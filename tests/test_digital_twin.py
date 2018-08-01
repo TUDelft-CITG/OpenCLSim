@@ -7,7 +7,7 @@ import pytest
 
 from click.testing import CliRunner
 
-from digital_twin import digital_twin
+from digital_twin import core
 from digital_twin import cli
 
 
