@@ -11,7 +11,7 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['Click>=6.0', ]
+requirements = ['Click>=6.0', 'simpy>=3.0.11', 'shapely>=1.6.4', 'pyproj>=1.9.5.1', ]
 
 setup_requirements = ['pytest-runner', ]
 
