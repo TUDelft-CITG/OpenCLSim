@@ -15,6 +15,10 @@ import pyproj
 
 
 class SimpyObject:
+    """General object which can be extended by any class requiring a simpy environment
+
+    env: a simpy Environment
+    """
     def __init__(self, env, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.env = env
@@ -23,7 +27,6 @@ class SimpyObject:
 class Identifiable:
     """Something that has a name and id
 
-    env: a simpy Environment
     name: a name
     id: a unique id generated with uuid"""
 
