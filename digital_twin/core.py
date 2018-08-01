@@ -13,33 +13,29 @@ import simpy
 import shapely.geometry
 import pyproj
 
-# todo remove simpy environment from constructor,
-# use metadata where all objects that need it are given an environment later instead
-# similar to http://docs.sqlalchemy.org/en/latest/core/metadata.html
+
+class SimpyObject:
+    def __init__(self, env, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.env = env
 
 
-class DigitalTwinObject:
-    def __init__(selfs, *args, **kwargs):
-        super().__init__()
-
-
-class Identifiable(DigitalTwinObject):
+class Identifiable:
     """Something that has a name and id
 
     env: a simpy Environment
     name: a name
     id: a unique id generated with uuid"""
 
-    def __init__(self, env, name, id=None, *args, **kwargs):
-        super().__init__(env=env, *args, **kwargs)
+    def __init__(self, name, id=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         """Initialization"""
-        self.env = env
         self.name = name
         # generate some id, in this case based on m
         self.id = id if id else str(uuid.uuid1())
 
 
-class Location(DigitalTwinObject):
+class Location(SimpyObject):
     """Something with a geometry (geojson format)
 
     geometry: can be a point as well as a polygon"""
@@ -50,7 +46,7 @@ class Location(DigitalTwinObject):
         self.geometry = geometry
 
 
-class Container(DigitalTwinObject):
+class Container(SimpyObject):
     """Container class
 
     capacity: amount the container can hold
@@ -58,31 +54,30 @@ class Container(DigitalTwinObject):
     container: a simpy object that can hold stuff
     total_requested: a counter needed to prevent over-handling"""
 
-    def __init__(self, env, capacity, level=0, nr_resources=1, *args, **kwargs):
-        super().__init__(env=env, *args, **kwargs)
+    def __init__(self, capacity, level=0, nr_resources=1, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         """Initialization"""
-        self.container = simpy.Container(env, capacity, init=level)
+        self.container = simpy.Container(self.env, capacity, init=level)
         self.total_requested = 0
-        self.resource = simpy.Resource(env, capacity=nr_resources)
+        self.resource = simpy.Resource(self.env, capacity=nr_resources)
 
 
-class Movable(DigitalTwinObject):
+class Movable(SimpyObject):
     """Movable class
 
     v_empty: speed empty [m/s]
     v_full: speed full [m/s]
     resource: a simpy resource that can be requested"""
 
-    def __init__(self, env,
+    def __init__(self,
                  v_empty, v_full,
                  nr_resources=1,
                  *args, **kwargs):
-        super().__init__(env=env, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         """Initialization"""
-        self.env = env
         self.v_empty = v_empty
         self.v_full = v_full
-        self.resource = simpy.Resource(env, capacity=nr_resources)
+        self.resource = simpy.Resource(self.env, capacity=nr_resources)
         self.wgs84 = pyproj.Geod(ellps='WGS84')
 
     def execute_move(self, origin, destination):
@@ -92,6 +87,7 @@ class Movable(DigitalTwinObject):
         dest = shapely.geometry.asShape(destination.geometry)
         forward, backward, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
+        #todo fix dependency between Movable and Container
         if self.container.level == self.container.capacity:
             yield self.env.timeout(distance / self.v_full)
             print('  distance full:  ' + '%4.2f' % (distance) + ' m')
@@ -105,21 +101,20 @@ class Movable(DigitalTwinObject):
             print('  duration:       ' + '%4.2f' % ((distance / self.v_empty) / 3600) + ' hrs')
 
 
-class Process(DigitalTwinObject):
+class Process(SimpyObject):
     """Process class
 
     resource: a simpy resource that can be requested
     rate: rate with which quantity can be processed [amount/s]
     amount: amount to process"""
 
-    def __init__(self, env,
+    def __init__(self,
                  rate, amount=0,
                  nr_resources=1,
                  *args, **kwargs):
-        super().__init__(env=env, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         """Initialization"""
-        self.env = env
-        self.resource = simpy.Resource(env, capacity=nr_resources)
+        self.resource = simpy.Resource(self.env, capacity=nr_resources)
         self.rate = rate
         self.amount = amount
 
@@ -156,7 +151,7 @@ class Process(DigitalTwinObject):
                 print('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
 
 
-class Log(DigitalTwinObject):
+class Log(SimpyObject):
     """Log class
 
     log: log message [format: 'start activity' or 'stop activity']
