@@ -9,7 +9,8 @@ from digital_twin import core
 def env():
     return simpy.Environment()
 
+
 def test_compose_crane(env):
     """Create a new type crane, based on existing components"""
-    Crane = type("Crane", (core.HasContainer, ), {})
-    Crane(env=env, capacity=3)
+    Crane = type("Crane", (core.Identifiable, core.HasContainer), {})
+    Crane(name='my crane', env=env, capacity=3)
