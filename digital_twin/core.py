@@ -5,6 +5,7 @@
 # package(s) related to time, space and id
 import uuid
 import logging
+import json
 
 # you need these dependencies (you can get these from anaconda)
 # package(s) related to the simulation
@@ -202,3 +203,23 @@ class TransportProcessingResource(Identifiable, Log, HasContainer, Movable, Proc
 class ProcessingResource(Identifiable, Locatable, Log, Process):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+
+class DictEncoder(json.JSONEncoder):
+    """serialize a simpy digital_twin object to json"""
+    def default(self, o):
+        result = {}
+        for key, val in o.__dict__.items():
+            if isinstance(val, simpy.Environment):
+                continue
+            if isinstance(val, simpy.Container):
+                result['capacity'] = val.capacity
+                result['level'] = val.level
+            else:
+                result[key] = val
+
+        return result
+
+
+def serialize(obj):
+    return json.dumps(obj, cls=DictEncoder)
