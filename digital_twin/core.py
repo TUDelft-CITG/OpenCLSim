@@ -4,6 +4,7 @@
 
 # package(s) related to time, space and id
 import uuid
+import logging
 
 # you need these dependencies (you can get these from anaconda)
 # package(s) related to the simulation
@@ -13,6 +14,7 @@ import simpy
 import shapely.geometry
 import pyproj
 
+logger = logging.getLogger(__name__)
 
 class SimpyObject:
     """General object which can be extended by any class requiring a simpy environment
@@ -38,7 +40,7 @@ class Identifiable:
         self.id = id if id else str(uuid.uuid1())
 
 
-class Location(SimpyObject):
+class Locatable:
     """Something with a geometry (geojson format)
 
     geometry: can be a point as well as a polygon"""
@@ -65,7 +67,35 @@ class Container(SimpyObject):
         self.resource = simpy.Resource(self.env, capacity=nr_resources)
 
 
-class Movable(SimpyObject):
+class Movable(SimpyObject, Locatable):
+    """Movable class todo doc"""
+
+    def __init__(self, v, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.v = v
+        self.wgs84 = pyproj.Geod(ellps='WGS84')
+
+    def move(self, destination):
+        """determine distance between origin and destination, and
+        yield the time it takes to travel it"""
+        orig = shapely.geometry.asShape(self.geometry)
+        dest = shapely.geometry.asShape(destination.geometry)
+        forward, backward, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+
+        speed = self.current_speed
+        yield self.env.timeout(distance / speed)
+        self.geometry = dest
+        logger.debug('  distance: ' + '%4.2f' % distance + ' m')
+        logger.debug('  sailing:  ' + '%4.2f' % speed + ' m/s')
+        logger.debug('  duration: ' + '%4.2f' % ((distance / speed) / 3600) + ' hrs')
+
+    @property
+    def current_speed(self):
+        return self.v
+
+
+class MovableContainer(Container):
     """Movable class
 
     v_empty: speed empty [m/s]
@@ -80,7 +110,7 @@ class Movable(SimpyObject):
         """Initialization"""
         self.v_empty = v_empty
         self.v_full = v_full
-        self.resource = simpy.Resource(self.env, capacity=nr_resources)
+        self.resource = simpy.Resource(self.env, capacity=nr_resources) # todo why? when is this used?
         self.wgs84 = pyproj.Geod(ellps='WGS84')
 
     def execute_move(self, origin, destination):
@@ -90,18 +120,17 @@ class Movable(SimpyObject):
         dest = shapely.geometry.asShape(destination.geometry)
         forward, backward, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
-        #todo fix dependency between Movable and Container
         if self.container.level == self.container.capacity:
             yield self.env.timeout(distance / self.v_full)
-            print('  distance full:  ' + '%4.2f' % (distance) + ' m')
-            print('  sailing full:   ' + '%4.2f' % (self.v_full) + ' m/s')
-            print('  duration:       ' + '%4.2f' % ((distance / self.v_full) / 3600) + ' hrs')
+            logger.debug('  distance full:  ' + '%4.2f' % distance + ' m')
+            logger.debug('  sailing full:   ' + '%4.2f' % self.v_full + ' m/s')
+            logger.debug('  duration:       ' + '%4.2f' % ((distance / self.v_full) / 3600) + ' hrs')
 
         elif self.container.level == 0:
             yield self.env.timeout(distance / self.v_empty)
-            print('  distance empty: ' + '%4.2f' % (distance) + ' m')
-            print('  sailing empty:  ' + '%4.2f' % (self.v_empty) + ' m/s')
-            print('  duration:       ' + '%4.2f' % ((distance / self.v_empty) / 3600) + ' hrs')
+            logger.debug('  distance empty: ' + '%4.2f' % distance + ' m')
+            logger.debug('  sailing empty:  ' + '%4.2f' % self.v_empty + ' m/s')
+            logger.debug('  duration:       ' + '%4.2f' % ((distance / self.v_empty) / 3600) + ' hrs')
 
 
 class Process(SimpyObject):
@@ -136,7 +165,7 @@ class Process(SimpyObject):
                 origin.log_entry('', self.env.now, origin.container.level)
                 destination.log_entry('', self.env.now, destination.container.level)
 
-                print('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
+                logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
 
         elif type(destination).__name__ == "Site":
             with destination.resource.request() as my_put_turn:
@@ -151,7 +180,7 @@ class Process(SimpyObject):
 
                 destination.resource.release(my_put_turn)
 
-                print('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
+                logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
 
 
 class Log(SimpyObject):
@@ -175,21 +204,21 @@ class Log(SimpyObject):
         self.value.append(value)
 
 
-class Site(Identifiable, Location, Log, Container):
+class Site(Identifiable, Locatable, Log, Container):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
-class TransportResource(Identifiable, Location, Log, Container, Movable):
+class TransportResource(Identifiable, Log, Container, Movable):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
-class TransportProcessingResource(Identifiable, Location, Log, Container, Movable, Process):
+class TransportProcessingResource(Identifiable, Log, Container, Movable, Process):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
-class ProcessingResource(Identifiable, Location, Log, Process):
+class ProcessingResource(Identifiable, Locatable, Log, Process):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
