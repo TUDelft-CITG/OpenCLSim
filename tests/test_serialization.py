@@ -20,3 +20,15 @@ def test_store_crane(env):
     print(data)
     crane2 = Crane(env=env, **data)
     assert crane2.container.capacity == 3
+
+
+def test_store_stockpile(env):
+    """Create a new type crane, based on existing components"""
+    Stockpile = type("Stockpile", (core.Identifiable, core.HasProcessingLimit), {})
+    stockpile = Stockpile(name='my stockpile', env=env, limit=3)
+    assert stockpile.resource.capacity == 3
+    txt = core.serialize(stockpile)
+    data = json.loads(txt)
+    print(data)
+    stockpile2 = Stockpile(env=env, **data)
+    assert stockpile2.resource.capacity == 3
