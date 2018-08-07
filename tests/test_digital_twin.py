@@ -97,3 +97,94 @@ def test_move_to_same_place(env, geometry_a, locatable_a):
     env.run()
     assert movable.geometry.equals(locatable_a.geometry)
     assert env.now == 0
+
+
+class ToBeProcessedWithLimit(core.HasContainer, core.HasProcessingLimit, core.Log):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class ToBeProcessedNoLimit(core.HasContainer, core.Log):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+def test_basic_processor(env):
+    # move content from one container to another, then move some of it back again
+    limited_container = ToBeProcessedWithLimit(env=env, capacity=1000, level=1000, limit=1)
+    unlimited_container = ToBeProcessedNoLimit(env=env, capacity=1000, level=0)
+
+    processor = core.Processor(env=env, rate=2)
+    env.process(processor.process(limited_container, unlimited_container, 600))
+    env.run()
+    np.testing.assert_almost_equal(env.now, 300)
+    assert limited_container.container.level == 400
+    assert unlimited_container.container.level == 600
+
+    env.process(processor.process(unlimited_container, limited_container, 300))
+    start = env.now
+    env.run()
+    time_spent = env.now - start
+    np.testing.assert_almost_equal(time_spent, 150)
+    assert limited_container.container.level == 700
+    assert unlimited_container.container.level == 300
+
+
+def test_dual_processors(env):
+    # move content from two different limited containers to an unlimited container at the same time
+    limited_container_1 = ToBeProcessedWithLimit(env=env, capacity=1000, level=0, limit=1)
+    limited_container_2 = ToBeProcessedWithLimit(env=env, capacity=1000, level=0, limit=1)
+    unlimited_container = ToBeProcessedNoLimit(env=env, capacity=2000, level=1000)
+
+    processor1 = core.Processor(env=env, rate=2)
+    processor2 = core.Processor(env=env, rate=1)
+
+    env.process(processor1.process(unlimited_container, limited_container_1, 400))
+    env.process(processor2.process(unlimited_container, limited_container_2, 400))
+    env.run()
+
+    np.testing.assert_almost_equal(env.now, 400)
+    assert unlimited_container.container.level == 200
+    assert limited_container_1.container.level == 400
+    assert limited_container_2.container.level == 400
+
+    env.process(processor1.process(limited_container_1, unlimited_container, 300))
+    env.process(processor2.process(limited_container_2, unlimited_container, 100))
+    start = env.now
+    env.run()
+    time_spent = env.now - start
+
+    np.testing.assert_almost_equal(time_spent, 150)
+    assert unlimited_container.container.level == 600
+    assert limited_container_1.container.level == 100
+    assert limited_container_2.container.level == 300
+
+
+def test_dual_processors_with_limit(env):
+    # move content into a limited container, have two process wait for each other to finish
+    unlimited_container_1 = ToBeProcessedNoLimit(env=env, capacity=1000, level=1000)
+    unlimited_container_2 = ToBeProcessedNoLimit(env=env, capacity=1000, level=1000)
+    limited_container = ToBeProcessedWithLimit(env=env, capacity=2000, level=0, limit=1)
+
+    processor1 = core.Processor(env=env, rate=1)
+    processor2 = core.Processor(env=env, rate=2)
+
+    env.process(processor1.process(unlimited_container_1, limited_container, 400))
+    env.process(processor2.process(unlimited_container_2, limited_container, 400))
+    env.run()
+
+    np.testing.assert_almost_equal(env.now, 600)
+    assert limited_container.container.level == 800
+    assert unlimited_container_1.container.level == 600
+    assert unlimited_container_2.container.level == 600
+
+    env.process(processor1.process(limited_container, unlimited_container_1, 100))
+    env.process(processor2.process(limited_container, unlimited_container_2, 300))
+    start = env.now
+    env.run()
+    time_spent = env.now - start
+
+    np.testing.assert_almost_equal(time_spent, 250)
+    assert limited_container.container.level == 400
+    assert unlimited_container_1.container.level == 700
+    assert unlimited_container_2.container.level == 900
