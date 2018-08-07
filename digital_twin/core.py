@@ -16,6 +16,7 @@ import pyproj
 
 logger = logging.getLogger(__name__)
 
+
 class SimpyObject:
     """General object which can be extended by any class requiring a simpy environment
 
@@ -51,26 +52,23 @@ class Locatable:
         self.geometry = geometry
 
 
-class Container(SimpyObject):
+class HasContainer(SimpyObject):
     """Container class
 
     capacity: amount the container can hold
-    level: amount the container holds
-    container: a simpy object that can hold stuff
-    total_requested: a counter needed to prevent over-handling"""
+    level: amount the container holds initially
+    container: a simpy object that can hold stuff"""
 
-    def __init__(self, capacity, level=0, nr_resources=1, *args, **kwargs):
+    def __init__(self, capacity, level=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.container = simpy.Container(self.env, capacity, init=level)
-        self.total_requested = 0
-        self.resource = simpy.Resource(self.env, capacity=nr_resources)
 
 
 class Movable(SimpyObject, Locatable):
     """Movable class todo doc"""
 
-    def __init__(self, v, *args, **kwargs):
+    def __init__(self, v=1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.v = v
@@ -95,7 +93,7 @@ class Movable(SimpyObject, Locatable):
         return self.v
 
 
-class MovableContainer(Container):
+class ContainerDependentMovable(Movable, HasContainer):
     """Movable class
 
     v_empty: speed empty [m/s]
@@ -103,34 +101,16 @@ class MovableContainer(Container):
     resource: a simpy resource that can be requested"""
 
     def __init__(self,
-                 v_empty, v_full,
-                 nr_resources=1,
+                 compute_v,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.v_empty = v_empty
-        self.v_full = v_full
-        self.resource = simpy.Resource(self.env, capacity=nr_resources) # todo why? when is this used?
+        self.compute_v = compute_v
         self.wgs84 = pyproj.Geod(ellps='WGS84')
 
-    def execute_move(self, origin, destination):
-        """determine distance between origin and destination, and
-        yield the time it takes to travel it"""
-        orig = shapely.geometry.asShape(origin.geometry)
-        dest = shapely.geometry.asShape(destination.geometry)
-        forward, backward, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
-
-        if self.container.level == self.container.capacity:
-            yield self.env.timeout(distance / self.v_full)
-            logger.debug('  distance full:  ' + '%4.2f' % distance + ' m')
-            logger.debug('  sailing full:   ' + '%4.2f' % self.v_full + ' m/s')
-            logger.debug('  duration:       ' + '%4.2f' % ((distance / self.v_full) / 3600) + ' hrs')
-
-        elif self.container.level == 0:
-            yield self.env.timeout(distance / self.v_empty)
-            logger.debug('  distance empty: ' + '%4.2f' % distance + ' m')
-            logger.debug('  sailing empty:  ' + '%4.2f' % self.v_empty + ' m/s')
-            logger.debug('  duration:       ' + '%4.2f' % ((distance / self.v_empty) / 3600) + ' hrs')
+    @property
+    def current_speed(self):
+        return self.compute_v(self.container.level / self.container.capacity)
 
 
 class Process(SimpyObject):
@@ -151,7 +131,7 @@ class Process(SimpyObject):
         self.amount = amount
 
     def execute_process(self, origin, destination, amount):
-        """get amount from origin container, put amount in destination continater,
+        """get amount from origin container, put amount in destination container,
         and yield the time it takes to process it"""
 
         if type(origin).__name__ == "Site":
@@ -204,17 +184,17 @@ class Log(SimpyObject):
         self.value.append(value)
 
 
-class Site(Identifiable, Locatable, Log, Container):
+class Site(Identifiable, Locatable, Log, HasContainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
-class TransportResource(Identifiable, Log, Container, Movable):
+class TransportResource(Identifiable, Log, HasContainer, Movable):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
-class TransportProcessingResource(Identifiable, Log, Container, Movable, Process):
+class TransportProcessingResource(Identifiable, Log, HasContainer, Movable, Process):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

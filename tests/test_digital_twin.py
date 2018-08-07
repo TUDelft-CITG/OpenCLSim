@@ -7,6 +7,7 @@ import pytest
 import simpy
 import shapely.geometry
 import logging
+import numpy as np
 
 from click.testing import CliRunner
 
@@ -60,3 +61,39 @@ def test_movable(env, geometry_a, locatable_a, locatable_b):
     env.process(movable.move(locatable_a))
     env.run()
     assert movable.geometry.equals(locatable_a.geometry)
+
+
+def test_container_dependent_movable(env, geometry_a, locatable_a, locatable_b):
+    v_full = 10
+    v_empty = 20
+    compute_v = lambda x: x * (v_full - v_empty) + v_empty
+    movable = core.ContainerDependentMovable(env=env, geometry=geometry_a, compute_v=compute_v, capacity=10)
+
+    move_and_test(env, locatable_b, movable, 20, 2.18)
+
+    movable.container.put(2)
+    move_and_test(env, locatable_a, movable, 18, 2.42)
+
+    movable.container.put(8)
+    move_and_test(env, locatable_b, movable, 10, 4.36)
+
+    movable.container.get(10)
+    move_and_test(env, locatable_a, movable, 20, 2.18)
+
+
+def move_and_test(env, destination, movable, expected_speed, expected_time):
+    start = env.now
+    env.process(movable.move(destination))
+    env.run()
+    np.testing.assert_almost_equal(movable.current_speed, expected_speed)
+    assert movable.geometry.equals(destination.geometry)
+    hours_spent = (env.now - start) / 3600
+    np.testing.assert_almost_equal(hours_spent, expected_time, decimal=2)
+
+
+def test_move_to_same_place(env, geometry_a, locatable_a):
+    movable = core.Movable(v=10, geometry=geometry_a, env=env)
+    env.process(movable.move(locatable_a))
+    env.run()
+    assert movable.geometry.equals(locatable_a.geometry)
+    assert env.now == 0
