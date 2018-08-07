@@ -114,54 +114,15 @@ class ContainerDependentMovable(Movable, HasContainer):
         return self.compute_v(self.container.level / self.container.capacity)
 
 
-class Process(SimpyObject):
-    """Process class
+class HasProcessingLimit(SimpyObject):
+    """HasProcessingLimit class
 
-    resource: a simpy resource that can be requested
-    rate: rate with which quantity can be processed [amount/s]
-    amount: amount to process"""
+    Adds a limited Simpy resource which should be requested before the object is used for processing."""
 
-    def __init__(self,
-                 rate, amount=0,
-                 nr_resources=1,
-                 *args, **kwargs):
+    def __init__(self, limit=1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.resource = simpy.Resource(self.env, capacity=nr_resources)
-        self.rate = rate
-        self.amount = amount
-
-    def execute_process(self, origin, destination, amount):
-        """get amount from origin container, put amount in destination container,
-        and yield the time it takes to process it"""
-
-        if type(origin).__name__ == "Site":
-            with origin.resource.request() as my_get_turn:
-                yield my_get_turn
-
-                origin.container.get(amount)
-                destination.container.put(amount)
-                yield self.env.timeout(amount / self.rate)
-
-                origin.log_entry('', self.env.now, origin.container.level)
-                destination.log_entry('', self.env.now, destination.container.level)
-
-                logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
-
-        elif type(destination).__name__ == "Site":
-            with destination.resource.request() as my_put_turn:
-                yield my_put_turn
-
-                origin.container.get(amount)
-                destination.container.put(amount)
-                yield self.env.timeout(amount / self.rate)
-
-                origin.log_entry('', self.env.now, origin.container.level)
-                destination.log_entry('', self.env.now, destination.container.level)
-
-                destination.resource.release(my_put_turn)
-
-                logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
+        self.resource = simpy.Resource(self.env, capacity=limit)
 
 
 class Log(SimpyObject):
@@ -185,7 +146,52 @@ class Log(SimpyObject):
         self.value.append(value)
 
 
-class Site(Identifiable, Locatable, Log, HasContainer):
+class Processor(SimpyObject):
+    """Processor class
+
+    rate: rate with which quantity can be processed [amount/s]"""
+
+    def __init__(self, rate, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.rate = rate
+
+    # noinspection PyUnresolvedReferences
+    def process(self, origin, destination, amount):
+        """get amount from origin container, put amount in destination container,
+        and yield the time it takes to process it"""
+        assert isinstance(origin, HasProcessingLimit) or isinstance(destination, HasProcessingLimit)
+        assert origin.container.level >= amount
+        assert destination.container.capacity - destination.container.level >= amount
+
+        if isinstance(origin, HasProcessingLimit):
+            with origin.resource.request() as my_get_turn:
+                yield my_get_turn
+
+                origin.container.get(amount)
+                destination.container.put(amount)
+                yield self.env.timeout(amount / self.rate)
+
+                origin.log_entry('', self.env.now, origin.container.level)
+                destination.log_entry('', self.env.now, destination.container.level)
+
+                logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
+
+        elif isinstance(destination, HasProcessingLimit):
+            with destination.resource.request() as my_put_turn:
+                yield my_put_turn
+
+                origin.container.get(amount)
+                destination.container.put(amount)
+                yield self.env.timeout(amount / self.rate)
+
+                origin.log_entry('', self.env.now, origin.container.level)
+                destination.log_entry('', self.env.now, destination.container.level)
+
+                logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
+
+
+class Site(Identifiable, Locatable, Log, HasContainer, HasProcessingLimit):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -195,12 +201,12 @@ class TransportResource(Identifiable, Log, HasContainer, Movable):
         super().__init__(*args, **kwargs)
 
 
-class TransportProcessingResource(Identifiable, Log, HasContainer, Movable, Process):
+class TransportProcessingResource(Identifiable, Log, HasContainer, Movable, Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
-class ProcessingResource(Identifiable, Locatable, Log, Process):
+class ProcessingResource(Identifiable, Locatable, Log, Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
