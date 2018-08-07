@@ -66,7 +66,11 @@ class HasContainer(SimpyObject):
 
 
 class Movable(SimpyObject, Locatable):
-    """Movable class todo doc"""
+    """Movable class
+
+    Used for object that can move with a fixed speed
+    geometry: point used to track its current location
+    v: speed"""
 
     def __init__(self, v=1, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -94,11 +98,10 @@ class Movable(SimpyObject, Locatable):
 
 
 class ContainerDependentMovable(Movable, HasContainer):
-    """Movable class
+    """ContainerDependentMovable class
 
-    v_empty: speed empty [m/s]
-    v_full: speed full [m/s]
-    resource: a simpy resource that can be requested"""
+    Used for objects that move with a speed dependent on the container level
+    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
 
     def __init__(self,
                  compute_v,
