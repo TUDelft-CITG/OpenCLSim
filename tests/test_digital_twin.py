@@ -99,42 +99,36 @@ def test_move_to_same_place(env, geometry_a, locatable_a):
     assert env.now == 0
 
 
-class ToBeProcessedWithLimit(core.HasContainer, core.HasProcessingLimit, core.Log):
+class BasicStorageUnit(core.HasContainer, core.HasResource, core.Log):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-
-class ToBeProcessedNoLimit(core.HasContainer, core.Log):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
 
 def test_basic_processor(env):
     # move content from one container to another, then move some of it back again
-    limited_container = ToBeProcessedWithLimit(env=env, capacity=1000, level=1000, limit=1)
-    unlimited_container = ToBeProcessedNoLimit(env=env, capacity=1000, level=0)
+    source = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=1)
+    dest = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
 
     processor = core.Processor(env=env, rate=2)
-    env.process(processor.process(limited_container, unlimited_container, 600))
+    env.process(processor.process(source, dest, 600))
     env.run()
     np.testing.assert_almost_equal(env.now, 300)
-    assert limited_container.container.level == 400
-    assert unlimited_container.container.level == 600
+    assert source.container.level == 400
+    assert dest.container.level == 600
 
-    env.process(processor.process(unlimited_container, limited_container, 300))
+    env.process(processor.process(dest, source, 300))
     start = env.now
     env.run()
     time_spent = env.now - start
     np.testing.assert_almost_equal(time_spent, 150)
-    assert limited_container.container.level == 700
-    assert unlimited_container.container.level == 300
+    assert source.container.level == 700
+    assert dest.container.level == 300
 
 
 def test_dual_processors(env):
     # move content from two different limited containers to an unlimited container at the same time
-    limited_container_1 = ToBeProcessedWithLimit(env=env, capacity=1000, level=0, limit=1)
-    limited_container_2 = ToBeProcessedWithLimit(env=env, capacity=1000, level=0, limit=1)
-    unlimited_container = ToBeProcessedNoLimit(env=env, capacity=2000, level=1000)
+    limited_container_1 = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
+    limited_container_2 = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
+    unlimited_container = BasicStorageUnit(env=env, capacity=2000, level=1000, nr_resources=100)
 
     processor1 = core.Processor(env=env, rate=2)
     processor2 = core.Processor(env=env, rate=1)
@@ -162,9 +156,9 @@ def test_dual_processors(env):
 
 def test_dual_processors_with_limit(env):
     # move content into a limited container, have two process wait for each other to finish
-    unlimited_container_1 = ToBeProcessedNoLimit(env=env, capacity=1000, level=1000)
-    unlimited_container_2 = ToBeProcessedNoLimit(env=env, capacity=1000, level=1000)
-    limited_container = ToBeProcessedWithLimit(env=env, capacity=2000, level=0, limit=1)
+    unlimited_container_1 = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=100)
+    unlimited_container_2 = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=100)
+    limited_container = BasicStorageUnit(env=env, capacity=2000, level=0, nr_resources=1)
 
     processor1 = core.Processor(env=env, rate=1)
     processor2 = core.Processor(env=env, rate=2)

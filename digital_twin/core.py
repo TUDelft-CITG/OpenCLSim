@@ -64,6 +64,7 @@ class HasContainer(SimpyObject):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.container = simpy.Container(self.env, capacity, init=level)
+        self.total_requested = 0
 
 
 class Movable(SimpyObject, Locatable):
@@ -117,15 +118,15 @@ class ContainerDependentMovable(Movable, HasContainer):
         return self.compute_v(self.container.level / self.container.capacity)
 
 
-class HasProcessingLimit(SimpyObject):
+class HasResource(SimpyObject):
     """HasProcessingLimit class
 
     Adds a limited Simpy resource which should be requested before the object is used for processing."""
 
-    def __init__(self, limit=1, *args, **kwargs):
+    def __init__(self, nr_resources=1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.resource = simpy.Resource(self.env, capacity=limit)
+        self.resource = simpy.Resource(self.env, capacity=nr_resources)
 
 
 class Log(SimpyObject):
@@ -160,58 +161,40 @@ class Processor(SimpyObject):
         self.rate = rate
 
     # noinspection PyUnresolvedReferences
-    def process(self, origin, destination, amount):
+    def process(self, origin, destination, amount, origin_resource_request=None, destination_resource_request=None):
         """get amount from origin container, put amount in destination container,
         and yield the time it takes to process it"""
-        assert isinstance(origin, HasProcessingLimit) or isinstance(destination, HasProcessingLimit)
+        assert isinstance(origin, HasContainer) and isinstance(destination, HasContainer)
+        assert isinstance(origin, HasResource) and isinstance(destination, HasResource)
+        assert isinstance(origin, Log) and isinstance(destination, Log)
+
         assert origin.container.level >= amount
         assert destination.container.capacity - destination.container.level >= amount
 
-        if isinstance(origin, HasProcessingLimit):
-            with origin.resource.request() as my_get_turn:
-                yield my_get_turn
+        my_origin_turn = origin_resource_request
+        if my_origin_turn is None:
+            my_origin_turn = origin.resource.request()
 
-                origin.container.get(amount)
-                destination.container.put(amount)
-                yield self.env.timeout(amount / self.rate)
+        my_dest_turn = destination_resource_request
+        if my_dest_turn is None:
+            my_dest_turn = destination.resource.request()
 
-                origin.log_entry('', self.env.now, origin.container.level)
-                destination.log_entry('', self.env.now, destination.container.level)
+        yield my_origin_turn
+        yield my_dest_turn
 
-                logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
+        origin.container.get(amount)
+        destination.container.put(amount)
+        yield self.env.timeout(amount / self.rate)
 
-        elif isinstance(destination, HasProcessingLimit):
-            with destination.resource.request() as my_put_turn:
-                yield my_put_turn
+        origin.log_entry('', self.env.now, origin.container.level)
+        destination.log_entry('', self.env.now, destination.container.level)
 
-                origin.container.get(amount)
-                destination.container.put(amount)
-                yield self.env.timeout(amount / self.rate)
+        logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
 
-                origin.log_entry('', self.env.now, origin.container.level)
-                destination.log_entry('', self.env.now, destination.container.level)
-
-                logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
-
-
-class Site(Identifiable, Locatable, Log, HasContainer, HasProcessingLimit):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class TransportResource(Identifiable, Log, HasContainer, Movable):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class TransportProcessingResource(Identifiable, Log, HasContainer, Movable, Processor):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class ProcessingResource(Identifiable, Locatable, Log, Processor):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        if origin_resource_request is None:
+            origin.resource.release(my_origin_turn)
+        if destination_resource_request is None:
+            destination.resource.release(my_dest_turn)
 
 
 class DictEncoder(json.JSONEncoder):
