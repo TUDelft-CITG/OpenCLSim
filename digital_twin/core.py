@@ -207,6 +207,8 @@ class DictEncoder(json.JSONEncoder):
             if isinstance(val, simpy.Container):
                 result['capacity'] = val.capacity
                 result['level'] = val.level
+            elif isinstance(val, simpy.Resource):
+                result['limit'] = val.capacity
             else:
                 result[key] = val
 
