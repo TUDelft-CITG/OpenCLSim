@@ -17,8 +17,8 @@ Hydraulic-Infrastructure-Realisation
         :target: https://hydraulic-infrastructure-realisation.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-.. image:: https://pyup.io/repos/github/TUDelft-CITG/digital_twin/shield.svg
-     :target: https://pyup.io/repos/github/TUDelft-CITG/digital_twin/
+.. image:: https://pyup.io/repos/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/shield.svg
+     :target: https://pyup.io/repos/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/
      :alt: Updates
 
 
