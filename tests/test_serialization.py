@@ -24,8 +24,8 @@ def test_store_crane(env):
 
 def test_store_stockpile(env):
     """Create a new type crane, based on existing components"""
-    Stockpile = type("Stockpile", (core.Identifiable, core.HasProcessingLimit), {})
-    stockpile = Stockpile(name='my stockpile', env=env, limit=3)
+    Stockpile = type("Stockpile", (core.Identifiable, core.HasResource), {})
+    stockpile = Stockpile(name='my stockpile', env=env, nr_resources=3)
     assert stockpile.resource.capacity == 3
     txt = core.serialize(stockpile)
     data = json.loads(txt)

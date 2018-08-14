@@ -60,11 +60,11 @@ class HasContainer(SimpyObject):
     level: amount the container holds initially
     container: a simpy object that can hold stuff"""
 
-    def __init__(self, capacity, level=0, *args, **kwargs):
+    def __init__(self, capacity, level=0, total_requested=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.container = simpy.Container(self.env, capacity, init=level)
-        self.total_requested = 0
+        self.total_requested = total_requested
 
 
 class Movable(SimpyObject, Locatable):
@@ -208,7 +208,7 @@ class DictEncoder(json.JSONEncoder):
                 result['capacity'] = val.capacity
                 result['level'] = val.level
             elif isinstance(val, simpy.Resource):
-                result['limit'] = val.capacity
+                result['nr_resources'] = val.capacity
             else:
                 result[key] = val
 
