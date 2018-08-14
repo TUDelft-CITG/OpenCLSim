@@ -4,6 +4,8 @@
 
 # package(s) related to time, space and id
 import uuid
+import logging
+import json
 
 # you need these dependencies (you can get these from anaconda)
 # package(s) related to the simulation
@@ -12,6 +14,8 @@ import simpy
 # spatial libraries
 import shapely.geometry
 import pyproj
+
+logger = logging.getLogger(__name__)
 
 
 class SimpyObject:
@@ -38,7 +42,7 @@ class Identifiable:
         self.id = id if id else str(uuid.uuid1())
 
 
-class Location(SimpyObject):
+class Locatable:
     """Something with a geometry (geojson format)
 
     geometry: can be a point as well as a polygon"""
@@ -49,109 +53,80 @@ class Location(SimpyObject):
         self.geometry = geometry
 
 
-class Container(SimpyObject):
+class HasContainer(SimpyObject):
     """Container class
 
     capacity: amount the container can hold
-    level: amount the container holds
-    container: a simpy object that can hold stuff
-    total_requested: a counter needed to prevent over-handling"""
+    level: amount the container holds initially
+    container: a simpy object that can hold stuff"""
 
-    def __init__(self, capacity, level=0, nr_resources=1, *args, **kwargs):
+    def __init__(self, capacity, level=0, total_requested=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.container = simpy.Container(self.env, capacity, init=level)
-        self.total_requested = 0
-        self.resource = simpy.Resource(self.env, capacity=nr_resources)
+        self.total_requested = total_requested
 
 
-class Movable(SimpyObject):
+class Movable(SimpyObject, Locatable):
     """Movable class
 
-    v_empty: speed empty [m/s]
-    v_full: speed full [m/s]
-    resource: a simpy resource that can be requested"""
+    Used for object that can move with a fixed speed
+    geometry: point used to track its current location
+    v: speed"""
 
-    def __init__(self,
-                 v_empty, v_full,
-                 nr_resources=1,
-                 *args, **kwargs):
+    def __init__(self, v=1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.v_empty = v_empty
-        self.v_full = v_full
-        self.resource = simpy.Resource(self.env, capacity=nr_resources)
+        self.v = v
         self.wgs84 = pyproj.Geod(ellps='WGS84')
 
-    def execute_move(self, origin, destination):
+    def move(self, destination):
         """determine distance between origin and destination, and
         yield the time it takes to travel it"""
-        orig = shapely.geometry.asShape(origin.geometry)
+        orig = shapely.geometry.asShape(self.geometry)
         dest = shapely.geometry.asShape(destination.geometry)
         forward, backward, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
-        #todo fix dependency between Movable and Container
-        if self.container.level == self.container.capacity:
-            yield self.env.timeout(distance / self.v_full)
-            print('  distance full:  ' + '%4.2f' % (distance) + ' m')
-            print('  sailing full:   ' + '%4.2f' % (self.v_full) + ' m/s')
-            print('  duration:       ' + '%4.2f' % ((distance / self.v_full) / 3600) + ' hrs')
+        speed = self.current_speed
+        yield self.env.timeout(distance / speed)
+        self.geometry = dest
+        logger.debug('  distance: ' + '%4.2f' % distance + ' m')
+        logger.debug('  sailing:  ' + '%4.2f' % speed + ' m/s')
+        logger.debug('  duration: ' + '%4.2f' % ((distance / speed) / 3600) + ' hrs')
 
-        elif self.container.level == 0:
-            yield self.env.timeout(distance / self.v_empty)
-            print('  distance empty: ' + '%4.2f' % (distance) + ' m')
-            print('  sailing empty:  ' + '%4.2f' % (self.v_empty) + ' m/s')
-            print('  duration:       ' + '%4.2f' % ((distance / self.v_empty) / 3600) + ' hrs')
+    @property
+    def current_speed(self):
+        return self.v
 
 
-class Process(SimpyObject):
-    """Process class
+class ContainerDependentMovable(Movable, HasContainer):
+    """ContainerDependentMovable class
 
-    resource: a simpy resource that can be requested
-    rate: rate with which quantity can be processed [amount/s]
-    amount: amount to process"""
+    Used for objects that move with a speed dependent on the container level
+    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
 
     def __init__(self,
-                 rate, amount=0,
-                 nr_resources=1,
+                 compute_v,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
+        self.compute_v = compute_v
+        self.wgs84 = pyproj.Geod(ellps='WGS84')
+
+    @property
+    def current_speed(self):
+        return self.compute_v(self.container.level / self.container.capacity)
+
+
+class HasResource(SimpyObject):
+    """HasProcessingLimit class
+
+    Adds a limited Simpy resource which should be requested before the object is used for processing."""
+
+    def __init__(self, nr_resources=1, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
         self.resource = simpy.Resource(self.env, capacity=nr_resources)
-        self.rate = rate
-        self.amount = amount
-
-    def execute_process(self, origin, destination, amount):
-        """get amount from origin container, put amount in destination continater,
-        and yield the time it takes to process it"""
-
-        if type(origin).__name__ == "Site":
-            with origin.resource.request() as my_get_turn:
-                yield my_get_turn
-
-                origin.container.get(amount)
-                destination.container.put(amount)
-                yield self.env.timeout(amount / self.rate)
-
-                origin.log_entry('', self.env.now, origin.container.level)
-                destination.log_entry('', self.env.now, destination.container.level)
-
-                print('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
-
-        elif type(destination).__name__ == "Site":
-            with destination.resource.request() as my_put_turn:
-                yield my_put_turn
-
-                origin.container.get(amount)
-                destination.container.put(amount)
-                yield self.env.timeout(amount / self.rate)
-
-                origin.log_entry('', self.env.now, origin.container.level)
-                destination.log_entry('', self.env.now, destination.container.level)
-
-                destination.resource.release(my_put_turn)
-
-                print('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
 
 
 class Log(SimpyObject):
@@ -175,21 +150,70 @@ class Log(SimpyObject):
         self.value.append(value)
 
 
-class Site(Identifiable, Location, Log, Container):
-    def __init__(self, *args, **kwargs):
+class Processor(SimpyObject):
+    """Processor class
+
+    rate: rate with which quantity can be processed [amount/s]"""
+
+    def __init__(self, rate, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.rate = rate
+
+    # noinspection PyUnresolvedReferences
+    def process(self, origin, destination, amount, origin_resource_request=None, destination_resource_request=None):
+        """get amount from origin container, put amount in destination container,
+        and yield the time it takes to process it"""
+        assert isinstance(origin, HasContainer) and isinstance(destination, HasContainer)
+        assert isinstance(origin, HasResource) and isinstance(destination, HasResource)
+        assert isinstance(origin, Log) and isinstance(destination, Log)
+
+        assert origin.container.level >= amount
+        assert destination.container.capacity - destination.container.level >= amount
+
+        my_origin_turn = origin_resource_request
+        if my_origin_turn is None:
+            my_origin_turn = origin.resource.request()
+
+        my_dest_turn = destination_resource_request
+        if my_dest_turn is None:
+            my_dest_turn = destination.resource.request()
+
+        yield my_origin_turn
+        yield my_dest_turn
+
+        origin.container.get(amount)
+        destination.container.put(amount)
+        yield self.env.timeout(amount / self.rate)
+
+        origin.log_entry('', self.env.now, origin.container.level)
+        destination.log_entry('', self.env.now, destination.container.level)
+
+        logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
+
+        if origin_resource_request is None:
+            origin.resource.release(my_origin_turn)
+        if destination_resource_request is None:
+            destination.resource.release(my_dest_turn)
 
 
-class TransportResource(Identifiable, Location, Log, Container, Movable):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class DictEncoder(json.JSONEncoder):
+    """serialize a simpy digital_twin object to json"""
+    def default(self, o):
+        result = {}
+        for key, val in o.__dict__.items():
+            if isinstance(val, simpy.Environment):
+                continue
+            if isinstance(val, simpy.Container):
+                result['capacity'] = val.capacity
+                result['level'] = val.level
+            elif isinstance(val, simpy.Resource):
+                result['nr_resources'] = val.capacity
+            else:
+                result[key] = val
+
+        return result
 
 
-class TransportProcessingResource(Identifiable, Location, Log, Container, Movable, Process):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class ProcessingResource(Identifiable, Location, Log, Process):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+def serialize(obj):
+    return json.dumps(obj, cls=DictEncoder)
