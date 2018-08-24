@@ -39,8 +39,6 @@ Features
 * Create new infrastructure from existing components (Identifiable, Locatable)
 
 
-
-
 Credits
 -------
 
