@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/TUDelft-CITG/digital_twin/issues.
+Report bugs at https://github.com/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/issues.
 
 If you are reporting a bug, please include:
 
@@ -45,7 +45,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/TUDelft-CITG/digital_twin/issues.
+The best way to send feedback is to file an issue at https://github.com/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/issues.
 
 If you are proposing a feature:
 
@@ -57,12 +57,12 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `digital_twin` for local development.
+Ready to contribute? Here's how to set up `Hydraulic-Infrastructure-Realisation` for local development.
 
-1. Fork the `digital_twin` repo on GitHub.
+1. Fork the `Hydraulic-Infrastructure-Realisation` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone git@github.com:your_name_here/digital_twin.git
+    $ git clone git@github.com:your_name_here/Hydraulic-Infrastructure-Realisation.git
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
@@ -103,7 +103,7 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
 3. The pull request should work for Python 2.7, 3.4, 3.5 and 3.6, and for PyPy. Check
-   https://travis-ci.org/TUDelft-CITG/digital_twin/pull_requests
+   https://travis-ci.org/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/pull_requests
    and make sure that the tests pass for all supported Python versions.
 
 Tips
@@ -112,6 +112,17 @@ Tips
 To run a subset of tests::
 
 $ py.test tests.test_digital_twin
+
+To make the documentation pages
+$ make docs # for linux/osx
+
+For windows
+$ del docs\digital_twin.rst
+$ del docs\modules.rst
+$ sphinx-apidoc -o docs/ digital_twin
+$ cd docs
+$ make html
+$ start explorer _build\html\index.html
 
 
 Deploying

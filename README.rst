@@ -13,24 +13,31 @@ Hydraulic-Infrastructure-Realisation
         :target: https://digital-twin.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
+.. image:: https://readthedocs.org/projects/hydraulic-infrastructure-realisation/badge/?version=latest
+        :target: https://hydraulic-infrastructure-realisation.readthedocs.io/en/latest/?badge=latest
+        :alt: Documentation Status
 
-.. image:: https://pyup.io/repos/github/TUDelft-CITG/digital_twin/shield.svg
-     :target: https://pyup.io/repos/github/TUDelft-CITG/digital_twin/
+.. image:: https://pyup.io/repos/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/shield.svg
+     :target: https://pyup.io/repos/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/
      :alt: Updates
 
 
 
-Hydraulic-Infrastructure-Realisation 
+Hydraulic-Infrastructure-Realisation
 
 
 * Free software: GNU General Public License v3
-* Documentation: https://digital-twin.readthedocs.io.
+* Documentation: https://hydraulic-infrastructure-realisation.readthedocs.io
 
 
 Features
 --------
 
-* TODO
+* Simulate installation work
+* Visualize construction using KML in Google Earth
+* Hydraulic infrastructure (Ships, Containers)
+* Create new infrastructure from existing components (Identifiable, Locatable)
+
 
 Credits
 -------
