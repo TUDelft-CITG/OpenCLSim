@@ -113,6 +113,17 @@ To run a subset of tests::
 
 $ py.test tests.test_digital_twin
 
+To make the documentation pages
+$ make docs # for linux/osx
+
+For windows
+$ del docs\digital_twin.rst
+$ del docs\modules.rst
+$ sphinx-apidoc -o docs/ digital_twin
+$ cd docs
+$ make html
+$ start explorer _build\html\index.html
+
 
 Deploying
 ---------
