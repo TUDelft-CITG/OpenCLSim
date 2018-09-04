@@ -29,7 +29,7 @@ Hydraulic-Infrastructure-Realisation
 * Documentation: https://hydraulic-infrastructure-realisation.readthedocs.io
 
 
-## Installations
+Installations
 
 ```dos
 git clone https://github.com/TUDelft-CITG/Hydraulic-Infrastructure-Realisation
