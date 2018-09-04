@@ -33,9 +33,13 @@ Installations
 
 ```dos
 git clone https://github.com/TUDelft-CITG/Hydraulic-Infrastructure-Realisation
+
 pip install -U pip
+
 pip install -U setuptools
+
 pip install -e .
+
 ```
 
 Features
