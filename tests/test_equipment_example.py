@@ -22,47 +22,54 @@ def env():
 @pytest.fixture
 def generate_equipment_list(env):
     # should be read from database
-    ships_data = [
+    equipment_data = [
         {
             'id': 'EGG123',
             'type': 'Side stone dumping vessel',
             'speed loaded': 6.5,
-            'tonnage': 2601
+            'tonnage': 2601,
+            'tags': ['mover']
         },
         {
             'id': 'Boaty McBoatStone',
             'type': 'Multi purpose support vessel',
             'speed loaded': 7.0,
             'tonnage': 1824,
-            'capacity': 10.3
+            'capacity': 10.3,
+            'tags': ['loader', 'mover']
+        },{
+            'id': 'Loady McLoader',
+            'type': 'Simple Loading Crane',
+            'capacity': 13.2
         }
     ]
 
     type_to_mixins_mapping = {
         'Side stone dumping vessel': (core.Identifiable, core.Log, core.ContainerDependentMovable, core.HasResource),
-        'Multi purpose support vessel': (core.Identifiable, core.Log, core.ContainerDependentMovable, core.Processor, core.HasResource)
+        'Multi purpose support vessel': (core.Identifiable, core.Log, core.ContainerDependentMovable, core.Processor, core.HasResource),
+        'Simple Loading Crane': (core.Identifiable, core.Log, core.Processor, core.HasResource)
     }
 
     ship_mixins = []
-    for ship_data in ships_data:
-        ship_type = ship_data['type']
+    for data in equipment_data:
+        ship_type = data['type']
         mixin_classes = type_to_mixins_mapping[ship_type]
         klass = type(type_to_class_name(ship_type), mixin_classes, {})
         ureg = pint.UnitRegistry()
-        kwargs = dict(env=env, name=ship_data['id'])
+        kwargs = dict(env=env, name=data['id'])
         if issubclass(klass, core.Processor):
-            processing_speed = (ship_data['capacity'] * ureg.ton / ureg.minute).to_base_units()
+            processing_speed = (data['capacity'] * ureg.ton / ureg.minute).to_base_units()
             kwargs['rate'] = processing_speed
         if issubclass(klass, core.HasResource):
             kwargs['nr_resources'] = 1
         if issubclass(klass, core.HasContainer):
-            tonnage = (ship_data['tonnage'] * ureg.metric_ton).to_base_units()
+            tonnage = (data['tonnage'] * ureg.metric_ton).to_base_units()
             kwargs['capacity'] = tonnage.magnitude
         if issubclass(klass, core.Locatable):
             # todo change this to something read from the database
             kwargs['geometry'] = shapely.geometry.Point(4.066045, 51.985577)
         if issubclass(klass, core.Movable):
-            speed_loaded = (ship_data['speed loaded'] * ureg.knot).to_base_units()
+            speed_loaded = (data['speed loaded'] * ureg.knot).to_base_units()
             if issubclass(klass, core.ContainerDependentMovable):
                 kwargs['compute_v'] = compute_v_linear(speed_loaded * 2, speed_loaded)
             else:
@@ -72,6 +79,9 @@ def generate_equipment_list(env):
         ship_mixins.append(ship)
     return ship_mixins
 
+
+# simple test to see if equipment list is generated correctly
 def test_ship_list(generate_equipment_list):
     print(generate_equipment_list[0])
     print(generate_equipment_list[1])
+    print(generate_equipment_list[2])
