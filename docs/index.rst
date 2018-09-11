@@ -8,6 +8,7 @@ Welcome to Hydraulic-Infrastructure-Realisation's documentation!
    readme
    installation
    usage
+   examples
    modules
    contributing
    authors

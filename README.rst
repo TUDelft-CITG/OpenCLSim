@@ -22,7 +22,6 @@ Hydraulic-Infrastructure-Realisation
      :alt: Updates
 
 
-
 Hydraulic-Infrastructure-Realisation
 
 
@@ -37,8 +36,6 @@ Features
 * Visualize construction using KML in Google Earth
 * Hydraulic infrastructure (Ships, Containers)
 * Create new infrastructure from existing components (Identifiable, Locatable)
-
-
 
 
 Credits
