@@ -37,7 +37,8 @@ def generate_equipment_list(env):
             'tonnage': 1824,
             'capacity': 10.3,
             'tags': ['loader', 'mover']
-        },{
+        },
+        {
             'id': 'Loady McLoader',
             'type': 'Simple Loading Crane',
             'capacity': 13.2
@@ -85,3 +86,49 @@ def test_ship_list(generate_equipment_list):
     print(generate_equipment_list[0])
     print(generate_equipment_list[1])
     print(generate_equipment_list[2])
+
+
+@pytest.fixture
+def generate_site_list(env):
+    # should be read from database
+    # example of data expected for simple "point" sites
+    site_data = [
+        {
+            'id': 'Den Oever',
+            'lat': 52.94042293840172,
+            'lon': 5.054676856441372,
+            'tonnage': 20_000
+        },
+        {
+            'id': 'Kornwerderzand',
+            'lat': 53.06686424241725,
+            'lon': 5.294877712236641,
+            'tonnage': 30_000
+        },
+        {
+            'id': 'Stockpile',
+            'lat': 52.94239823421129,
+            'lon': 5.019298185633251,
+            'tonnage': 100_000
+        }
+    ]
+
+    site_mixins = []
+    for data in site_data:
+        klass = type('Site', (core.Identifiable, core.Log, core.Locatable, core.HasContainer, core.HasResource), {})
+        kwargs = dict(env=env, name=data['id'], geometry=shapely.geometry.Point(data['lon'], data['lat']))
+
+        ureg = pint.UnitRegistry()
+        tonnage = (data['tonnage'] * ureg.metric_ton).to_base_units()
+        kwargs['capacity'] = tonnage.magnitude
+
+        site = klass(**kwargs)
+        site_mixins.append(site)
+    return site_mixins
+
+
+# simple test to see if site list is generated correctly
+def test_site_list(generate_site_list):
+    print(generate_site_list[0])
+    print(generate_site_list[1])
+    print(generate_site_list[2])
