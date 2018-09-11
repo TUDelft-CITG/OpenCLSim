@@ -94,6 +94,13 @@ class Movable(SimpyObject, Locatable):
         logger.debug('  sailing:  ' + '%4.2f' % speed + ' m/s')
         logger.debug('  duration: ' + '%4.2f' % ((distance / speed) / 3600) + ' hrs')
 
+    def is_at(self, locatable, tolerance=100):
+        current_location = shapely.geometry.asShape(self.geometry)
+        other_location = shapely.geometry.asShape(locatable.geometry)
+        _, _, distance = self.wgs84.inv(current_location.x, current_location.y,
+                                        other_location.x, other_location.y)
+        return distance < tolerance
+
     @property
     def current_speed(self):
         return self.v

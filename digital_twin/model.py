@@ -1,8 +1,7 @@
 import digital_twin.core as core
-import simpy
 
 
-class Installation(core.Identifiable, core.SimpyObject):
+class Activity(core.Identifiable, core.SimpyObject):
     """The Installation Class forms a specific class of activities with associated methods that can
     initiate and suspend processes according to a number of specified conditions. This class deals
     with transport and installation/placement of discrete and continuous objects.
@@ -44,11 +43,12 @@ class Installation(core.Identifiable, core.SimpyObject):
         self.installation_reactivate = self.env.event()
 
     def standing_by(self, condition, destination, ):
-        # todo why have a separate standing by? Why not just have a single method controlling the flow?
+        # todo clear up control flow of standing_by vs installation_process_control
         # todo separate conditions into start condition and stop condition? no need to check start again after it was satisfied once?
         """Standing by"""
         shown = False
 
+        # todo change implementation of conditions, no longer use eval
         while not eval(condition):
             if not shown:
                 print(
@@ -88,122 +88,80 @@ class Installation(core.Identifiable, core.SimpyObject):
             # request access to the transport_resource
             origin.total_requested += amount
             destination.total_requested += amount
-            if id(loader) == id(mover):
-                # this is the case when a hopper is used
-                print('Using Hopper to process ' + str(amount))
-                with mover.resource.request() as my_mover_turn:
-                    yield my_mover_turn
 
-                    # request access to the load_resource
-                    mover.log_entry('loading start', self.env.now, mover.container.level)
-                    yield from loader.process(origin, mover, amount, destination_resource_request=my_mover_turn)
-                    mover.log_entry('loading stop', self.env.now, mover.container.level)
+            print('Using ' + mover.name + ' to process ' + str(amount))
 
-                    print('Loaded:')
-                    print('  from:           ' + origin.name + ' contains: ' + str(origin.container.level))
-                    print('  by:             ' + mover.name + ' contains: ' + str(mover.container.level))
-                    print('  to:             ' + destination.name + ' contains: ' + str(destination.container.level))
+            with mover.resource.request() as my_mover_turn:
+                yield my_mover_turn
 
-                    old_location = mover.geometry
+                # move to the origin if necessary
+                if not mover.is_at(origin):
+                    yield from self.__move_mover__(mover, origin)
 
-                    mover.log_entry('sailing full start', self.env.now, mover.container.level)
-                    yield from mover.move(destination)
-                    mover.log_entry('sailing full stop', self.env.now, mover.container.level)
+                # load the mover
+                yield from self.__load_mover__(amount, loader, mover, my_mover_turn, origin)
 
-                    print('Moved:')
-                    print(
-                        '  from:            ' + format(old_location.x, '02.0f') + ' ' + format(old_location.x, '02.0f'))
-                    print('  to:              ' + format(mover.geometry.x, '02.0f') + ' ' + format(mover.geometry.y,
-                                                                                                   '02.0f'))
+                # move the mover to the destination
+                yield from self.__move_mover__(mover, destination)
 
-                    # request access to the placement_resource
-                    mover.log_entry('unloading start', self.env.now, mover.container.level)
-                    yield from unloader.process(mover, destination, amount, origin_resource_request=my_mover_turn)
-                    mover.log_entry('unloading stop', self.env.now, mover.container.level)
-
-                    print('Unloaded:')
-                    print('  from:           ' + destination.name + ' contains: ' + str(destination.container.level))
-                    print('  by:             ' + mover.name + ' contains: ' + str(mover.container.level))
-                    print('  to:             ' + origin.name + ' contains: ' + str(origin.container.level))
-
-                    old_location = mover.geometry
-
-                    mover.log_entry('sailing full start', self.env.now, mover.container.level)
-                    yield from mover.move(origin)
-                    mover.log_entry('sailing full stop', self.env.now, mover.container.level)
-
-                    print('Moved:')
-                    print(
-                        '  from:            ' + format(old_location.x, '02.0f') + ' ' + format(old_location.x, '02.0f'))
-                    print('  to:              ' + format(mover.geometry.x, '02.0f') + ' ' + format(mover.geometry.y,
-                                                                                                   '02.0f'))
-
-                    # once a mover is assigned to an Activity it completes a full cycle
-                    mover.resource.release(my_mover_turn)
-            else:
-                # if not a hopper is used we have to handle resource requests differently
-                print('Using Transport to process ' + str(amount))
-                with mover.resource.request() as my_mover_turn:
-                    yield my_mover_turn
-
-                    # request access to the load_resource
-                    with loader.resource.request() as my_load_resource_turn:
-                        yield my_load_resource_turn
-
-                        mover.log_entry('loading start', self.env.now, mover.container.level)
-                        yield from loader.process(origin, mover, amount, destination_resource_request=my_mover_turn)
-                        mover.log_entry('loading stop', self.env.now, mover.container.level)
-
-                        print('Loaded:')
-                        print('  from:           ' + origin.name + ' contains: ' + str(origin.container.level))
-                        print('  by:             ' + mover.name + ' contains: ' + str(mover.container.level))
-                        print(
-                            '  to:             ' + destination.name + ' contains: ' + str(destination.container.level))
-
-                    old_location = mover.geometry
-
-                    mover.log_entry('sailing full start', self.env.now, mover.container.level)
-                    yield from mover.move(destination)
-                    mover.log_entry('sailing full stop', self.env.now, mover.container.level)
-
-                    print('Moved:')
-                    print(
-                        '  from:            ' + format(old_location.x, '02.0f') + ' ' + format(old_location.x, '02.0f'))
-                    print('  to:              ' + format(mover.geometry.x, '02.0f') + ' ' + format(mover.geometry.y,
-                                                                                                   '02.0f'))
-
-                    # request access to the placement_resource
-                    with unloader.resource.request() as my_unloader_turn:
-                        yield my_unloader_turn
-
-                        print('unloading')
-
-                        mover.log_entry('unloading start', self.env.now, mover.container.level)
-                        yield from unloader.process(mover, destination, amount, origin_resource_request=my_mover_turn)
-                        mover.log_entry('unloading stop', self.env.now, mover.container.level)
-
-                        print('Unloaded:')
-                        print(
-                            '  from:           ' + destination.name + ' contains: ' + str(destination.container.level))
-                        print('  by:             ' + mover.name + ' contains: ' + str(mover.container.level))
-                        print('  to:             ' + origin.name + ' contains: ' + str(origin.container.level))
-
-                        unloader.resource.release(my_unloader_turn)
-
-                    old_location = mover.geometry
-
-                    mover.log_entry('sailing full start', self.env.now, mover.container.level)
-                    yield from mover.move(origin)
-                    mover.log_entry('sailing full stop', self.env.now, mover.container.level)
-
-                    print('Moved:')
-                    print(
-                        '  from:            ' + format(old_location.x, '02.0f') + ' ' + format(old_location.x, '02.0f'))
-                    print('  to:              ' + format(mover.geometry.x, '02.0f') + ' ' + format(mover.geometry.y,
-                                                                                                   '02.0f'))
-
-                    # once a mover is assigned to an Activity it completes a full cycle
-                    mover.resource.release(my_mover_turn)
+                # unload the mover
+                yield from self.__unload_mover__(amount, unloader, mover, my_mover_turn, destination)
         else:
             print('Nothing to move')
             yield self.env.timeout(3600)
+
+    # todo __load_mover__ and __unload_mover__ are very similar, turn them into a single method __shift_amount__
+
+    def __load_mover__(self, amount, loader, mover, my_mover_turn, origin):
+        # request access to the loader if necessary
+        if id(loader) == id(mover):
+            my_loader_turn = None
+        else:
+            my_loader_turn = loader.resource.request()
+            yield my_loader_turn
+
+        # load the resource
+        mover.log_entry('loading start', self.env.now, mover.container.level)
+        yield from loader.process(origin, mover, amount, destination_resource_request=my_mover_turn)
+        mover.log_entry('loading stop', self.env.now, mover.container.level)
+
+        if my_loader_turn is not None:
+            loader.resource.release(my_loader_turn)
+
+        print('Loaded:')
+        print('  from:        ' + origin.name + ' contains: ' + str(origin.container.level))
+        print('  by:          ' + loader.name)
+        print('  to:          ' + mover.name + ' contains: ' + str(mover.container.level))
+
+    def __unload_mover__(self, amount, unloader, mover, my_mover_turn, destination):
+        # request access to the unloader if necessary
+        if id(unloader) == id(mover):
+            my_unloader_turn = None
+        else:
+            my_unloader_turn = unloader.resource.request()
+            yield my_unloader_turn
+
+        # unload the resource
+        mover.log_entry('unloading start', self.env.now, mover.container.level)
+        yield from unloader.process(mover, destination, amount, origin_resource_request=my_mover_turn)
+        mover.log_entry('unloading stop', self.env.now, mover.container.level)
+
+        if my_unloader_turn is not None:
+            unloader.resource.release(my_unloader_turn)
+
+        print('Unloaded')
+        print('  from:        ' + mover.name + ' contains: ' + str(mover.container.level))
+        print('  by:          ' + unloader.name)
+        print('  to:          ' + destination.name + ' contains: ' + str(destination.container.level))
+
+    def __move_mover__(self, mover, origin):
+        old_location = mover.geometry
+
+        mover.log_entry('sailing full start', self.env.now, mover.container.level)
+        yield from mover.move(origin)
+        mover.log_entry('sailing full stop', self.env.now, mover.container.level)
+
+        print('Moved:')
+        print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
+        print('  from:        ' + format(old_location.x, '02.5f') + ' ' + format(old_location.y, '02.5f'))
+        print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))

@@ -4,7 +4,9 @@ import shapely.geometry
 import logging
 import numpy as np
 import pint
+import datetime
 import digital_twin.core as core
+import digital_twin.model as model
 
 
 def type_to_class_name(type):
@@ -42,6 +44,11 @@ def generate_equipment_list(env):
             'id': 'Loady McLoader',
             'type': 'Simple Loading Crane',
             'capacity': 13.2
+        },
+        {
+            'id': 'Unloady McUnloader',
+            'type': 'Simple Loading Crane',
+            'capacity': 12.1
         }
     ]
 
@@ -60,7 +67,7 @@ def generate_equipment_list(env):
         kwargs = dict(env=env, name=data['id'])
         if issubclass(klass, core.Processor):
             processing_speed = (data['capacity'] * ureg.ton / ureg.minute).to_base_units()
-            kwargs['rate'] = processing_speed
+            kwargs['rate'] = processing_speed.magnitude
         if issubclass(klass, core.HasResource):
             kwargs['nr_resources'] = 1
         if issubclass(klass, core.HasContainer):
@@ -70,7 +77,7 @@ def generate_equipment_list(env):
             # todo change this to something read from the database
             kwargs['geometry'] = shapely.geometry.Point(4.066045, 51.985577)
         if issubclass(klass, core.Movable):
-            speed_loaded = (data['speed loaded'] * ureg.knot).to_base_units()
+            speed_loaded = (data['speed loaded'] * ureg.knot).to_base_units().magnitude
             if issubclass(klass, core.ContainerDependentMovable):
                 kwargs['compute_v'] = compute_v_linear(speed_loaded * 2, speed_loaded)
             else:
@@ -83,10 +90,8 @@ def generate_equipment_list(env):
 
 # simple test to see if equipment list is generated correctly
 def test_ship_list(generate_equipment_list):
-    print(generate_equipment_list[0])
-    print(generate_equipment_list[1])
-    print(generate_equipment_list[2])
-
+    for equipment in generate_equipment_list:
+        print(equipment)
 
 @pytest.fixture
 def generate_site_list(env):
@@ -129,6 +134,29 @@ def generate_site_list(env):
 
 # simple test to see if site list is generated correctly
 def test_site_list(generate_site_list):
-    print(generate_site_list[0])
-    print(generate_site_list[1])
-    print(generate_site_list[2])
+    for site in generate_site_list:
+        print(site)
+
+
+def test_activity(env, generate_equipment_list, generate_site_list):
+    origin = generate_site_list[2]
+    origin.container.put(origin.container.capacity)  # fill the origin container
+    destination = generate_site_list[0]
+    assert destination.container.capacity < origin.container.capacity
+
+    kwargs = dict(env=env, name='MyFirstActivity',
+                  origin=origin, destination=destination,
+                  loader=generate_equipment_list[2], mover=generate_equipment_list[0], unloader=generate_equipment_list[3],
+                  condition='destination.container.level < destination.container.capacity')
+    model.Activity(**kwargs)
+
+    assert origin.container.level == origin.container.capacity
+    assert destination.container.level == 0
+
+    env.run()
+    print('Simulation completed in: ' + str(datetime.timedelta(seconds=env.now)))
+
+    assert origin.container.level == origin.container.capacity - destination.container.capacity
+    assert destination.container.level == destination.container.level
+
+# todo add test with multi-purpose vessel: loader == mover == unloader
