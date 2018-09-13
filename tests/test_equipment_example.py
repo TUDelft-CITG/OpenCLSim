@@ -160,6 +160,27 @@ def test_activity(env, available_equipment, available_sites):
     print('Simulation completed in: ' + str(datetime.timedelta(seconds=env.now)))
 
     assert origin.container.level == origin.container.capacity - destination.container.capacity
-    assert destination.container.level == destination.container.level
+    assert destination.container.level == destination.container.capacity
 
-# todo add test with multi-purpose vessel: loader == mover == unloader
+
+def test_activity_hopper(env, available_equipment, available_sites):
+    origin = available_sites['Kornwerderzand']
+    origin.container.put(origin.container.capacity)  # fill the origin container
+    destination = available_sites['Den Oever']
+    assert destination.container.capacity < origin.container.capacity
+
+    hopper = available_equipment['Boaty McBoatStone']
+    kwargs = dict(env = env, name='MyHopperActivity', origin=origin, destination=destination,
+                  loader=hopper, mover=hopper, unloader=hopper,
+                  condition='destination.container.level < destination.container.capacity')
+    model.Activity(**kwargs)
+
+    assert origin.container.level == origin.container.capacity
+    assert destination.container.level == 0
+
+    env.run()
+    print('Simulation completed in: ' + str(datetime.timedelta(seconds=env.now)))
+
+    assert origin.container.level == origin.container.capacity - destination.container.capacity
+    assert destination.container.level == destination.container.capacity
+
