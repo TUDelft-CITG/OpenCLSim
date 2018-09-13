@@ -22,7 +22,7 @@ def env():
     return simpy.Environment()
 
 @pytest.fixture
-def generate_equipment_list(env):
+def available_equipment(env):
     # should be read from database
     equipment_data = [
         {
@@ -58,7 +58,7 @@ def generate_equipment_list(env):
         'Simple Loading Crane': (core.Identifiable, core.Log, core.Processor, core.HasResource)
     }
 
-    ship_mixins = []
+    ship_mixins = {}
     for data in equipment_data:
         ship_type = data['type']
         mixin_classes = type_to_mixins_mapping[ship_type]
@@ -84,17 +84,18 @@ def generate_equipment_list(env):
                 kwargs['v'] = speed_loaded
 
         ship = klass(**kwargs)
-        ship_mixins.append(ship)
+        ship_mixins[data['id']] = ship
     return ship_mixins
 
 
 # simple test to see if equipment list is generated correctly
-def test_ship_list(generate_equipment_list):
-    for equipment in generate_equipment_list:
-        print(equipment)
+def test_ship_list(available_equipment):
+    print('')
+    for id in available_equipment:
+        print(id + ': ' + str(available_equipment[id]))
 
 @pytest.fixture
-def generate_site_list(env):
+def available_sites(env):
     # should be read from database
     # example of data expected for simple "point" sites
     site_data = [
@@ -118,7 +119,7 @@ def generate_site_list(env):
         }
     ]
 
-    site_mixins = []
+    site_mixins = {}
     for data in site_data:
         klass = type('Site', (core.Identifiable, core.Log, core.Locatable, core.HasContainer, core.HasResource), {})
         kwargs = dict(env=env, name=data['id'], geometry=shapely.geometry.Point(data['lon'], data['lat']))
@@ -128,25 +129,27 @@ def generate_site_list(env):
         kwargs['capacity'] = tonnage.magnitude
 
         site = klass(**kwargs)
-        site_mixins.append(site)
+        site_mixins[data['id']] = site
     return site_mixins
 
 
 # simple test to see if site list is generated correctly
-def test_site_list(generate_site_list):
-    for site in generate_site_list:
-        print(site)
+def test_site_list(available_sites):
+    print('')
+    for site in available_sites:
+        print(site + ': ' + str(available_sites[site]))
 
 
-def test_activity(env, generate_equipment_list, generate_site_list):
-    origin = generate_site_list[2]
+def test_activity(env, available_equipment, available_sites):
+    origin = available_sites['Stockpile']
     origin.container.put(origin.container.capacity)  # fill the origin container
-    destination = generate_site_list[0]
+    destination = available_sites['Den Oever']
     assert destination.container.capacity < origin.container.capacity
 
     kwargs = dict(env=env, name='MyFirstActivity',
                   origin=origin, destination=destination,
-                  loader=generate_equipment_list[2], mover=generate_equipment_list[0], unloader=generate_equipment_list[3],
+                  loader=available_equipment['Loady McLoader'], mover=available_equipment['EGG123'],
+                  unloader=available_equipment['Unloady McUnloader'],
                   condition='destination.container.level < destination.container.capacity')
     model.Activity(**kwargs)
 
