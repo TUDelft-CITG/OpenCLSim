@@ -1,5 +1,5 @@
 import digital_twin.core as core
-
+import numpy as np
 
 class Activity(core.Identifiable, core.SimpyObject):
     """The Activity Class forms a specific class for a single activity within a simulation.
@@ -85,17 +85,15 @@ class Activity(core.Identifiable, core.SimpyObject):
 
         # stand by until at least one of the start levels is satisfied
         shown = False
-        while origin.container.level > origin_start_level and destination.container.level < destination_start_level:
+        while origin.container.level > origin_start_level or destination.container.level < destination_start_level:
             if not shown:
                 print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + self.name +
                       ' to ' + destination.name + ' suspended')
                 shown=True
             yield self.env.timeout(3600)
 
-        if origin.container.level <= origin_start_level:
-            start_condition = 'contents of origin {} lower than {}'.format(origin.name, origin_start_level)
-        else:
-            start_condition = 'contents of destination {} greater than {}'.format(destination.name, destination_start_level)
+        start_condition = 'contents of origin {} lower than {} and contents of destination {} greater than {}' \
+                          .format(origin.name, origin_start_level, destination.name, destination_start_level)
         print('T=' + '{:06.2f}'.format(self.env.now) + '. Start condition: "' + start_condition + '" is satisfied. '
               + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' started.')
 
@@ -124,7 +122,7 @@ class Activity(core.Identifiable, core.SimpyObject):
         amount = min(
             mover.container.capacity - mover.container.level,
             origin.container.level - origin_stop_level,
-            origin.container.capacity - origin.total_requested,
+            origin.container.capacity - origin.total_requested - origin_stop_level,
             destination_stop_level - destination.container.level,
             destination_stop_level - destination.total_requested)
 
@@ -226,12 +224,20 @@ class Simulation(core.Identifiable, core.SimpyObject):
     equipment: a list of dicts where each dict contains a 'loader', 'mover' and 'unloader' key-value pair representing
                a valid combination of equipment which can be used to move substances from the origin to the destination
     condition: the condition that should be passed to the Activity instances
-    #todo complete docs
+    origin_layer_capacities: use if each origin needs to be separated into several layers
+                             should be a list of the capacity for each layer, from top to bottom
+                             each origin container must have a capacity large enough to hold the sum of the list
+                             can not be used in combination with destination_layer_capacities
+    destination_layer_capacities: use if each destination needs to be separated into several layers
+                                  should be a list of the capacity for each layer from bottom to top
+                                  each destination container must have a capacity large enough to hold the sum of the list
+                                  can not be used in combination with origin_layer_capacities
     """
 
-    #todo add support for layered origin or layered destination locations using start and stop levels
-    #todo should this also contain support for "line locations" or should these just be passed separately?
-    def __init__(self, origins, destinations, equipment, condition='True', *args, **kwargs):
+    #todo should this also contain support for "line locations" or should these just be passed as separate locations?
+    #todo should it be possible to define different layer capacities per location?
+    def __init__(self, origins, destinations, equipment, condition='True',
+                 origin_layer_capacities=None, destination_layer_capacities=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
@@ -239,6 +245,13 @@ class Simulation(core.Identifiable, core.SimpyObject):
         self.destinations = destinations
         self.equipment = equipment
         self.condition = condition
+        self.origin_layer_capacities = origin_layer_capacities
+        self.destination_layer_capacities = destination_layer_capacities
+
+        if destination_layer_capacities is not None and origin_layer_capacities is not None:
+            raise ValueError('Using layers for both the origin and the destination is not supported.')
+        self.__validate_layer_capacities__(origins, origin_layer_capacities)
+        self.__validate_layer_capacities__(destinations, destination_layer_capacities)
 
         # fill the origin containers
         for origin in origins:
@@ -247,12 +260,50 @@ class Simulation(core.Identifiable, core.SimpyObject):
         # initialize all activities
         self.activities = []
         i = 0
+        origin_layer_sizes = origin_layer_capacities if origin_layer_capacities is not None else [None]
+        destination_layer_sizes = destination_layer_capacities if destination_layer_capacities is not None else [None]
         for origin in origins:
-            for destination in destinations:
-                for eq in equipment:
-                    activity = Activity(env=self.env, name='{}_ACT_{}'.format(self.name, i),
-                                        origin=origin, destination=destination,
-                                        loader=eq['loader'], mover=eq['mover'], unloader=eq['unloader'],
-                                        condition=condition)
-                    self.activities.append(activity)
-                    i += 1
+            origin_container_level = origin.container.capacity
+            for origin_layer_size in origin_layer_sizes:
+                if origin_layer_size is not None:
+                    origin_start_level = origin_container_level
+                    origin_container_level -= origin_layer_size
+                    origin_stop_level = origin_container_level
+                else:
+                    origin_start_level = None
+                    origin_stop_level = None
+
+                for destination in destinations:
+                    destination_container_level = 0
+                    for destination_layer_size in destination_layer_sizes:
+                        if destination_layer_size is not None:
+                            destination_start_level = destination_container_level
+                            destination_container_level += destination_layer_size
+                            destination_stop_level = destination_container_level
+                        else:
+                            destination_start_level = None
+                            destination_stop_level = None
+
+                        for eq in equipment:
+                            activity = Activity(env=self.env, name='{}_ACT_{}'.format(self.name, i),
+                                                origin=origin, destination=destination,
+                                                loader=eq['loader'], mover=eq['mover'], unloader=eq['unloader'],
+                                                condition=condition,
+                                                origin_start_level=origin_start_level,
+                                                origin_stop_level=origin_stop_level,
+                                                destination_start_level=destination_start_level,
+                                                destination_stop_level=destination_stop_level)
+                            self.activities.append(activity)
+                            i += 1
+
+    def __validate_layer_capacities__(self, locations, layer_capacities):
+        if layer_capacities is None:
+            return
+
+        total_capacity = np.sum(layer_capacities)
+        for loc in locations:
+            if loc.container.capacity < total_capacity:
+                raise ValueError('Layer capacities of {} too large to fit in {} with capacity {}'
+                                 .format(layer_capacities, loc.name, loc.container.capacity))
+
+

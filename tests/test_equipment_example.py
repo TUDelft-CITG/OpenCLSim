@@ -268,3 +268,76 @@ def test_simulation_empty_origin(env, available_equipment, available_sites):
         total_capacity += origin.container.capacity
         assert origin.container.level == 0
     assert destinations[0].container.level == total_capacity
+
+
+def test_simulation_layered_origin(env, available_equipment, available_sites):
+    # these settings should be read from the UI
+    origins = [available_sites['Kornwerderzand'], available_sites['Den Oever']]
+    origin_layer_capacities = [5_000_000, 7_000_000, 6_000_000]
+    destinations = [available_sites['Stockpile']]
+    equipment = [{
+        'loader': available_equipment['Loady McLoader'],
+        'mover': available_equipment['EGG123'],
+        'unloader': available_equipment['Unloady McUnloader']
+    }, {
+        'loader': available_equipment['Boaty McBoatStone'],
+        'mover': available_equipment['Boaty McBoatStone'],
+        'unloader': available_equipment['Boaty McBoatStone']
+    }]
+
+    # prepare the simulation
+    model.Simulation(env=env, name='MyFirstSimulation', origins=origins, destinations=destinations, equipment=equipment,
+                     origin_layer_capacities=origin_layer_capacities)
+
+    # run the simulation
+    for origin in origins:
+        assert origin.container.level == origin.container.capacity
+    for destination in destinations:
+        assert destination.container.level == 0
+
+    env.run()
+    print('Simulation completed in: ' + str(datetime.timedelta(seconds=env.now)))
+
+    total_capacity = np.sum(origin_layer_capacities)
+    for origin in origins:
+        assert origin.container.level == origin.container.capacity - total_capacity
+    assert destinations[0].container.level == total_capacity * len(origins)
+
+    #todo add some sort of assertions to automatically check if execution order is correct
+
+
+def test_simulation_layered_destination(env, available_equipment, available_sites):
+    # these settings should be read from the UI
+    origins = [available_sites['Stockpile']]
+    destinations = [available_sites['Kornwerderzand'], available_sites['Den Oever']]
+    destination_layer_capacities = [5_000_000, 7_000_000, 6_000_000]
+    equipment = [{
+        'loader': available_equipment['Loady McLoader'],
+        'mover': available_equipment['EGG123'],
+        'unloader': available_equipment['Unloady McUnloader']
+    }, {
+        'loader': available_equipment['Boaty McBoatStone'],
+        'mover': available_equipment['Boaty McBoatStone'],
+        'unloader': available_equipment['Boaty McBoatStone']
+    }]
+
+    # prepare the simulation
+    model.Simulation(env=env, name='MyFirstSimulation', origins=origins, destinations=destinations, equipment=equipment,
+                     destination_layer_capacities=destination_layer_capacities)
+
+    # run the simulation
+    for origin in origins:
+        assert origin.container.level == origin.container.capacity
+    for destination in destinations:
+        assert destination.container.level == 0
+
+    env.run()
+    print('Simulation completed in: ' + str(datetime.timedelta(seconds=env.now)))
+
+    total_capacity = np.sum(destination_layer_capacities)
+    assert origins[0].container.level == origins[0].container.capacity - total_capacity * len(destinations)
+    for destination in destinations:
+        assert destination.container.level == total_capacity
+
+    # todo add some sort of assertions to automatically check if execution order is correct
+
