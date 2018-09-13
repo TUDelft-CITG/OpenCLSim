@@ -96,49 +96,37 @@ class Activity(core.Identifiable, core.SimpyObject):
                     yield from self.__move_mover__(mover, origin)
 
                 # load the mover
-                yield from self.__load_mover__(amount, loader, mover, my_mover_turn, origin)
+                yield from self.__shift_amount__(amount, loader, origin, mover, destination_resource_request=my_mover_turn)
 
                 # move the mover to the destination
                 yield from self.__move_mover__(mover, destination)
 
                 # unload the mover
-                yield from self.__unload_mover__(amount, unloader, mover, my_mover_turn, destination)
+                yield from self.__shift_amount__(amount, unloader, mover, destination, origin_resource_request=my_mover_turn)
         else:
             print('Nothing to move')
             yield self.env.timeout(3600)
 
-    # todo __load_mover__ and __unload_mover__ are very similar, turn them into a single method __shift_amount__
+    def __shift_amount__(self, amount, processor, origin, destination,
+                         origin_resource_request=None, destination_resource_request=None):
+        if id(origin) == id(processor) and origin_resource_request is not None or \
+                id(destination) == id(processor) and destination_resource_request is not None:
 
-    def __load_mover__(self, amount, loader, mover, my_mover_turn, origin):
-        if id(loader) == id(mover):
-            yield from loader.process(origin, mover, amount, destination_resource_request=my_mover_turn)
+            yield from processor.process(origin, destination, amount, origin_resource_request=origin_resource_request,
+                                         destination_resource_request=destination_resource_request)
         else:
-            with loader.resource.request() as my_loader_turn:
-                yield my_loader_turn
+            with processor.resource.request() as my_processor_turn:
+                yield my_processor_turn
 
-                loader.log_entry('processing start', self.env.now, amount)
-                yield from loader.process(origin, mover, amount, destination_resource_request=my_mover_turn)
-                loader.log_entry('processing stop', self.env.now, amount)
+                processor.log_entry('processing start', self.env.now, amount)
+                yield from processor.process(origin, destination, amount,
+                                             origin_resource_request=origin_resource_request,
+                                             destination_resource_request=destination_resource_request)
+                processor.log_entry('processing start', self.env.now, amount)
 
-        print('Loaded:')
+        print('Processed {}:'.format(amount))
         print('  from:        ' + origin.name + ' contains: ' + str(origin.container.level))
-        print('  by:          ' + loader.name)
-        print('  to:          ' + mover.name + ' contains: ' + str(mover.container.level))
-
-    def __unload_mover__(self, amount, unloader, mover, my_mover_turn, destination):
-        if id(unloader) == id(mover):
-            yield from unloader.process(mover, destination, amount, origin_resource_request=my_mover_turn)
-        else:
-            with unloader.resource.request() as my_unloader_turn:
-                yield my_unloader_turn
-
-                unloader.log_entry('processing start', self.env.now, amount)
-                yield from unloader.process(mover, destination, amount, origin_resource_request=my_mover_turn)
-                unloader.log_entry('processing stop', self.env.now, amount)
-
-        print('Unloaded')
-        print('  from:        ' + mover.name + ' contains: ' + str(mover.container.level))
-        print('  by:          ' + unloader.name)
+        print('  by:          ' + processor.name)
         print('  to:          ' + destination.name + ' contains: ' + str(destination.container.level))
 
     def __move_mover__(self, mover, origin):
