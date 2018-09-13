@@ -8,10 +8,29 @@ class Activity(core.Identifiable, core.SimpyObject):
     according to a number of specified conditions. To run an activity after it has been initialized call env.run()
     on the Simpy environment with which it was initialized.
 
-    condition: expression that states when to initiate the activity,
+    By default an activity will start immediately upon the start of the simulation and run until either the origin
+    container is empty or the destination container is full. The start level parameters can be used to make the activity
+    wait for a certain level in the origin or destination container before starting. The stop level parameters can be
+    used to make the activity stop when the origin or destination container has reached a certain level.
+
+    condition: expression that states when the activity is allowed to run,
                i.e., when moving substances from the origin to the destination is allowed
+               this condition will only be checked after at least one of the start levels is satisfied
+               and as long as none of the stop levels have not been reached
+               by default no additional condition is used
     origin: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
+    origin_start_level: the maximum amount of content the origin container is allowed to have for the activity to start
+                        set to the capacity of the origin container by default
+    origin_stop_level: the minimum amount of content the origin container must have for the activity to run, i.e.,
+                       the activity will be terminated if this level is reached
+                       set to 0 by default
     destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
+    destination_start_level: the minimum amount of content the destination container must contain
+                             for the activity to start
+                             set to 0 by default
+    destination_stop_level: the maximum amount of content the destination container is allowed to contain for the
+                            activity to run, i.e., the activity will be terminated if this level is reached
+                            set to the capacity of the destination container by default
     loader: object which will get units from 'origin' Container and put them into 'mover' Container
             should inherit from Processor, HasResource, Identifiable and Log
             after the simulation is complete, its log will contain entries for each time it
@@ -29,9 +48,11 @@ class Activity(core.Identifiable, core.SimpyObject):
     # todo should loader and unloader also inherit from Locatable and Activity include checks if the loader / unloader is at the correct location?
 
     def __init__(self,
-                 condition,
                  origin, destination,
                  loader, mover, unloader,
+                 condition='True',
+                 origin_start_level=None, origin_stop_level=None,
+                 destination_start_level=None, destination_stop_level=None,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
@@ -43,43 +64,69 @@ class Activity(core.Identifiable, core.SimpyObject):
         self.mover = mover
         self.unloader = unloader
 
+        self.origin_start_level = origin_start_level if origin_start_level is not None else origin.container.capacity
+        self.origin_stop_level = origin_stop_level if origin_stop_level is not None else 0
+        self.destination_start_level = destination_start_level if destination_start_level is not None else 0
+        self.destination_stop_level = destination_stop_level if destination_stop_level is not None else destination.container.capacity
+
+        self.__validate_start_and_stop_levels__()
+
         self.installation_proc = self.env.process(
-            self.installation_process_control(condition, origin, destination, loader, mover, unloader)
+            self.installation_process_control(self.condition, self.origin, self.origin_start_level, self.origin_stop_level,
+                                              self.destination, self.destination_start_level, self.destination_stop_level,
+                                              self.loader, self.mover, self.unloader)
         )
 
     def installation_process_control(self, condition,
-                                     origin, destination,
+                                     origin, origin_start_level, origin_stop_level,
+                                     destination, destination_start_level, destination_stop_level,
                                      loader, mover, unloader):
         """Installation process control"""
 
-        # stand by until the condition is satisfied
+        # stand by until at least one of the start levels is satisfied
         shown = False
-        # todo separate conditions into start condition and stop condition? no need to check start again after it was satisfied once?
-        # todo change implementation of conditions, no longer use eval
-        while not eval(condition):
+        while origin.container.level > origin_start_level and destination.container.level < destination_start_level:
             if not shown:
                 print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + self.name +
                       ' to ' + destination.name + ' suspended')
-                shown = True
-            yield self.env.timeout(3600)  # step 3600 time units ahead
+                shown=True
+            yield self.env.timeout(3600)
 
-        print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + 'Condition: ' + condition + ' is satisfied, '
-              + self.name + ' to ' + destination.name + ' started')
+        if origin.container.level <= origin_start_level:
+            start_condition = 'contents of origin {} lower than {}'.format(origin.name, origin_start_level)
+        else:
+            start_condition = 'contents of destination {} greater than {}'.format(destination.name, destination_start_level)
+        print('T=' + '{:06.2f}'.format(self.env.now) + '. Start condition: "' + start_condition + '" is satisfied. '
+              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' started.')
 
-        # keep moving substances until the condition is no longer satisfied
-        while eval(condition):
-            yield from self.installation_process(origin, destination, loader, mover, unloader)
+        # while none of the stop levels are reached,
+        # keep checking the (optional) condition and processing content while it is satisfied
+        while origin.container.level > origin_stop_level and destination.container.level < destination_stop_level:
+            # todo change implementation of conditions, no longer use eval
+            if eval(condition):
+                yield from self.installation_process(origin, origin_stop_level, destination,
+                                                     destination_stop_level, loader, mover, unloader)
+            else:
+                yield self.env.timeout(3600)
 
-    def installation_process(self, origin, destination,
+        if origin.container.level <= origin_stop_level:
+            stop_condition = 'contents of origin {} lower than {}'.format(origin.name, origin_stop_level)
+        else:
+            stop_condition = 'contents of destination {} greater than {}'.format(destination.name, destination_stop_level)
+        print('T=' + '{:06.2f}'.format(self.env.now) + '. Stop condition "' + stop_condition + '" is satisfied. '
+              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' completed.')
+
+    def installation_process(self, origin, origin_stop_level,
+                             destination, destination_stop_level,
                              loader, mover, unloader):
         """Installation process"""
         # estimate amount that should be transported
         amount = min(
             mover.container.capacity - mover.container.level,
-            origin.container.level,
+            origin.container.level - origin_stop_level,
             origin.container.capacity - origin.total_requested,
-            destination.container.capacity - destination.container.level,
-            destination.container.capacity - destination.total_requested)
+            destination_stop_level - destination.container.level,
+            destination_stop_level - destination.total_requested)
 
         if amount > 0:
             # request access to the transport_resource
@@ -140,3 +187,31 @@ class Activity(core.Identifiable, core.SimpyObject):
         print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
         print('  from:        ' + format(old_location.x, '02.5f') + ' ' + format(old_location.y, '02.5f'))
         print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))
+
+    def __validate_start_and_stop_levels__(self):
+        if self.origin_start_level < 0 or self.origin_stop_level < 0:
+            raise ValueError('origin_start_level ({}) and origin_stop_level ({}) must be greater than or equal to 0'
+                             .format(self.origin_start_level, self.origin_stop_level))
+        if self.origin_start_level > self.origin.container.capacity or self.origin_stop_level > self.origin.container.capacity:
+            raise ValueError('origin_start_level ({}) and origin_stop_level ({}) must '
+                             'be smaller or equal to the origin {} container capacity of {}'
+                             .format(self.origin_start_level, self.origin_stop_level,
+                                     self.origin.name, self.origin.container.capacity))
+        if self.origin_start_level <= self.origin_stop_level:
+            raise ValueError('origin_start_level ({}) should be strictly greater than origin_stop_level ({}), '
+                             'otherwise the activity will complete immediately after starting without any effect.'
+                             .format(self.origin_start_level, self.origin_stop_level))
+
+        if self.destination_start_level < 0 or self.destination_stop_level < 0:
+            raise ValueError('destination_start_level ({}) and destination_stop_level ({}) must be greater than or equal to 0'
+                             .format(self.destination_start_level, self.destination_stop_level))
+        if self.destination_start_level > self.destination.container.capacity or self.destination_stop_level > self.destination.container.capacity:
+            raise ValueError('destination_start_level ({}) and destination_stop_level ({}) must '
+                             'be smaller or equal to the destination {} container capacity of {}'
+                             .format(self.destination_start_level, self.destination_stop_level,
+                                     self.destination.name, self.destination.container.capacity))
+        if self.destination_start_level >= self.destination_stop_level:
+            raise ValueError('destination_start_level ({}) should be strictly greater than destination_stop_level ({}), '
+                             'otherwise the activity will complete immediately after starting without any effect.'
+                             .format(self.destination_start_level, self.destination_stop_level))
+
