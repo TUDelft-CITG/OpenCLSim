@@ -2,22 +2,27 @@ import digital_twin.core as core
 
 
 class Activity(core.Identifiable, core.SimpyObject):
-    """The Installation Class forms a specific class of activities with associated methods that can
-    initiate and suspend processes according to a number of specified conditions. This class deals
-    with transport and installation/placement of discrete and continuous objects.
+    """The Activity Class forms a specific class for a single activity within a simulation.
+    It deals with a single origin container, destination container and a single combination of equipment
+    to move substances from the origin to the destination. It will initiate and suspend processes
+    according to a number of specified conditions. To run an activity after it has been initialized call env.run()
+    on the Simpy environment with which it was initialized.
 
-    condition: expression that states when to initiate or to suspend activity
+    condition: expression that states when to initiate the activity,
+               i.e., when moving substances from the origin to the destination is allowed
     origin: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
-    destination: object inheriting from HasContainer, HasResource, Locatable and Log
+    destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
     loader: object which will get units from 'origin' Container and put them into 'mover' Container
-            should inherit from Processor, HasResource, Identifiable and Log
-    mover: is loaded, then moves from 'origin' to 'destination' and is unloaded, then moves back to 'origin'
-            should inherit from Movable, HasContainer, HasResource, Identifiable and Log
+            should inherit from Processor, HasResource and Identifiable
+    mover: moves to 'origin' if it is not already there, is loaded, then moves to 'destination' and is unloaded
+           should inherit from Movable, HasContainer, HasResource, Identifiable and Log
+           after the simulation is complete, it's log will contain entries for each time it started moving,
+           stopped moving, started loading / unloading and stopped loading / unloading
     unloader: gets amount from 'mover' Container and puts it into 'destination' Container
-            should inherit from Processor, HasResource, Identifiable and Log
-
-            #todo check this after implementation is done
+              should inherit from Processor, HasResource and Identifiable
     """
+
+    # todo should loader and unloader also inherit from Locatable and Activity include checks if the loader / unloader is at the correct location?
 
     def __init__(self,
                  condition,
@@ -43,7 +48,6 @@ class Activity(core.Identifiable, core.SimpyObject):
         self.installation_reactivate = self.env.event()
 
     def standing_by(self, condition, destination, ):
-        # todo clear up control flow of standing_by vs installation_process_control
         # todo separate conditions into start condition and stop condition? no need to check start again after it was satisfied once?
         """Standing by"""
         shown = False
@@ -51,14 +55,14 @@ class Activity(core.Identifiable, core.SimpyObject):
         # todo change implementation of conditions, no longer use eval
         while not eval(condition):
             if not shown:
-                print(
-                    'T=' + '{:06.2f}'.format(self.env.now) + ' ' + self.name + ' to ' + destination.name + ' suspended')
+                print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + self.name +
+                      ' to ' + destination.name + ' suspended')
                 shown = True
             yield self.env.timeout(3600)  # step 3600 time units ahead
 
         print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + 'Condition: ' + condition + ' is satisfied')
 
-        self.installation_reactivate.succeed()  # "reactivate"
+        self.installation_reactivate.succeed()  # "reactivate" installation_process_control
         self.installation_reactivate = self.env.event()
 
     def installation_process_control(self, condition,
