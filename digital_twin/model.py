@@ -13,13 +13,17 @@ class Activity(core.Identifiable, core.SimpyObject):
     origin: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
     destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
     loader: object which will get units from 'origin' Container and put them into 'mover' Container
-            should inherit from Processor, HasResource and Identifiable
+            should inherit from Processor, HasResource, Identifiable and Log
+            after the simulation is complete, its log will contain entries for each time it
+            started loading and stopped loading
     mover: moves to 'origin' if it is not already there, is loaded, then moves to 'destination' and is unloaded
            should inherit from Movable, HasContainer, HasResource, Identifiable and Log
-           after the simulation is complete, it's log will contain entries for each time it started moving,
+           after the simulation is complete, its log will contain entries for each time it started moving,
            stopped moving, started loading / unloading and stopped loading / unloading
     unloader: gets amount from 'mover' Container and puts it into 'destination' Container
-              should inherit from Processor, HasResource and Identifiable
+              should inherit from Processor, HasResource, Identifiable and Log
+              after the simulation is complete, its log will contain entries for each time it
+              started unloading and stopped unloading
     """
 
     # todo should loader and unloader also inherit from Locatable and Activity include checks if the loader / unloader is at the correct location?
@@ -106,20 +110,15 @@ class Activity(core.Identifiable, core.SimpyObject):
     # todo __load_mover__ and __unload_mover__ are very similar, turn them into a single method __shift_amount__
 
     def __load_mover__(self, amount, loader, mover, my_mover_turn, origin):
-        # request access to the loader if necessary
         if id(loader) == id(mover):
-            my_loader_turn = None
+            yield from loader.process(origin, mover, amount, destination_resource_request=my_mover_turn)
         else:
-            my_loader_turn = loader.resource.request()
-            yield my_loader_turn
+            with loader.resource.request() as my_loader_turn:
+                yield my_loader_turn
 
-        # load the resource
-        mover.log_entry('loading start', self.env.now, mover.container.level)
-        yield from loader.process(origin, mover, amount, destination_resource_request=my_mover_turn)
-        mover.log_entry('loading stop', self.env.now, mover.container.level)
-
-        if my_loader_turn is not None:
-            loader.resource.release(my_loader_turn)
+                loader.log_entry('processing start', self.env.now, amount)
+                yield from loader.process(origin, mover, amount, destination_resource_request=my_mover_turn)
+                loader.log_entry('processing stop', self.env.now, amount)
 
         print('Loaded:')
         print('  from:        ' + origin.name + ' contains: ' + str(origin.container.level))
@@ -127,20 +126,15 @@ class Activity(core.Identifiable, core.SimpyObject):
         print('  to:          ' + mover.name + ' contains: ' + str(mover.container.level))
 
     def __unload_mover__(self, amount, unloader, mover, my_mover_turn, destination):
-        # request access to the unloader if necessary
         if id(unloader) == id(mover):
-            my_unloader_turn = None
+            yield from unloader.process(mover, destination, amount, origin_resource_request=my_mover_turn)
         else:
-            my_unloader_turn = unloader.resource.request()
-            yield my_unloader_turn
+            with unloader.resource.request() as my_unloader_turn:
+                yield my_unloader_turn
 
-        # unload the resource
-        mover.log_entry('unloading start', self.env.now, mover.container.level)
-        yield from unloader.process(mover, destination, amount, origin_resource_request=my_mover_turn)
-        mover.log_entry('unloading stop', self.env.now, mover.container.level)
-
-        if my_unloader_turn is not None:
-            unloader.resource.release(my_unloader_turn)
+                unloader.log_entry('processing start', self.env.now, amount)
+                yield from unloader.process(mover, destination, amount, origin_resource_request=my_mover_turn)
+                unloader.log_entry('processing stop', self.env.now, amount)
 
         print('Unloaded')
         print('  from:        ' + mover.name + ' contains: ' + str(mover.container.level))

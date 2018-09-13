@@ -189,12 +189,15 @@ class Processor(SimpyObject):
         yield my_origin_turn
         yield my_dest_turn
 
+        origin.log_entry('unloading start', self.env.now, origin.container.level)
+        destination.log_entry('loading start', self.env.now, destination.container.level)
+
         origin.container.get(amount)
         destination.container.put(amount)
         yield self.env.timeout(amount / self.rate)
 
-        origin.log_entry('', self.env.now, origin.container.level)
-        destination.log_entry('', self.env.now, destination.container.level)
+        origin.log_entry('unloading stop', self.env.now, origin.container.level)
+        destination.log_entry('loading stop', self.env.now, destination.container.level)
 
         logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
 
