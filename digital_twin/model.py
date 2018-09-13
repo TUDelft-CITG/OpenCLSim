@@ -133,7 +133,7 @@ class Activity(core.Identifiable, core.SimpyObject):
             origin.total_requested += amount
             destination.total_requested += amount
 
-            print('Using ' + mover.name + ' to process ' + str(amount))
+            print('Using ' + mover.name + ' to transport ' + str(amount) + ' from ' + origin.name + ' to ' + destination.name)
 
             with mover.resource.request() as my_mover_turn:
                 yield my_mover_turn
@@ -151,7 +151,6 @@ class Activity(core.Identifiable, core.SimpyObject):
                 # unload the mover
                 yield from self.__shift_amount__(amount, unloader, mover, destination, origin_resource_request=my_mover_turn)
         else:
-            print('Nothing to move')
             yield self.env.timeout(3600)
 
     def __shift_amount__(self, amount, processor, origin, destination,
@@ -176,17 +175,18 @@ class Activity(core.Identifiable, core.SimpyObject):
         print('  by:          ' + processor.name)
         print('  to:          ' + destination.name + ' contains: ' + str(destination.container.level))
 
-    def __move_mover__(self, mover, origin):
+    def __move_mover__(self, mover, destination):
         old_location = mover.geometry
 
         mover.log_entry('sailing full start', self.env.now, mover.container.level)
-        yield from mover.move(origin)
+        yield from mover.move(destination)
         mover.log_entry('sailing full stop', self.env.now, mover.container.level)
 
         print('Moved:')
         print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
         print('  from:        ' + format(old_location.x, '02.5f') + ' ' + format(old_location.y, '02.5f'))
-        print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))
+        print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f')
+              + '(' + destination.name + ')')
 
     def __validate_start_and_stop_levels__(self):
         if self.origin_start_level < 0 or self.origin_stop_level < 0:
@@ -215,3 +215,44 @@ class Activity(core.Identifiable, core.SimpyObject):
                              'otherwise the activity will complete immediately after starting without any effect.'
                              .format(self.destination_start_level, self.destination_stop_level))
 
+
+class Simulation(core.Identifiable, core.SimpyObject):
+    """The Simulation class can be used to quickly instantiate several Activity instances which together would form a
+    complete simulation. It will create activities for each combination of origin, destination and equipment set. To run
+    the simulation after it has been initialized call env.run() on the Simpy environment with which it was initialized.
+
+    origins: a list of origin locations
+    destinations: a list of destination locations
+    equipment: a list of dicts where each dict contains a 'loader', 'mover' and 'unloader' key-value pair representing
+               a valid combination of equipment which can be used to move substances from the origin to the destination
+    condition: the condition that should be passed to the Activity instances
+    #todo complete docs
+    """
+
+    #todo add support for layered origin or layered destination locations using start and stop levels
+    #todo should this also contain support for "line locations" or should these just be passed separately?
+    def __init__(self, origins, destinations, equipment, condition='True', *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+
+        self.origins = origins
+        self.destinations = destinations
+        self.equipment = equipment
+        self.condition = condition
+
+        # fill the origin containers
+        for origin in origins:
+            origin.container.put(origin.container.capacity)
+
+        # initialize all activities
+        self.activities = []
+        i = 0
+        for origin in origins:
+            for destination in destinations:
+                for eq in equipment:
+                    activity = Activity(env=self.env, name='{}_ACT_{}'.format(self.name, i),
+                                        origin=origin, destination=destination,
+                                        loader=eq['loader'], mover=eq['mover'], unloader=eq['unloader'],
+                                        condition=condition)
+                    self.activities.append(activity)
+                    i += 1

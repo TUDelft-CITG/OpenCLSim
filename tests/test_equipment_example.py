@@ -190,7 +190,7 @@ def test_activity_hopper(env, available_equipment, available_sites):
     destination = available_sites['Den Oever']
 
     hopper = available_equipment['Boaty McBoatStone']
-    kwargs = dict(env = env, name='MyHopperActivity', origin=origin, destination=destination,
+    kwargs = dict(env=env, name='MyHopperActivity', origin=origin, destination=destination,
                   loader=hopper, mover=hopper, unloader=hopper)
     model.Activity(**kwargs)
 
@@ -203,3 +203,68 @@ def test_activity_hopper(env, available_equipment, available_sites):
     assert origin.container.level == origin.container.capacity - destination.container.level
     assert destination.container.level == destination.container.capacity or origin.container.level == 0
 
+
+def test_simulation_fill_destination(env, available_equipment, available_sites):
+    # these settings should be read from UI
+    origins = [available_sites['Stockpile']]
+    destinations = [available_sites['Kornwerderzand'], available_sites['Den Oever']]
+    equipment = [{
+        'loader': available_equipment['Loady McLoader'],
+        'mover': available_equipment['EGG123'],
+        'unloader': available_equipment['Unloady McUnloader']
+    },{
+        'loader': available_equipment['Boaty McBoatStone'],
+        'mover': available_equipment['Boaty McBoatStone'],
+        'unloader': available_equipment['Boaty McBoatStone']
+    }]
+
+    # prepare the simulation
+    model.Simulation(env=env, name='MyFirstSimulation', origins=origins, destinations=destinations, equipment=equipment)
+
+    # run the simulation
+    for origin in origins:
+        assert origin.container.level == origin.container.capacity
+    for destination in destinations:
+        assert destination.container.level == 0
+
+    env.run()
+    print('Simulation completed in: ' + str(datetime.timedelta(seconds=env.now)))
+
+    total_capacity = 0
+    for destination in destinations:
+        total_capacity += destination.container.capacity
+        assert destination.container.level == destination.container.capacity
+    assert origins[0].container.level == origins[0].container.capacity - total_capacity
+
+
+def test_simulation_empty_origin(env, available_equipment, available_sites):
+    # these settings should be read from the UI
+    origins = [available_sites['Kornwerderzand'], available_sites['Den Oever']]
+    destinations = [available_sites['Stockpile']]
+    equipment = [{
+        'loader': available_equipment['Loady McLoader'],
+        'mover': available_equipment['EGG123'],
+        'unloader': available_equipment['Unloady McUnloader']
+    }, {
+        'loader': available_equipment['Boaty McBoatStone'],
+        'mover': available_equipment['Boaty McBoatStone'],
+        'unloader': available_equipment['Boaty McBoatStone']
+    }]
+
+    # prepare the simulation
+    model.Simulation(env=env, name='MyFirstSimulation', origins=origins, destinations=destinations, equipment=equipment)
+
+    # run the simulation
+    for origin in origins:
+        assert origin.container.level == origin.container.capacity
+    for destination in destinations:
+        assert destination.container.level == 0
+
+    env.run()
+    print('Simulation completed in: ' + str(datetime.timedelta(seconds=env.now)))
+
+    total_capacity = 0
+    for origin in origins:
+        total_capacity += origin.container.capacity
+        assert origin.container.level == 0
+    assert destinations[0].container.level == total_capacity
