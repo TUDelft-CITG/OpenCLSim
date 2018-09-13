@@ -39,19 +39,18 @@ class Activity(core.Identifiable, core.SimpyObject):
         self.mover = mover
         self.unloader = unloader
 
-        self.standing_by_proc = self.env.process(
-            self.standing_by(condition, destination))
         self.installation_proc = self.env.process(
-            self.installation_process_control(condition,
-                                              origin, destination,
-                                              loader, mover, unloader))
-        self.installation_reactivate = self.env.event()
+            self.installation_process_control(condition, origin, destination, loader, mover, unloader)
+        )
 
-    def standing_by(self, condition, destination, ):
-        # todo separate conditions into start condition and stop condition? no need to check start again after it was satisfied once?
-        """Standing by"""
+    def installation_process_control(self, condition,
+                                     origin, destination,
+                                     loader, mover, unloader):
+        """Installation process control"""
+
+        # stand by until the condition is satisfied
         shown = False
-
+        # todo separate conditions into start condition and stop condition? no need to check start again after it was satisfied once?
         # todo change implementation of conditions, no longer use eval
         while not eval(condition):
             if not shown:
@@ -60,22 +59,12 @@ class Activity(core.Identifiable, core.SimpyObject):
                 shown = True
             yield self.env.timeout(3600)  # step 3600 time units ahead
 
-        print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + 'Condition: ' + condition + ' is satisfied')
+        print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + 'Condition: ' + condition + ' is satisfied, '
+              + self.name + ' to ' + destination.name + ' started')
 
-        self.installation_reactivate.succeed()  # "reactivate" installation_process_control
-        self.installation_reactivate = self.env.event()
-
-    def installation_process_control(self, condition,
-                                     origin, destination,
-                                     loader, mover, unloader):
-        """Installation process control"""
-        while not eval(condition):
-            yield self.installation_reactivate
-
-        print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + self.name + ' to ' + destination.name + ' started')
+        # keep moving substances until the condition is no longer satisfied
         while eval(condition):
-            yield from self.installation_process(origin, destination,
-                                                 loader, mover, unloader)
+            yield from self.installation_process(origin, destination, loader, mover, unloader)
 
     def installation_process(self, origin, destination,
                              loader, mover, unloader):
