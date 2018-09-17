@@ -140,7 +140,7 @@ def test_site_list(available_sites):
         print(site + ': ' + str(available_sites[site]))
 
 
-def test_activity(env, available_equipment, available_sites):
+def test_activity_fill_destination(env, available_equipment, available_sites):
     origin = available_sites['Stockpile']
     origin.container.put(origin.container.capacity)  # fill the origin container
     destination = available_sites['Den Oever']
@@ -149,8 +149,7 @@ def test_activity(env, available_equipment, available_sites):
     kwargs = dict(env=env, name='MyFirstActivity',
                   origin=origin, destination=destination,
                   loader=available_equipment['Loady McLoader'], mover=available_equipment['EGG123'],
-                  unloader=available_equipment['Unloady McUnloader'],
-                  condition='destination.container.level < destination.container.capacity')
+                  unloader=available_equipment['Unloady McUnloader'])
     model.Activity(**kwargs)
 
     assert origin.container.level == origin.container.capacity
@@ -163,6 +162,28 @@ def test_activity(env, available_equipment, available_sites):
     assert destination.container.level == destination.container.capacity
 
 
+def test_activity_empty_origin(env, available_equipment, available_sites):
+    origin = available_sites['Den Oever']
+    origin.container.put(origin.container.capacity)  # fill the origin container
+    destination = available_sites['Stockpile']
+    assert origin.container.capacity < destination.container.capacity
+
+    kwargs = dict(env=env, name='MyFirstActivity',
+                  origin=origin, destination=destination,
+                  loader=available_equipment['Loady McLoader'], mover=available_equipment['EGG123'],
+                  unloader=available_equipment['Unloady McUnloader'])
+    model.Activity(**kwargs)
+
+    assert origin.container.level == origin.container.capacity
+    assert destination.container.level == 0
+
+    env.run()
+    print('Simulation completed in: ' + str(datetime.timedelta(seconds=env.now)))
+
+    assert origin.container.level == 0
+    assert destination.container.level == origin.container.capacity
+
+
 def test_activity_hopper(env, available_equipment, available_sites):
     origin = available_sites['Kornwerderzand']
     origin.container.put(origin.container.capacity)  # fill the origin container
@@ -171,8 +192,7 @@ def test_activity_hopper(env, available_equipment, available_sites):
 
     hopper = available_equipment['Boaty McBoatStone']
     kwargs = dict(env = env, name='MyHopperActivity', origin=origin, destination=destination,
-                  loader=hopper, mover=hopper, unloader=hopper,
-                  condition='destination.container.level < destination.container.capacity')
+                  loader=hopper, mover=hopper, unloader=hopper)
     model.Activity(**kwargs)
 
     assert origin.container.level == origin.container.capacity
