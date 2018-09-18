@@ -190,13 +190,13 @@ class Activity(core.Identifiable, core.SimpyObject):
 
                 # move to the origin if necessary
                 if not mover.is_at(origin):
-                    yield from self.__move_mover__(mover, origin)
+                    yield from self.__move_mover__(mover, origin, 'empty')
 
                 # load the mover
                 yield from self.__shift_amount__(amount, loader, origin, mover, destination_resource_request=my_mover_turn)
 
                 # move the mover to the destination
-                yield from self.__move_mover__(mover, destination)
+                yield from self.__move_mover__(mover, destination, 'full')
 
                 # unload the mover
                 yield from self.__shift_amount__(amount, unloader, mover, destination, origin_resource_request=my_mover_turn)
@@ -226,12 +226,12 @@ class Activity(core.Identifiable, core.SimpyObject):
         print('  by:          ' + processor.name)
         print('  to:          ' + destination.name + ' contains: ' + str(destination.container.level))
 
-    def __move_mover__(self, mover, origin):
+    def __move_mover__(self, mover, origin, status):
         old_location = mover.geometry
 
-        mover.log_entry('sailing full start', self.env.now, mover.container.level)
+        mover.log_entry('sailing ' + status + ' start', self.env.now, mover.container.level)
         yield from mover.move(origin)
-        mover.log_entry('sailing full stop', self.env.now, mover.container.level)
+        mover.log_entry('sailing ' + status + ' stop', self.env.now, mover.container.level)
 
         print('Moved:')
         print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
