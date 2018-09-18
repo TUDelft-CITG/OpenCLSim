@@ -94,6 +94,13 @@ class Movable(SimpyObject, Locatable):
         logger.debug('  sailing:  ' + '%4.2f' % speed + ' m/s')
         logger.debug('  duration: ' + '%4.2f' % ((distance / speed) / 3600) + ' hrs')
 
+    def is_at(self, locatable, tolerance=100):
+        current_location = shapely.geometry.asShape(self.geometry)
+        other_location = shapely.geometry.asShape(locatable.geometry)
+        _, _, distance = self.wgs84.inv(current_location.x, current_location.y,
+                                        other_location.x, other_location.y)
+        return distance < tolerance
+
     @property
     def current_speed(self):
         return self.v
@@ -182,12 +189,15 @@ class Processor(SimpyObject):
         yield my_origin_turn
         yield my_dest_turn
 
+        origin.log_entry('unloading start', self.env.now, origin.container.level)
+        destination.log_entry('loading start', self.env.now, destination.container.level)
+
         origin.container.get(amount)
         destination.container.put(amount)
         yield self.env.timeout(amount / self.rate)
 
-        origin.log_entry('', self.env.now, origin.container.level)
-        destination.log_entry('', self.env.now, destination.container.level)
+        origin.log_entry('unloading stop', self.env.now, origin.container.level)
+        destination.log_entry('loading stop', self.env.now, destination.container.level)
 
         logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
 
