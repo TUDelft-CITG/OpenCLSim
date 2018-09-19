@@ -23,7 +23,7 @@
             <v-list-tile-title>Equipment</v-list-tile-title>
           </v-list-tile-content>
         </v-list-tile>
-        <v-list-tile to="/project">
+        <v-list-tile to="/projects">
           <v-list-tile-action>
             <v-icon>work</v-icon>
           </v-list-tile-action>

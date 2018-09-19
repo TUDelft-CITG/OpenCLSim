@@ -26,10 +26,20 @@
 
           <v-card-actions>
             <v-btn flat color="orange">Use</v-btn>
-            <v-btn flat color="orange">Details</v-btn>
+            <v-btn flat color="orange">Clone</v-btn>
           </v-card-actions>
         </v-card>
       </v-flex>
+      <v-btn
+        color="pink"
+        dark
+        small
+        absolute
+        bottom
+        right
+        fab
+        ></v-btn>
+
     </v-layout>
   </v-container>
 
