@@ -3,17 +3,17 @@
 """Main module."""
 
 # package(s) related to time, space and id
-import uuid
-import logging
 import json
+import logging
+import uuid
 
 # you need these dependencies (you can get these from anaconda)
 # package(s) related to the simulation
 import simpy
 
 # spatial libraries
-import shapely.geometry
 import pyproj
+import shapely.geometry
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +67,28 @@ class HasContainer(SimpyObject):
         self.total_requested = total_requested
 
 
+class HasFuel(SimpyObject):
+    """
+    fuel_capacity: amount of fuel that the container can hold
+    fuel_level: amount the container holds initially
+    fuel_container: a simpy object that can hold stuff
+    """
+
+    def __init__(self, fuel_capacity, fuel_level=0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.fuel_container = simpy.Container(self.env, fuel_capacity, init=fuel_level)
+
+    def consume(self, amount):
+        """consume an amount of fuel"""
+        self.fuel_container.get(amount)
+
+    def fill(self):
+        """fill 'er up"""
+        self.fuel_container.put(self.fuel_container.capacity - self.fuel_container.level)
+
+
+
 class Movable(SimpyObject, Locatable):
     """Movable class
 
@@ -88,6 +110,12 @@ class Movable(SimpyObject, Locatable):
         forward, backward, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
         speed = self.current_speed
+        # lower the fuel
+        if isinstance(self, HasFuel):
+            # remove seconds of fuel
+            self.consume(distance / speed)
+
+
         yield self.env.timeout(distance / speed)
         self.geometry = dest
         logger.debug('  distance: ' + '%4.2f' % distance + ' m')
