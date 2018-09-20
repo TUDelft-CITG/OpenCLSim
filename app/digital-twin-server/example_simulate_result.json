@@ -1,0 +1,232 @@
+{
+    "completion_time": 47704.52023165101,
+    "activities": {
+        "MyFirstSite_MySecondSite": [
+            {
+                "message": "started",
+                "time": 0,
+                "value": -1
+            },
+            {
+                "message": "transporting start",
+                "time": 0,
+                "value": 1000000.0
+            },
+            {
+                "message": "transporting stop",
+                "time": 15056.119688450259,
+                "value": 1000000.0
+            },
+            {
+                "message": "completed",
+                "time": 15056.119688450259,
+                "value": -1
+            }
+        ],
+        "MyFirstSite_MyThirdSite": [
+            {
+                "message": "started",
+                "time": 0,
+                "value": -1
+            },
+            {
+                "message": "transporting start",
+                "time": 0,
+                "value": 2000000.0
+            },
+            {
+                "message": "transporting stop",
+                "time": 47704.52023165101,
+                "value": 2000000.0
+            },
+            {
+                "message": "completed",
+                "time": 47704.52023165101,
+                "value": -1
+            }
+        ]
+    },
+    "destinations": {
+        "MySecondSite": [
+            {
+                "message": "loading start",
+                "time": 9590.113187998748,
+                "value": 0
+            },
+            {
+                "message": "loading stop",
+                "time": 15056.119688450259,
+                "value": 1000000.0
+            }
+        ],
+        "MyThirdSite": [
+            {
+                "message": "loading start",
+                "time": 36772.50723074799,
+                "value": 0
+            },
+            {
+                "message": "loading stop",
+                "time": 47704.52023165101,
+                "value": 2000000.0
+            }
+        ]
+    },
+    "equipment": {
+        "EGG123": [
+            {
+                "message": "loading start",
+                "time": 0,
+                "value": 0
+            },
+            {
+                "message": "loading stop",
+                "time": 5010.505958747218,
+                "value": 1000000.0
+            },
+            {
+                "message": "sailing full start",
+                "time": 5010.505958747218,
+                "value": 1000000.0
+            },
+            {
+                "message": "fuel consumed",
+                "time": 5010.505958747218,
+                "value": 4579.607229251531
+            },
+            {
+                "message": "sailing full stop",
+                "time": 9590.113187998748,
+                "value": 1000000.0
+            },
+            {
+                "message": "unloading start",
+                "time": 9590.113187998748,
+                "value": 1000000.0
+            },
+            {
+                "message": "unloading stop",
+                "time": 15056.119688450259,
+                "value": 0.0
+            },
+            {
+                "message": "sailing empty start",
+                "time": 15056.119688450259,
+                "value": 0.0
+            },
+            {
+                "message": "fuel consumed",
+                "time": 15056.119688450259,
+                "value": 3699.2521294338585
+            },
+            {
+                "message": "sailing empty stop",
+                "time": 18755.371817884115,
+                "value": 0.0
+            },
+            {
+                "message": "loading start",
+                "time": 18755.371817884115,
+                "value": 0.0
+            },
+            {
+                "message": "loading stop",
+                "time": 28776.38373537855,
+                "value": 2000000.0
+            },
+            {
+                "message": "sailing full start",
+                "time": 28776.38373537855,
+                "value": 2000000.0
+            },
+            {
+                "message": "fuel consumed",
+                "time": 28776.38373537855,
+                "value": 7996.123495369444
+            },
+            {
+                "message": "sailing full stop",
+                "time": 36772.50723074799,
+                "value": 2000000.0
+            },
+            {
+                "message": "unloading start",
+                "time": 36772.50723074799,
+                "value": 2000000.0
+            },
+            {
+                "message": "unloading stop",
+                "time": 47704.52023165101,
+                "value": 0.0
+            }
+        ],
+        "Loady McLoader": [
+            {
+                "message": "processing start",
+                "time": 0,
+                "value": 1000000.0
+            },
+            {
+                "message": "processing stop",
+                "time": 5010.505958747218,
+                "value": 1000000.0
+            },
+            {
+                "message": "processing start",
+                "time": 18755.371817884115,
+                "value": 2000000.0
+            },
+            {
+                "message": "processing stop",
+                "time": 28776.38373537855,
+                "value": 2000000.0
+            }
+        ],
+        "Unloady McUnloader": [
+            {
+                "message": "processing start",
+                "time": 9590.113187998748,
+                "value": 1000000.0
+            },
+            {
+                "message": "processing stop",
+                "time": 15056.119688450259,
+                "value": 1000000.0
+            },
+            {
+                "message": "processing start",
+                "time": 36772.50723074799,
+                "value": 2000000.0
+            },
+            {
+                "message": "processing stop",
+                "time": 47704.52023165101,
+                "value": 2000000.0
+            }
+        ]
+    },
+    "origins": {
+        "MyFirstSite": [
+            {
+                "message": "unloading start",
+                "time": 0,
+                "value": 10000000.0
+            },
+            {
+                "message": "unloading stop",
+                "time": 5010.505958747218,
+                "value": 9000000.0
+            },
+            {
+                "message": "unloading start",
+                "time": 18755.371817884115,
+                "value": 9000000.0
+            },
+            {
+                "message": "unloading stop",
+                "time": 28776.38373537855,
+                "value": 7000000.0
+            }
+        ]
+    }
+}
