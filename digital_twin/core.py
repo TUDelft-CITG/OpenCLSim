@@ -81,6 +81,8 @@ class HasFuel(SimpyObject):
 
     def consume(self, amount):
         """consume an amount of fuel"""
+        if isinstance(self, Log):
+            self.log_entry("fuel consumed", self.env.now, amount)
         self.fuel_container.get(amount)
 
     def fill(self):
@@ -183,6 +185,12 @@ class Log(SimpyObject):
         self.log.append(log)
         self.t.append(t)
         self.value.append(value)
+
+    def get_log_as_json(self):
+        json = []
+        for msg, t, value in zip(self.log, self.t, self.value):
+            json.append(dict(message=msg, time=t, value=value))
+        return json
 
 
 class Processor(SimpyObject):

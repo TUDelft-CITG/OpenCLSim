@@ -73,7 +73,7 @@ class TrueCondition:
         return True
 
 
-class Activity(core.Identifiable, core.SimpyObject):
+class Activity(core.Identifiable, core.Log):
     """The Activity Class forms a specific class for a single activity within a simulation.
     It deals with a single origin container, destination container and a single combination of equipment
     to move substances from the origin to the destination. It will initiate and suspend processes
@@ -150,12 +150,14 @@ class Activity(core.Identifiable, core.SimpyObject):
             if not shown:
                 print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + self.name +
                       ' to ' + destination.name + ' suspended')
+                self.log_entry("suspended", self.env.now, -1)
                 shown = True
             yield self.env.timeout(3600)  # step 3600 time units ahead
 
         # todo add nice printing to the conditions, then print them here
         print('T=' + '{:06.2f}'.format(self.env.now) + ' Start condition is satisfied, '
               + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' started')
+        self.log_entry("started", self.env.now, -1)
 
         # keep moving substances until the stop condition is satisfied
         while not stop_condition.satisfied():
@@ -166,6 +168,7 @@ class Activity(core.Identifiable, core.SimpyObject):
 
         print('T=' + '{:06.2f}'.format(self.env.now) + ' Stop condition is satisfied, '
               + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' complete')
+        self.log_entry("completed", self.env.now, -1)
 
     def installation_process(self, origin, destination,
                              loader, mover, unloader):
@@ -184,6 +187,7 @@ class Activity(core.Identifiable, core.SimpyObject):
             destination.total_requested += amount
 
             print('Using ' + mover.name + ' to process ' + str(amount))
+            self.log_entry("transporting start", self.env.now, amount)
 
             with mover.resource.request() as my_mover_turn:
                 yield my_mover_turn
@@ -200,6 +204,8 @@ class Activity(core.Identifiable, core.SimpyObject):
 
                 # unload the mover
                 yield from self.__shift_amount__(amount, unloader, mover, destination, origin_resource_request=my_mover_turn)
+
+            self.log_entry("transporting stop", self.env.now, amount)
         else:
             print('Nothing to move')
             yield self.env.timeout(3600)
@@ -219,7 +225,7 @@ class Activity(core.Identifiable, core.SimpyObject):
                 yield from processor.process(origin, destination, amount,
                                              origin_resource_request=origin_resource_request,
                                              destination_resource_request=destination_resource_request)
-                processor.log_entry('processing start', self.env.now, amount)
+                processor.log_entry('processing stop', self.env.now, amount)
 
         print('Processed {}:'.format(amount))
         print('  from:        ' + origin.name + ' contains: ' + str(origin.container.level))
