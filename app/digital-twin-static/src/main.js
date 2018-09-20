@@ -1,3 +1,7 @@
+import 'material-design-icons-iconfont/dist/material-design-icons.css'
+import 'mapbox-gl/dist/mapbox-gl.css'
+import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
+
 import Vue from 'vue'
 import './plugins/vuetify'
 import App from './App.vue'

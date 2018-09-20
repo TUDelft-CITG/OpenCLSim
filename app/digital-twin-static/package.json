@@ -10,6 +10,7 @@
   "dependencies": {
     "@mapbox/mapbox-gl-draw": "^1.0.9",
     "mapbox-gl": "^0.48.0",
+    "material-design-icons-iconfont": "^3.0.3",
     "vue": "^2.5.17",
     "vue-router": "^3.0.1",
     "vue2mapbox-gl": "^0.3.2",

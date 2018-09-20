@@ -1,16 +1,18 @@
 <template>
-  <v-flex fill-height fluid>
-  </v-flex>
+  <v-mapbox
+    ref="mapbox"
+    class="map"
+    access-token="pk.eyJ1Ijoic2lnZ3lmIiwiYSI6Il8xOGdYdlEifQ.3-JZpqwUa3hydjAJFXIlMA"
+    map-style="mapbox://styles/mapbox/satellite-streets-v10"
+    :center="[5.2, 53]"
+    :zoom="10">
+  </v-mapbox>
 </template>
-
 <script>
-// @ is an alias to /src
 import Vue2MapboxGl from 'vue2mapbox-gl'
 import Vue from 'vue'
 
-import 'mapbox-gl/dist/mapbox-gl.css'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
-import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 Vue.use(Vue2MapboxGl)
 export default {
@@ -32,10 +34,5 @@ export default {
     map.addControl(draw, 'top-left')
   }
 }
+
 </script>
-<style>
-  .mapboxgl-map {
-  width: 100%;
-  height: 100%;
-  }
-</style>
