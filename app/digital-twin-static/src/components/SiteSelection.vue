@@ -20,7 +20,15 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 Vue.use(Vue2MapboxGl)
 
 export default {
-  name: 'home',
+  name: 'site-selection',
+  props: {
+    'site': Object
+  },
+  data () {
+    return {
+      draw: null
+    }
+  },
   components: {
   },
   mounted () {
@@ -34,9 +42,20 @@ export default {
       },
       displayControlsDefault: false
     }
-    let draw = new MapboxDraw(options)
-    map.addControl(draw, 'top-left')
+    this.draw = new MapboxDraw(options)
+    map.addControl(this.draw, 'top-left')
+    map.on('draw.create', this.updateFeatures)
+    map.on('draw.delete', this.updateFeatures)
+    map.on('draw.update', this.updateFeatures)
+  },
+  methods: {
+    updateFeatures () {
+      let features = this.draw.getAll()
+      // perhaps use vuex or features
+      Vue.set(this.site, 'features', features)
+    }
   }
+
 }
 
 </script>
