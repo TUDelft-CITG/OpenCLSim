@@ -133,13 +133,13 @@ def simulate():
     env = simpy.Environment()
 
     origins = []
-    for origin_data in origins_data:
+    for origin_data in origins_data["features"]:
         site = create_site(origin_data, env)
         site.container.put(site.container.capacity)  # fill the origins
         origins.append(site)
 
     destinations = []
-    for destination_data in destinations_data:
+    for destination_data in destinations_data["features"]:
         site = create_site(destination_data, env)
         destinations.append(site)
 
@@ -171,14 +171,14 @@ def simulate():
 
 
 def create_site(site_data, env):
-    """factory function for site"""
+    properties = site_data["properties"]
     kwargs = dict(
         env=env,
-        name=site_data["name"],
-        geometry=shapely.geometry.Point(site_data["lon"], site_data["lat"])
+        name=properties["name"],
+        geometry=shapely.geometry.asShape(site_data["geometry"]).centroid
     )
 
-    tonnage = site_data["capacity"] * ureg.metric_ton
+    tonnage = properties["capacity"] * ureg.metric_ton
     kwargs["capacity"] = tonnage.to_base_units().magnitude
 
     return Site(**kwargs)
