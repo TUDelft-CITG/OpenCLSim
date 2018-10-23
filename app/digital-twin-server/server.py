@@ -1,6 +1,7 @@
 from flask import Flask
 from flask import jsonify
 from flask import request
+from flask_cors import CORS
 
 import simpy
 from digital_twin import core
@@ -9,34 +10,59 @@ import shapely.geometry
 import pint
 
 app = Flask(__name__)
+CORS(app)
 
-equipment_data = {
-    'S1': {
+
+EQUIPMENT_DB = [
+    {
+        'id': 'S1',
         'name': 'EGG123',
         'type': 'Transport barge',
-        'speed loaded': 6.5,
-        'tonnage': 2601,
+        'img': 'https://upload.wikimedia.org/wikipedia/commons/6/60/Barge_%C3%A0_charbon.jpg',
+        'properties': {
+            'speed loaded': 6.5,
+            'tonnage': 2601
+        },
         'tags': ['mover']
     },
-    'S2': {
+    {
+        'id': 'S2',
         'name': 'Boaty McBoatStone',
         'type': 'Multi purpose support vessel',
-        'speed loaded': 7.0,
-        'tonnage': 1824,
-        'capacity': 10.3,
+        'img': 'https://c1.staticflickr.com/8/7248/13806607764_411823213a_b.jpg',
+        'properties': {
+            'speed loaded': 7.0,
+            'tonnage': 1824,
+            'capacity': 10.3
+        },
         'tags': ['loader', 'mover']
     },
-    'C1': {
+    {
+        'id': 'C1',
         'name': 'Loady McLoader',
         'type': 'Simple Loading Crane',
-        'capacity': 13.2
+        'img': 'https://upload.wikimedia.org/wikipedia/commons/2/24/Dock_Crane%2C_Belfast_%286%29_-_geograph.org.uk_-_878924.jpg',
+        'properties': {
+            'capacity': 13.2
+        },
+       'tags': ['loader']
+
+
     },
-    'C2': {
+    {
+        'id': 'C2',
         'name': 'Unloady McUnloader',
         'type': 'Simple Loading Crane',
-        'capacity': 12.1
+        'img': 'https://upload.wikimedia.org/wikipedia/commons/2/24/Dock_Crane%2C_Belfast_%286%29_-_geograph.org.uk_-_878924.jpg',
+        'properties': {
+            'capacity': 12.1
+        },
+        'tags': ['unloader']
+
+
     }
-}
+]
+
 
 type_to_mixins_mapping = {
     'Transport barge': (
@@ -84,13 +110,13 @@ def main():
 @app.route("/equipment")
 def equipment_list():
     """return list of equipment ids """
-    return jsonify(list(equipment_data.keys()))
+    return jsonify(EQUIPMENT_DB)
 
 
 @app.route("/equipment/<id>")
 def equipment(id):
     """return equipment"""
-    return jsonify(equipment_data[id])
+    return jsonify(EQUIPMENT_DB[id])
 
 
 @app.route("/simulate", methods=['POST'])
@@ -117,9 +143,12 @@ def simulate():
         site = create_site(destination_data, env)
         destinations.append(site)
 
+    print('equipment', equipment_data)
     equipment = {}
-    for tag, equipment_id in equipment_data.items():
-        equipment_object = create_equipment(equipment_id, env, origins[0].geometry)
+    for equipment_json in equipment_data:
+        equipment_object = create_equipment(equipment_json, env, origins[0].geometry)
+        # TODO: this is not logical, just use a list
+        tag = equipment_json['tags'][0]
         equipment[tag] = equipment_object
 
     activities = []
@@ -170,9 +199,9 @@ def compute_v_linear(v_empty, v_full):
     return lambda x: x * (v_full - v_empty) + v_empty
 
 
-def create_equipment(equipment_id, env, geometry):
+def create_equipment(equipment, env, geometry):
     """factory function for equipment, uses global equipment data"""
-    data = equipment_data[equipment_id]
+    data = equipment
     mixin_classes = type_to_mixins_mapping[data["type"]]
     klass = type(
         type_to_class_name(data["type"]),
@@ -183,13 +212,13 @@ def create_equipment(equipment_id, env, geometry):
     kwargs = dict(env=env, name=data["name"])
     if issubclass(klass, core.Processor):
         processing_speed = (
-            data['capacity'] * ureg.ton / ureg.minute
+            data['properties']['capacity'] * ureg.ton / ureg.minute
         ).to_base_units()
         kwargs['rate'] = processing_speed.magnitude
     if issubclass(klass, core.HasResource):
         kwargs['nr_resources'] = 1
     if issubclass(klass, core.HasContainer):
-        tonnage = (data['tonnage'] * ureg.metric_ton).to_base_units()
+        tonnage = (data['properties']['tonnage'] * ureg.metric_ton).to_base_units()
         kwargs['capacity'] = tonnage.magnitude
     if issubclass(klass, core.HasFuel):
         # todo request something from data to calculate this
@@ -197,7 +226,7 @@ def create_equipment(equipment_id, env, geometry):
     if issubclass(klass, core.Locatable):
         kwargs['geometry'] = geometry
     if issubclass(klass, core.Movable):
-        speed_loaded = (data['speed loaded'] * ureg.knot).to_base_units().magnitude
+        speed_loaded = (data['properties']['speed loaded'] * ureg.knot).to_base_units().magnitude
         if issubclass(klass, core.ContainerDependentMovable):
             kwargs['compute_v'] = compute_v_linear(
                 speed_loaded * 2, speed_loaded

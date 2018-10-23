@@ -11,6 +11,7 @@
 <script>
 import Vue2MapboxGl from 'vue2mapbox-gl'
 import Vue from 'vue'
+import _ from 'lodash'
 
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
 
@@ -47,11 +48,20 @@ export default {
     map.on('draw.create', this.updateFeatures)
     map.on('draw.delete', this.updateFeatures)
     map.on('draw.update', this.updateFeatures)
+    this.$nextTick(() => {
+      // not sure why this is needed
+      map.resize()
+    })
   },
   methods: {
     updateFeatures () {
       let features = this.draw.getAll()
       // perhaps use vuex or features
+      _.each(features.features, (feature, index) => {
+        feature.properties.capacity = 1000
+        feature.properties.name = 'Site' + index
+      })
+
       Vue.set(this.site, 'features', features)
     }
   }
