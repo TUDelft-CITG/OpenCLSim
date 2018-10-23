@@ -1,18 +1,16 @@
 <template>
-  <v-container grid-list-md >
-    <v-layout row wrap >
-      <v-flex xs4 v-for="feature in site.features.features" :key="feature.id">
-        <v-card>
-          {{ feature }}
-        </v-card>
-      </v-flex>
-    </v-layout>
-  </v-container>
+  <v-card>
+    <div class="jsoneditor"></div>
+  </v-card>
 
 </template>
 
 <script>
 // @ is an alias to /src
+
+import JSONEditor from 'jsoneditor'
+
+import 'jsoneditor/dist/jsoneditor.min.css'
 
 export default {
   name: 'site-configuration',
@@ -20,7 +18,33 @@ export default {
     'site': Object
   },
   data () {
-    return {}
+    return {
+      editor: null
+    }
+  },
+  mounted () {
+    let options = {}
+    let container = this.$el.getElementsByClassName('jsoneditor')[0]
+    let editor = new JSONEditor(container, options)
+    this.editor = editor
+    this.editor.set(
+      this.site
+    )
+  },
+  watch: {
+    'site': {
+      handler: function (newValue, oldValue) {
+        console.log('site', newValue)
+        if (this.editor) {
+          this.editor.set(
+            this.site
+          )
+          this.editor.expandAll()
+        }
+      },
+      deep: true
+
+    }
   },
   components: {
   }

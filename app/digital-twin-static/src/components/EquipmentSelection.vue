@@ -20,25 +20,15 @@
                 <v-list-tile-content class="align-end">{{ val }}</v-list-tile-content>
               </v-list-tile>
             </v-list>
-            <v-chip v-for="task in obj.tasks" :key="task.id">{{ task }}</v-chip>
+            <v-chip v-for="tag in obj.tags" :key="tag">{{ tag }}</v-chip>
 
           </v-card-text>
 
           <v-card-actions>
-            <v-btn flat color="orange">Use</v-btn>
-            <v-btn flat color="orange">Clone</v-btn>
+            <v-btn flat @click="remove(obj)">Remove</v-btn>
           </v-card-actions>
         </v-card>
       </v-flex>
-      <v-btn
-        color="pink"
-        dark
-        small
-        absolute
-        bottom
-        right
-        fab
-        ></v-btn>
 
     </v-layout>
   </v-container>
@@ -50,44 +40,25 @@
 
 export default {
   name: 'equipment',
+  props: {
+    equipment: Array
+  },
   data () {
-    let equipment = [
-      {
-        id: 1,
-        img: 'https://c1.staticflickr.com/8/7248/13806607764_411823213a_b.jpg',
-        name: 'MVP-1',
-        type: 'multi purpose vessel',
-        tasks: ['mover', 'loader'],
-        properties: {
-          tonnage: 200,
-          speed: 11,
-          'processing capacity': 3
-        }
-      },
-      {
-        id: 2,
-        name: 'Crane-1',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/2/24/Dock_Crane%2C_Belfast_%286%29_-_geograph.org.uk_-_878924.jpg',
-        type: 'crane',
-        tasks: ['loader'],
-        properties: {
-          'processing capacity': 3
-        }
-      },
-      {
-        id: 3,
-        name: 'Barge-1',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/6/60/Barge_%C3%A0_charbon.jpg',
-        type: 'barge',
-        tasks: ['mover'],
-        properties: {
-          tonnage: 200,
-          speed: 8
-        }
-      }
-    ]
-    return {
-      equipment
+    return {}
+  },
+  mounted () {
+    fetch('http://localhost:5000/equipment')
+      .then(resp => {
+        return resp.json()
+      })
+      .then(json => {
+        this.equipment.push(...json)
+      })
+  },
+  methods: {
+    remove (obj) {
+      const index = this.equipment.indexOf(obj)
+      this.equipment.splice(index, 1)
     }
   },
   components: {
