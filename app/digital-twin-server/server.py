@@ -13,7 +13,7 @@ app = Flask(__name__)
 CORS(app)
 
 
-equipment_data = [
+EQUIPMENT_DB = [
     {
         'id': 'S1',
         'name': 'EGG123',
@@ -57,7 +57,7 @@ equipment_data = [
         'properties': {
             'capacity': 12.1
         },
-        'tags': ['loader']
+        'tags': ['unloader']
 
 
     }
@@ -110,13 +110,13 @@ def main():
 @app.route("/equipment")
 def equipment_list():
     """return list of equipment ids """
-    return jsonify(equipment_data)
+    return jsonify(EQUIPMENT_DB)
 
 
 @app.route("/equipment/<id>")
 def equipment(id):
     """return equipment"""
-    return jsonify(equipment_data[id])
+    return jsonify(EQUIPMENT_DB[id])
 
 
 @app.route("/simulate", methods=['POST'])
@@ -143,9 +143,12 @@ def simulate():
         site = create_site(destination_data, env)
         destinations.append(site)
 
+    print('equipment', equipment_data)
     equipment = {}
-    for tag, equipment_id in equipment_data.items():
-        equipment_object = create_equipment(equipment_id, env, origins[0].geometry)
+    for equipment_json in equipment_data:
+        equipment_object = create_equipment(equipment_json, env, origins[0].geometry)
+        # TODO: this is not logical, just use a list
+        tag = equipment_json['tags'][0]
         equipment[tag] = equipment_object
 
     activities = []
@@ -196,9 +199,9 @@ def compute_v_linear(v_empty, v_full):
     return lambda x: x * (v_full - v_empty) + v_empty
 
 
-def create_equipment(equipment_id, env, geometry):
+def create_equipment(equipment, env, geometry):
     """factory function for equipment, uses global equipment data"""
-    data = equipment_data[equipment_id]
+    data = equipment
     mixin_classes = type_to_mixins_mapping[data["type"]]
     klass = type(
         type_to_class_name(data["type"]),
@@ -209,13 +212,13 @@ def create_equipment(equipment_id, env, geometry):
     kwargs = dict(env=env, name=data["name"])
     if issubclass(klass, core.Processor):
         processing_speed = (
-            data['capacity'] * ureg.ton / ureg.minute
+            data['properties']['capacity'] * ureg.ton / ureg.minute
         ).to_base_units()
         kwargs['rate'] = processing_speed.magnitude
     if issubclass(klass, core.HasResource):
         kwargs['nr_resources'] = 1
     if issubclass(klass, core.HasContainer):
-        tonnage = (data['tonnage'] * ureg.metric_ton).to_base_units()
+        tonnage = (data['properties']['tonnage'] * ureg.metric_ton).to_base_units()
         kwargs['capacity'] = tonnage.magnitude
     if issubclass(klass, core.HasFuel):
         # todo request something from data to calculate this
@@ -223,7 +226,7 @@ def create_equipment(equipment_id, env, geometry):
     if issubclass(klass, core.Locatable):
         kwargs['geometry'] = geometry
     if issubclass(klass, core.Movable):
-        speed_loaded = (data['speed loaded'] * ureg.knot).to_base_units().magnitude
+        speed_loaded = (data['properties']['speed loaded'] * ureg.knot).to_base_units().magnitude
         if issubclass(klass, core.ContainerDependentMovable):
             kwargs['compute_v'] = compute_v_linear(
                 speed_loaded * 2, speed_loaded
