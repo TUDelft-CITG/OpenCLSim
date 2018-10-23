@@ -1,6 +1,7 @@
 from flask import Flask
 from flask import jsonify
 from flask import request
+from flask_cors import CORS
 
 import simpy
 from digital_twin import core
@@ -9,34 +10,59 @@ import shapely.geometry
 import pint
 
 app = Flask(__name__)
+CORS(app)
 
-equipment_data = {
-    'S1': {
+
+equipment_data = [
+    {
+        'id': 'S1',
         'name': 'EGG123',
         'type': 'Transport barge',
-        'speed loaded': 6.5,
-        'tonnage': 2601,
+        'img': 'https://upload.wikimedia.org/wikipedia/commons/6/60/Barge_%C3%A0_charbon.jpg',
+        'properties': {
+            'speed loaded': 6.5,
+            'tonnage': 2601
+        },
         'tags': ['mover']
     },
-    'S2': {
+    {
+        'id': 'S2',
         'name': 'Boaty McBoatStone',
         'type': 'Multi purpose support vessel',
-        'speed loaded': 7.0,
-        'tonnage': 1824,
-        'capacity': 10.3,
+        'img': 'https://c1.staticflickr.com/8/7248/13806607764_411823213a_b.jpg',
+        'properties': {
+            'speed loaded': 7.0,
+            'tonnage': 1824,
+            'capacity': 10.3
+        },
         'tags': ['loader', 'mover']
     },
-    'C1': {
+    {
+        'id': 'C1',
         'name': 'Loady McLoader',
         'type': 'Simple Loading Crane',
-        'capacity': 13.2
+        'img': 'https://upload.wikimedia.org/wikipedia/commons/2/24/Dock_Crane%2C_Belfast_%286%29_-_geograph.org.uk_-_878924.jpg',
+        'properties': {
+            'capacity': 13.2
+        },
+       'tags': ['loader']
+
+
     },
-    'C2': {
+    {
+        'id': 'C2',
         'name': 'Unloady McUnloader',
         'type': 'Simple Loading Crane',
-        'capacity': 12.1
+        'img': 'https://upload.wikimedia.org/wikipedia/commons/2/24/Dock_Crane%2C_Belfast_%286%29_-_geograph.org.uk_-_878924.jpg',
+        'properties': {
+            'capacity': 12.1
+        },
+        'tags': ['loader']
+
+
     }
-}
+]
+
 
 type_to_mixins_mapping = {
     'Transport barge': (
@@ -84,7 +110,7 @@ def main():
 @app.route("/equipment")
 def equipment_list():
     """return list of equipment ids """
-    return jsonify(list(equipment_data.keys()))
+    return jsonify(equipment_data)
 
 
 @app.route("/equipment/<id>")
