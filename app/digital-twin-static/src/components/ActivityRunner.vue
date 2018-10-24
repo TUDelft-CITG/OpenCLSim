@@ -38,17 +38,9 @@ export default {
     this.editor.set(
       this.results
     )
-
   },
   methods: {
     run () {
-
-      let equipment = {
-        'loader': _.first(this.equipment).id,
-        'unloader': _.first(this.equipment).id,
-        'mover': _.first(this.equipment).id
-
-      }
       let obj = {
         origins: this.site.origins.features,
         destination: this.site.destination.features,
