@@ -2,7 +2,6 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import Projects from './views/Projects.vue'
 import Wizard from './views/Wizard.vue'
-import Equipment from './views/Equipment.vue'
 
 Vue.use(Router)
 
@@ -17,11 +16,6 @@ export default new Router({
       path: '/projects',
       name: 'Projects',
       component: Projects
-    },
-    {
-      path: '/equipment',
-      name: 'Equipment',
-      component: Equipment
     },
     {
       path: '/about',

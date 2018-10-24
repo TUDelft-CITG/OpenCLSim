@@ -9,11 +9,13 @@
   },
   "dependencies": {
     "@mapbox/mapbox-gl-draw": "^1.0.9",
-    "mapbox-gl": "^0.48.0",
+    "jsoneditor": "^5.24.7",
+    "lodash": "^4.17.11",
+    "mapbox-gl": "^0.50.0",
     "material-design-icons-iconfont": "^3.0.3",
     "vue": "^2.5.17",
     "vue-router": "^3.0.1",
-    "vue2mapbox-gl": "^0.3.2",
+    "vue2mapbox-gl": "^0.4.50",
     "vuetify": "^1.0.19",
     "vuex": "^3.0.1"
   },

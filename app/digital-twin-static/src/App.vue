@@ -15,20 +15,20 @@
             <v-list-tile-title>Home</v-list-tile-title>
           </v-list-tile-content>
         </v-list-tile>
-        <v-list-tile to="/equipment">
-          <v-list-tile-action>
-            <v-icon>directions_boat</v-icon>
-          </v-list-tile-action>
-          <v-list-tile-content>
-            <v-list-tile-title>Equipment</v-list-tile-title>
-          </v-list-tile-content>
-        </v-list-tile>
         <v-list-tile to="/projects">
           <v-list-tile-action>
             <v-icon>work</v-icon>
           </v-list-tile-action>
           <v-list-tile-content>
             <v-list-tile-title>Projects</v-list-tile-title>
+          </v-list-tile-content>
+        </v-list-tile>
+        <v-list-tile to="/about">
+          <v-list-tile-action>
+
+          </v-list-tile-action>
+          <v-list-tile-content>
+            <v-list-tile-title>About</v-list-tile-title>
           </v-list-tile-content>
         </v-list-tile>
       </v-list>
