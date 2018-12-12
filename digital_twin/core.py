@@ -81,14 +81,20 @@ class HasFuel(SimpyObject):
 
     def consume(self, amount):
         """consume an amount of fuel"""
-        if isinstance(self, Log):
-            self.log_entry("fuel consumed", self.env.now, amount)
+        
+        self.log_entry("fuel consumed", self.env.now, amount)
         self.fuel_container.get(amount)
 
-    def fill(self):
-        """fill 'er up"""
-        self.fuel_container.put(self.fuel_container.capacity - self.fuel_container.level)
+    def fill(self, rate=1, method="bunker"):
+        """fill 'er up
+        
+        method is the way a vessel gets its fuel: either via a bunkervessel or by getting to a quay"""
 
+        # the amount is reduced by 1 unit, this to make sure that there are no rounding errors
+        amount = int(self.fuel_container.capacity - self.fuel_container.level - 1)
+        self.fuel_container.put(amount)
+        
+        return amount / rate
 
 
 class Movable(SimpyObject, Locatable):
@@ -112,17 +118,30 @@ class Movable(SimpyObject, Locatable):
         forward, backward, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
         speed = self.current_speed
-        # lower the fuel
-        if isinstance(self, HasFuel):
-            # remove seconds of fuel
-            self.consume(distance / speed)
 
+        # check for sufficient fuel
+        if isinstance(self, HasFuel):
+            if self.fuel_container.level < (distance / speed):
+
+                latest_log = [self.log[-1], self.t[-1], self.value[-1]]
+                del self.log[-1], self.t[-1], self.value[-1]
+
+                self.log_entry("fuel loading start", self.env.now, self.fuel_container.level)
+                yield self.env.timeout(self.fill())
+                self.log_entry("fuel loading stop", self.env.now, self.fuel_container.level)
+
+                self.log_entry(latest_log[0], latest_log[1], latest_log[2])
 
         yield self.env.timeout(distance / speed)
         self.geometry = dest
         logger.debug('  distance: ' + '%4.2f' % distance + ' m')
         logger.debug('  sailing:  ' + '%4.2f' % speed + ' m/s')
         logger.debug('  duration: ' + '%4.2f' % ((distance / speed) / 3600) + ' hrs')
+
+        # lower the fuel
+        if isinstance(self, HasFuel):
+            # remove seconds of fuel
+            self.consume(distance / speed)
 
     def is_at(self, locatable, tolerance=100):
         current_location = shapely.geometry.asShape(self.geometry)
