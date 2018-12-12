@@ -72,12 +72,14 @@ class HasFuel(SimpyObject):
     fuel_capacity: amount of fuel that the container can hold
     fuel_level: amount the container holds initially
     fuel_container: a simpy object that can hold stuff
+    refuel_method: method of refueling (bunker or returning to quay)
     """
 
-    def __init__(self, fuel_capacity, fuel_level=0, *args, **kwargs):
+    def __init__(self, fuel_capacity, fuel_level=0, refuel_method="bunker", *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.fuel_container = simpy.Container(self.env, fuel_capacity, init=fuel_level)
+        self.refuel_method = refuel_method
 
     def consume(self, amount):
         """consume an amount of fuel"""
@@ -85,16 +87,13 @@ class HasFuel(SimpyObject):
         self.log_entry("fuel consumed", self.env.now, amount)
         self.fuel_container.get(amount)
 
-    def fill(self, rate=1, method="bunker"):
-        """fill 'er up
-        
-        method is the way a vessel gets its fuel: either via a bunkervessel or by getting to a quay"""
+    def fill(self, fuel_delivery_rate=1):
+        """fill 'er up"""
 
-        # the amount is reduced by 1 unit, this to make sure that there are no rounding errors
-        amount = int(self.fuel_container.capacity - self.fuel_container.level - 1)
+        amount = self.fuel_container.capacity - self.fuel_container.level
         self.fuel_container.put(amount)
         
-        return amount / rate
+        return amount / fuel_delivery_rate
 
 
 class Movable(SimpyObject, Locatable):
@@ -244,12 +243,26 @@ class Processor(SimpyObject):
         yield my_origin_turn
         yield my_dest_turn
 
+        # check for sufficient fuel
+        if isinstance(self, HasFuel):
+            fuel_consumed = (amount / self.rate)*(0.1*self.container.capacity)/3600
+
+            if self.fuel_container.level < fuel_consumed:
+                self.log_entry("fuel loading start", self.env.now, self.fuel_container.level)
+                yield self.env.timeout(self.fill())
+                self.log_entry("fuel loading stop", self.env.now, self.fuel_container.level)
+
         origin.log_entry('unloading start', self.env.now, origin.container.level)
         destination.log_entry('loading start', self.env.now, destination.container.level)
 
         origin.container.get(amount)
         destination.container.put(amount)
         yield self.env.timeout(amount / self.rate)
+
+        # lower the fuel
+        if isinstance(self, HasFuel):
+            # remove seconds of fuel
+            self.consume(fuel_consumed)
 
         origin.log_entry('unloading stop', self.env.now, origin.container.level)
         destination.log_entry('loading stop', self.env.now, destination.container.level)
