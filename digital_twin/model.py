@@ -225,7 +225,15 @@ class Activity(core.Identifiable, core.Log):
                 yield from processor.process(origin, destination, amount,
                                              origin_resource_request=origin_resource_request,
                                              destination_resource_request=destination_resource_request)
+                
                 processor.log_entry('processing stop', self.env.now, amount)
+
+                if self.origin == origin:
+                    # In this case destination is the mover
+                    origin.spillDredging(processor, destination, origin.density, origin.fines, amount, (self.env.now - processor.t[-2]))
+                else:
+                    # In this case origin is the mover
+                    destination.spillPlacement(processor, origin)
 
         print('Processed {}:'.format(amount))
         print('  from:        ' + origin.name + ' contains: ' + str(origin.container.level))

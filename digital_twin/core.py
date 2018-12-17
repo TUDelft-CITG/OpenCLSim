@@ -90,6 +90,85 @@ class HasFuel(SimpyObject):
         self.fuel_container.put(self.fuel_container.capacity - self.fuel_container.level)
 
 
+class HasPlume(SimpyObject):
+    """Using values from Becker [2014], https://www.sciencedirect.com/science/article/pii/S0301479714005143.
+
+    The values are slightly modified, there is nog differences in dragead / bucket drip / cutterhead within this class
+    sigma_d = source term fraction due to dredging
+    sigma_o = source term fraction due to overflow
+    sigma_p = source term fraction due to placement
+    f_sett  = fraction of fines that settle within the hopper
+    f_trap  = fraction of fines that are trapped within the hopper
+    """
+
+    def __init__(self, sigma_d=0.015, sigma_o=0.1, sigma_p=0.05, f_sett=0.5, f_trap=0.01, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+
+        self.sigma_d = sigma_d
+        self.sigma_o = sigma_o
+        self.sigma_p = sigma_p
+        self.f_sett = f_sett
+        self.f_trap = f_trap
+
+class HasSpill(SimpyObject):
+    """Using relations from Becker [2014], https://www.sciencedirect.com/science/article/pii/S0301479714005143."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+    
+    def spillDredging(self, processor, mover, density, fines, volume, dredging_duration, overflow_duration = 0):
+        """Calculate the spill due to the dredging activity
+        
+        density = the density of the dredged material
+        fines   = the percentage of fines in the dredged material
+        volume  = the dredged volume
+        dredging_duration = duration of the dredging event
+        overflow_duration = duration of the dredging event whilst overflowing
+        
+        m_t = total mass of dredged fines per cycle
+        m_d = total mass of spilled fines during one dredging event
+        m_h = total mass of dredged fines that enter the hopper
+        
+        m_o  = total mass of fine material that leaves the hopper during overflow
+        m_op = total mass of fines that are released during overflow that end in dredging plume
+        m_r  = total mass of fines that remain within the hopper"""
+
+        m_t = density * fines * volume
+        m_d = processor.sigma_d * m_t
+        m_h = m_t - m_d
+        
+        m_o = (overflow_duration / dredging_duration) * (1 - mover.f_sett) * (1 - mover.f_trap) * m_h
+        m_op = mover.sigma_o * m_o
+        mover.m_r = m_h - m_o
+
+        if isinstance(self, Log):
+            self.log_entry("fines released", self.env.now, m_d + m_op)
+
+        return m_d + m_op
+
+    def spillPlacement(self, processor, mover):
+        """Calculate the spill due to the placement activity"""
+        if isinstance(self, Log):
+            self.log_entry("fines released", self.env.now, mover.m_r * processor.sigma_p)
+
+        return mover.m_r * processor.sigma_p
+
+
+class HasSoil:
+    """ Add soil properties to an object
+
+    density = density of the dredged material
+    fines = fraction of total that is fine material
+    """
+
+    def __init__(self, density, fines, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.density = density
+        self.fines = fines
+
 
 class Movable(SimpyObject, Locatable):
     """Movable class
@@ -230,6 +309,7 @@ class Processor(SimpyObject):
 
         origin.container.get(amount)
         destination.container.put(amount)
+
         yield self.env.timeout(amount / self.rate)
 
         origin.log_entry('unloading stop', self.env.now, origin.container.level)
