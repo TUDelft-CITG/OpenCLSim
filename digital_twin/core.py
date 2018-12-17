@@ -72,10 +72,10 @@ class HasFuel(SimpyObject):
     fuel_capacity: amount of fuel that the container can hold
     fuel_level: amount the container holds initially
     fuel_container: a simpy object that can hold stuff
-    refuel_method: method of refueling (bunker or returning to quay)
+    refuel_method: method of refueling (bunker or returning to quay) or ignore for not tracking
     """
 
-    def __init__(self, fuel_capacity, fuel_level=0, refuel_method="bunker", *args, **kwargs):
+    def __init__(self, fuel_capacity, fuel_level=0, refuel_method="ignore", *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.fuel_container = simpy.Container(self.env, fuel_capacity, init=fuel_level)
@@ -91,9 +91,13 @@ class HasFuel(SimpyObject):
         """fill 'er up"""
 
         amount = self.fuel_container.capacity - self.fuel_container.level
-        self.fuel_container.put(amount)
-        
-        return amount / fuel_delivery_rate
+        if 0 < amount:
+            self.fuel_container.put(amount)
+
+        if self.refuel_method == "ignore":
+            return 0
+        else:
+            return amount / fuel_delivery_rate
 
 
 class Movable(SimpyObject, Locatable):
@@ -120,16 +124,19 @@ class Movable(SimpyObject, Locatable):
 
         # check for sufficient fuel
         if isinstance(self, HasFuel):
-            if self.fuel_container.level < (distance / speed):
+            if self.fuel_container.level < (distance / speed  / 100):
 
                 latest_log = [self.log[-1], self.t[-1], self.value[-1]]
                 del self.log[-1], self.t[-1], self.value[-1]
 
-                self.log_entry("fuel loading start", self.env.now, self.fuel_container.level)
-                yield self.env.timeout(self.fill())
-                self.log_entry("fuel loading stop", self.env.now, self.fuel_container.level)
+                refuel_duration = self.fill()
 
-                self.log_entry(latest_log[0], latest_log[1], latest_log[2])
+                if refuel_duration != 0:
+                    self.log_entry("fuel loading start", self.env.now, self.fuel_container.level)
+                    yield self.env.timeout(refuel_duration)
+                    self.log_entry("fuel loading stop", self.env.now, self.fuel_container.level)
+
+                self.log_entry(latest_log[0], self.env.now, latest_log[2])
 
         yield self.env.timeout(distance / speed)
         self.geometry = dest
@@ -140,7 +147,7 @@ class Movable(SimpyObject, Locatable):
         # lower the fuel
         if isinstance(self, HasFuel):
             # remove seconds of fuel
-            self.consume(distance / speed)
+            self.consume(distance / speed / 100)
 
     def is_at(self, locatable, tolerance=100):
         current_location = shapely.geometry.asShape(self.geometry)
@@ -245,12 +252,15 @@ class Processor(SimpyObject):
 
         # check for sufficient fuel
         if isinstance(self, HasFuel):
-            fuel_consumed = (amount / self.rate)*(0.1*self.container.capacity)/3600
+            fuel_consumed = (amount / self.rate)*(0.1*destination.container.capacity)/3600
 
             if self.fuel_container.level < fuel_consumed:
-                self.log_entry("fuel loading start", self.env.now, self.fuel_container.level)
-                yield self.env.timeout(self.fill())
-                self.log_entry("fuel loading stop", self.env.now, self.fuel_container.level)
+                refuel_duration = self.fill()
+
+                if refuel_duration != 0:
+                    self.log_entry("fuel loading start", self.env.now, self.fuel_container.level)
+                    yield self.env.timeout(refuel_duration)
+                    self.log_entry("fuel loading stop", self.env.now, self.fuel_container.level)
 
         origin.log_entry('unloading start', self.env.now, origin.container.level)
         destination.log_entry('loading start', self.env.now, destination.container.level)
