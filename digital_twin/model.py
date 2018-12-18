@@ -221,6 +221,25 @@ class Activity(core.Identifiable, core.Log):
             with processor.resource.request() as my_processor_turn:
                 yield my_processor_turn
 
+                # Before processing can start, check the conditions
+                if self.origin == origin and isinstance(self.origin, core.HasSpillCondition):
+                    # In this case "destination" is the "mover"
+                    tolerance, waiting = self.origin.check_conditions()
+
+                    if tolerance < (processor.sigma_d * origin.density * origin.fines * amount):
+                        destination.log_entry('waiting for spill start', self.env.now, 0)
+                        yield self.env.timeout(waiting - self.env.now)
+                        destination.log_entry('waiting for spill stop', self.env.now, 0)
+
+                elif  isinstance(self.destination, core.HasSpillCondition):
+                    # In this case "origin" is the "mover"
+                    tolerance, waiting = destination.check_conditions()
+
+                    if tolerance < (origin.m_r * processor.sigma_p):
+                        origin.log_entry('waiting for spill start', self.env.now, 0)
+                        yield self.env.timeout(waiting - self.env.now)
+                        origin.log_entry('waiting for spill stop', self.env.now, 0)
+
                 processor.log_entry('processing start', self.env.now, amount)
                 yield from processor.process(origin, destination, amount,
                                              origin_resource_request=origin_resource_request,
@@ -229,11 +248,21 @@ class Activity(core.Identifiable, core.Log):
                 processor.log_entry('processing stop', self.env.now, amount)
 
                 if self.origin == origin:
-                    # In this case destination is the mover
-                    origin.spillDredging(processor, destination, origin.density, origin.fines, amount, (self.env.now - processor.t[-2]))
+                    # In this case "destination" is the "mover"
+                    spill = origin.spillDredging(processor, destination, origin.density, origin.fines, amount, (self.env.now - processor.t[-2]))
+                
+                    if spill > 0 and isinstance(origin, core.HasSpillCondition):
+                        for condition in origin.SpillConditions["Spill limit"]:
+                            condition.put(spill)
+
                 else:
-                    # In this case origin is the mover
-                    destination.spillPlacement(processor, origin)
+                    # In this case "origin" is the "mover"
+                    spill = destination.spillPlacement(processor, origin)
+                
+                    if spill > 0 and isinstance(destination, core.HasSpillCondition):
+                        for condition in destination.SpillConditions["Spill limit"]:
+                            condition.put(spill)
+                    
 
         print('Processed {}:'.format(amount))
         print('  from:        ' + origin.name + ' contains: ' + str(origin.container.level))

@@ -15,6 +15,12 @@ import simpy
 import pyproj
 import shapely.geometry
 
+# additional packages
+import math
+import datetime
+import numpy as np
+import pandas as pd
+
 logger = logging.getLogger(__name__)
 
 
@@ -111,6 +117,64 @@ class HasPlume(SimpyObject):
         self.f_sett = f_sett
         self.f_trap = f_trap
 
+
+class HasSpillCondition(SimpyObject):
+    """Condition to stop dredging if certain spill limits are exceeded
+
+    limit = limit of kilograms spilled material
+    start = start of the condition
+    end   = end of the condition 
+    """
+
+    def __init__(self, conditions, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        limits = []
+        starts = []
+        ends = []
+
+        if type(conditions) == list:
+            for condition in conditions:
+                limits.append(simpy.Container(self.env, capacity = condition.spill_limit))
+                starts.append((condition.start - datetime.datetime(1970, 1, 1)).total_seconds())
+                ends.append((condition.end - datetime.datetime(1970, 1, 1)).total_seconds())
+        else:
+            limits.append(simpy.Container(self.env, capacity = conditions.spill_limit))
+            starts.append((conditions.start - datetime.datetime(1970, 1, 1)).total_seconds())
+            ends.append((conditions.end - datetime.datetime(1970, 1, 1)).total_seconds())
+            
+        self.SpillConditions = pd.DataFrame.from_dict({"Spill limit": limits,
+                                                       "Criterion start": starts,
+                                                       "Criterion end": ends})
+    
+    def check_conditions(self):
+        tolerance = math.inf
+        waiting = 0
+
+        for i in self.SpillConditions.index:
+            if self.SpillConditions["Criterion start"][i] <= self.env.now and self.env.now <= self.SpillConditions["Criterion end"][i]:
+                tolerance = self.SpillConditions["Spill limit"][i].capacity - self.SpillConditions["Spill limit"][i].level
+                waiting = self.SpillConditions["Criterion end"][i]
+        
+        return tolerance, waiting
+
+
+class SpillCondition():
+    """Condition to stop dredging if certain spill limits are exceeded
+
+    limit = limit of kilograms spilled material
+    start = start of the condition
+    end   = end of the condition 
+    """
+
+    def __init__(self, spill_limit, start, end, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.spill_limit = spill_limit
+        self.start = start
+        self.end = end
+
+
 class HasSpill(SimpyObject):
     """Using relations from Becker [2014], https://www.sciencedirect.com/science/article/pii/S0301479714005143."""
 
@@ -159,13 +223,15 @@ class HasSpill(SimpyObject):
 class HasSoil:
     """ Add soil properties to an object
 
+    material = name of the dredged material
     density = density of the dredged material
     fines = fraction of total that is fine material
     """
 
-    def __init__(self, density, fines, *args, **kwargs):
+    def __init__(self, material, density, fines, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
+        self.material = material
         self.density = density
         self.fines = fines
 
