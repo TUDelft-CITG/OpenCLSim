@@ -75,9 +75,10 @@ class HasFuel(SimpyObject):
     refuel_method: method of refueling (bunker or returning to quay) or ignore for not tracking
     """
 
-    def __init__(self, fuel_capacity, fuel_level=0, refuel_method="ignore", *args, **kwargs):
+    def __init__(self, fuel_use, fuel_capacity, fuel_level=0, refuel_method="ignore", *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
+        self.fuel_use = fuel_use
         self.fuel_container = simpy.Container(self.env, fuel_capacity, init=fuel_level)
         self.refuel_method = refuel_method
 
@@ -252,10 +253,7 @@ class Processor(SimpyObject):
 
         # check for sufficient fuel
         if isinstance(self, HasFuel):
-            if self.container == origin.container:
-                fuel_consumed = (amount / self.rate)*(0.1*self.container.capacity)/3600
-            else:
-                fuel_consumed = (amount / self.rate)*(0.1*destination.capacity)/3600
+            fuel_consumed = (amount / self.rate) * (self.fuel_use * amount)/3600
 
             if self.fuel_container.level < fuel_consumed:
                 refuel_duration = self.fill()
