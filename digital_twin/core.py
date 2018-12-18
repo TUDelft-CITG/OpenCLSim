@@ -252,7 +252,10 @@ class Processor(SimpyObject):
 
         # check for sufficient fuel
         if isinstance(self, HasFuel):
-            fuel_consumed = (amount / self.rate)*(0.1*self.container.capacity)/3600
+            if self.container == origin.container:
+                fuel_consumed = (amount / self.rate)*(0.1*self.container.capacity)/3600
+            else:
+                fuel_consumed = (amount / self.rate)*(0.1*destination.capacity)/3600
 
             if self.fuel_container.level < fuel_consumed:
                 refuel_duration = self.fill()
