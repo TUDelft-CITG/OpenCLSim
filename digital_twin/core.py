@@ -68,7 +68,12 @@ class HasContainer(SimpyObject):
 
 
 class HasFuel(SimpyObject):
-    """
+    """HasFuel class
+
+    fuel_use_loading: function that specifies the fuel use during loading activity
+    fuel_use_unloading: function that specifies the fuel use during unloading activity
+    fuel_use_sailing: function that specifies the fuel use during sailing activity
+
     fuel_capacity: amount of fuel that the container can hold
     fuel_level: amount the container holds initially
     fuel_container: a simpy object that can hold stuff
@@ -257,6 +262,9 @@ class Processor(SimpyObject):
         yield my_origin_turn
         yield my_dest_turn
 
+        #######################################
+        ############### THIS SHOULD BE IMPROVED
+
         # check fuel from origin
         if isinstance(origin, HasFuel):
             fuel_consumed_origin = origin.fuel_use_unloading(amount)
@@ -267,14 +275,14 @@ class Processor(SimpyObject):
             fuel_consumed_destination = destination.fuel_use_unloading(amount)
             destination.check_fuel(fuel_consumed_destination)
         
-        # check fuel from processor if not origin or destination  -- case of backhoe with barges
+        # check fuel from processor if not origin or destination  -- case if processor != mover
         if self.id != origin.id and self.id != destination.id and isinstance(self, HasFuel):
-            # if origin is moveable -- unloading
+            # if origin is moveable -- e.g. unloading a barge with a crane
             if isinstance(origin, Movable):
                 fuel_consumed = self.fuel_use_unloading(amount)
                 self.check_fuel(fuel_consumed)
             
-            # if destinaion is moveable -- loading
+            # if destinaion is moveable -- e.g. loading a barge with a backhoe
             if isinstance(destination, Movable):
                 fuel_consumed = self.fuel_use_loading(amount)
                 self.check_fuel(fuel_consumed)
@@ -283,6 +291,9 @@ class Processor(SimpyObject):
             else:
                 fuel_consumed = max(self.fuel_use_unloading(amount), self.fuel_use_loading(amount))
                 self.check_fuel(fuel_consumed)
+        
+        ############### THIS SHOULD BE IMPROVED
+        #######################################
                 
         origin.log_entry('unloading start', self.env.now, origin.container.level)
         destination.log_entry('loading start', self.env.now, destination.container.level)
