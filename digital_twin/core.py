@@ -18,6 +18,7 @@ import shapely.geometry
 # additional packages
 import math
 import datetime
+import copy
 import numpy as np
 import pandas as pd
 
@@ -99,7 +100,7 @@ class HasFuel(SimpyObject):
 class HasPlume(SimpyObject):
     """Using values from Becker [2014], https://www.sciencedirect.com/science/article/pii/S0301479714005143.
 
-    The values are slightly modified, there is nog differences in dragead / bucket drip / cutterhead within this class
+    The values are slightly modified, there is no differences in dragead / bucket drip / cutterhead within this class
     sigma_d = source term fraction due to dredging
     sigma_o = source term fraction due to overflow
     sigma_p = source term fraction due to placement
@@ -220,21 +221,166 @@ class HasSpill(SimpyObject):
         return mover.m_r * processor.sigma_p
 
 
-class HasSoil:
-    """ Add soil properties to an object
+class SoilLayer:
+    """ Create a soillayer
 
+    layer = layer number, 0 to n, with 0 the layer at the surface
     material = name of the dredged material
     density = density of the dredged material
     fines = fraction of total that is fine material
     """
 
-    def __init__(self, material, density, fines, *args, **kwargs):
+    def __init__(self, layer, volume, material, density, fines, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
+        self.layer = layer
+        self.volume = volume
         self.material = material
         self.density = density
         self.fines = fines
 
+
+class HasSoil:
+    """ Add soil properties to an object
+
+    soil = list of SoilLayer objects
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+
+        self.soil = {}
+    
+    def add_layer(self, soillayer):
+        """Add a layer based on a SoilLayer object."""
+        for key in self.soil:
+            if key == "Layer {:04d}".format(soillayer.layer):
+                print("Soil layer named **Layer {:04d}** already exists".format(soillayer.layer))
+
+        # Add soillayer to self
+        self.soil["Layer {:04d}".format(soillayer.layer)] = {"Layer": soillayer.layer,
+                                                              "Volume": soillayer.volume,
+                                                              "Material": soillayer.material,
+                                                              "Density": soillayer.density,
+                                                              "Fines": soillayer.fines}
+
+        # Make sure that self.soil is always a sorted dict based on layernumber
+        soil = copy.deepcopy(self.soil)
+        self.soil = {}
+
+        for key in sorted(soil):
+            self.soil[key] = soil[key]
+    
+    def add_layers(self, soillayers):
+        """Add a list layers based on a SoilLayer object."""
+        for layer in soillayers:
+            self.add_layer(layer)
+    
+    def total_volume(self):
+        """Determine the total volume of soil."""
+        total_volume = 0
+
+        for layer in self.soil:
+            total_volume += self.soil[layer]["Volume"]
+        
+        return total_volume
+    
+    def weighted_average(self, layers, volumes):
+        """Create a new SoilLayer object based on the weighted average parameters of extracted layers.
+        
+        len(layers) should be len(volumes)"""
+        densities = []
+        fines = []
+        name = "Mixture of: "
+    
+        for i, layer in enumerate(layers):
+            if 0 < volumes[i]:
+                densities.append(self.soil[layer]["Density"])
+                fines.append(self.soil[layer]["Fines"])
+                name += (self.soil[layer]["Material"] + ", ")
+            else:
+                densities.append(0)
+                fines.append(0)
+        
+        return SoilLayer(0, sum(volumes), name.rstrip(", "), np.average(np.asarray(densities), weights = np.asarray(volumes)), 
+                                                             np.average(np.asarray(fines), weights = np.asarray(volumes)))
+    
+    def get_soil(self, volume):
+        """Remove soil from self."""
+
+        # If soil is a mover, the mover should be initialized with an empty soil dict after emptying
+        if isinstance(self, Movable) and volume == self.container.level:
+            removed_soil = list(self.soil.items())[0]
+            self.soil = {}
+
+            return SoilLayer(0,
+                             removed_soil[1]["Volume"],
+                             removed_soil[1]["Material"],
+                             removed_soil[1]["Density"],
+                             removed_soil[1]["Fines"])
+
+        # In all other cases the soil dict should remain, with updated values
+        else:
+            removed_volume = 0
+            layers = []
+            volumes = []
+            
+            for layer in sorted(self.soil):
+                if (volume - removed_volume) <= self.soil[layer]["Volume"]:
+                    layers.append(layer)
+                    volumes.append(volume - removed_volume)
+                    
+                    self.soil[layer]["Volume"] -= (volume - removed_volume)
+                    break
+                
+                else:
+                    removed_volume += self.soil[layer]["Volume"]
+                    layers.append(layer)
+                    volumes.append(self.soil[layer]["Volume"])
+
+                    self.soil[layer]["Volume"] = 0
+
+            return self.weighted_average(layers, volumes)
+    
+    def put_soil(self, soillayer):
+        """Add soil to self.
+        
+        Add a layer based on a SoilLayer object."""
+        # If already soil available
+        if self.soil:
+            # Can be moveable --> mix
+            if isinstance(self, Movable):
+                pass
+
+            # Can be site --> add layer or add volume
+            else:
+                top_layer = list(sorted(self.soil.keys()))[0]
+            
+                # If toplayer material is similar to added material --> add volume
+                if (self.soil[top_layer]["Material"] == soillayer.material and \
+                    self.soil[top_layer]["Density"] == soillayer.density and \
+                    self.soil[top_layer]["Fines"] == soillayer.fines):
+
+                    self.soil[top_layer]["Volume"] += soillayer.volume
+                
+                # If not --> add layer
+                else:
+                    layers = copy.deepcopy(self.soil)
+                    self.soil = {}
+                    self.add_layer(soillayer)
+
+                    for key in sorted(layers):
+                        layers[key]["Layer"] += 1
+                        self.add_layer(SoilLayer(layers[key]["Layer"], 
+                                                 layers[key]["Volume"], 
+                                                 layers[key]["Material"], 
+                                                 layers[key]["Density"], 
+                                                 layers[key]["Fines"]))
+
+        # If no soil yet available, add layer
+        else:
+            self.add_layer(soillayer)
 
 class Movable(SimpyObject, Locatable):
     """Movable class
@@ -380,6 +526,11 @@ class Processor(SimpyObject):
 
         origin.log_entry('unloading stop', self.env.now, origin.container.level)
         destination.log_entry('loading stop', self.env.now, destination.container.level)
+
+        # Move soil from origin to destination
+        if isinstance(origin, HasSoil) and isinstance(destination, HasSoil):
+            soil = origin.get_soil(amount)
+            destination.put_soil(soil)
 
         logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
 
