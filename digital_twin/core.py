@@ -381,6 +381,28 @@ class HasSoil:
         # If no soil yet available, add layer
         else:
             self.add_layer(soillayer)
+    
+    def get_properties(self, amount):
+        """Get the soil properties for a certain amount"""
+        volumes = []
+        layers = []
+        volume = 0
+
+        for layer in sorted(self.soil):
+            print(self.soil[layer]["Volume"])
+
+            if (amount - volume) <= self.soil[layer]["Volume"]:
+                volumes.append(amount - volume)
+                layers.append(layer)
+                break
+            else:
+                volumes.append(self.soil[layer]["Volume"])
+                layers.append(layer)
+                volume += self.soil[layer]["Volume"]
+
+        properties = self.weighted_average(layers, volumes)
+
+        return properties.density, properties.fines
 
 class Movable(SimpyObject, Locatable):
     """Movable class
@@ -519,6 +541,11 @@ class Processor(SimpyObject):
         origin.log_entry('unloading start', self.env.now, origin.container.level)
         destination.log_entry('loading start', self.env.now, destination.container.level)
 
+        # Move soil from origin to destination
+        if isinstance(origin, HasSoil) and isinstance(destination, HasSoil):
+            soil = origin.get_soil(amount)
+            destination.put_soil(soil)
+
         origin.container.get(amount)
         destination.container.put(amount)
 
@@ -526,11 +553,6 @@ class Processor(SimpyObject):
 
         origin.log_entry('unloading stop', self.env.now, origin.container.level)
         destination.log_entry('loading stop', self.env.now, destination.container.level)
-
-        # Move soil from origin to destination
-        if isinstance(origin, HasSoil) and isinstance(destination, HasSoil):
-            soil = origin.get_soil(amount)
-            destination.put_soil(soil)
 
         logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
 

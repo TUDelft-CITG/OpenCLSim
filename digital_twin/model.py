@@ -222,11 +222,13 @@ class Activity(core.Identifiable, core.Log):
                 yield my_processor_turn
 
                 # Before processing can start, check the conditions
-                if self.origin == origin and isinstance(self.origin, core.HasSpillCondition):
+                if self.origin == origin and isinstance(self.origin, core.HasSpillCondition) and isinstance(self.origin, core.HasSoil):
                     # In this case "destination" is the "mover"
                     tolerance, waiting = self.origin.check_conditions()
 
-                    if tolerance < (processor.sigma_d * origin.density * origin.fines * amount):
+                    density, fines = origin.get_properties(amount)
+
+                    if tolerance < (processor.sigma_d * density * fines * amount):
                         destination.log_entry('waiting for spill start', self.env.now, 0)
                         yield self.env.timeout(waiting - self.env.now)
                         destination.log_entry('waiting for spill stop', self.env.now, 0)
@@ -249,7 +251,7 @@ class Activity(core.Identifiable, core.Log):
 
                 if self.origin == origin:
                     # In this case "destination" is the "mover"
-                    spill = origin.spillDredging(processor, destination, origin.density, origin.fines, amount, (self.env.now - processor.t[-2]))
+                    spill = origin.spillDredging(processor, destination, density, fines, amount, (self.env.now - processor.t[-2]))
                 
                     if spill > 0 and isinstance(origin, core.HasSpillCondition):
                         for condition in origin.SpillConditions["Spill limit"]:
