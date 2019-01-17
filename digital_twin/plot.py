@@ -1,6 +1,16 @@
 import pandas as pd
+import datetime
+
+# plotting libraries
 from plotly.offline import init_notebook_mode, iplot
 import plotly.graph_objs as go
+
+# spatial libraries 
+import pyproj
+import shapely.geometry
+from simplekml import Kml, Style
+
+import networkx as nx
 
 def vessel_planning(vessels, activities, colors, web=False):
         """create a plot of the planning of vessels"""
@@ -68,3 +78,90 @@ def vessel_planning(vessels, activities, colors, web=False):
         init_notebook_mode(connected=True)        
         fig = go.Figure(data=traces, layout=layout)
         return iplot(fig, filename='news-source')
+
+def vessel_kml(env, vessels, 
+               fname='vessel_movements.kml',
+               icon='http://maps.google.com/mapfiles/kml/shapes/donut.png',
+               size=1,
+               scale=1):
+        """Create a kml visualisation of vessels. Env variable needs to contain 
+        epoch to enable conversion of simulation time to real time. Vessels need
+        logs that contain geometries in lat, lon as a function of time."""
+ 
+        # create a kml file containing the visualisation
+        kml = Kml()
+        fol = kml.newfolder(name="Vessels")
+
+        shared_style = Style()
+        shared_style.labelstyle.color = 'ffffffff'  # White
+        shared_style.labelstyle.scale = size  
+        shared_style.iconstyle.color = 'ffff0000'  # Blue
+        shared_style.iconstyle.scale = scale
+        shared_style.iconstyle.icon.href = icon
+
+        # each timestep will be represented as a single point
+        for vessel in vessels:
+            for log_index, value in enumerate(vessel.log["Geometry"][:-1]):
+                
+                begin = env.epoch + datetime.timedelta(seconds=vessel.log["Timestamp"][log_index])
+                end = env.epoch + datetime.timedelta(seconds=vessel.log["Timestamp"][log_index + 1])
+                
+                pnt = fol.newpoint(name=vessel.name, coords=[(vessel.log["Geometry"][log_index].x, vessel.log["Geometry"][log_index].y)])
+                pnt.timespan.begin = begin.isoformat()
+                pnt.timespan.end = end.isoformat()
+                pnt.style = shared_style
+
+            # include last point as well
+            begin = env.epoch + datetime.timedelta(seconds=vessel.log["Timestamp"][log_index + 1])
+            end = env.epoch + datetime.timedelta(seconds=vessel.log["Timestamp"][log_index + 1])
+           
+            pnt = fol.newpoint(name=vessel.name, coords=[(vessel.log["Geometry"][log_index + 1].x, vessel.log["Geometry"][log_index + 1].y)])
+            pnt.timespan.begin = begin.isoformat()
+            pnt.timespan.end = end.isoformat()
+            pnt.style = shared_style
+                
+        kml.save(fname)
+
+def graph_kml(env, 
+              fname='graph.kml',
+              icon='http://maps.google.com/mapfiles/kml/shapes/donut.png',
+              size=0.5,
+              scale=0.5,
+              width=5):
+        """Create a kml visualisation of graph. Env variable needs to contain 
+        graph."""
+ 
+        # create a kml file containing the visualisation
+        kml = Kml()
+        fol = kml.newfolder(name="Vessels")
+
+        shared_style = Style()
+        shared_style.labelstyle.color = 'ffffffff'  # White
+        shared_style.labelstyle.scale = size  
+        shared_style.iconstyle.color = 'ffffffff'  # White
+        shared_style.iconstyle.scale = scale
+        shared_style.iconstyle.icon.href = icon
+        shared_style.linestyle.color = 'ff0055ff'  # Red
+        shared_style.linestyle.width = width
+
+        nodes = list(env.FG.nodes)
+        
+        # each timestep will be represented as a single point
+        for log_index, value in enumerate(list(env.FG.nodes)[0:-1-1]):
+
+            pnt = fol.newpoint(name='', 
+                               coords=[(nx.get_node_attributes(env.FG, "Geometry")[nodes[log_index]].x,
+                                        nx.get_node_attributes(env.FG, "Geometry")[nodes[log_index]].y)])
+            pnt.style = shared_style
+
+        edges = list(env.FG.edges)
+        for log_index, value in enumerate(list(env.FG.edges)[0:-1-1]):
+
+            lne = fol.newlinestring(name='',
+                                    coords = [(nx.get_node_attributes(env.FG, "Geometry")[edges[log_index][0]].x,
+                                               nx.get_node_attributes(env.FG, "Geometry")[edges[log_index][0]].y),
+                                              (nx.get_node_attributes(env.FG, "Geometry")[edges[log_index][1]].x,
+                                               nx.get_node_attributes(env.FG, "Geometry")[edges[log_index][1]].y)])
+            lne.style = shared_style
+                
+        kml.save(fname)

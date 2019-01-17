@@ -93,7 +93,7 @@ class HasFuel(SimpyObject):
     def consume(self, amount):
         """consume an amount of fuel"""
         
-        self.log_entry("fuel consumed", self.env.now, amount)
+        self.log_entry("fuel consumed", self.env.now, amount, self.geometry)
         self.fuel_container.get(amount)
 
     def fill(self, fuel_delivery_rate=1):
@@ -116,9 +116,9 @@ class HasFuel(SimpyObject):
             refuel_duration = self.fill()
 
             if refuel_duration != 0:
-                self.log_entry("fuel loading start", self.env.now, self.fuel_container.level)
+                self.log_entry("fuel loading start", self.env.now, self.fuel_container.level, self.geometry)
                 yield self.env.timeout(refuel_duration)
-                self.log_entry("fuel loading stop", self.env.now, self.fuel_container.level)
+                self.log_entry("fuel loading stop", self.env.now, self.fuel_container.level, self.geometry)
 
             #self.log_entry(latest_log[0], self.env.now, latest_log[2])
 
@@ -208,25 +208,28 @@ class Log(SimpyObject):
 
     log: log message [format: 'start activity' or 'stop activity']
     t: timestamp
-    value: a value can be logged as well"""
+    value: a value can be logged as well
+    geometry: value from locatable (lat, lon)"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.log = []
-        self.t = []
-        self.value = []
+        self.log = {"Message": [],
+                    "Timestamp": [],
+                    "Value": [],
+                    "Geometry": []}
 
-    def log_entry(self, log, t, value):
+    def log_entry(self, log, t, value, geometry_log):
         """Log"""
-        self.log.append(log)
-        self.t.append(t)
-        self.value.append(value)
+        self.log["Message"].append(log)
+        self.log["Timestamp"].append(t)
+        self.log["Value"].append(value)
+        self.log["Geometry"].append(geometry_log)
 
     def get_log_as_json(self):
         json = []
-        for msg, t, value in zip(self.log, self.t, self.value):
-            json.append(dict(message=msg, time=t, value=value))
+        for msg, t, value, geometry_log in zip(self.log["Message"], self.log["Timestamp"], self.log["Value"], self.log["Geometry"]):
+            json.append(dict(message=msg, time=t, value=value, geometry_log=geometry_log))
         return json
 
 
@@ -267,36 +270,36 @@ class Processor(SimpyObject):
 
         # check fuel from origin
         if isinstance(origin, HasFuel):
-            fuel_consumed_origin = origin.fuel_use_unloading(amount)
+            fuel_consumed_origin = origin.fuel_use_unloading(amount, self.rate)
             origin.check_fuel(fuel_consumed_origin)
 
         # check fuel from destination
         if isinstance(destination, HasFuel):
-            fuel_consumed_destination = destination.fuel_use_unloading(amount)
+            fuel_consumed_destination = destination.fuel_use_unloading(amount, self.rate)
             destination.check_fuel(fuel_consumed_destination)
         
         # check fuel from processor if not origin or destination  -- case if processor != mover
         if self.id != origin.id and self.id != destination.id and isinstance(self, HasFuel):
             # if origin is moveable -- e.g. unloading a barge with a crane
             if isinstance(origin, Movable):
-                fuel_consumed = self.fuel_use_unloading(amount)
+                fuel_consumed = self.fuel_use_unloading(amount, self.rate)
                 self.check_fuel(fuel_consumed)
             
             # if destinaion is moveable -- e.g. loading a barge with a backhoe
             if isinstance(destination, Movable):
-                fuel_consumed = self.fuel_use_loading(amount)
+                fuel_consumed = self.fuel_use_loading(amount, self.rate)
                 self.check_fuel(fuel_consumed)
 
             # third option -- from moveable to moveable -- take highest fuel consumption
             else:
-                fuel_consumed = max(self.fuel_use_unloading(amount), self.fuel_use_loading(amount))
+                fuel_consumed = max(self.fuel_use_unloading(amount, self.rate), self.fuel_use_loading(amount, self.rate))
                 self.check_fuel(fuel_consumed)
         
         ############### THIS SHOULD BE IMPROVED
         #######################################
                 
-        origin.log_entry('unloading start', self.env.now, origin.container.level)
-        destination.log_entry('loading start', self.env.now, destination.container.level)
+        origin.log_entry('unloading start', self.env.now, origin.container.level, self.geometry)
+        destination.log_entry('loading start', self.env.now, destination.container.level, self.geometry)
 
         origin.container.get(amount)
         destination.container.put(amount)
@@ -312,8 +315,8 @@ class Processor(SimpyObject):
         if self.id != origin.id and self.id != destination.id and isinstance(self, HasFuel):
             self.consume(fuel_consumed)
 
-        origin.log_entry('unloading stop', self.env.now, origin.container.level)
-        destination.log_entry('loading stop', self.env.now, destination.container.level)
+        origin.log_entry('unloading stop', self.env.now, origin.container.level, self.geometry)
+        destination.log_entry('loading stop', self.env.now, destination.container.level, self.geometry)
 
         logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
 
