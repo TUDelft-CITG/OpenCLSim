@@ -5,6 +5,7 @@ import datetime
 # plotting libraries
 from plotly.offline import init_notebook_mode, iplot
 import plotly.graph_objs as go
+import matplotlib.pyplot as plt
 
 # spatial libraries 
 import pyproj
@@ -187,3 +188,41 @@ def graph_kml(env,
             lne.style = shared_style
                 
         kml.save(fname)
+
+def energy_use(vessel):
+    fuel_consumption_dredging = 0         # concumption between loading start and loading stop
+    fuel_consumption_sailing_full = 0     # concumption between sailing full start and sailing full stop
+    fuel_consumption_dumping = 0          # concumption between unloading  start and unloading  stop
+    fuel_consumption_sailing_empty = 0    # concumption between sailing empty start and sailing empty stop
+
+    for i in range(len(vessel.log["Message"])):
+        if vessel.log["Message"][i] == "loading start":
+            fuel_consumption_dredging += vessel.log["Value"][i + 1]
+
+        elif vessel.log["Message"][i] == "sailing full start":
+            fuel_consumption_sailing_full += vessel.log["Value"][i + 1]
+
+        elif vessel.log["Message"][i] == "unloading start":
+            fuel_consumption_dumping += vessel.log["Value"][i + 1]
+
+        elif vessel.log["Message"][i] == "sailing empty start":
+            fuel_consumption_sailing_empty += vessel.log["Value"][i + 1]
+    
+    fig1, ax1 = plt.subplots(figsize = [10, 10])
+
+    ax1.pie([fuel_consumption_dredging, 
+            fuel_consumption_sailing_full, 
+            fuel_consumption_dumping, 
+            fuel_consumption_sailing_empty],
+            labels = ["Dredging", "Sailing full", "Dumping", "Sailing empty"],
+            autopct = '%1.1f%%',
+            startangle = 90,
+            center = [5, 5],
+            radius = 3.5)
+
+    ax1.axis('equal')
+    ax1.set_ylim([0, 10])
+    ax1.set_xlim([0, 10])
+
+    plt.title("Energy use - {}".format(vessel.name))
+    plt.show()
