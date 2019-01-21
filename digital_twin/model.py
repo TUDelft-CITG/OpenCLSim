@@ -116,7 +116,7 @@ class Activity(core.Identifiable, core.Log):
                  origin, destination,
                  loader, mover, unloader,
                  start_condition=None, stop_condition=None, condition=None,
-                 print=False,
+                 show=False,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
@@ -132,7 +132,7 @@ class Activity(core.Identifiable, core.Log):
         self.mover = mover
         self.unloader = unloader
 
-        self.print = print
+        self.print = show
 
         self.installation_proc = self.env.process(
             self.process_control(self.start_condition, self.stop_condition, self.condition,
@@ -218,33 +218,12 @@ class Activity(core.Identifiable, core.Log):
                          origin_resource_request=None, destination_resource_request=None):
         if id(origin) == id(processor) and origin_resource_request is not None or \
                 id(destination) == id(processor) and destination_resource_request is not None:
-
+            
             yield from processor.process(origin, destination, amount, origin_resource_request=origin_resource_request,
                                          destination_resource_request=destination_resource_request)
         else:
             with processor.resource.request() as my_processor_turn:
                 yield my_processor_turn
-
-                # Before processing can start, check the conditions
-                if self.origin == origin and isinstance(self.origin, core.HasSpillCondition) and isinstance(self.origin, core.HasSoil):
-                    # In this case "destination" is the "mover"
-                    tolerance, waiting = self.origin.check_conditions()
-
-                    density, fines = origin.get_properties(amount)
-
-                    if tolerance < (processor.sigma_d * density * fines * amount):
-                        destination.log_entry('waiting for spill start', self.env.now, 0, destination.geometry)
-                        yield self.env.timeout(waiting - self.env.now)
-                        destination.log_entry('waiting for spill stop', self.env.now, 0, destination.geometry)
-
-                elif  isinstance(self.destination, core.HasSpillCondition):
-                    # In this case "origin" is the "mover"
-                    tolerance, waiting = destination.check_conditions()
-
-                    if tolerance < (origin.m_r * processor.sigma_p):
-                        origin.log_entry('waiting for spill start', self.env.now, 0, origin.geometry)
-                        yield self.env.timeout(waiting - self.env.now)
-                        origin.log_entry('waiting for spill stop', self.env.now, 0, origin.geometry)
 
                 processor.log_entry('processing start', self.env.now, amount, processor.geometry)
                 yield from processor.process(origin, destination, amount,
@@ -252,28 +231,12 @@ class Activity(core.Identifiable, core.Log):
                                              destination_resource_request=destination_resource_request)
                 
                 processor.log_entry('processing stop', self.env.now, amount, processor.geometry)
-
-                if self.origin == origin:
-                    # In this case "destination" is the "mover"
-                    spill = origin.spillDredging(processor, destination, density, fines, amount, (self.env.now - processor.t[-2]))
-                
-                    if spill > 0 and isinstance(origin, core.HasSpillCondition):
-                        for condition in origin.SpillConditions["Spill limit"]:
-                            condition.put(spill)
-
-                else:
-                    # In this case "origin" is the "mover"
-                    spill = destination.spillPlacement(processor, origin)
-                
-                    if spill > 0 and isinstance(destination, core.HasSpillCondition):
-                        for condition in destination.SpillConditions["Spill limit"]:
-                            condition.put(spill)
                     
-
-        print('Processed {}:'.format(amount))
-        print('  from:        ' + origin.name + ' contains: ' + str(origin.container.level))
-        print('  by:          ' + processor.name)
-        print('  to:          ' + destination.name + ' contains: ' + str(destination.container.level))
+        if self.print == True:
+            print('Processed {}:'.format(amount))
+            print('  from:        ' + origin.name + ' contains: ' + str(origin.container.level))
+            print('  by:          ' + processor.name)
+            print('  to:          ' + destination.name + ' contains: ' + str(destination.container.level))
 
     def __move_mover__(self, mover, origin, status):
         old_location = mover.geometry

@@ -17,7 +17,7 @@ import shapely.geometry
 
 # additional packages
 import math
-import datetime
+import datetime, time
 import copy
 import numpy as np
 import pandas as pd
@@ -150,6 +150,8 @@ class HasPlume(SimpyObject):
         self.f_sett = f_sett
         self.f_trap = f_trap
 
+        self.m_r = 0
+
 
 class HasSpillCondition(SimpyObject):
     """Condition to stop dredging if certain spill limits are exceeded
@@ -169,27 +171,38 @@ class HasSpillCondition(SimpyObject):
         if type(conditions) == list:
             for condition in conditions:
                 limits.append(simpy.Container(self.env, capacity = condition.spill_limit))
-                starts.append((condition.start - datetime.datetime(1970, 1, 1)).total_seconds())
-                ends.append((condition.end - datetime.datetime(1970, 1, 1)).total_seconds())
+                starts.append(time.mktime(condition.start.timetuple()))
+                ends.append(time.mktime(condition.end.timetuple()))
+
         else:
             limits.append(simpy.Container(self.env, capacity = conditions.spill_limit))
-            starts.append((conditions.start - datetime.datetime(1970, 1, 1)).total_seconds())
-            ends.append((conditions.end - datetime.datetime(1970, 1, 1)).total_seconds())
+            starts.append(time.mktime(conditions.start.timetuple()))
+            ends.append(time.mktime(conditions.end.timetuple()))
             
         self.SpillConditions = pd.DataFrame.from_dict({"Spill limit": limits,
                                                        "Criterion start": starts,
                                                        "Criterion end": ends})
     
-    def check_conditions(self):
+    def check_conditions(self, spill):
         tolerance = math.inf
         waiting = 0
 
         for i in self.SpillConditions.index:
+
             if self.SpillConditions["Criterion start"][i] <= self.env.now and self.env.now <= self.SpillConditions["Criterion end"][i]:
                 tolerance = self.SpillConditions["Spill limit"][i].capacity - self.SpillConditions["Spill limit"][i].level
-                waiting = self.SpillConditions["Criterion end"][i]
-        
-        return tolerance, waiting
+                
+                if tolerance < spill:
+                    waiting = self.SpillConditions["Criterion end"][i]
+
+                while i + 1 != len(self.SpillConditions.index) and tolerance < spill:                    
+                    if self.SpillConditions["Criterion end"][i] == self.SpillConditions["Criterion start"][i + 1]:
+                        tolerance = self.SpillConditions["Spill limit"][i + 1].capacity - self.SpillConditions["Spill limit"][i + 1].level
+                        waiting = self.SpillConditions["Criterion end"][i + 1]
+                    
+                    i += 1
+
+        return waiting
 
 
 class SpillCondition():
@@ -241,14 +254,14 @@ class HasSpill(SimpyObject):
         mover.m_r = m_h - m_o
 
         if isinstance(self, Log):
-            self.log_entry("fines released", self.env.now, m_d + m_op)
+            self.log_entry("fines released", self.env.now, m_d + m_op, self.geometry)
 
         return m_d + m_op
 
     def spillPlacement(self, processor, mover):
         """Calculate the spill due to the placement activity"""
         if isinstance(self, Log):
-            self.log_entry("fines released", self.env.now, mover.m_r * processor.sigma_p)
+            self.log_entry("fines released", self.env.now, mover.m_r * processor.sigma_p, self.geometry)
 
         return mover.m_r * processor.sigma_p
 
@@ -334,7 +347,7 @@ class HasSoil:
             else:
                 densities.append(0)
                 fines.append(0)
-        
+
         return SoilLayer(0, sum(volumes), name.rstrip(", "), np.average(np.asarray(densities), weights = np.asarray(volumes)), 
                                                              np.average(np.asarray(fines), weights = np.asarray(volumes)))
     
@@ -421,8 +434,6 @@ class HasSoil:
         volume = 0
 
         for layer in sorted(self.soil):
-            print(self.soil[layer]["Volume"])
-
             if (amount - volume) <= self.soil[layer]["Volume"]:
                 volumes.append(amount - volume)
                 layers.append(layer)
@@ -579,6 +590,7 @@ class Processor(SimpyObject):
         yield my_dest_turn
 
         #######################################
+        ############### ON FUEL USE
         ############### THIS SHOULD BE IMPROVED
 
         # check fuel from origin
@@ -598,7 +610,7 @@ class Processor(SimpyObject):
                 fuel_consumed = self.fuel_use_unloading(amount, self.rate)
                 self.check_fuel(fuel_consumed)
             
-            # if destinaion is moveable -- e.g. loading a barge with a backhoe
+            # if destination is moveable -- e.g. loading a barge with a backhoe
             if isinstance(destination, Movable):
                 fuel_consumed = self.fuel_use_loading(amount, self.rate)
                 self.check_fuel(fuel_consumed)
@@ -609,6 +621,17 @@ class Processor(SimpyObject):
                 self.check_fuel(fuel_consumed)
         
         ############### THIS SHOULD BE IMPROVED
+        ############### ON Fuel
+        #######################################
+
+
+        #######################################
+        ############### ON Spill
+        #######################################
+        yield from self.checkSpill(origin, destination, amount)
+
+        #######################################
+        ############### ON Weather
         #######################################
                 
         origin.log_entry('unloading start', self.env.now, origin.container.level, self.geometry)
@@ -618,6 +641,8 @@ class Processor(SimpyObject):
         if isinstance(origin, HasSoil) and isinstance(destination, HasSoil):
             soil = origin.get_soil(amount)
             destination.put_soil(soil)
+
+            self.addSpill(soil, origin, destination, amount, amount / self.rate)
 
         origin.container.get(amount)
         destination.container.put(amount)
@@ -643,6 +668,52 @@ class Processor(SimpyObject):
             origin.resource.release(my_origin_turn)
         if destination_resource_request is None:
             destination.resource.release(my_dest_turn)
+    
+    def checkFuel(self):
+        pass
+    
+    def checkSpill(self, origin, destination, amount):
+        # Before processing can start, check the conditions
+        if self.id != origin.id and isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+            # In this case "destination" is the "mover"
+            density, fines = origin.get_properties(amount)
+            spill = self.sigma_d * density * fines * amount
+
+            waiting = origin.check_conditions(spill)
+            
+            if 0 < waiting:
+                self.log_entry('waiting for spill start', self.env.now, 0, destination.geometry)
+                yield self.env.timeout(waiting - self.env.now)
+                self.log_entry('waiting for spill stop', self.env.now, 0, destination.geometry)
+
+        elif self.id != destination.id and isinstance(destination, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+            # In this case "origin" is the "mover"
+            spill = origin.m_r * self.sigma_p
+            waiting = destination.check_conditions(spill)
+            
+            if 0 < waiting:
+                self.log_entry('waiting for spill start', self.env.now, 0, origin.geometry)
+                yield self.env.timeout(waiting - self.env.now)
+                self.log_entry('waiting for spill stop', self.env.now, 0, origin.geometry)
+    
+    def addSpill(self, soil, origin, destination, amount, duration):
+        density, fines = soil.density, soil.fines
+            
+        if self.id == destination.id and isinstance(origin, HasSpillCondition):
+            # In this case "destination" is the "mover"
+            spill = origin.spillDredging(self, destination, density, fines, amount, duration)
+        
+            if spill > 0 and isinstance(origin, HasSpillCondition):
+                for condition in origin.SpillConditions["Spill limit"]:
+                    condition.put(spill)
+
+        elif self.id == origin.id and isinstance(destination, HasSpillCondition):
+            # In this case "origin" is the "mover"
+            spill = destination.spillPlacement(self, origin)
+        
+            if spill > 0 and isinstance(destination, HasSpillCondition):
+                for condition in destination.SpillConditions["Spill limit"]:
+                    condition.put(spill)
 
 
 class DictEncoder(json.JSONEncoder):

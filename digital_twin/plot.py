@@ -32,7 +32,7 @@ def vessel_planning(vessels, activities, colors, web=False):
         dataframes = []
         for vessel in vessels:
             df = pd.DataFrame(
-                {'log_value': vessel.value, 'log_string': vessel.log}, vessel.t)
+                {'log_value': vessel.log["Value"], 'log_string': vessel.log["Message"]}, vessel.log["Timestamp"])
             dataframes.append(df)
         df = dataframes[0]
 
@@ -67,7 +67,7 @@ def vessel_planning(vessels, activities, colors, web=False):
                     family='Courier New, monospace',
                     size=18,
                     color='#7f7f7f'),
-                range=[0, vessel.t[-1]]),
+                range=[0, vessel.log["Timestamp"][-1]]),
             yaxis=dict(
                 title='Vessels',
                 titlefont=dict(
