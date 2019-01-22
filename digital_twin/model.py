@@ -184,6 +184,15 @@ class Activity(core.Identifiable, core.Log):
             destination.container.capacity - destination.container.level,
             destination.container.capacity - destination.total_requested)
 
+        if isinstance(mover, core.HasDepthRestriction):
+            amount = min(amount, mover.filling * mover.container.capacity)
+
+            if not mover.depth_data:
+                if isinstance(origin, core.HasWeather):
+                    mover.calc_depth_restrictions(origin)
+                if isinstance(destination, core.HasWeather):
+                    mover.calc_depth_restrictions(destination)
+
         if amount > 0:
             # request access to the transport_resource
             origin.total_requested += amount
