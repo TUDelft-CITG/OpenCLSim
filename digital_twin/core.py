@@ -553,8 +553,8 @@ class HasDepthRestriction:
                     a = series.values
                     v = np.datetime64(time - location.timestep)
 
-                    location = np.searchsorted(a, v, side='right')
-                    next_window = series[location] - time
+                    index = np.searchsorted(a, v, side='right')
+                    next_window = series[index] - time
 
                     waiting = max(next_window, datetime.timedelta(0)).total_seconds()
 
@@ -703,7 +703,7 @@ class Log(SimpyObject):
     def log_entry(self, log, t, value, geometry_log):
         """Log"""
         self.log["Message"].append(log)
-        self.log["Timestamp"].append(t)
+        self.log["Timestamp"].append(datetime.datetime.fromtimestamp(t))
         self.log["Value"].append(value)
         self.log["Geometry"].append(geometry_log)
 
