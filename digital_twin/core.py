@@ -540,6 +540,7 @@ class HasDepthRestriction:
     def check_depth_restriction(self, location):
         fill_degree = self.container.level / self.container.capacity
         time = datetime.datetime.utcfromtimestamp(self.env.now)
+        waiting = 0
 
         for key in self.depth_data[location.name].keys():
             if fill_degree <= key:
@@ -572,7 +573,7 @@ class HasDepthRestriction:
 
         self.depth_data[location.name] = {}
 
-        for i in np.linspace(0, 1, 11):
+        for i in np.linspace(0.02, 1, 50):
             df = location.metocean_data.copy()
             
             draught = self.compute_draught(i)

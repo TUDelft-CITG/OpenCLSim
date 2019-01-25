@@ -203,6 +203,7 @@ class Activity(core.Identifiable, core.Log):
             # If not, try to optimize the load with regard to the tidal window
             else:
                 loads = []
+                amounts = []
                 time = datetime.datetime.utcfromtimestamp(self.env.now)
                 fill_degrees = mover.depth_data[destination.name].keys()
 
@@ -220,19 +221,22 @@ class Activity(core.Identifiable, core.Log):
                     series = mover.depth_data[destination.name][filling]["Series"]
                     
                     if len(series) != 0:
+                        loads.append(filling * mover.container.capacity)
                         a = series.values
                         v = np.datetime64(time + datetime.timedelta(seconds = duration) - destination.timestep)
 
                         index = np.searchsorted(a, v, side='right')
-                        next_window = series[index] - time
+                        next_window = series[index] - datetime.timedelta(seconds = duration) - time
 
                         waiting = max(next_window, datetime.timedelta(0)).total_seconds()
 
                         if waiting == 0:
-                            loads.append(filling * mover.container.capacity)
+                            amounts.append(filling * mover.container.capacity)
 
                 # Check if there is a better filling degree
-                if loads:
+                if amounts:
+                    amount = min(amount, max(amounts))
+                elif loads:
                     amount = min(amount, max(loads))
 
         if amount > 0:
