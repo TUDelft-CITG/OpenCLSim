@@ -547,7 +547,7 @@ class HasDepthRestriction:
                 series = self.depth_data[location.name][key]["Series"]
                 
                 if len(series) == 0:
-                    print("No actual allowable draught available - starting anyway")
+                    print("No actual allowable draught available - starting anyway.")
                     waiting = 0
                 
                 else:
@@ -559,6 +559,7 @@ class HasDepthRestriction:
                     try:
                         next_window = series[index] - time
                     except IndexError:
+                        print("Length weather data exceeded - continuing without weather.")
                         next_window = series[-1] - time
 
                     waiting = max(next_window, datetime.timedelta(0)).total_seconds()
@@ -577,7 +578,7 @@ class HasDepthRestriction:
 
         self.depth_data[location.name] = {}
 
-        for i in np.linspace(0.02, 1, 50):
+        for i in np.linspace(0.20, 1, 9):
             df = location.metocean_data.copy()
             
             draught = self.compute_draught(i)
