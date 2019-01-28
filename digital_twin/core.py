@@ -542,7 +542,7 @@ class HasDepthRestriction:
         time = datetime.datetime.utcfromtimestamp(self.env.now)
         waiting = 0
 
-        for key in self.depth_data[location.name].keys():
+        for key in sorted(self.depth_data[location.name].keys()):
             if fill_degree <= key:
                 series = self.depth_data[location.name][key]["Series"]
                 
@@ -555,16 +555,20 @@ class HasDepthRestriction:
                     v = np.datetime64(time - location.timestep)
 
                     index = np.searchsorted(a, v, side='right')
-                    next_window = series[index] - time
+                    
+                    try:
+                        next_window = series[index] - time
+                    except IndexError:
+                        next_window = series[-1] - time
 
                     waiting = max(next_window, datetime.timedelta(0)).total_seconds()
 
                 break
         
         if waiting != 0:
-            self.log_entry('waiting for tide start', self.env.now, 0, self.geometry)
+            self.log_entry('waiting for tide start', self.env.now, waiting, self.geometry)
             yield self.env.timeout(waiting)
-            self.log_entry('waiting for tide stop', self.env.now, 0, self.geometry)
+            self.log_entry('waiting for tide stop', self.env.now, waiting, self.geometry)
 
     def calc_depth_restrictions(self, location):
         # Minimal waterdepth should be draught + ukc
@@ -581,7 +585,7 @@ class HasDepthRestriction:
             series = pd.Series(df["Required depth"] < df["Water depth"])
 
             # Make a series on which the activity can start
-            duration = self.container.level / self.rate
+            duration = i * self.container.capacity / self.rate
             steps = max(int(duration / location.timestep.seconds + .5), 1)
             windowed = series.rolling(steps)
             windowed = windowed.max().shift(-steps + 1)
@@ -809,7 +813,10 @@ class Processor(SimpyObject):
         origin.container.get(amount)
         destination.container.put(amount)
 
-        yield self.env.timeout(amount / self.rate)
+        if self.id == origin.id:
+            yield self.env.timeout(amount / self.rate + datetime.timedelta(minutes = 20).total_seconds())
+        else:
+            yield self.env.timeout(amount / self.rate)
 
         # lower the fuel for all active entities
         if isinstance(origin, HasFuel):

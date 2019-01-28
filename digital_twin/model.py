@@ -203,41 +203,54 @@ class Activity(core.Identifiable, core.Log):
             # If not, try to optimize the load with regard to the tidal window
             else:
                 loads = []
+                waits = []
+
                 amounts = []
                 time = datetime.datetime.utcfromtimestamp(self.env.now)
                 fill_degrees = mover.depth_data[destination.name].keys()
 
                 for filling in fill_degrees:
-                    loading = filling * mover.container.capacity * loader.rate
-                    unloading = filling * mover.container.capacity * unloader.rate
-
-                    orig = shapely.geometry.asShape(origin.geometry)
-                    dest = shapely.geometry.asShape(destination.geometry)
-                    _, _, distance = mover.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
-                    sailing = mover.compute_v(filling) * distance
-
-                    duration = loading + unloading + sailing
-
                     series = mover.depth_data[destination.name][filling]["Series"]
                     
                     if len(series) != 0:
-                        loads.append(filling * mover.container.capacity)
+                        # Determine length of cycle
+                        loading = filling * mover.container.capacity / loader.rate
+
+                        orig = shapely.geometry.asShape(origin.geometry)
+                        dest = shapely.geometry.asShape(destination.geometry)
+                        _, _, distance = mover.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+                        sailing_full = distance / mover.compute_v(0)
+                        sailing_full = distance / mover.compute_v(filling)
+
+                        duration = datetime.timedelta(seconds = (sailing_full + loading + sailing_full))
+
+                        # Determine waiting time
                         a = series.values
-                        v = np.datetime64(time + datetime.timedelta(seconds = duration) - destination.timestep)
+                        v = np.datetime64(time + duration)
 
                         index = np.searchsorted(a, v, side='right')
-                        next_window = series[index] - datetime.timedelta(seconds = duration) - time
+                        next_window = series[index] - duration - time
 
                         waiting = max(next_window, datetime.timedelta(0)).total_seconds()
+                        
+                        # In case waiting is always required
+                        loads.append(filling * mover.container.capacity)
+                        waits.append(waiting)
 
-                        if waiting == 0:
+                        if waiting < destination.timestep.total_seconds():
                             amounts.append(filling * mover.container.capacity)
 
                 # Check if there is a better filling degree
                 if amounts:
                     amount = min(amount, max(amounts))
                 elif loads:
-                    amount = min(amount, max(loads))
+                    cargo = 0
+                    
+                    for i, _ in enumerate(loads):
+                        if waits[i] == min(waits):
+                            cargo = loads[i]
+
+                    amount = min(amount, cargo)
 
         if amount > 0:
             # request access to the transport_resource
