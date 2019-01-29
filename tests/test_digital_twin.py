@@ -109,6 +109,10 @@ def test_basic_processor(env):
     dest = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
 
     processor = core.Processor(env=env, rate=2)
+
+    processor.ID = "Test 1"
+    processor.geometry = "Test 1"
+
     env.process(processor.process(source, dest, 600))
     env.run()
     np.testing.assert_almost_equal(env.now, 300)
@@ -132,6 +136,12 @@ def test_dual_processors(env):
 
     processor1 = core.Processor(env=env, rate=2)
     processor2 = core.Processor(env=env, rate=1)
+    
+    processor1.ID = "Test 1"
+    processor2.ID = "Test 2"
+
+    processor1.geometry = "Test 1"
+    processor2.geometry = "Test 2"
 
     env.process(processor1.process(unlimited_container, limited_container_1, 400))
     env.process(processor2.process(unlimited_container, limited_container_2, 400))
@@ -162,6 +172,12 @@ def test_dual_processors_with_limit(env):
 
     processor1 = core.Processor(env=env, rate=1)
     processor2 = core.Processor(env=env, rate=2)
+
+    processor1.ID = "Test 1"
+    processor2.ID = "Test 2"
+
+    processor1.geometry = "Test 1"
+    processor2.geometry = "Test 2"
 
     env.process(processor1.process(unlimited_container_1, limited_container, 400))
     env.process(processor2.process(unlimited_container_2, limited_container, 400))

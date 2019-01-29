@@ -1,0 +1,9 @@
+# Ignore
+.pytest_cache
+.htmlcov
+.eggs
+.docs
+.v**/scode
+**/__pycache__
+*.egg-info
+app/frontend

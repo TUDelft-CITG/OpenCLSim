@@ -603,36 +603,37 @@ class Processor(SimpyObject):
             fuel_consumed_destination = destination.fuel_use_unloading(amount, self.rate)
             destination.check_fuel(fuel_consumed_destination)
         
+        if isinstance(self, Identifiable):
         # check fuel from processor if not origin or destination  -- case if processor != mover
-        if self.id != origin.id and self.id != destination.id and isinstance(self, HasFuel):
-            # if origin is moveable -- e.g. unloading a barge with a crane
-            if isinstance(origin, Movable):
-                fuel_consumed = self.fuel_use_unloading(amount, self.rate)
-                self.check_fuel(fuel_consumed)
-            
-            # if destination is moveable -- e.g. loading a barge with a backhoe
-            if isinstance(destination, Movable):
-                fuel_consumed = self.fuel_use_loading(amount, self.rate)
-                self.check_fuel(fuel_consumed)
+            if self.id != origin.id and self.id != destination.id and isinstance(self, HasFuel):
+                # if origin is moveable -- e.g. unloading a barge with a crane
+                if isinstance(origin, Movable):
+                    fuel_consumed = self.fuel_use_unloading(amount, self.rate)
+                    self.check_fuel(fuel_consumed)
+                
+                # if destination is moveable -- e.g. loading a barge with a backhoe
+                if isinstance(destination, Movable):
+                    fuel_consumed = self.fuel_use_loading(amount, self.rate)
+                    self.check_fuel(fuel_consumed)
 
-            # third option -- from moveable to moveable -- take highest fuel consumption
-            else:
-                fuel_consumed = max(self.fuel_use_unloading(amount, self.rate), self.fuel_use_loading(amount, self.rate))
-                self.check_fuel(fuel_consumed)
+                # third option -- from moveable to moveable -- take highest fuel consumption
+                else:
+                    fuel_consumed = max(self.fuel_use_unloading(amount, self.rate), self.fuel_use_loading(amount, self.rate))
+                    self.check_fuel(fuel_consumed)
         
-        ############### THIS SHOULD BE IMPROVED
-        ############### ON Fuel
-        #######################################
+            ############### THIS SHOULD BE IMPROVED
+            ############### ON Fuel
+            #######################################
 
 
-        #######################################
-        ############### ON Spill
-        #######################################
-        yield from self.checkSpill(origin, destination, amount)
+            #######################################
+            ############### ON Spill
+            #######################################
+            yield from self.checkSpill(origin, destination, amount)
 
-        #######################################
-        ############### ON Weather
-        #######################################
+            #######################################
+            ############### ON Weather
+            #######################################
                 
         origin.log_entry('unloading start', self.env.now, origin.container.level, self.geometry)
         destination.log_entry('loading start', self.env.now, destination.container.level, self.geometry)
@@ -649,15 +650,16 @@ class Processor(SimpyObject):
 
         yield self.env.timeout(amount / self.rate)
 
-        # lower the fuel for all active entities
-        if isinstance(origin, HasFuel):
-            origin.consume(fuel_consumed_origin)
+        if isinstance(self, Identifiable):
+            # lower the fuel for all active 
+            if isinstance(origin, HasFuel):
+                origin.consume(fuel_consumed_origin)
 
-        if isinstance(destination, HasFuel):
-            destination.consume(fuel_consumed_destination)
+            if isinstance(destination, HasFuel):
+                destination.consume(fuel_consumed_destination)
 
-        if self.id != origin.id and self.id != destination.id and isinstance(self, HasFuel):
-            self.consume(fuel_consumed)
+            if self.id != origin.id and self.id != destination.id and isinstance(self, HasFuel):
+                self.consume(fuel_consumed)
 
         origin.log_entry('unloading stop', self.env.now, origin.container.level, self.geometry)
         destination.log_entry('loading stop', self.env.now, destination.container.level, self.geometry)

@@ -55,7 +55,7 @@ def available_equipment(env):
     type_to_mixins_mapping = {
         'Side stone dumping vessel': (core.Identifiable, core.Log, core.ContainerDependentMovable, core.HasResource),
         'Multi purpose support vessel': (core.Identifiable, core.Log, core.ContainerDependentMovable, core.Processor, core.HasResource),
-        'Simple Loading Crane': (core.Identifiable, core.Log, core.Processor, core.HasResource)
+        'Simple Loading Crane': (core.Identifiable, core.Log, core.Processor, core.HasResource, core.Locatable)
     }
 
     ship_mixins = {}

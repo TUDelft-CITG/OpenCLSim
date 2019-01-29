@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  main:
+    build: .
+    container_name: hydraulic-infrastructure-realisation
+    # this helps with https://github.com/docker/compose/issues/3106
+    # also make sure to run docker compose with -f flag
+    command: sleep 9999d
