@@ -1,0 +1,45 @@
+version: 2
+jobs:
+  build:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          name: Build and start container
+          command: docker-compose up -d
+
+      - run:
+          name: Install coverage badge beforte running tests
+          command: |
+            docker exec -it hydraulic-infrastructure-realisation bash -c "pip install coverage coverage-badge "
+      
+      - run:
+          name: Run tests
+          command: |
+            docker exec -it hydraulic-infrastructure-realisation bash -c "python setup.py test"
+            docker cp hydraulic-infrastructure-realisation:/Hydraulic-Infrastructure-Realisation/htmlcov /tmp/artifacts
+      
+      - run:
+          name: Build docs
+          command: |
+            docker exec -it hydraulic-infrastructure-realisation bash -c "pip install sphinx"
+            docker exec -it hydraulic-infrastructure-realisation bash -c "python setup.py docs"
+            docker cp hydraulic-infrastructure-realisation:/Hydraulic-Infrastructure-Realisation/_build/html /tmp/artifacts/docs
+      
+      - run:
+          name: Generate coverage badge
+          command: |
+            docker exec -it hydraulic-infrastructure-realisation bash -c "coverage-badge -o coverage.svg"
+            docker cp hydraulic-infrastructure-realisation:/Hydraulic-Infrastructure-Realisation/coverage.svg /tmp/artifacts/
+      
+      - store_artifacts:
+          path: /tmp/artifacts
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
