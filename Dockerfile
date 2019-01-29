@@ -2,7 +2,8 @@
 FROM continuumio/miniconda3
 
 # Install conda stuff first
-RUN conda install nomkl pyproj
+RUN conda install numpy pandas nomkl pyproj
+RUN pip install pint
 
 WORKDIR /Hydraulic-Infrastructure-Realisation
 ADD . /Hydraulic-Infrastructure-Realisation
