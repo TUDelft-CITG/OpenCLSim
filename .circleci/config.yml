@@ -24,7 +24,7 @@ jobs:
           command: |
             docker exec -it hydraulic-infrastructure-realisation bash -c "pip install sphinx"
             docker exec -it hydraulic-infrastructure-realisation bash -c "python setup.py docs"
-            docker cp hydraulic-infrastructure-realisation:/Hydraulic-Infrastructure-Realisation/_build/html /tmp/artifacts/docs
+            docker cp hydraulic-infrastructure-realisation:/Hydraulic-Infrastructure-Realisation/docs/_build/html /tmp/artifacts/docs
       
       - run:
           name: Generate coverage badge
