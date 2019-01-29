@@ -74,60 +74,29 @@ class HasContainer(SimpyObject):
         self.total_requested = total_requested
 
 
-class HasFuel(SimpyObject):
-    """HasFuel class
+class EnergyUse(SimpyObject):
+    """EnergyUse class
+    
+    energy_use_sailing:   function that specifies the fuel use during sailing activity   - input should be time
+    energy_use_loading:   function that specifies the fuel use during loading activity   - input should be time
+    energy_use_unloading: function that specifies the fuel use during unloading activity - input should be time
 
-    fuel_use_loading: function that specifies the fuel use during loading activity
-    fuel_use_unloading: function that specifies the fuel use during unloading activity
-    fuel_use_sailing: function that specifies the fuel use during sailing activity
+    At the moment "keeping track of fuel" is not added to the digital twin. 
 
-    fuel_capacity: amount of fuel that the container can hold
-    fuel_level: amount the container holds initially
-    fuel_container: a simpy object that can hold stuff
-    refuel_method: method of refueling (bunker or returning to quay) or ignore for not tracking
+    Example function could be as follows.
+    The energy use of the loading event is equal to: duration * power_use.
+
+    def energy_use_loading(power_use):
+        return lambda x: x * power_use
     """
 
-    def __init__(self, fuel_use_loading, fuel_use_unloading, fuel_use_sailing, 
-                 fuel_capacity, fuel_level, refuel_method="ignore", *args, **kwargs):
+    def __init__(self, energy_use_sailing, energy_use_loading, energy_use_unloading, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.fuel_use_loading = fuel_use_loading
-        self.fuel_use_unloading = fuel_use_unloading
-        self.fuel_use_sailing = fuel_use_sailing
-        self.fuel_container = simpy.Container(self.env, fuel_capacity, init=fuel_level)
-        self.refuel_method = refuel_method
+        self.energy_use_sailing = energy_use_sailing
+        self.energy_use_loading = energy_use_loading
+        self.energy_use_unloading = energy_use_unloading
 
-    def consume(self, amount):
-        """consume an amount of fuel"""
-        
-        self.log_entry("fuel consumed", self.env.now, amount, self.geometry)
-        self.fuel_container.get(amount)
-
-    def fill(self, fuel_delivery_rate=1):
-        """fill 'er up"""
-
-        amount = self.fuel_container.capacity - self.fuel_container.level
-        if 0 < amount:
-            self.fuel_container.put(amount)
-
-        if self.refuel_method == "ignore":
-            return 0
-        else:
-            return amount / fuel_delivery_rate
-    
-    def check_fuel(self, fuel_use):
-        if self.fuel_container.level < fuel_use:
-            #latest_log = [self.log[-1], self.t[-1], self.value[-1]]
-            #del self.log[-1], self.t[-1], self.value[-1]
-
-            refuel_duration = self.fill()
-
-            if refuel_duration != 0:
-                self.log_entry("fuel loading start", self.env.now, self.fuel_container.level, self.geometry)
-                yield self.env.timeout(refuel_duration)
-                self.log_entry("fuel loading stop", self.env.now, self.fuel_container.level, self.geometry)
-
-            #self.log_entry(latest_log[0], self.env.now, latest_log[2])
 
 class HasPlume(SimpyObject):
     """Using values from Becker [2014], https://www.sciencedirect.com/science/article/pii/S0301479714005143.
@@ -463,27 +432,29 @@ class Movable(SimpyObject, Locatable):
     def move(self, destination):
         """determine distance between origin and destination, and
         yield the time it takes to travel it"""
-        orig = shapely.geometry.asShape(self.geometry)
-        dest = shapely.geometry.asShape(destination.geometry)
-        forward, backward, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+        # Determine distance based on geometry objects
+        distance = self.get_distance(self.geometry, destination)
 
+        # Determine speed based on filling degree
         speed = self.current_speed
 
-        # check for sufficient fuel
-        if isinstance(self, HasFuel):
-            fuel_consumed = self.fuel_use_sailing(distance, speed)
-            self.check_fuel(fuel_consumed)
-
+        # Check out the time based on duration of sailing event
         yield self.env.timeout(distance / speed)
-        self.geometry = dest
+        
+        # Set mover geometry to destination geometry
+        self.geometry = shapely.geometry.asShape(destination.geometry)
+
+        # Compute the energy use
+        if isinstance(self, EnergyUse):
+            energy = self.energy_use_sailing(distance / speed)
+            message = "Energy use " + self.log["Message"][-1].rstrip(" start")
+            self.log_entry(message, self.env.now, energy, self.geometry)
+        
+        # Debug logs
         logger.debug('  distance: ' + '%4.2f' % distance + ' m')
         logger.debug('  sailing:  ' + '%4.2f' % speed + ' m/s')
         logger.debug('  duration: ' + '%4.2f' % ((distance / speed) / 3600) + ' hrs')
 
-        # lower the fuel
-        if isinstance(self, HasFuel):
-            # remove seconds of fuel
-            self.consume(fuel_consumed)
 
     def is_at(self, locatable, tolerance=100):
         current_location = shapely.geometry.asShape(self.geometry)
@@ -491,6 +462,14 @@ class Movable(SimpyObject, Locatable):
         _, _, distance = self.wgs84.inv(current_location.x, current_location.y,
                                         other_location.x, other_location.y)
         return distance < tolerance
+
+
+    def get_distance(self, origin, destination):
+        orig = shapely.geometry.asShape(self.geometry)
+        dest = shapely.geometry.asShape(destination.geometry)
+        _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+
+        return distance
 
     @property
     def current_speed(self):
@@ -560,17 +539,38 @@ class Log(SimpyObject):
 class Processor(SimpyObject):
     """Processor class
 
-    rate: rate with which quantity can be processed [amount/s]"""
+    loading_func:   lambda function to determine the duration of loading event based on input parameter amount 
+    unloading_func: lambda function to determine the duration of unloading event based on input parameter amount 
+    
+    Example function could be as follows.
+    The duration of the loading event is equal to: amount / rate.
 
-    def __init__(self, rate, *args, **kwargs):
+    def loading_func(loading_rate):
+        return lambda x: x / loading_rate
+
+    
+    A more complex example function could be as follows.
+    The duration of the loading event is equal to: manoeuvring + amount / rate + cleaning.
+
+    def loading_func(manoeuvring, loading_rate, cleaning):
+        return lambda x: datetime.timedelta(minutes = manoeuvring).total_seconds() + \
+                         x / loading_rate + \
+                         datetime.timedelta(minutes = cleaning).total_seconds()
+
+    """
+
+    def __init__(self, loading_func = None, unloading_func = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.rate = rate
+        self.loading_func = loading_func
+        self.unloading_func = unloading_func
 
     # noinspection PyUnresolvedReferences
     def process(self, origin, destination, amount, origin_resource_request=None, destination_resource_request=None):
         """get amount from origin container, put amount in destination container,
         and yield the time it takes to process it"""
+
+        # Make sure all requests are granted
         assert isinstance(origin, HasContainer) and isinstance(destination, HasContainer)
         assert isinstance(origin, HasResource) and isinstance(destination, HasResource)
         assert isinstance(origin, Log) and isinstance(destination, Log)
@@ -589,52 +589,14 @@ class Processor(SimpyObject):
         yield my_origin_turn
         yield my_dest_turn
 
-        #######################################
-        ############### ON FUEL USE
-        ############### THIS SHOULD BE IMPROVED
+        # If requests are yielded, start activity
+        # Activity can only start if environmental conditions allow it
+        yield from self.checkSpill(origin, destination, amount)
 
-        # check fuel from origin
-        if isinstance(origin, HasFuel):
-            fuel_consumed_origin = origin.fuel_use_unloading(amount, self.rate)
-            origin.check_fuel(fuel_consumed_origin)
+        # If environmental conditions allow starting the activity, check if there is a weather window
+        # yield from self.checkWeather / self.checkTide
 
-        # check fuel from destination
-        if isinstance(destination, HasFuel):
-            fuel_consumed_destination = destination.fuel_use_unloading(amount, self.rate)
-            destination.check_fuel(fuel_consumed_destination)
-        
-        if isinstance(self, Identifiable):
-        # check fuel from processor if not origin or destination  -- case if processor != mover
-            if self.id != origin.id and self.id != destination.id and isinstance(self, HasFuel):
-                # if origin is moveable -- e.g. unloading a barge with a crane
-                if isinstance(origin, Movable):
-                    fuel_consumed = self.fuel_use_unloading(amount, self.rate)
-                    self.check_fuel(fuel_consumed)
-                
-                # if destination is moveable -- e.g. loading a barge with a backhoe
-                if isinstance(destination, Movable):
-                    fuel_consumed = self.fuel_use_loading(amount, self.rate)
-                    self.check_fuel(fuel_consumed)
-
-                # third option -- from moveable to moveable -- take highest fuel consumption
-                else:
-                    fuel_consumed = max(self.fuel_use_unloading(amount, self.rate), self.fuel_use_loading(amount, self.rate))
-                    self.check_fuel(fuel_consumed)
-        
-            ############### THIS SHOULD BE IMPROVED
-            ############### ON Fuel
-            #######################################
-
-
-            #######################################
-            ############### ON Spill
-            #######################################
-            yield from self.checkSpill(origin, destination, amount)
-
-            #######################################
-            ############### ON Weather
-            #######################################
-                
+        # Log the start of the activity     
         origin.log_entry('unloading start', self.env.now, origin.container.level, self.geometry)
         destination.log_entry('loading start', self.env.now, destination.container.level, self.geometry)
 
@@ -643,40 +605,76 @@ class Processor(SimpyObject):
             soil = origin.get_soil(amount)
             destination.put_soil(soil)
 
-            self.addSpill(soil, origin, destination, amount, amount / self.rate)
+            self.addSpill(soil, origin, destination, amount, self.rate(amount))
 
         origin.container.get(amount)
         destination.container.put(amount)
 
-        yield self.env.timeout(amount / self.rate)
+        yield self.env.timeout(self.rate(amount))
 
-        if isinstance(self, Identifiable):
-            # lower the fuel for all active 
-            if isinstance(origin, HasFuel):
-                origin.consume(fuel_consumed_origin)
+        # Compute the energy use
+        self.computeEnergy(self.rate(amount), origin, destination)
 
-            if isinstance(destination, HasFuel):
-                destination.consume(fuel_consumed_destination)
-
-            if self.id != origin.id and self.id != destination.id and isinstance(self, HasFuel):
-                self.consume(fuel_consumed)
-
+        # Log the end of the activity
         origin.log_entry('unloading stop', self.env.now, origin.container.level, self.geometry)
         destination.log_entry('loading stop', self.env.now, destination.container.level, self.geometry)
 
-        logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
+        logger.debug('  process:        ' + '%4.2f' % ((self.rate(amount)) / 3600) + ' hrs')
 
         if origin_resource_request is None:
             origin.resource.release(my_origin_turn)
         if destination_resource_request is None:
             destination.resource.release(my_dest_turn)
     
-    def checkFuel(self):
-        pass
+    def computeEnergy(self, duration, origin, destination):
+        """
+        There are three options:
+          1. Processor is also destination, origin could have fuel
+          2. Processor is also origin, destination could have fuel
+          3. Processor is neither destination, nor origin, but both could have fuel
+        """
+
+        # If self == origin --> unloading
+        if self == origin:
+            if isinstance(self, EnergyUse):
+                energy = self.energy_use_loading(duration)
+                message = "Energy use loading"
+                self.log_entry(message, self.env.now, energy, self.geometry)
+            if isinstance(destination, EnergyUse):
+                energy = destination.energy_use_unloading(duration)
+                message = "Energy use unloading"
+                destination.log_entry(message, self.env.now, energy, destination.geometry)
+
+        # If self == destination --> loading
+        elif self == destination:
+            if isinstance(self, EnergyUse):
+                energy = self.energy_use_unloading(duration)
+                message = "Energy use loading"
+                self.log_entry(message, self.env.now, energy, self.geometry)
+            if isinstance(origin, EnergyUse):
+                energy = origin.energy_use_loading(duration)
+                message = "Energy use unloading"
+                origin.log_entry(message, self.env.now, energy, origin.geometry)
+
+        # If self != origin and self != destination --> processing
+        else:
+            if isinstance(self, EnergyUse):
+                energy = self.energy_use_loading(duration)
+                message = "Energy use loading"
+                self.log_entry(message, self.env.now, energy, self.geometry)
+            if isinstance(origin, EnergyUse):
+                energy = origin.energy_use_unloading(duration)
+                message = "Energy use unloading"
+                origin.log_entry(message, self.env.now, energy, origin.geometry)
+            if isinstance(destination, EnergyUse):
+                energy = destination.energy_use_loading(duration)
+                message = "Energy use loading"
+                destination.log_entry(message, self.env.now, energy, destination.geometry)
+
     
     def checkSpill(self, origin, destination, amount):
         # Before processing can start, check the conditions
-        if self.id != origin.id and isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+        if self != origin and isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
             # In this case "destination" is the "mover"
             density, fines = origin.get_properties(amount)
             spill = self.sigma_d * density * fines * amount
@@ -688,7 +686,7 @@ class Processor(SimpyObject):
                 yield self.env.timeout(waiting - self.env.now)
                 self.log_entry('waiting for spill stop', self.env.now, 0, destination.geometry)
 
-        elif self.id != destination.id and isinstance(destination, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+        elif self != destination and isinstance(destination, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
             # In this case "origin" is the "mover"
             spill = origin.m_r * self.sigma_p
             waiting = destination.check_conditions(spill)

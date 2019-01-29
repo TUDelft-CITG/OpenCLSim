@@ -108,9 +108,8 @@ def test_basic_processor(env):
     source = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=1)
     dest = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
 
-    processor = core.Processor(env=env, rate=2)
-
-    processor.ID = "Test 1"
+    processor = core.Processor(env=env, loading_func=(lambda x: x / 2), unloading_func=(lambda x: x / 2))
+    processor.rate = processor.loading_func
     processor.geometry = "Test 1"
 
     env.process(processor.process(source, dest, 600))
@@ -134,12 +133,10 @@ def test_dual_processors(env):
     limited_container_2 = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
     unlimited_container = BasicStorageUnit(env=env, capacity=2000, level=1000, nr_resources=100)
 
-    processor1 = core.Processor(env=env, rate=2)
-    processor2 = core.Processor(env=env, rate=1)
-    
-    processor1.ID = "Test 1"
-    processor2.ID = "Test 2"
-
+    processor1 = core.Processor(env=env, loading_func=(lambda x: x / 2), unloading_func=(lambda x: x / 2))
+    processor2 = core.Processor(env=env, loading_func=(lambda x: x / 1), unloading_func=(lambda x: x / 1))
+    processor1.rate = processor1.loading_func
+    processor2.rate = processor2.loading_func
     processor1.geometry = "Test 1"
     processor2.geometry = "Test 2"
 
@@ -170,12 +167,10 @@ def test_dual_processors_with_limit(env):
     unlimited_container_2 = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=100)
     limited_container = BasicStorageUnit(env=env, capacity=2000, level=0, nr_resources=1)
 
-    processor1 = core.Processor(env=env, rate=1)
-    processor2 = core.Processor(env=env, rate=2)
-
-    processor1.ID = "Test 1"
-    processor2.ID = "Test 2"
-
+    processor1 = core.Processor(env=env, loading_func=(lambda x: x / 1), unloading_func=(lambda x: x / 1))
+    processor2 = core.Processor(env=env, loading_func=(lambda x: x / 2), unloading_func=(lambda x: x / 2))
+    processor1.rate = processor1.loading_func
+    processor2.rate = processor2.loading_func
     processor1.geometry = "Test 1"
     processor2.geometry = "Test 2"
 

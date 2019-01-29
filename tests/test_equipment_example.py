@@ -67,7 +67,8 @@ def available_equipment(env):
         kwargs = dict(env=env, name=data['id'])
         if issubclass(klass, core.Processor):
             processing_speed = (data['capacity'] * ureg.ton / ureg.minute).to_base_units()
-            kwargs['rate'] = processing_speed.magnitude
+            kwargs['loading_func'] = (lambda x: x / processing_speed.magnitude)
+            kwargs['unloading_func'] = (lambda x: x / processing_speed.magnitude)
         if issubclass(klass, core.HasResource):
             kwargs['nr_resources'] = 1
         if issubclass(klass, core.HasContainer):

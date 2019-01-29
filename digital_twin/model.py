@@ -201,12 +201,14 @@ class Activity(core.Identifiable, core.Log):
                     yield from self.__move_mover__(mover, origin, 'empty')
 
                 # load the mover
+                loader.rate = loader.loading_func        # rate is variable to loading / unloading
                 yield from self.__shift_amount__(amount, loader, origin, mover, destination_resource_request=my_mover_turn)
 
                 # move the mover to the destination
                 yield from self.__move_mover__(mover, destination, 'full')
 
                 # unload the mover
+                unloader.rate = unloader.unloading_func  # rate is variable to loading / unloading
                 yield from self.__shift_amount__(amount, unloader, mover, destination, origin_resource_request=my_mover_turn)
 
             self.log_entry("transporting stop", self.env.now, amount, mover.geometry)
