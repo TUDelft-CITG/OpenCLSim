@@ -326,6 +326,7 @@ class HasSoil:
         # If soil is a mover, the mover should be initialized with an empty soil dict after emptying
         if isinstance(self, Movable) and volume == self.container.level:
             removed_soil = list(self.soil.items())[0]
+
             self.soil = {}
 
             return SoilLayer(0,
@@ -346,6 +347,7 @@ class HasSoil:
                     volumes.append(volume - removed_volume)
                     
                     self.soil[layer]["Volume"] -= (volume - removed_volume)
+                    
                     break
                 
                 else:
@@ -590,6 +592,7 @@ class Processor(SimpyObject):
         yield my_dest_turn
 
         # If requests are yielded, start activity
+        # Waiting event should be combined to check if all conditions allow starting
         # Activity can only start if environmental conditions allow it
         yield from self.checkSpill(origin, destination, amount)
 
@@ -600,16 +603,17 @@ class Processor(SimpyObject):
         origin.log_entry('unloading start', self.env.now, origin.container.level, self.geometry)
         destination.log_entry('loading start', self.env.now, destination.container.level, self.geometry)
 
-        # Move soil from origin to destination
-        if isinstance(origin, HasSoil) and isinstance(destination, HasSoil):
-            soil = origin.get_soil(amount)
-            destination.put_soil(soil)
+        # Add spill the location where processing is taking place
+        self.addSpill(origin, destination, amount, self.rate(amount))
 
-            self.addSpill(soil, origin, destination, amount, self.rate(amount))
+        # Shift soil from container volumes
+        self.shiftSoil(origin, destination, amount)
 
+        # Shift volumes in containers
         origin.container.get(amount)
         destination.container.put(amount)
 
+        # Checkout the time
         yield self.env.timeout(self.rate(amount))
 
         # Compute the energy use
@@ -625,6 +629,7 @@ class Processor(SimpyObject):
             origin.resource.release(my_origin_turn)
         if destination_resource_request is None:
             destination.resource.release(my_dest_turn)
+    
     
     def computeEnergy(self, duration, origin, destination):
         """
@@ -703,7 +708,7 @@ class Processor(SimpyObject):
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
 
-        # If self == destination --> loading
+        # If self == destination --> origin is a retrieval location
         elif self == destination:
             if isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
                 density, fines = origin.get_properties(amount)
@@ -731,25 +736,63 @@ class Processor(SimpyObject):
                     self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
 
 
-    
-    # def addSpill(self, soil, origin, destination, amount, duration):
-    #     density, fines = soil.density, soil.fines
-            
-    #     if self.id == destination.id and isinstance(origin, HasSpillCondition):
-    #         # In this case "destination" is the "mover"
-    #         spill = origin.spillDredging(self, destination, density, fines, amount, duration)
-        
-    #         if spill > 0 and isinstance(origin, HasSpillCondition):
-    #             for condition in origin.SpillConditions["Spill limit"]:
-    #                 condition.put(spill)
+    def addSpill(self, origin, destination, amount, duration):
+        """
+        duration: duration of the activity in seconds
+        origin: origin of the moved volume (the computed amount)
+        destination: destination of the moved volume (the computed amount)
 
-    #     elif self.id == origin.id and isinstance(destination, HasSpillCondition):
-    #         # In this case "origin" is the "mover"
-    #         spill = destination.spillPlacement(self, origin)
+        There are three options:
+          1. Processor is also origin, destination could have spill requirements
+          2. Processor is also destination, origin could have spill requirements
+          3. Processor is neither destination, nor origin, but both could have spill requirements
+
+        Result of this function is possible waiting, spill is added later on and does not depend on possible requirements
+        """
+
+        if isinstance(origin, HasSoil):
+            density, fines = origin.get_properties(amount)
+
+            # If self == origin --> destination is a placement location
+            if self == origin:
+                if isinstance(destination, HasSpillCondition) and isinstance(self, HasPlume):
+                    spill = destination.spillPlacement(self, self)
+                
+                    if spill > 0 and isinstance(destination, HasSpillCondition):
+                        for condition in destination.SpillConditions["Spill limit"]:
+                            condition.put(spill)
+
+            # If self == destination --> origin is a retrieval location
+            elif self == destination:
+                if isinstance(origin, HasSpillCondition) and isinstance(self, HasPlume):
+                    spill = origin.spillDredging(self, self, density, fines, amount, duration)
+                
+                    if spill > 0 and isinstance(destination, HasSpillCondition):
+                        for condition in destination.SpillConditions["Spill limit"]:
+                            condition.put(spill)
+
+            # If self != origin and self != destination --> processing
+            else:
+                if isinstance(destination, HasSpillCondition) and isinstance(self, HasPlume):
+                    spill = destination.spillPlacement(self, origin)
+                
+                    if spill > 0 and isinstance(destination, HasSpillCondition):
+                        for condition in destination.SpillConditions["Spill limit"]:
+                            condition.put(spill)
+    
+
+    def shiftSoil(self, origin, destination, amount):
+        """
+        origin: origin of the moved volume (the computed amount)
+        destination: destination of the moved volume (the computed amount)
+        amount: the volume of soil that is moved
+
+        Can only occur if both the origin and the destination have soil objects (mix-ins)
+        """
         
-    #         if spill > 0 and isinstance(destination, HasSpillCondition):
-    #             for condition in destination.SpillConditions["Spill limit"]:
-    #                 condition.put(spill)
+        if isinstance(origin, HasSoil) and isinstance(destination, HasSoil):
+            soil = origin.get_soil(amount)
+            destination.put_soil(soil)
 
 
 class DictEncoder(json.JSONEncoder):
