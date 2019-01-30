@@ -557,7 +557,7 @@ class HasDepthRestriction:
             series = pd.Series(df["Required depth"] < df["Water depth"])
 
             # Make a series on which the activity can start
-            duration = i * self.container.capacity / self.rate
+            duration = self.unloading_func(i * self.container.capacity)
             steps = max(int(duration / location.timestep.seconds + .5), 1)
             windowed = series.rolling(steps)
             windowed = windowed.max().shift(-steps + 1)
@@ -575,6 +575,71 @@ class HasDepthRestriction:
                 required_depth = self.ukc[i] + draught
         
         return required_depth
+    
+
+    def check_optimal_filling(self, loader, origin, destination):
+        # Calculate depth restrictions
+        if not self.depth_data:
+            if isinstance(origin, HasWeather):
+                self.calc_depth_restrictions(origin)
+            if isinstance(destination, HasWeather):
+                self.calc_depth_restrictions(destination)
+        
+        # If a filling degee has been specified
+        if self.filling:
+            return self.filling * self.container.capacity
+        
+        # If not, try to optimize the load with regard to the tidal window
+        else:
+            loads = []
+            waits = []
+
+            amounts = []
+            time = datetime.datetime.utcfromtimestamp(self.env.now)
+            fill_degrees = self.depth_data[destination.name].keys()
+
+            for filling in fill_degrees:
+                series = self.depth_data[destination.name][filling]["Series"]
+                
+                if len(series) != 0:
+                    # Determine length of cycle
+                    loading = loader.loading_func(filling * self.container.capacity)
+
+                    orig = shapely.geometry.asShape(origin.geometry)
+                    dest = shapely.geometry.asShape(destination.geometry)
+                    _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+                    sailing_full = distance / self.compute_v(0)
+                    sailing_full = distance / self.compute_v(filling)
+
+                    duration = datetime.timedelta(seconds = (sailing_full + loading + sailing_full))
+
+                    # Determine waiting time
+                    a = series.values
+                    v = np.datetime64(time + duration)
+
+                    index = np.searchsorted(a, v, side='right')
+                    next_window = series[index] - duration - time
+
+                    waiting = max(next_window, datetime.timedelta(0)).total_seconds()
+                    
+                    # In case waiting is always required
+                    loads.append(filling * self.container.capacity)
+                    waits.append(waiting)
+
+                    if waiting < destination.timestep.total_seconds():
+                        amounts.append(filling * self.container.capacity)
+
+            # Check if there is a better filling degree
+            if amounts:
+                return max(amounts)
+            elif loads:
+                cargo = 0
+                
+                for i, _ in enumerate(loads):
+                    if waits[i] == min(waits):
+                        cargo = loads[i]
+
+                return cargo
 
     @property
     def current_draught(self):
@@ -629,6 +694,7 @@ class Movable(SimpyObject, Locatable):
         
         return distance < tolerance
 
+    
     def get_distance(self, origin, destination):
         orig = shapely.geometry.asShape(self.geometry)
         dest = shapely.geometry.asShape(destination.geometry)
@@ -636,6 +702,7 @@ class Movable(SimpyObject, Locatable):
 
         return distance
 
+    
     @property
     def current_speed(self):
         return self.v
@@ -767,10 +834,7 @@ class Processor(SimpyObject):
             # yield from self.checkWeather()
             
             # Check tide
-            # if isinstance(origin, HasDepthRestriction) and isinstance(origin, Movable) and isinstance(destination, HasWeather):
-            #     yield from origin.check_depth_restriction(destination)
-            # elif isinstance(destination, HasDepthRestriction) and isinstance(destination, Movable) and isinstance(origin, HasWeather):
-            #     yield from destination.check_depth_restriction(origin)
+            yield from self.checkTide(origin, destination)
             
             # Check spill
             yield from self.checkSpill(origin, destination, amount)
@@ -896,7 +960,6 @@ class Processor(SimpyObject):
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
 
-
         # If self != origin and self != destination --> processing
         else:
             if isinstance(destination, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
@@ -910,6 +973,12 @@ class Processor(SimpyObject):
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
 
+
+    def checkTide(self, origin, destination):
+        if isinstance(origin, HasDepthRestriction) and isinstance(origin, Movable) and isinstance(destination, HasWeather):
+            yield from origin.check_depth_restriction(destination)
+        elif isinstance(destination, HasDepthRestriction) and isinstance(destination, Movable) and isinstance(origin, HasWeather):
+            yield from destination.check_depth_restriction(origin)
 
     def addSpill(self, origin, destination, amount, duration):
         """
