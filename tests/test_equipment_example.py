@@ -5,6 +5,7 @@ import logging
 import numpy as np
 import pint
 import datetime
+import time
 import digital_twin.core as core
 import digital_twin.model as model
 
@@ -19,7 +20,10 @@ def compute_v_linear(v_empty, v_full):
 
 @pytest.fixture
 def env():
-    return simpy.Environment()
+    simulation_start = datetime.datetime(2019, 1, 1)
+    my_env = simpy.Environment(initial_time = time.mktime(simulation_start.timetuple()))
+    my_env.epoch = time.mktime(simulation_start.timetuple())
+    return my_env
 
 @pytest.fixture
 def available_equipment(env):

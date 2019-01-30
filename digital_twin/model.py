@@ -1,4 +1,7 @@
 import digital_twin.core as core
+import datetime
+import shapely
+import numpy as np
 
 
 class LevelCondition:
@@ -183,6 +186,71 @@ class Activity(core.Identifiable, core.Log):
             origin.container.capacity - origin.total_requested,
             destination.container.capacity - destination.container.level,
             destination.container.capacity - destination.total_requested)
+
+        # Try a function to optimize the load
+        if isinstance(mover, core.HasDepthRestriction):
+            # Calculate depth restrictions
+            if not mover.depth_data:
+                if isinstance(origin, core.HasWeather):
+                    mover.calc_depth_restrictions(origin)
+                if isinstance(destination, core.HasWeather):
+                    mover.calc_depth_restrictions(destination)
+            
+            # If a filling degee has been specified
+            if mover.filling:
+                amount = min(amount, mover.filling * mover.container.capacity)
+            
+            # If not, try to optimize the load with regard to the tidal window
+            else:
+                loads = []
+                waits = []
+
+                amounts = []
+                time = datetime.datetime.utcfromtimestamp(self.env.now)
+                fill_degrees = mover.depth_data[destination.name].keys()
+
+                for filling in fill_degrees:
+                    series = mover.depth_data[destination.name][filling]["Series"]
+                    
+                    if len(series) != 0:
+                        # Determine length of cycle
+                        loading = filling * mover.container.capacity / loader.rate
+
+                        orig = shapely.geometry.asShape(origin.geometry)
+                        dest = shapely.geometry.asShape(destination.geometry)
+                        _, _, distance = mover.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+                        sailing_full = distance / mover.compute_v(0)
+                        sailing_full = distance / mover.compute_v(filling)
+
+                        duration = datetime.timedelta(seconds = (sailing_full + loading + sailing_full))
+
+                        # Determine waiting time
+                        a = series.values
+                        v = np.datetime64(time + duration)
+
+                        index = np.searchsorted(a, v, side='right')
+                        next_window = series[index] - duration - time
+
+                        waiting = max(next_window, datetime.timedelta(0)).total_seconds()
+                        
+                        # In case waiting is always required
+                        loads.append(filling * mover.container.capacity)
+                        waits.append(waiting)
+
+                        if waiting < destination.timestep.total_seconds():
+                            amounts.append(filling * mover.container.capacity)
+
+                # Check if there is a better filling degree
+                if amounts:
+                    amount = min(amount, max(amounts))
+                elif loads:
+                    cargo = 0
+                    
+                    for i, _ in enumerate(loads):
+                        if waits[i] == min(waits):
+                            cargo = loads[i]
+
+                    amount = min(amount, cargo)
 
         if amount > 0:
             # request access to the transport_resource

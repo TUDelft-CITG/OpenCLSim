@@ -113,21 +113,25 @@ def vessel_kml(env, vessels,
 
             vessel.log["Geometry - x"] = geom_x
             vessel.log["Geometry - y"] = geom_y
-            
-            time_stamp_min = min(vessel.log["Timestamp"])
-            time_stamp_max = max(vessel.log["Timestamp"])
+
+            time_stamp_min = min(vessel.log["Timestamp"]).timestamp()
+            time_stamp_max = max(vessel.log["Timestamp"]).timestamp()
 
             steps = int(np.floor((time_stamp_max - time_stamp_min) / stepsize))
-
             timestamps_t = np.linspace(time_stamp_min, time_stamp_max, steps)
+
+            times = []
+            for t in vessel.log["Timestamp"]:
+                times.append(t.timestamp())
+
             vessel.log["timestamps_t"] = timestamps_t
-            vessel.log["timestamps_x"] = np.interp(timestamps_t, vessel.log["Timestamp"], vessel.log["Geometry - x"])
-            vessel.log["timestamps_y"] = np.interp(timestamps_t, vessel.log["Timestamp"], vessel.log["Geometry - y"])
+            vessel.log["timestamps_x"] = np.interp(timestamps_t, times, vessel.log["Geometry - x"])
+            vessel.log["timestamps_y"] = np.interp(timestamps_t, times, vessel.log["Geometry - y"])
 
             for log_index, value in enumerate(vessel.log["timestamps_t"][:-1]):
                 
-                begin = env.epoch + datetime.timedelta(seconds=vessel.log["timestamps_t"][log_index])
-                end = env.epoch + datetime.timedelta(seconds=vessel.log["timestamps_t"][log_index + 1])
+                begin = datetime.datetime.fromtimestamp(vessel.log["timestamps_t"][log_index])
+                end = datetime.datetime.fromtimestamp(vessel.log["timestamps_t"][log_index + 1])
                 
                 pnt = fol.newpoint(name=vessel.name, coords=[(vessel.log["timestamps_x"][log_index], vessel.log["timestamps_y"][log_index])])
                 pnt.timespan.begin = begin.isoformat()
@@ -135,8 +139,8 @@ def vessel_kml(env, vessels,
                 pnt.style = shared_style
 
             # include last point as well
-            begin = env.epoch + datetime.timedelta(seconds=vessel.log["timestamps_t"][log_index + 1])
-            end = env.epoch + datetime.timedelta(seconds=vessel.log["timestamps_t"][log_index + 1])
+            begin = datetime.datetime.fromtimestamp(vessel.log["timestamps_t"][log_index + 1])
+            end = datetime.datetime.fromtimestamp(vessel.log["timestamps_t"][log_index + 1])
            
             pnt = fol.newpoint(name=vessel.name, coords=[(vessel.log["timestamps_x"][log_index + 1], vessel.log["timestamps_y"][log_index + 1])])
             pnt.timespan.begin = begin.isoformat()

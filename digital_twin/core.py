@@ -98,6 +98,7 @@ class EnergyUse(SimpyObject):
         self.energy_use_unloading = energy_use_unloading
 
 
+
 class HasPlume(SimpyObject):
     """Using values from Becker [2014], https://www.sciencedirect.com/science/article/pii/S0301479714005143.
 
@@ -418,6 +419,168 @@ class HasSoil:
 
         return properties.density, properties.fines
 
+
+class HasWeather:
+    """HasWeather class
+
+    Used to add weather conditions to a project site
+    name: name of .csv file in folder
+
+    year: name of the year column
+    month: name of the month column
+    day: name of the day column
+
+    timestep: size of timestep to interpolate between datapoints (minutes)
+    bed: level of the seabed / riverbed with respect to CD (meters)
+    """
+
+    def __init__(self, file, year, month, day, hour, timestep=10, bed=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        df = pd.read_csv(file)
+        df.index = df[[year, month, day, hour]].apply(lambda s : datetime.datetime(*s), axis = 1)
+        df = df.drop([year, month, day, hour],axis=1)
+        
+        self.timestep = datetime.timedelta(minutes = timestep)
+
+        data = {}
+        for key in df:
+            series = (pd.Series(df[key], index = df.index)
+                      .fillna(0)
+                      .resample(self.timestep)
+                      .interpolate("linear"))
+            
+            data[key] = series.values
+
+        data["Index"] = series.index
+        self.metocean_data = pd.DataFrame.from_dict(data)
+        self.metocean_data.index = self.metocean_data["Index"]
+        self.metocean_data.drop(["Index"], axis = 1, inplace = True)
+
+        if bed:
+            self.metocean_data["Water depth"] = self.metocean_data["Tide"] - bed
+
+
+class HasWorkabilityCriteria:
+    """HasWorkabilityCriteria class
+
+    Used to add workability criteria
+    """
+
+    def __init__(self, v=1, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.v = v
+        self.wgs84 = pyproj.Geod(ellps='WGS84')
+
+
+class WorkabilityCriterion:
+    """WorkabilityCriterion class
+
+    Used to add limits to vessels (and therefore acitivities)
+    condition: column name of the metocean data (Hs, Tp, etc.)
+    maximum: maximum value 
+    minimum: minimum value
+    window_length: minimal length of the window (minutes)"""
+
+    def __init__(self, prop, max, min, value, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.wgs84 = pyproj.Geod(ellps='WGS84')
+
+
+class HasDepthRestriction:
+    """HasDepthRestriction class
+
+    Used to add depth limits to vessels
+    draught: should be a lambda function with input variable container.volume
+    waves: list with wave_heights
+    ukc: list with ukc, corresponding to wave_heights
+    """
+
+    def __init__(self, compute_draught, waves, ukc, filling=1, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.compute_draught = compute_draught
+        self.waves = waves
+        self.ukc = ukc
+        self.filling = filling
+
+        self.depth_data = {}
+    
+    def check_depth_restriction(self, location):
+        fill_degree = self.container.level / self.container.capacity
+        time = datetime.datetime.utcfromtimestamp(self.env.now)
+        waiting = 0
+
+        for key in sorted(self.depth_data[location.name].keys()):
+            if fill_degree <= key:
+                series = self.depth_data[location.name][key]["Series"]
+                
+                if len(series) == 0:
+                    print("No actual allowable draught available - starting anyway.")
+                    waiting = 0
+                
+                else:
+                    a = series.values
+                    v = np.datetime64(time - location.timestep)
+
+                    index = np.searchsorted(a, v, side='right')
+                    
+                    try:
+                        next_window = series[index] - time
+                    except IndexError:
+                        print("Length weather data exceeded - continuing without weather.")
+                        next_window = series[-1] - time
+
+                    waiting = max(next_window, datetime.timedelta(0)).total_seconds()
+
+                break
+        
+        if waiting != 0:
+            self.log_entry('waiting for tide start', self.env.now, waiting, self.geometry)
+            yield self.env.timeout(waiting)
+            self.log_entry('waiting for tide stop', self.env.now, waiting, self.geometry)
+
+    def calc_depth_restrictions(self, location):
+        # Minimal waterdepth should be draught + ukc
+        # Waterdepth is tide - depth site
+        # For full to empty [0%, 20%, 40%, 60%, 80%, 100%]
+
+        self.depth_data[location.name] = {}
+
+        for i in np.linspace(0.20, 1, 9):
+            df = location.metocean_data.copy()
+            
+            draught = self.compute_draught(i)
+            df["Required depth"] = df["Hs"].apply(lambda s : self.calc_required_depth(draught, s))
+            series = pd.Series(df["Required depth"] < df["Water depth"])
+
+            # Make a series on which the activity can start
+            duration = i * self.container.capacity / self.rate
+            steps = max(int(duration / location.timestep.seconds + .5), 1)
+            windowed = series.rolling(steps)
+            windowed = windowed.max().shift(-steps + 1)
+            windowed = windowed[windowed.values == 1].index
+
+            self.depth_data[location.name][i] = {"Volume": i * self.container.capacity,
+                                                 "Draught": draught,
+                                                 "Series": windowed}
+    
+    def calc_required_depth(self, draught, wave_height):
+        required_depth = np.nan
+
+        for i, wave in enumerate(self.waves):
+            if wave_height <= wave:
+                required_depth = self.ukc[i] + draught
+        
+        return required_depth
+
+    @property
+    def current_draught(self):
+        return self.compute_draught(self.container.level / self.container.capacity)
+
+
 class Movable(SimpyObject, Locatable):
     """Movable class
 
@@ -527,7 +690,7 @@ class Log(SimpyObject):
     def log_entry(self, log, t, value, geometry_log):
         """Log"""
         self.log["Message"].append(log)
-        self.log["Timestamp"].append(t)
+        self.log["Timestamp"].append(datetime.datetime.fromtimestamp(t))
         self.log["Value"].append(value)
         self.log["Geometry"].append(geometry_log)
 
@@ -604,12 +767,14 @@ class Processor(SimpyObject):
             # yield from self.checkWeather()
             
             # Check tide
-            # yield from self.checkTide()
+            # if isinstance(origin, HasDepthRestriction) and isinstance(origin, Movable) and isinstance(destination, HasWeather):
+            #     yield from origin.check_depth_restriction(destination)
+            # elif isinstance(destination, HasDepthRestriction) and isinstance(destination, Movable) and isinstance(origin, HasWeather):
+            #     yield from destination.check_depth_restriction(origin)
             
             # Check spill
             yield from self.checkSpill(origin, destination, amount)
 
-        # Log the start of the activity     
         origin.log_entry('unloading start', self.env.now, origin.container.level, self.geometry)
         destination.log_entry('loading start', self.env.now, destination.container.level, self.geometry)
 
