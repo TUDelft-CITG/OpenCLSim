@@ -592,12 +592,22 @@ class Processor(SimpyObject):
         yield my_dest_turn
 
         # If requests are yielded, start activity
-        # Waiting event should be combined to check if all conditions allow starting
-        # Activity can only start if environmental conditions allow it
-        yield from self.checkSpill(origin, destination, amount)
 
-        # If environmental conditions allow starting the activity, check if there is a weather window
-        # yield from self.checkWeather / self.checkTide
+        # Activity can only start if environmental conditions allow it
+        # Waiting event should be combined to check if all conditions allow starting
+        time = 0
+
+        while time != self.env.now:
+            time = self.env.now
+
+            # Check weather
+            # yield from self.checkWeather()
+            
+            # Check tide
+            # yield from self.checkTide()
+            
+            # Check spill
+            yield from self.checkSpill(origin, destination, amount)
 
         # Log the start of the activity     
         origin.log_entry('unloading start', self.env.now, origin.container.level, self.geometry)
@@ -792,6 +802,13 @@ class Processor(SimpyObject):
         
         if isinstance(origin, HasSoil) and isinstance(destination, HasSoil):
             soil = origin.get_soil(amount)
+            destination.put_soil(soil)
+
+        elif isinstance(origin, HasSoil):
+            soil = origin.get_soil(amount)
+        
+        elif isinstance(destination, HasSoil):
+            soil = SoilLayer(0, amount, "Unknown", 0, 0)
             destination.put_soil(soil)
 
 
