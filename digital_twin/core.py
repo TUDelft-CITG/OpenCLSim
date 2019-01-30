@@ -461,8 +461,8 @@ class Movable(SimpyObject, Locatable):
         other_location = shapely.geometry.asShape(locatable.geometry)
         _, _, distance = self.wgs84.inv(current_location.x, current_location.y,
                                         other_location.x, other_location.y)
+        
         return distance < tolerance
-
 
     def get_distance(self, origin, destination):
         orig = shapely.geometry.asShape(self.geometry)
@@ -628,21 +628,25 @@ class Processor(SimpyObject):
     
     def computeEnergy(self, duration, origin, destination):
         """
+        duration: duration of the activity in seconds
+        origin: origin of the moved volume (the computed amount)
+        destination: destination of the moved volume (the computed amount)
+
         There are three options:
-          1. Processor is also destination, origin could have fuel
-          2. Processor is also origin, destination could have fuel
-          3. Processor is neither destination, nor origin, but both could have fuel
+          1. Processor is also origin, destination could consume energy
+          2. Processor is also destination, origin could consume energy
+          3. Processor is neither destination, nor origin, but both could consume energy
         """
 
         # If self == origin --> unloading
         if self == origin:
             if isinstance(self, EnergyUse):
-                energy = self.energy_use_loading(duration)
-                message = "Energy use loading"
+                energy = self.energy_use_unloading(duration)
+                message = "Energy use unloading"
                 self.log_entry(message, self.env.now, energy, self.geometry)
             if isinstance(destination, EnergyUse):
-                energy = destination.energy_use_unloading(duration)
-                message = "Energy use unloading"
+                energy = destination.energy_use_loading(duration)
+                message = "Energy use loading"
                 destination.log_entry(message, self.env.now, energy, destination.geometry)
 
         # If self == destination --> loading
@@ -673,47 +677,79 @@ class Processor(SimpyObject):
 
     
     def checkSpill(self, origin, destination, amount):
-        # Before processing can start, check the conditions
-        if self != origin and isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
-            # In this case "destination" is the "mover"
-            density, fines = origin.get_properties(amount)
-            spill = self.sigma_d * density * fines * amount
+        """
+        duration: duration of the activity in seconds
+        origin: origin of the moved volume (the computed amount)
+        destination: destination of the moved volume (the computed amount)
 
-            waiting = origin.check_conditions(spill)
-            
-            if 0 < waiting:
-                self.log_entry('waiting for spill start', self.env.now, 0, destination.geometry)
-                yield self.env.timeout(waiting - self.env.now)
-                self.log_entry('waiting for spill stop', self.env.now, 0, destination.geometry)
+        There are three options:
+          1. Processor is also origin, destination could have spill requirements
+          2. Processor is also destination, origin could have spill requirements
+          3. Processor is neither destination, nor origin, but both could have spill requirements
 
-        elif self != destination and isinstance(destination, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
-            # In this case "origin" is the "mover"
-            spill = origin.m_r * self.sigma_p
-            waiting = destination.check_conditions(spill)
-            
-            if 0 < waiting:
-                self.log_entry('waiting for spill start', self.env.now, 0, origin.geometry)
-                yield self.env.timeout(waiting - self.env.now)
-                self.log_entry('waiting for spill stop', self.env.now, 0, origin.geometry)
+        Result of this function is possible waiting, spill is added later on and does not depend on possible requirements
+        """
+
+        # If self == origin --> destination is a placement location
+        if self == origin:
+            if isinstance(destination, HasSpillCondition) and isinstance(self, HasSoil) and isinstance(self, HasPlume):
+                density, fines = self.get_properties(amount)
+                spill = self.sigma_d * density * fines * amount
+
+                waiting = destination.check_conditions(spill)
+                
+                if 0 < waiting:
+                    self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
+                    yield self.env.timeout(waiting - self.env.now)
+                    self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
+
+        # If self == destination --> loading
+        elif self == destination:
+            if isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+                density, fines = origin.get_properties(amount)
+                spill = self.sigma_d * density * fines * amount
+
+                waiting = origin.check_conditions(spill)
+                
+                if 0 < waiting:
+                    self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
+                    yield self.env.timeout(waiting - self.env.now)
+                    self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
+
+
+        # If self != origin and self != destination --> processing
+        else:
+            if isinstance(destination, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+                density, fines = origin.get_properties(amount)
+                spill = self.sigma_d * density * fines * amount
+
+                waiting = destination.check_conditions(spill)
+                
+                if 0 < waiting:
+                    self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
+                    yield self.env.timeout(waiting - self.env.now)
+                    self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
+
+
     
-    def addSpill(self, soil, origin, destination, amount, duration):
-        density, fines = soil.density, soil.fines
+    # def addSpill(self, soil, origin, destination, amount, duration):
+    #     density, fines = soil.density, soil.fines
             
-        if self.id == destination.id and isinstance(origin, HasSpillCondition):
-            # In this case "destination" is the "mover"
-            spill = origin.spillDredging(self, destination, density, fines, amount, duration)
+    #     if self.id == destination.id and isinstance(origin, HasSpillCondition):
+    #         # In this case "destination" is the "mover"
+    #         spill = origin.spillDredging(self, destination, density, fines, amount, duration)
         
-            if spill > 0 and isinstance(origin, HasSpillCondition):
-                for condition in origin.SpillConditions["Spill limit"]:
-                    condition.put(spill)
+    #         if spill > 0 and isinstance(origin, HasSpillCondition):
+    #             for condition in origin.SpillConditions["Spill limit"]:
+    #                 condition.put(spill)
 
-        elif self.id == origin.id and isinstance(destination, HasSpillCondition):
-            # In this case "origin" is the "mover"
-            spill = destination.spillPlacement(self, origin)
+    #     elif self.id == origin.id and isinstance(destination, HasSpillCondition):
+    #         # In this case "origin" is the "mover"
+    #         spill = destination.spillPlacement(self, origin)
         
-            if spill > 0 and isinstance(destination, HasSpillCondition):
-                for condition in destination.SpillConditions["Spill limit"]:
-                    condition.put(spill)
+    #         if spill > 0 and isinstance(destination, HasSpillCondition):
+    #             for condition in destination.SpillConditions["Spill limit"]:
+    #                 condition.put(spill)
 
 
 class DictEncoder(json.JSONEncoder):
