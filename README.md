@@ -6,15 +6,18 @@
 Hydraulic-Infrastructure-Realisation
 ====================================
 
-Hydraulic-Infrastructure-Realisation
-
-* Documentation: [here](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/index.html)
+* Documentation can be found: [here](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/index.html)
 
 Features
 --------
 
 Complex Logistics Simulation - Rule based planning of cyclic activities and in depth comparison of different system concepts
 
+Example notebooks:
+* **Example 01 - Building a Layered Dike** - Example of a construction challenge, with four separate activites, where each activity depends on the progress of the other activities.
+* **Example 02 - Basic Hopper Operation** - Example of a trailing suction hopper dredge shipping sediment from origin to destination site.
+* **Example 03 - Tracking Spill** - Example of a project where sediment spill limits influence project progress.
+* **Example 04 - Fuel Use** - Example of estimating fuel use on a project.
 
 Credits
 -------
