@@ -156,7 +156,7 @@ class Activity(core.Identifiable, core.Log):
             if not shown:
                 print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + self.name +
                       ' to ' + destination.name + ' suspended')
-                self.log_entry("suspended", self.env.now, -1, self.geometry)
+                self.log_entry("suspended", self.env.now, -1, origin.geometry)
                 shown = True
             yield self.env.timeout(3600)  # step 3600 time units ahead
 
