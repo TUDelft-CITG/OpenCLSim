@@ -29,6 +29,7 @@ def env():
     my_env.epoch = time.mktime(simulation_start.timetuple())
     return my_env
 
+
 @pytest.fixture
 def geometry_a():
     return shapely.geometry.Point(0, 0)
@@ -48,13 +49,16 @@ def locatable_a(geometry_a):
 def locatable_b(geometry_b):
     return core.Locatable(geometry_b)
 
+
 @pytest.fixture
 def energy_use_sailing():
     return lambda x: x * 2
 
+
 @pytest.fixture
 def energy_use_loading():
     return lambda x: x * 4
+
 
 @pytest.fixture
 def energy_use_unloading():
@@ -205,13 +209,13 @@ def test_Processor_ContainerDependentMovable(env, geometry_a, geometry_b, locata
                    "loading_func": (lambda x: x / 2),             # Loading rate
                    "energy_use_loading": energy_use_loading,      # Variable fuel use
                    "energy_use_sailing": energy_use_sailing,      # Variable fuel use
-                   "energy_use_unloading": energy_use_loading}  # Variable fuel use
+                   "energy_use_unloading": energy_use_loading}    # Variable fuel use
     processor_2 = {"env": env,                                    # The simpy environment
                    "name": "Processor 2",                         # Name
                    "geometry": geometry_b,                        # It is located at location B
                    "unloading_func": (lambda x: x / 1),           # Unloading rate 
                    "loading_func": (lambda x: x / 2),             # Loading rate
-                   "energy_use_loading": energy_use_unloading,      # Variable fuel use
+                   "energy_use_loading": energy_use_unloading,    # Variable fuel use
                    "energy_use_sailing": energy_use_sailing,      # Variable fuel use
                    "energy_use_unloading": energy_use_unloading}  # Variable fuel use
 
