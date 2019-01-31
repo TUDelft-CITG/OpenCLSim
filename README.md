@@ -8,18 +8,13 @@ Hydraulic-Infrastructure-Realisation
 
 Hydraulic-Infrastructure-Realisation
 
-
-* Free software: GNU General Public License v3
 * Documentation: https://hydraulic-infrastructure-realisation.readthedocs.io
 
 
 Features
 --------
 
-* Simulate installation work
-* Visualize construction using KML in Google Earth
-* Hydraulic infrastructure (Ships, Containers)
-* Create new infrastructure from existing components (Identifiable, Locatable)
+Complex Logistics Simulation - Rule based planning of cyclic activities and in depth comparison of different system concepts
 
 
 Credits
