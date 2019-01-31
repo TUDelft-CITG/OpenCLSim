@@ -675,16 +675,12 @@ class Movable(SimpyObject, Locatable):
         self.geometry = shapely.geometry.asShape(destination.geometry)
 
         # Compute the energy use
-        if isinstance(self, EnergyUse):
-            energy = self.energy_use_sailing(distance / speed)
-            message = "Energy use " + self.log["Message"][-1].rstrip(" start")
-            self.log_entry(message, self.env.now, energy, self.geometry)
+        self.energy_use(distance / speed)
         
         # Debug logs
         logger.debug('  distance: ' + '%4.2f' % distance + ' m')
         logger.debug('  sailing:  ' + '%4.2f' % speed + ' m/s')
         logger.debug('  duration: ' + '%4.2f' % ((distance / speed) / 3600) + ' hrs')
-
 
     def is_at(self, locatable, tolerance=100):
         current_location = shapely.geometry.asShape(self.geometry)
@@ -694,15 +690,26 @@ class Movable(SimpyObject, Locatable):
         
         return distance < tolerance
 
-    
     def get_distance(self, origin, destination):
         orig = shapely.geometry.asShape(self.geometry)
         dest = shapely.geometry.asShape(destination.geometry)
         _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
         return distance
-
     
+    def energy_use(self, duration):
+        if isinstance(self, EnergyUse):
+            # message depends on filling degree: if container is empty --> sailing empt
+            if not isinstance(self, HasContainer):
+                message = "Energy use sailing empty"
+            elif self.container.level == 0:
+                message = "Energy use sailing empty"
+            else:
+                message = "Energy use sailing full"
+
+            energy = self.energy_use_sailing(duration)
+            self.log_entry(message, self.env.now, energy, self.geometry)
+
     @property
     def current_speed(self):
         return self.v
@@ -896,11 +903,11 @@ class Processor(SimpyObject):
         # If self == destination --> loading
         elif self == destination:
             if isinstance(self, EnergyUse):
-                energy = self.energy_use_unloading(duration)
+                energy = self.energy_use_loading(duration)
                 message = "Energy use loading"
                 self.log_entry(message, self.env.now, energy, self.geometry)
             if isinstance(origin, EnergyUse):
-                energy = origin.energy_use_loading(duration)
+                energy = origin.energy_use_unloading(duration)
                 message = "Energy use unloading"
                 origin.log_entry(message, self.env.now, energy, origin.geometry)
 
