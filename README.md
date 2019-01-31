@@ -8,8 +8,7 @@ Hydraulic-Infrastructure-Realisation
 
 Hydraulic-Infrastructure-Realisation
 
-* Documentation: https://hydraulic-infrastructure-realisation.readthedocs.io
-
+* Documentation: [here](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/index.html)
 
 Features
 --------
