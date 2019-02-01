@@ -1,55 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+    Setup file for hydraulic_infrastructure_realisation.
+    Use setup.cfg to configure your project.
 
-"""The setup script."""
+    This file was generated with PyScaffold 3.1.
+    PyScaffold helps you to put up the scaffold of your new Python project.
+    Learn more under: https://pyscaffold.org/
+"""
+import sys
 
-from setuptools import setup, find_packages
+from pkg_resources import require, VersionConflict
+from setuptools import setup
 
-with open('README.md') as readme_file:
-    readme = readme_file.read()
+try:
+    require('setuptools>=38.3')
+except VersionConflict:
+    print("Error: version of setuptools is too old (<38.3)!")
+    sys.exit(1)
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
 
-requirements = ['Click>=6.0', 'simpy>=3.0.11', 'shapely>=1.6.4', 'pyproj>=1.9.5.1', 'pandas', 'networkx', 'pint', ]
-
-setup_requirements = ['pytest-runner', ]
-
-test_requirements = ['pytest', 'pytest-cov', ]
-
-setup(
-    author="Fedor Baart",
-    author_email='fedor.baart@deltares.nl',
-    classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-        'Natural Language :: English',
-        "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-    ],
-    description="Hydraulic-Infrastructure-Realisation ",
-    entry_points={
-        'console_scripts': [
-            'digital_twin=digital_twin.cli:main',
-        ],
-    },
-    install_requires=requirements,
-    license="GNU General Public License v3",
-    long_description=readme + '\n\n' + history,
-    include_package_data=True,
-    keywords='digital_twin',
-    name='digital_twin',
-    packages=find_packages(include=['digital_twin']),
-    setup_requires=setup_requirements,
-    test_suite='tests',
-    tests_require=test_requirements,
-    url='https://github.com/TUDelft-CITG/digital_twin',
-    version='0.1.0',
-    zip_safe=False,
-)
+if __name__ == "__main__":
+    setup(use_pyscaffold=True)
