@@ -1,0 +1,5 @@
+[run]
+source = digital_twin
+
+[report]
+omit = test*, .eggs*
