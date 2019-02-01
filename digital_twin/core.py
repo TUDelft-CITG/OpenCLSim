@@ -74,60 +74,30 @@ class HasContainer(SimpyObject):
         self.total_requested = total_requested
 
 
-class HasFuel(SimpyObject):
-    """HasFuel class
+class EnergyUse(SimpyObject):
+    """EnergyUse class
+    
+    energy_use_sailing:   function that specifies the fuel use during sailing activity   - input should be time
+    energy_use_loading:   function that specifies the fuel use during loading activity   - input should be time
+    energy_use_unloading: function that specifies the fuel use during unloading activity - input should be time
 
-    fuel_use_loading: function that specifies the fuel use during loading activity
-    fuel_use_unloading: function that specifies the fuel use during unloading activity
-    fuel_use_sailing: function that specifies the fuel use during sailing activity
+    At the moment "keeping track of fuel" is not added to the digital twin. 
 
-    fuel_capacity: amount of fuel that the container can hold
-    fuel_level: amount the container holds initially
-    fuel_container: a simpy object that can hold stuff
-    refuel_method: method of refueling (bunker or returning to quay) or ignore for not tracking
+    Example function could be as follows.
+    The energy use of the loading event is equal to: duration * power_use.
+
+    def energy_use_loading(power_use):
+        return lambda x: x * power_use
     """
 
-    def __init__(self, fuel_use_loading, fuel_use_unloading, fuel_use_sailing, 
-                 fuel_capacity, fuel_level, refuel_method="ignore", *args, **kwargs):
+    def __init__(self, energy_use_sailing, energy_use_loading, energy_use_unloading, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.fuel_use_loading = fuel_use_loading
-        self.fuel_use_unloading = fuel_use_unloading
-        self.fuel_use_sailing = fuel_use_sailing
-        self.fuel_container = simpy.Container(self.env, fuel_capacity, init=fuel_level)
-        self.refuel_method = refuel_method
+        self.energy_use_sailing = energy_use_sailing
+        self.energy_use_loading = energy_use_loading
+        self.energy_use_unloading = energy_use_unloading
 
-    def consume(self, amount):
-        """consume an amount of fuel"""
-        
-        self.log_entry("fuel consumed", self.env.now, amount, self.geometry)
-        self.fuel_container.get(amount)
 
-    def fill(self, fuel_delivery_rate=1):
-        """fill 'er up"""
-
-        amount = self.fuel_container.capacity - self.fuel_container.level
-        if 0 < amount:
-            self.fuel_container.put(amount)
-
-        if self.refuel_method == "ignore":
-            return 0
-        else:
-            return amount / fuel_delivery_rate
-    
-    def check_fuel(self, fuel_use):
-        if self.fuel_container.level < fuel_use:
-            #latest_log = [self.log[-1], self.t[-1], self.value[-1]]
-            #del self.log[-1], self.t[-1], self.value[-1]
-
-            refuel_duration = self.fill()
-
-            if refuel_duration != 0:
-                self.log_entry("fuel loading start", self.env.now, self.fuel_container.level, self.geometry)
-                yield self.env.timeout(refuel_duration)
-                self.log_entry("fuel loading stop", self.env.now, self.fuel_container.level, self.geometry)
-
-            #self.log_entry(latest_log[0], self.env.now, latest_log[2])
 
 class HasPlume(SimpyObject):
     """Using values from Becker [2014], https://www.sciencedirect.com/science/article/pii/S0301479714005143.
@@ -357,6 +327,7 @@ class HasSoil:
         # If soil is a mover, the mover should be initialized with an empty soil dict after emptying
         if isinstance(self, Movable) and volume == self.container.level:
             removed_soil = list(self.soil.items())[0]
+
             self.soil = {}
 
             return SoilLayer(0,
@@ -377,6 +348,7 @@ class HasSoil:
                     volumes.append(volume - removed_volume)
                     
                     self.soil[layer]["Volume"] -= (volume - removed_volume)
+                    
                     break
                 
                 else:
@@ -447,6 +419,233 @@ class HasSoil:
 
         return properties.density, properties.fines
 
+
+class HasWeather:
+    """HasWeather class
+
+    Used to add weather conditions to a project site
+    name: name of .csv file in folder
+
+    year: name of the year column
+    month: name of the month column
+    day: name of the day column
+
+    timestep: size of timestep to interpolate between datapoints (minutes)
+    bed: level of the seabed / riverbed with respect to CD (meters)
+    """
+
+    def __init__(self, file, year, month, day, hour, timestep=10, bed=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        df = pd.read_csv(file)
+        df.index = df[[year, month, day, hour]].apply(lambda s : datetime.datetime(*s), axis = 1)
+        df = df.drop([year, month, day, hour],axis=1)
+        
+        self.timestep = datetime.timedelta(minutes = timestep)
+
+        data = {}
+        for key in df:
+            series = (pd.Series(df[key], index = df.index)
+                      .fillna(0)
+                      .resample(self.timestep)
+                      .interpolate("linear"))
+            
+            data[key] = series.values
+
+        data["Index"] = series.index
+        self.metocean_data = pd.DataFrame.from_dict(data)
+        self.metocean_data.index = self.metocean_data["Index"]
+        self.metocean_data.drop(["Index"], axis = 1, inplace = True)
+
+        if bed:
+            self.metocean_data["Water depth"] = self.metocean_data["Tide"] - bed
+
+
+class HasWorkabilityCriteria:
+    """HasWorkabilityCriteria class
+
+    Used to add workability criteria
+    """
+
+    def __init__(self, v=1, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.v = v
+        self.wgs84 = pyproj.Geod(ellps='WGS84')
+
+
+class WorkabilityCriterion:
+    """WorkabilityCriterion class
+
+    Used to add limits to vessels (and therefore acitivities)
+    condition: column name of the metocean data (Hs, Tp, etc.)
+    maximum: maximum value 
+    minimum: minimum value
+    window_length: minimal length of the window (minutes)"""
+
+    def __init__(self, prop, max, min, value, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.wgs84 = pyproj.Geod(ellps='WGS84')
+
+
+class HasDepthRestriction:
+    """HasDepthRestriction class
+
+    Used to add depth limits to vessels
+    draught: should be a lambda function with input variable container.volume
+    waves: list with wave_heights
+    ukc: list with ukc, corresponding to wave_heights
+    """
+
+    def __init__(self, compute_draught, waves, ukc, filling=1, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.compute_draught = compute_draught
+        self.waves = waves
+        self.ukc = ukc
+        self.filling = filling
+
+        self.depth_data = {}
+    
+    def check_depth_restriction(self, location):
+        fill_degree = self.container.level / self.container.capacity
+        time = datetime.datetime.utcfromtimestamp(self.env.now)
+        waiting = 0
+
+        for key in sorted(self.depth_data[location.name].keys()):
+            if fill_degree <= key:
+                series = self.depth_data[location.name][key]["Series"]
+                
+                if len(series) == 0:
+                    print("No actual allowable draught available - starting anyway.")
+                    waiting = 0
+                
+                else:
+                    a = series.values
+                    v = np.datetime64(time - location.timestep)
+
+                    index = np.searchsorted(a, v, side='right')
+                    
+                    try:
+                        next_window = series[index] - time
+                    except IndexError:
+                        print("Length weather data exceeded - continuing without weather.")
+                        next_window = series[-1] - time
+
+                    waiting = max(next_window, datetime.timedelta(0)).total_seconds()
+
+                break
+        
+        if waiting != 0:
+            self.log_entry('waiting for tide start', self.env.now, waiting, self.geometry)
+            yield self.env.timeout(waiting)
+            self.log_entry('waiting for tide stop', self.env.now, waiting, self.geometry)
+
+    def calc_depth_restrictions(self, location):
+        # Minimal waterdepth should be draught + ukc
+        # Waterdepth is tide - depth site
+        # For full to empty [0%, 20%, 40%, 60%, 80%, 100%]
+
+        self.depth_data[location.name] = {}
+
+        for i in np.linspace(0.20, 1, 9):
+            df = location.metocean_data.copy()
+            
+            draught = self.compute_draught(i)
+            df["Required depth"] = df["Hs"].apply(lambda s : self.calc_required_depth(draught, s))
+            series = pd.Series(df["Required depth"] < df["Water depth"])
+
+            # Make a series on which the activity can start
+            duration = self.unloading_func(i * self.container.capacity)
+            steps = max(int(duration / location.timestep.seconds + .5), 1)
+            windowed = series.rolling(steps)
+            windowed = windowed.max().shift(-steps + 1)
+            windowed = windowed[windowed.values == 1].index
+
+            self.depth_data[location.name][i] = {"Volume": i * self.container.capacity,
+                                                 "Draught": draught,
+                                                 "Series": windowed}
+    
+    def calc_required_depth(self, draught, wave_height):
+        required_depth = np.nan
+
+        for i, wave in enumerate(self.waves):
+            if wave_height <= wave:
+                required_depth = self.ukc[i] + draught
+        
+        return required_depth
+    
+
+    def check_optimal_filling(self, loader, origin, destination):
+        # Calculate depth restrictions
+        if not self.depth_data:
+            if isinstance(origin, HasWeather):
+                self.calc_depth_restrictions(origin)
+            if isinstance(destination, HasWeather):
+                self.calc_depth_restrictions(destination)
+        
+        # If a filling degee has been specified
+        if self.filling:
+            return self.filling * self.container.capacity
+        
+        # If not, try to optimize the load with regard to the tidal window
+        else:
+            loads = []
+            waits = []
+
+            amounts = []
+            time = datetime.datetime.utcfromtimestamp(self.env.now)
+            fill_degrees = self.depth_data[destination.name].keys()
+
+            for filling in fill_degrees:
+                series = self.depth_data[destination.name][filling]["Series"]
+                
+                if len(series) != 0:
+                    # Determine length of cycle
+                    loading = loader.loading_func(filling * self.container.capacity)
+
+                    orig = shapely.geometry.asShape(origin.geometry)
+                    dest = shapely.geometry.asShape(destination.geometry)
+                    _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+                    sailing_full = distance / self.compute_v(0)
+                    sailing_full = distance / self.compute_v(filling)
+
+                    duration = datetime.timedelta(seconds = (sailing_full + loading + sailing_full))
+
+                    # Determine waiting time
+                    a = series.values
+                    v = np.datetime64(time + duration)
+
+                    index = np.searchsorted(a, v, side='right')
+                    next_window = series[index] - duration - time
+
+                    waiting = max(next_window, datetime.timedelta(0)).total_seconds()
+                    
+                    # In case waiting is always required
+                    loads.append(filling * self.container.capacity)
+                    waits.append(waiting)
+
+                    if waiting < destination.timestep.total_seconds():
+                        amounts.append(filling * self.container.capacity)
+
+            # Check if there is a better filling degree
+            if amounts:
+                return max(amounts)
+            elif loads:
+                cargo = 0
+                
+                for i, _ in enumerate(loads):
+                    if waits[i] == min(waits):
+                        cargo = loads[i]
+
+                return cargo
+
+    @property
+    def current_draught(self):
+        return self.compute_draught(self.container.level / self.container.capacity)
+
+
 class Movable(SimpyObject, Locatable):
     """Movable class
 
@@ -463,34 +662,53 @@ class Movable(SimpyObject, Locatable):
     def move(self, destination):
         """determine distance between origin and destination, and
         yield the time it takes to travel it"""
-        orig = shapely.geometry.asShape(self.geometry)
-        dest = shapely.geometry.asShape(destination.geometry)
-        forward, backward, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+        # Determine distance based on geometry objects
+        distance = self.get_distance(self.geometry, destination)
 
+        # Determine speed based on filling degree
         speed = self.current_speed
 
-        # check for sufficient fuel
-        if isinstance(self, HasFuel):
-            fuel_consumed = self.fuel_use_sailing(distance, speed)
-            self.check_fuel(fuel_consumed)
-
+        # Check out the time based on duration of sailing event
         yield self.env.timeout(distance / speed)
-        self.geometry = dest
+        
+        # Set mover geometry to destination geometry
+        self.geometry = shapely.geometry.asShape(destination.geometry)
+
+        # Compute the energy use
+        self.energy_use(distance / speed)
+        
+        # Debug logs
         logger.debug('  distance: ' + '%4.2f' % distance + ' m')
         logger.debug('  sailing:  ' + '%4.2f' % speed + ' m/s')
         logger.debug('  duration: ' + '%4.2f' % ((distance / speed) / 3600) + ' hrs')
-
-        # lower the fuel
-        if isinstance(self, HasFuel):
-            # remove seconds of fuel
-            self.consume(fuel_consumed)
 
     def is_at(self, locatable, tolerance=100):
         current_location = shapely.geometry.asShape(self.geometry)
         other_location = shapely.geometry.asShape(locatable.geometry)
         _, _, distance = self.wgs84.inv(current_location.x, current_location.y,
                                         other_location.x, other_location.y)
+        
         return distance < tolerance
+
+    def get_distance(self, origin, destination):
+        orig = shapely.geometry.asShape(self.geometry)
+        dest = shapely.geometry.asShape(destination.geometry)
+        _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+
+        return distance
+    
+    def energy_use(self, duration):
+        if isinstance(self, EnergyUse):
+            # message depends on filling degree: if container is empty --> sailing empt
+            if not isinstance(self, HasContainer):
+                message = "Energy use sailing empty"
+            elif self.container.level == 0:
+                message = "Energy use sailing empty"
+            else:
+                message = "Energy use sailing full"
+
+            energy = self.energy_use_sailing(duration)
+            self.log_entry(message, self.env.now, energy, self.geometry)
 
     @property
     def current_speed(self):
@@ -546,7 +764,7 @@ class Log(SimpyObject):
     def log_entry(self, log, t, value, geometry_log):
         """Log"""
         self.log["Message"].append(log)
-        self.log["Timestamp"].append(t)
+        self.log["Timestamp"].append(datetime.datetime.fromtimestamp(t))
         self.log["Value"].append(value)
         self.log["Geometry"].append(geometry_log)
 
@@ -560,17 +778,38 @@ class Log(SimpyObject):
 class Processor(SimpyObject):
     """Processor class
 
-    rate: rate with which quantity can be processed [amount/s]"""
+    loading_func:   lambda function to determine the duration of loading event based on input parameter amount 
+    unloading_func: lambda function to determine the duration of unloading event based on input parameter amount 
+    
+    Example function could be as follows.
+    The duration of the loading event is equal to: amount / rate.
 
-    def __init__(self, rate, *args, **kwargs):
+    def loading_func(loading_rate):
+        return lambda x: x / loading_rate
+
+    
+    A more complex example function could be as follows.
+    The duration of the loading event is equal to: manoeuvring + amount / rate + cleaning.
+
+    def loading_func(manoeuvring, loading_rate, cleaning):
+        return lambda x: datetime.timedelta(minutes = manoeuvring).total_seconds() + \
+                         x / loading_rate + \
+                         datetime.timedelta(minutes = cleaning).total_seconds()
+
+    """
+
+    def __init__(self, loading_func = None, unloading_func = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.rate = rate
+        self.loading_func = loading_func
+        self.unloading_func = unloading_func
 
     # noinspection PyUnresolvedReferences
     def process(self, origin, destination, amount, origin_resource_request=None, destination_resource_request=None):
         """get amount from origin container, put amount in destination container,
         and yield the time it takes to process it"""
+
+        # Make sure all requests are granted
         assert isinstance(origin, HasContainer) and isinstance(destination, HasContainer)
         assert isinstance(origin, HasResource) and isinstance(destination, HasResource)
         assert isinstance(origin, Log) and isinstance(destination, Log)
@@ -589,133 +828,247 @@ class Processor(SimpyObject):
         yield my_origin_turn
         yield my_dest_turn
 
-        #######################################
-        ############### ON FUEL USE
-        ############### THIS SHOULD BE IMPROVED
+        # If requests are yielded, start activity
 
-        # check fuel from origin
-        if isinstance(origin, HasFuel):
-            fuel_consumed_origin = origin.fuel_use_unloading(amount, self.rate)
-            origin.check_fuel(fuel_consumed_origin)
+        # Activity can only start if environmental conditions allow it
+        # Waiting event should be combined to check if all conditions allow starting
+        time = 0
 
-        # check fuel from destination
-        if isinstance(destination, HasFuel):
-            fuel_consumed_destination = destination.fuel_use_unloading(amount, self.rate)
-            destination.check_fuel(fuel_consumed_destination)
-        
-        if isinstance(self, Identifiable):
-        # check fuel from processor if not origin or destination  -- case if processor != mover
-            if self.id != origin.id and self.id != destination.id and isinstance(self, HasFuel):
-                # if origin is moveable -- e.g. unloading a barge with a crane
-                if isinstance(origin, Movable):
-                    fuel_consumed = self.fuel_use_unloading(amount, self.rate)
-                    self.check_fuel(fuel_consumed)
-                
-                # if destination is moveable -- e.g. loading a barge with a backhoe
-                if isinstance(destination, Movable):
-                    fuel_consumed = self.fuel_use_loading(amount, self.rate)
-                    self.check_fuel(fuel_consumed)
+        while time != self.env.now:
+            time = self.env.now
 
-                # third option -- from moveable to moveable -- take highest fuel consumption
-                else:
-                    fuel_consumed = max(self.fuel_use_unloading(amount, self.rate), self.fuel_use_loading(amount, self.rate))
-                    self.check_fuel(fuel_consumed)
-        
-            ############### THIS SHOULD BE IMPROVED
-            ############### ON Fuel
-            #######################################
-
-
-            #######################################
-            ############### ON Spill
-            #######################################
+            # Check weather
+            # yield from self.checkWeather()
+            
+            # Check tide
+            yield from self.checkTide(origin, destination)
+            
+            # Check spill
             yield from self.checkSpill(origin, destination, amount)
 
-            #######################################
-            ############### ON Weather
-            #######################################
-                
         origin.log_entry('unloading start', self.env.now, origin.container.level, self.geometry)
         destination.log_entry('loading start', self.env.now, destination.container.level, self.geometry)
 
-        # Move soil from origin to destination
-        if isinstance(origin, HasSoil) and isinstance(destination, HasSoil):
-            soil = origin.get_soil(amount)
-            destination.put_soil(soil)
+        # Add spill the location where processing is taking place
+        self.addSpill(origin, destination, amount, self.rate(amount))
 
-            self.addSpill(soil, origin, destination, amount, amount / self.rate)
+        # Shift soil from container volumes
+        self.shiftSoil(origin, destination, amount)
 
+        # Shift volumes in containers
         origin.container.get(amount)
         destination.container.put(amount)
 
-        yield self.env.timeout(amount / self.rate)
+        # Checkout the time
+        yield self.env.timeout(self.rate(amount))
 
-        if isinstance(self, Identifiable):
-            # lower the fuel for all active 
-            if isinstance(origin, HasFuel):
-                origin.consume(fuel_consumed_origin)
+        # Compute the energy use
+        self.computeEnergy(self.rate(amount), origin, destination)
 
-            if isinstance(destination, HasFuel):
-                destination.consume(fuel_consumed_destination)
-
-            if self.id != origin.id and self.id != destination.id and isinstance(self, HasFuel):
-                self.consume(fuel_consumed)
-
+        # Log the end of the activity
         origin.log_entry('unloading stop', self.env.now, origin.container.level, self.geometry)
         destination.log_entry('loading stop', self.env.now, destination.container.level, self.geometry)
 
-        logger.debug('  process:        ' + '%4.2f' % ((amount / self.rate) / 3600) + ' hrs')
+        logger.debug('  process:        ' + '%4.2f' % ((self.rate(amount)) / 3600) + ' hrs')
 
         if origin_resource_request is None:
             origin.resource.release(my_origin_turn)
         if destination_resource_request is None:
             destination.resource.release(my_dest_turn)
     
-    def checkFuel(self):
-        pass
+    
+    def computeEnergy(self, duration, origin, destination):
+        """
+        duration: duration of the activity in seconds
+        origin: origin of the moved volume (the computed amount)
+        destination: destination of the moved volume (the computed amount)
+
+        There are three options:
+          1. Processor is also origin, destination could consume energy
+          2. Processor is also destination, origin could consume energy
+          3. Processor is neither destination, nor origin, but both could consume energy
+        """
+
+        # If self == origin --> unloading
+        if self == origin:
+            if isinstance(self, EnergyUse):
+                energy = self.energy_use_unloading(duration)
+                message = "Energy use unloading"
+                self.log_entry(message, self.env.now, energy, self.geometry)
+            if isinstance(destination, EnergyUse):
+                energy = destination.energy_use_loading(duration)
+                message = "Energy use loading"
+                destination.log_entry(message, self.env.now, energy, destination.geometry)
+
+        # If self == destination --> loading
+        elif self == destination:
+            if isinstance(self, EnergyUse):
+                energy = self.energy_use_loading(duration)
+                message = "Energy use loading"
+                self.log_entry(message, self.env.now, energy, self.geometry)
+            if isinstance(origin, EnergyUse):
+                energy = origin.energy_use_unloading(duration)
+                message = "Energy use unloading"
+                origin.log_entry(message, self.env.now, energy, origin.geometry)
+
+        # If self != origin and self != destination --> processing
+        else:
+            if isinstance(self, EnergyUse):
+                energy = self.energy_use_loading(duration)
+                message = "Energy use loading"
+                self.log_entry(message, self.env.now, energy, self.geometry)
+            if isinstance(origin, EnergyUse):
+                energy = origin.energy_use_unloading(duration)
+                message = "Energy use unloading"
+                origin.log_entry(message, self.env.now, energy, origin.geometry)
+            if isinstance(destination, EnergyUse):
+                energy = destination.energy_use_loading(duration)
+                message = "Energy use loading"
+                destination.log_entry(message, self.env.now, energy, destination.geometry)
+
     
     def checkSpill(self, origin, destination, amount):
-        # Before processing can start, check the conditions
-        if self.id != origin.id and isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
-            # In this case "destination" is the "mover"
+        """
+        duration: duration of the activity in seconds
+        origin: origin of the moved volume (the computed amount)
+        destination: destination of the moved volume (the computed amount)
+
+        There are three options:
+          1. Processor is also origin, destination could have spill requirements
+          2. Processor is also destination, origin could have spill requirements
+          3. Processor is neither destination, nor origin, but both could have spill requirements
+
+        Result of this function is possible waiting, spill is added later on and does not depend on possible requirements
+        """
+
+        # If self == origin --> destination is a placement location
+        if self == origin:
+            if isinstance(destination, HasSpillCondition) and isinstance(self, HasSoil) and isinstance(self, HasPlume):
+                density, fines = self.get_properties(amount)
+                spill = self.sigma_d * density * fines * amount
+
+                waiting = destination.check_conditions(spill)
+                
+                if 0 < waiting:
+                    self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
+                    yield self.env.timeout(waiting - self.env.now)
+                    self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
+
+        # If self == destination --> origin is a retrieval location
+        elif self == destination:
+            if isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+                density, fines = origin.get_properties(amount)
+                spill = self.sigma_d * density * fines * amount
+
+                waiting = origin.check_conditions(spill)
+                
+                if 0 < waiting:
+                    self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
+                    yield self.env.timeout(waiting - self.env.now)
+                    self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
+
+        # If self != origin and self != destination --> processing
+        else:
+            if isinstance(destination, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+                density, fines = origin.get_properties(amount)
+                spill = self.sigma_d * density * fines * amount
+
+                waiting = destination.check_conditions(spill)
+                
+                if 0 < waiting:
+                    self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
+                    yield self.env.timeout(waiting - self.env.now)
+                    self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
+            
+            elif isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+                density, fines = origin.get_properties(amount)
+                spill = self.sigma_d * density * fines * amount
+
+                waiting = origin.check_conditions(spill)
+                
+                if 0 < waiting:
+                    self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
+                    yield self.env.timeout(waiting - self.env.now)
+                    self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
+
+
+    def checkTide(self, origin, destination):
+        if isinstance(origin, HasDepthRestriction) and isinstance(origin, Movable) and isinstance(destination, HasWeather):
+            yield from origin.check_depth_restriction(destination)
+        elif isinstance(destination, HasDepthRestriction) and isinstance(destination, Movable) and isinstance(origin, HasWeather):
+            yield from destination.check_depth_restriction(origin)
+
+    def addSpill(self, origin, destination, amount, duration):
+        """
+        duration: duration of the activity in seconds
+        origin: origin of the moved volume (the computed amount)
+        destination: destination of the moved volume (the computed amount)
+
+        There are three options:
+          1. Processor is also origin, destination could have spill requirements
+          2. Processor is also destination, origin could have spill requirements
+          3. Processor is neither destination, nor origin, but both could have spill requirements
+
+        Result of this function is possible waiting, spill is added later on and does not depend on possible requirements
+        """
+
+        if isinstance(origin, HasSoil):
             density, fines = origin.get_properties(amount)
-            spill = self.sigma_d * density * fines * amount
 
-            waiting = origin.check_conditions(spill)
-            
-            if 0 < waiting:
-                self.log_entry('waiting for spill start', self.env.now, 0, destination.geometry)
-                yield self.env.timeout(waiting - self.env.now)
-                self.log_entry('waiting for spill stop', self.env.now, 0, destination.geometry)
+            # If self == origin --> destination is a placement location
+            if self == origin:
+                if isinstance(self, HasPlume) and isinstance(destination, HasSpill):
+                    spill = destination.spillPlacement(self, self)
 
-        elif self.id != destination.id and isinstance(destination, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
-            # In this case "origin" is the "mover"
-            spill = origin.m_r * self.sigma_p
-            waiting = destination.check_conditions(spill)
-            
-            if 0 < waiting:
-                self.log_entry('waiting for spill start', self.env.now, 0, origin.geometry)
-                yield self.env.timeout(waiting - self.env.now)
-                self.log_entry('waiting for spill stop', self.env.now, 0, origin.geometry)
+                    if 0 < spill and isinstance(destination, HasSpillCondition):
+                        for condition in destination.SpillConditions["Spill limit"]:
+                                condition.put(spill)
+
+            # If self == destination --> origin is a retrieval location
+            elif self == destination:
+                if isinstance(self, HasPlume) and isinstance(origin, HasSpill):
+                    spill = origin.spillDredging(self, self, density, fines, amount, duration)
+
+                    if 0 < spill and isinstance(origin, HasSpillCondition):
+                        for condition in origin.SpillConditions["Spill limit"]:
+                            condition.put(spill)
+
+            # If self != origin and self != destination --> processing
+            else:
+                if isinstance(self, HasPlume) and isinstance(destination, HasSpill):
+                    spill = destination.spillPlacement(self, self)
+
+                    if 0 < spill and isinstance(destination, HasSpillCondition):
+                        for condition in destination.SpillConditions["Spill limit"]:
+                            condition.put(spill)
+                
+                if isinstance(self, HasPlume) and isinstance(origin, HasSpill):
+                    spill = origin.spillDredging(self, self, density, fines, amount, duration)
+
+                    if 0 < spill and isinstance(origin, HasSpillCondition):
+                        for condition in origin.SpillConditions["Spill limit"]:
+                            condition.put(spill)
     
-    def addSpill(self, soil, origin, destination, amount, duration):
-        density, fines = soil.density, soil.fines
-            
-        if self.id == destination.id and isinstance(origin, HasSpillCondition):
-            # In this case "destination" is the "mover"
-            spill = origin.spillDredging(self, destination, density, fines, amount, duration)
-        
-            if spill > 0 and isinstance(origin, HasSpillCondition):
-                for condition in origin.SpillConditions["Spill limit"]:
-                    condition.put(spill)
 
-        elif self.id == origin.id and isinstance(destination, HasSpillCondition):
-            # In this case "origin" is the "mover"
-            spill = destination.spillPlacement(self, origin)
+    def shiftSoil(self, origin, destination, amount):
+        """
+        origin: origin of the moved volume (the computed amount)
+        destination: destination of the moved volume (the computed amount)
+        amount: the volume of soil that is moved
+
+        Can only occur if both the origin and the destination have soil objects (mix-ins)
+        """
         
-            if spill > 0 and isinstance(destination, HasSpillCondition):
-                for condition in destination.SpillConditions["Spill limit"]:
-                    condition.put(spill)
+        if isinstance(origin, HasSoil) and isinstance(destination, HasSoil):
+            soil = origin.get_soil(amount)
+            destination.put_soil(soil)
+
+        elif isinstance(origin, HasSoil):
+            soil = origin.get_soil(amount)
+        
+        elif isinstance(destination, HasSoil):
+            soil = SoilLayer(0, amount, "Unknown", 0, 0)
+            destination.put_soil(soil)
 
 
 class DictEncoder(json.JSONEncoder):

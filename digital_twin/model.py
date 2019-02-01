@@ -1,4 +1,7 @@
 import digital_twin.core as core
+import datetime
+import shapely
+import numpy as np
 
 
 class LevelCondition:
@@ -153,7 +156,7 @@ class Activity(core.Identifiable, core.Log):
             if not shown:
                 print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + self.name +
                       ' to ' + destination.name + ' suspended')
-                self.log_entry("suspended", self.env.now, -1, self.geometry)
+                self.log_entry("suspended", self.env.now, -1, origin.geometry)
                 shown = True
             yield self.env.timeout(3600)  # step 3600 time units ahead
 
@@ -183,6 +186,8 @@ class Activity(core.Identifiable, core.Log):
             origin.container.capacity - origin.total_requested,
             destination.container.capacity - destination.container.level,
             destination.container.capacity - destination.total_requested)
+        
+        if isinstance(mover, core.HasDepthRestriction): amount = min(amount, mover.check_optimal_filling(loader, origin, destination))
 
         if amount > 0:
             # request access to the transport_resource
@@ -201,12 +206,14 @@ class Activity(core.Identifiable, core.Log):
                     yield from self.__move_mover__(mover, origin, 'empty')
 
                 # load the mover
+                loader.rate = loader.loading_func        # rate is variable to loading / unloading
                 yield from self.__shift_amount__(amount, loader, origin, mover, destination_resource_request=my_mover_turn)
 
                 # move the mover to the destination
                 yield from self.__move_mover__(mover, destination, 'full')
 
                 # unload the mover
+                unloader.rate = unloader.unloading_func  # rate is variable to loading / unloading
                 yield from self.__shift_amount__(amount, unloader, mover, destination, origin_resource_request=my_mover_turn)
 
             self.log_entry("transporting stop", self.env.now, amount, mover.geometry)

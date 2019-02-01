@@ -7,6 +7,8 @@ import pytest
 import simpy
 import shapely.geometry
 import logging
+import datetime
+import time
 import numpy as np
 
 from click.testing import CliRunner
@@ -19,7 +21,10 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def env():
-    return simpy.Environment()
+    simulation_start = datetime.datetime(2019, 1, 1)
+    my_env = simpy.Environment(initial_time = time.mktime(simulation_start.timetuple()))
+    my_env.epoch = time.mktime(simulation_start.timetuple())
+    return my_env
 
 
 @pytest.fixture
@@ -96,7 +101,7 @@ def test_move_to_same_place(env, geometry_a, locatable_a):
     env.process(movable.move(locatable_a))
     env.run()
     assert movable.geometry.equals(locatable_a.geometry)
-    assert env.now == 0
+    assert env.now == env.epoch
 
 
 class BasicStorageUnit(core.HasContainer, core.HasResource, core.Log):
@@ -108,14 +113,13 @@ def test_basic_processor(env):
     source = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=1)
     dest = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
 
-    processor = core.Processor(env=env, rate=2)
-
-    processor.ID = "Test 1"
+    processor = core.Processor(env=env, loading_func=(lambda x: x / 2), unloading_func=(lambda x: x / 2))
+    processor.rate = processor.loading_func
     processor.geometry = "Test 1"
 
     env.process(processor.process(source, dest, 600))
     env.run()
-    np.testing.assert_almost_equal(env.now, 300)
+    np.testing.assert_almost_equal(env.now, env.epoch + 300)
     assert source.container.level == 400
     assert dest.container.level == 600
 
@@ -134,12 +138,10 @@ def test_dual_processors(env):
     limited_container_2 = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
     unlimited_container = BasicStorageUnit(env=env, capacity=2000, level=1000, nr_resources=100)
 
-    processor1 = core.Processor(env=env, rate=2)
-    processor2 = core.Processor(env=env, rate=1)
-    
-    processor1.ID = "Test 1"
-    processor2.ID = "Test 2"
-
+    processor1 = core.Processor(env=env, loading_func=(lambda x: x / 2), unloading_func=(lambda x: x / 2))
+    processor2 = core.Processor(env=env, loading_func=(lambda x: x / 1), unloading_func=(lambda x: x / 1))
+    processor1.rate = processor1.loading_func
+    processor2.rate = processor2.loading_func
     processor1.geometry = "Test 1"
     processor2.geometry = "Test 2"
 
@@ -147,7 +149,7 @@ def test_dual_processors(env):
     env.process(processor2.process(unlimited_container, limited_container_2, 400))
     env.run()
 
-    np.testing.assert_almost_equal(env.now, 400)
+    np.testing.assert_almost_equal(env.now, env.epoch + 400)
     assert unlimited_container.container.level == 200
     assert limited_container_1.container.level == 400
     assert limited_container_2.container.level == 400
@@ -170,12 +172,10 @@ def test_dual_processors_with_limit(env):
     unlimited_container_2 = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=100)
     limited_container = BasicStorageUnit(env=env, capacity=2000, level=0, nr_resources=1)
 
-    processor1 = core.Processor(env=env, rate=1)
-    processor2 = core.Processor(env=env, rate=2)
-
-    processor1.ID = "Test 1"
-    processor2.ID = "Test 2"
-
+    processor1 = core.Processor(env=env, loading_func=(lambda x: x / 1), unloading_func=(lambda x: x / 1))
+    processor2 = core.Processor(env=env, loading_func=(lambda x: x / 2), unloading_func=(lambda x: x / 2))
+    processor1.rate = processor1.loading_func
+    processor2.rate = processor2.loading_func
     processor1.geometry = "Test 1"
     processor2.geometry = "Test 2"
 
@@ -183,7 +183,7 @@ def test_dual_processors_with_limit(env):
     env.process(processor2.process(unlimited_container_2, limited_container, 400))
     env.run()
 
-    np.testing.assert_almost_equal(env.now, 600)
+    np.testing.assert_almost_equal(env.now, env.epoch + 600)
     assert limited_container.container.level == 800
     assert unlimited_container_1.container.level == 600
     assert unlimited_container_2.container.level == 600
