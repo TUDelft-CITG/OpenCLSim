@@ -979,6 +979,17 @@ class Processor(SimpyObject):
                     self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
+            
+            elif isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+                density, fines = origin.get_properties(amount)
+                spill = self.sigma_d * density * fines * amount
+
+                waiting = origin.check_conditions(spill)
+                
+                if 0 < waiting:
+                    self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
+                    yield self.env.timeout(waiting - self.env.now)
+                    self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
 
 
     def checkTide(self, origin, destination):
@@ -1006,29 +1017,36 @@ class Processor(SimpyObject):
 
             # If self == origin --> destination is a placement location
             if self == origin:
-                if isinstance(destination, HasSpillCondition) and isinstance(self, HasPlume):
+                if isinstance(self, HasPlume) and isinstance(destination, HasSpill):
                     spill = destination.spillPlacement(self, self)
-                
-                    if spill > 0 and isinstance(destination, HasSpillCondition):
+
+                    if 0 < spill and isinstance(destination, HasSpillCondition):
                         for condition in destination.SpillConditions["Spill limit"]:
-                            condition.put(spill)
+                                condition.put(spill)
 
             # If self == destination --> origin is a retrieval location
             elif self == destination:
-                if isinstance(origin, HasSpillCondition) and isinstance(self, HasPlume):
+                if isinstance(self, HasPlume) and isinstance(origin, HasSpill):
                     spill = origin.spillDredging(self, self, density, fines, amount, duration)
-                
-                    if spill > 0 and isinstance(destination, HasSpillCondition):
-                        for condition in destination.SpillConditions["Spill limit"]:
+
+                    if 0 < spill and isinstance(origin, HasSpillCondition):
+                        for condition in origin.SpillConditions["Spill limit"]:
                             condition.put(spill)
 
             # If self != origin and self != destination --> processing
             else:
-                if isinstance(destination, HasSpillCondition) and isinstance(self, HasPlume):
-                    spill = destination.spillPlacement(self, origin)
-                
-                    if spill > 0 and isinstance(destination, HasSpillCondition):
+                if isinstance(self, HasPlume) and isinstance(destination, HasSpill):
+                    spill = destination.spillPlacement(self, self)
+
+                    if 0 < spill and isinstance(destination, HasSpillCondition):
                         for condition in destination.SpillConditions["Spill limit"]:
+                            condition.put(spill)
+                
+                if isinstance(self, HasPlume) and isinstance(origin, HasSpill):
+                    spill = origin.spillDredging(self, self, density, fines, amount, duration)
+
+                    if 0 < spill and isinstance(origin, HasSpillCondition):
+                        for condition in origin.SpillConditions["Spill limit"]:
                             condition.put(spill)
     
 
