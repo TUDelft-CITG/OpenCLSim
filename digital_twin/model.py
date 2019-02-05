@@ -25,6 +25,27 @@ class LevelCondition:
         return self.min_level <= current_level <= self.max_level
 
 
+class TimeCondition:
+    """The TimeCondition class can be used to specify the period in which an activity can take place
+
+    environment: the environment in which the simulation takes place
+    start: the start date of the condition
+    end: the end date of the condition
+    """
+
+    def __init__(self, environment, start = None, stop = None,
+                 *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.env = environment
+        self.start = start if start is not None else datetime.datetime.fromtimestamp(self.env.now)
+        self.stop = stop if start is not None else datetime.datetime.fromtimestamp(self.env.now + 100 * 365 * 24 * 3600)
+    
+    def satisfied(self):
+        current_time = datetime.datetime.fromtimestamp(self.env.now)
+        return self.start <= current_time >= self.stop
+
+
 class AndCondition:
     """The AndCondition class can be used to combine several different conditions into a single condition for an Activity.
 
