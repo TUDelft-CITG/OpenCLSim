@@ -809,22 +809,31 @@ class Processor(SimpyObject):
         """get amount from origin container, put amount in destination container,
         and yield the time it takes to process it"""
 
-        # Make sure all requests are granted
+        # Before starting to process, check the following requirements
+        # Make sure that the origin and destination have storage
         assert isinstance(origin, HasContainer) and isinstance(destination, HasContainer)
+        # Make sure that the origin and destination allow processing
         assert isinstance(origin, HasResource) and isinstance(destination, HasResource)
-        assert isinstance(origin, Log) and isinstance(destination, Log)
-
+        # Make sure that the processor, origin and destination can log the events
+        assert isinstance(self, Log) and isinstance(origin, Log) and isinstance(destination, Log)
+        # Make sure that the processor, origin and destination are all at the same location
+        assert self.geometry.x == origin.geometry.x == destination.geometry.x
+        assert self.geometry.y == origin.geometry.y == destination.geometry.y
+        # Make sure that the volume of the origin is equal, or smaller, than the requested amount
         assert origin.container.level >= amount
+        # Make sure that the container of the destination is sufficiently large
         assert destination.container.capacity - destination.container.level >= amount
 
+        # Make sure all requests are granted
+        # Request access to the origin
         my_origin_turn = origin_resource_request
         if my_origin_turn is None:
             my_origin_turn = origin.resource.request()
-
+        # Request access to the destination
         my_dest_turn = destination_resource_request
         if my_dest_turn is None:
             my_dest_turn = destination.resource.request()
-
+        # Yield the requests once granted
         yield my_origin_turn
         yield my_dest_turn
 
