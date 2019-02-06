@@ -83,7 +83,7 @@ def vessel_planning(vessels, activities, colors, web=False):
 
 def vessel_kml(env, vessels, 
                fname='vessel_movements.kml',
-               icon='http://maps.google.com/mapfiles/kml/shapes/donut.png',
+               icon='http://maps.google.com/mapfiles/kml/shapes/sailing.png',
                size=1,
                scale=1,
                stepsize=120):
@@ -140,20 +140,20 @@ def vessel_kml(env, vessels,
 
             # include last point as well
             begin = datetime.datetime.fromtimestamp(vessel.log["timestamps_t"][log_index + 1])
-            end = datetime.datetime.fromtimestamp(vessel.log["timestamps_t"][log_index + 1])
+            # end = datetime.datetime.fromtimestamp(vessel.log["timestamps_t"][log_index + 1])
            
             pnt = fol.newpoint(name=vessel.name, coords=[(vessel.log["timestamps_x"][log_index + 1], vessel.log["timestamps_y"][log_index + 1])])
             pnt.timespan.begin = begin.isoformat()
-            pnt.timespan.end = end.isoformat()
+            # pnt.timespan.end = end.isoformat()
             pnt.style = shared_style
                 
         kml.save(fname)
 
 def site_kml(env, sites, 
                fname='site_development.kml',
-               icon='http://maps.google.com/mapfiles/kml/shapes/donut.png',
+               icon='http://maps.google.com/mapfiles/kml/shapes/square.png',
                size=1,
-               scale=1,
+               scale=3,
                stepsize=120):
         """Create a kml visualisation of vessels. Env variable needs to contain 
         epoch to enable conversion of simulation time to real time. Vessels need
@@ -163,38 +163,41 @@ def site_kml(env, sites,
         kml = Kml()
         fol = kml.newfolder(name="Sites")
 
-        shared_style = Style()
-        shared_style.labelstyle.color = 'ffffffff'  # White
-        shared_style.labelstyle.scale = size  
-        shared_style.iconstyle.color = 'ffff0000'  # Blue
-        shared_style.iconstyle.scale = scale
-        shared_style.iconstyle.icon.href = icon
-
         # each timestep will be represented as a single point
         for site in sites:
             for log_index, value in enumerate(site.log["Timestamp"][:-1]):
+                style = Style()
+                style.labelstyle.color = 'ffffffff'  # White
+                style.labelstyle.scale = 1  
+                style.iconstyle.color = 'ff00ffff'  # Yellow
+                style.iconstyle.scale = scale*(site.log["Value"][log_index]/site.container.capacity)
+                style.iconstyle.icon.href = icon
+
                 begin = site.log["Timestamp"][log_index]
                 end = site.log["Timestamp"][log_index + 1]
-                
+
                 pnt = fol.newpoint(name=site.name, coords=[(site.log["Geometry"][log_index].x,
                                                             site.log["Geometry"][log_index].y)])
-                
-                pnt.iconstyle.scale = scale*(site.log["Value"][log_index]/site.container.capacity)
                 pnt.timespan.begin = begin.isoformat()
                 pnt.timespan.end = end.isoformat()
-                pnt.style = shared_style
+                pnt.style = style
 
             # include last point as well
-            begin = site.log["Timestamp"][log_index + 1]
-            end = site.log["Timestamp"][log_index + 1]
-           
-            pnt = fol.newpoint(name=site.name, coords=[(site.log["Geometry"][log_index].x, 
-                                                        site.log["Geometry"][log_index].y)])
+            style = Style()
+            style.labelstyle.color = 'ffffffff'  # White
+            style.labelstyle.scale = 1  
+            style.iconstyle.color = 'ff00ffff'  # Yellow
+            style.iconstyle.scale = scale*(site.log["Value"][log_index+1]/site.container.capacity)
+            style.iconstyle.icon.href = icon
 
-            pnt.iconstyle.scale = scale*(site.log["Value"][log_index]/site.container.capacity)
+            begin = site.log["Timestamp"][log_index + 1]
+            # end = site.log["Timestamp"][log_index + 1]
+           
+            pnt = fol.newpoint(name=site.name, coords=[(site.log["Geometry"][log_index + 1].x, 
+                                                        site.log["Geometry"][log_index + 1].y)])
             pnt.timespan.begin = begin.isoformat()
-            pnt.timespan.end = end.isoformat()
-            pnt.style = shared_style
+            # pnt.timespan.end = end.isoformat()
+            pnt.style = style
                 
         kml.save(fname)
 
