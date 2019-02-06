@@ -270,18 +270,3 @@ def test_Processor_ContainerDependentMovable(env, geometry_a, geometry_b, locata
     env.run()
     
     np.testing.assert_almost_equal(processor_2.log["Value"][-1], (env.now - start) * 3)
-
-@image_comparison(baseline_images=['fuel_use_transportprocessing'], extensions=['png'])
-def test_transportprocessing_plot():
-    
-    class vessel():
-        def __init__(self, log, name):
-            self.log = log
-            self.name = name
-    
-    with open('tests/energy_use.json') as f:
-        data = json.load(f)
-    
-    vessel = vessel(data, "Test vessel")
-
-    plot.energy_use(vessel, testing = True)

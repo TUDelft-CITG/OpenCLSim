@@ -39,7 +39,7 @@ class TimeCondition:
         """Initialization"""
         self.env = environment
         self.start = start if start is not None else datetime.datetime.fromtimestamp(self.env.now)
-        self.stop = stop if start is not None else datetime.datetime.fromtimestamp(self.env.now + 100 * 365 * 24 * 3600)
+        self.stop = stop if stop is not None else datetime.datetime.fromtimestamp(self.env.now)
     
     def satisfied(self):
         current_time = datetime.datetime.fromtimestamp(self.env.now)
