@@ -149,6 +149,51 @@ def vessel_kml(env, vessels,
                 
         kml.save(fname)
 
+def site_kml(env, sites, 
+               fname='site_development.kml',
+               icon='http://maps.google.com/mapfiles/kml/shapes/donut.png',
+               size=1,
+               scale=1,
+               stepsize=120):
+        """Create a kml visualisation of vessels. Env variable needs to contain 
+        epoch to enable conversion of simulation time to real time. Vessels need
+        logs that contain geometries in lat, lon as a function of time."""
+
+        # create a kml file containing the visualisation
+        kml = Kml()
+        fol = kml.newfolder(name="Sites")
+
+        shared_style = Style()
+        shared_style.labelstyle.color = 'ffffffff'  # White
+        shared_style.labelstyle.scale = size  
+        shared_style.iconstyle.color = 'ffff0000'  # Blue
+        shared_style.iconstyle.scale = scale
+        shared_style.iconstyle.icon.href = icon
+
+        # each timestep will be represented as a single point
+        for site in sites:
+            for log_index, value in enumerate(site.log["Timestamp"][:-1]):
+                begin = site.log["Timestamp"][log_index]
+                end = site.log["Timestamp"][log_index + 1]
+                
+                pnt = fol.newpoint(name=site.name, coords=[(site.log["Geometry"][log_index].x,
+                                                            site.log["Geometry"][log_index].y)])
+                pnt.timespan.begin = begin.isoformat()
+                pnt.timespan.end = end.isoformat()
+                pnt.style = shared_style
+
+            # include last point as well
+            begin = site.log["Timestamp"][log_index + 1]
+            end = site.log["Timestamp"][log_index + 1]
+           
+            pnt = fol.newpoint(name=site.name, coords=[(site.log["Geometry"][log_index].x, 
+                                                        site.log["Geometry"][log_index].y)])
+            pnt.timespan.begin = begin.isoformat()
+            pnt.timespan.end = end.isoformat()
+            pnt.style = shared_style
+                
+        kml.save(fname)
+
 def graph_kml(env, 
               fname='graph.kml',
               icon='http://maps.google.com/mapfiles/kml/shapes/donut.png',
