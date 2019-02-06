@@ -178,6 +178,8 @@ def site_kml(env, sites,
                 
                 pnt = fol.newpoint(name=site.name, coords=[(site.log["Geometry"][log_index].x,
                                                             site.log["Geometry"][log_index].y)])
+                
+                pnt.iconstyle.scale = scale*(site.log["Value"][log_index]/site.container.capacity)
                 pnt.timespan.begin = begin.isoformat()
                 pnt.timespan.end = end.isoformat()
                 pnt.style = shared_style
@@ -188,6 +190,8 @@ def site_kml(env, sites,
            
             pnt = fol.newpoint(name=site.name, coords=[(site.log["Geometry"][log_index].x, 
                                                         site.log["Geometry"][log_index].y)])
+
+            pnt.iconstyle.scale = scale*(site.log["Value"][log_index]/site.container.capacity)
             pnt.timespan.begin = begin.isoformat()
             pnt.timespan.end = end.isoformat()
             pnt.style = shared_style
