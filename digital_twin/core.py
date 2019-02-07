@@ -439,7 +439,7 @@ class HasWeather:
         """Initialization"""
         df = pd.read_csv(file)
         df.index = df[[year, month, day, hour]].apply(lambda s : datetime.datetime(*s), axis = 1)
-        df = df.drop([year, month, day, hour],axis=1)
+        df = df.drop([year, month, day, hour], axis = 1)
         
         self.timestep = datetime.timedelta(minutes = timestep)
 
@@ -508,9 +508,28 @@ class HasDepthRestriction:
 
         self.depth_data = {}
     
+    def calc_depth_restrictions(self, location, processor):
+        # Minimal waterdepth should be draught + ukc
+        # Waterdepth is tide - depth site
+        # For empty to full [20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%]
+
+        self.depth_data[location.name] = {}
+
+        for i in [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+            df = location.metocean_data.copy()
+            
+            draught = self.compute_draught(i)
+            df["Required depth"] = df["Hs"].apply(lambda s : self.calc_required_depth(draught, s))
+            series = pd.Series(df["Required depth"] <= df["Water depth"])
+
+            self.depth_data[location.name][i] = {"Volume": i * self.container.capacity,
+                                                 "Draught": draught,
+                                                 "Series": series[series.values == 1].index}
+
+    
     def check_depth_restriction(self, location):
         fill_degree = self.container.level / self.container.capacity
-        time = datetime.datetime.utcfromtimestamp(self.env.now)
+        time = datetime.datetime.fromtimestamp(self.env.now)
         waiting = 0
 
         for key in sorted(self.depth_data[location.name].keys()):
@@ -542,31 +561,6 @@ class HasDepthRestriction:
             yield self.env.timeout(waiting)
             self.log_entry('waiting for tide stop', self.env.now, waiting, self.geometry)
 
-    def calc_depth_restrictions(self, location):
-        # Minimal waterdepth should be draught + ukc
-        # Waterdepth is tide - depth site
-        # For full to empty [0%, 20%, 40%, 60%, 80%, 100%]
-
-        self.depth_data[location.name] = {}
-
-        for i in np.linspace(0.20, 1, 9):
-            df = location.metocean_data.copy()
-            
-            draught = self.compute_draught(i)
-            df["Required depth"] = df["Hs"].apply(lambda s : self.calc_required_depth(draught, s))
-            series = pd.Series(df["Required depth"] < df["Water depth"])
-
-            # Make a series on which the activity can start
-            duration = self.unloading_func(i * self.container.capacity)
-            steps = max(int(duration / location.timestep.seconds + .5), 1)
-            windowed = series.rolling(steps)
-            windowed = windowed.max().shift(-steps + 1)
-            windowed = windowed[windowed.values == 1].index
-
-            self.depth_data[location.name][i] = {"Volume": i * self.container.capacity,
-                                                 "Draught": draught,
-                                                 "Series": windowed}
-    
     def calc_required_depth(self, draught, wave_height):
         required_depth = np.nan
 
@@ -577,13 +571,13 @@ class HasDepthRestriction:
         return required_depth
     
 
-    def check_optimal_filling(self, loader, origin, destination):
+    def check_optimal_filling(self, loader, unloader, origin, destination):
         # Calculate depth restrictions
         if not self.depth_data:
             if isinstance(origin, HasWeather):
-                self.calc_depth_restrictions(origin)
+                self.calc_depth_restrictions(origin, loader)
             if isinstance(destination, HasWeather):
-                self.calc_depth_restrictions(destination)
+                self.calc_depth_restrictions(destination, unloader)
         
         # If a filling degee has been specified
         if self.filling:
@@ -595,7 +589,7 @@ class HasDepthRestriction:
             waits = []
 
             amounts = []
-            time = datetime.datetime.utcfromtimestamp(self.env.now)
+            time = datetime.datetime.fromtimestamp(self.env.now)
             fill_degrees = self.depth_data[destination.name].keys()
 
             for filling in fill_degrees:
@@ -838,11 +832,10 @@ class Processor(SimpyObject):
         yield my_dest_turn
 
         # If requests are yielded, start activity
-
         # Activity can only start if environmental conditions allow it
-        # Waiting event should be combined to check if all conditions allow starting
         time = 0
 
+        # Waiting event should be combined to check if all conditions allow starting
         while time != self.env.now:
             time = self.env.now
 

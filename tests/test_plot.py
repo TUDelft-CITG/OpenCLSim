@@ -32,7 +32,7 @@ def test_energy_use_plot():
             self.log = log
             self.name = name
     
-    with open('tests/energy_use.json') as f:
+    with open('tests/baseline_images/energy_use.json') as f:
         data = json.load(f)
     
     vessel = vessel(data, "Test vessel")
