@@ -83,7 +83,7 @@ def vessel_planning(vessels, activities, colors, web=False):
 
 def vessel_kml(env, vessels, 
                fname='vessel_movements.kml',
-               icon='http://maps.google.com/mapfiles/kml/shapes/donut.png',
+               icon='http://maps.google.com/mapfiles/kml/shapes/sailing.png',
                size=1,
                scale=1,
                stepsize=120):
@@ -140,12 +140,64 @@ def vessel_kml(env, vessels,
 
             # include last point as well
             begin = datetime.datetime.fromtimestamp(vessel.log["timestamps_t"][log_index + 1])
-            end = datetime.datetime.fromtimestamp(vessel.log["timestamps_t"][log_index + 1])
+            # end = datetime.datetime.fromtimestamp(vessel.log["timestamps_t"][log_index + 1])
            
             pnt = fol.newpoint(name=vessel.name, coords=[(vessel.log["timestamps_x"][log_index + 1], vessel.log["timestamps_y"][log_index + 1])])
             pnt.timespan.begin = begin.isoformat()
-            pnt.timespan.end = end.isoformat()
+            # pnt.timespan.end = end.isoformat()
             pnt.style = shared_style
+                
+        kml.save(fname)
+
+def site_kml(env, sites, 
+               fname='site_development.kml',
+               icon='http://maps.google.com/mapfiles/kml/shapes/square.png',
+               size=1,
+               scale=3,
+               stepsize=120):
+        """Create a kml visualisation of vessels. Env variable needs to contain 
+        epoch to enable conversion of simulation time to real time. Vessels need
+        logs that contain geometries in lat, lon as a function of time."""
+
+        # create a kml file containing the visualisation
+        kml = Kml()
+        fol = kml.newfolder(name="Sites")
+
+        # each timestep will be represented as a single point
+        for site in sites:
+            for log_index, value in enumerate(site.log["Timestamp"][:-1]):
+                style = Style()
+                style.labelstyle.color = 'ffffffff'  # White
+                style.labelstyle.scale = 1  
+                style.iconstyle.color = 'ff00ffff'  # Yellow
+                style.iconstyle.scale = scale*(site.log["Value"][log_index]/site.container.capacity)
+                style.iconstyle.icon.href = icon
+
+                begin = site.log["Timestamp"][log_index]
+                end = site.log["Timestamp"][log_index + 1]
+
+                pnt = fol.newpoint(name=site.name, coords=[(site.log["Geometry"][log_index].x,
+                                                            site.log["Geometry"][log_index].y)])
+                pnt.timespan.begin = begin.isoformat()
+                pnt.timespan.end = end.isoformat()
+                pnt.style = style
+
+            # include last point as well
+            style = Style()
+            style.labelstyle.color = 'ffffffff'  # White
+            style.labelstyle.scale = 1  
+            style.iconstyle.color = 'ff00ffff'  # Yellow
+            style.iconstyle.scale = scale*(site.log["Value"][log_index+1]/site.container.capacity)
+            style.iconstyle.icon.href = icon
+
+            begin = site.log["Timestamp"][log_index + 1]
+            # end = site.log["Timestamp"][log_index + 1]
+           
+            pnt = fol.newpoint(name=site.name, coords=[(site.log["Geometry"][log_index + 1].x, 
+                                                        site.log["Geometry"][log_index + 1].y)])
+            pnt.timespan.begin = begin.isoformat()
+            # pnt.timespan.end = end.isoformat()
+            pnt.style = style
                 
         kml.save(fname)
 
@@ -193,40 +245,88 @@ def graph_kml(env,
                 
         kml.save(fname)
 
-def energy_use(vessel):
-    fuel_consumption_dredging = 0         # concumption between loading start and loading stop
-    fuel_consumption_sailing_full = 0     # concumption between sailing full start and sailing full stop
-    fuel_consumption_dumping = 0          # concumption between unloading  start and unloading  stop
-    fuel_consumption_sailing_empty = 0    # concumption between sailing empty start and sailing empty stop
+def energy_use(vessel, testing = False):
+    energy_use_loading = 0            # concumption between loading start and loading stop
+    energy_use_sailing_full = 0       # concumption between sailing full start and sailing full stop
+    energy_use_unloading = 0          # concumption between unloading  start and unloading  stop
+    energy_use_sailing_empty = 0      # concumption between sailing empty start and sailing empty stop
+    energy_use_waiting = 0            # concumption between waiting start and waiting stop
 
     for i in range(len(vessel.log["Message"])):
-        if vessel.log["Message"][i] == "loading start":
-            fuel_consumption_dredging += vessel.log["Value"][i + 1]
+        if vessel.log["Message"][i] == "Energy use loading":
+            energy_use_loading += vessel.log["Value"][i]
 
-        elif vessel.log["Message"][i] == "sailing full start":
-            fuel_consumption_sailing_full += vessel.log["Value"][i + 1]
+        elif vessel.log["Message"][i] == "Energy use sailing full":
+            energy_use_sailing_full += vessel.log["Value"][i]
 
-        elif vessel.log["Message"][i] == "unloading start":
-            fuel_consumption_dumping += vessel.log["Value"][i + 1]
+        elif vessel.log["Message"][i] == "Energy use unloading":
+            energy_use_unloading += vessel.log["Value"][i]
 
-        elif vessel.log["Message"][i] == "sailing empty start":
-            fuel_consumption_sailing_empty += vessel.log["Value"][i + 1]
-    
-    fig1, ax1 = plt.subplots(figsize = [10, 10])
+        elif vessel.log["Message"][i] == "Energy use sailing empty":
+            energy_use_sailing_empty += vessel.log["Value"][i]
+        
+        elif vessel.log["Message"][i] == "Energy use waiting":
+            energy_use_waiting += vessel.log["Value"][i]
 
-    ax1.pie([fuel_consumption_dredging, 
-            fuel_consumption_sailing_full, 
-            fuel_consumption_dumping, 
-            fuel_consumption_sailing_empty],
-            labels = ["Dredging", "Sailing full", "Dumping", "Sailing empty"],
-            autopct = '%1.1f%%',
-            startangle = 90,
-            center = [5, 5],
-            radius = 3.5)
+    # For the total plot
+    fig, ax1 = plt.subplots(figsize = [15, 10])
 
-    ax1.axis('equal')
-    ax1.set_ylim([0, 10])
-    ax1.set_xlim([0, 10])
+    # For the barchart
+    height = [energy_use_loading, 
+            energy_use_unloading, 
+            energy_use_sailing_full, 
+            energy_use_sailing_empty,
+            energy_use_waiting]
+    labels = ["Loading", 
+            "Unloading", 
+            "Sailing full", 
+            "Sailing empty",
+            "Waiting"]
+    colors = [(55/255,126/255,184/255), 
+            (98/255, 192/255, 122/255), 
+            (255/255,150/255,0/255), 
+            (98/255, 141/255, 122/255),
+            (124/255, 10/255, 2/255)]
 
-    plt.title("Energy use - {}".format(vessel.name))
-    plt.show()
+    positions = np.arange(len(labels))
+    ax1.bar(positions, height, color = colors)
+
+    # For the cumulative percentages
+    total_use = sum([energy_use_loading, 
+                    energy_use_unloading, 
+                    energy_use_sailing_full, 
+                    energy_use_sailing_empty,
+                    energy_use_waiting])
+
+    energy_use_unloading += energy_use_loading
+    energy_use_sailing_full += energy_use_unloading
+    energy_use_sailing_empty += energy_use_sailing_full
+    energy_use_waiting += energy_use_sailing_empty
+    y = [energy_use_loading, 
+        energy_use_unloading, 
+        energy_use_sailing_full, 
+        energy_use_sailing_empty, 
+        energy_use_waiting]
+    n = [energy_use_loading / total_use,
+        energy_use_unloading / total_use,
+        energy_use_sailing_full / total_use,
+        energy_use_sailing_empty / total_use,
+        energy_use_waiting / total_use,]
+
+    ax1.plot(positions, y, 'ko', markersize=10)
+    ax1.plot(positions, y, 'k')
+
+    for i, txt in enumerate(n):
+        x_txt = positions[i] + 0.1
+        y_txt = y[i] * 0.95
+        ax1.annotate("{:02.1f}%".format(txt * 100), 
+                    (x_txt, y_txt), size = 12)
+
+    # Further markup
+    plt.ylabel("Energy useage in KWH", size = 12)
+    ax1.set_xticks(positions)
+    ax1.set_xticklabels(labels, size = 12)
+    plt.title("Energy use - {}".format(vessel.name), size = 15)
+
+    if testing == False:
+        plt.show()
