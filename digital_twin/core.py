@@ -515,47 +515,70 @@ class HasDepthRestriction:
 
         self.depth_data[location.name] = {}
 
-        for i in [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
-            df = location.metocean_data.copy()
+        for filling_degree in [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+            # Determine characteristics based on filling
+            draught = self.compute_draught(filling_degree)
+            duration = datetime.timedelta(seconds = processor.unloading_func(filling_degree * self.container.capacity))
             
-            draught = self.compute_draught(i)
+            # Make dataframe based on characteristics
+            df = location.metocean_data.copy()
             df["Required depth"] = df["Hs"].apply(lambda s : self.calc_required_depth(draught, s))
             series = pd.Series(df["Required depth"] <= df["Water depth"])
-
-            self.depth_data[location.name][i] = {"Volume": i * self.container.capacity,
-                                                 "Draught": draught,
-                                                 "Series": series[series.values == 1].index}
+            
+            # Loop through series to find windows
+            index = series.index
+            values = series.values
+            in_range = False
+            ranges = []
+            
+            for i, value in enumerate(values):
+                if value == True:
+                    if i == 0:
+                        begin = index[i]
+                    elif not in_range:
+                        begin = index[i]
+                    
+                    in_range = True
+                elif in_range:
+                    in_range = False
+                    end = index[i]
+                    
+                    if (end - begin) >= duration:
+                        ranges.append((begin.to_datetime64(), (end - duration).to_datetime64()))
+            
+            self.depth_data[location.name][filling_degree] = \
+                                            {"Volume": filling_degree * self.container.capacity,
+                                            "Draught": draught,
+                                            "Ranges": np.array(ranges)}
 
     
     def check_depth_restriction(self, location):
         fill_degree = self.container.level / self.container.capacity
-        time = datetime.datetime.fromtimestamp(self.env.now)
         waiting = 0
 
         for key in sorted(self.depth_data[location.name].keys()):
             if fill_degree <= key:
-                series = self.depth_data[location.name][key]["Series"]
+                ranges = self.depth_data[location.name][key]["Ranges"]
                 
-                if len(series) == 0:
+                if len(ranges) == 0:
                     print("No actual allowable draught available - starting anyway.")
                     waiting = 0
                 
                 else:
-                    a = series.values
-                    v = np.datetime64(time - location.timestep)
+                    t = datetime.datetime.fromtimestamp(self.env.now)
+                    t = pd.Timestamp(t).to_datetime64()
+                    i = ranges[:, 0].searchsorted(t)
 
-                    index = np.searchsorted(a, v, side='right')
-                    
-                    try:
-                        next_window = series[index] - time
-                    except IndexError:
-                        print("Length weather data exceeded - continuing without weather.")
-                        next_window = series[-1] - time
-
-                    waiting = max(next_window, datetime.timedelta(0)).total_seconds()
+                    if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
+                        waiting = pd.Timedelta(0).total_seconds()
+                    elif i + 1 < len(ranges):
+                        waiting = pd.Timedelta(ranges[i, 0] - t).total_seconds()
+                    else:
+                        print("Exceeding time")
+                        waiting = 0
 
                 break
-        
+
         if waiting != 0:
             self.log_entry('waiting for tide start', self.env.now, waiting, self.geometry)
             yield self.env.timeout(waiting)
@@ -587,15 +610,15 @@ class HasDepthRestriction:
         else:
             loads = []
             waits = []
-
             amounts = []
+
             time = datetime.datetime.fromtimestamp(self.env.now)
             fill_degrees = self.depth_data[destination.name].keys()
 
             for filling in fill_degrees:
-                series = self.depth_data[destination.name][filling]["Series"]
+                ranges = self.depth_data[destination.name][filling]["Ranges"]
                 
-                if len(series) != 0:
+                if len(ranges) != 0:
                     # Determine length of cycle
                     loading = loader.loading_func(filling * self.container.capacity)
 
@@ -605,16 +628,20 @@ class HasDepthRestriction:
                     sailing_full = distance / self.compute_v(0)
                     sailing_full = distance / self.compute_v(filling)
 
-                    duration = datetime.timedelta(seconds = (sailing_full + loading + sailing_full))
+                    duration = sailing_full + loading + sailing_full
 
                     # Determine waiting time
-                    a = series.values
-                    v = np.datetime64(time + duration)
+                    t = datetime.datetime.fromtimestamp(self.env.now + duration)
+                    t = pd.Timestamp(t).to_datetime64()
+                    i = ranges[:, 0].searchsorted(t)
 
-                    index = np.searchsorted(a, v, side='right')
-                    next_window = series[index] - duration - time
-
-                    waiting = max(next_window, datetime.timedelta(0)).total_seconds()
+                    if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
+                        waiting = pd.Timedelta(0).total_seconds()
+                    elif i + 1 != len(ranges):
+                        waiting = pd.Timedelta(ranges[i, 0] - t).total_seconds()
+                    else:
+                        print("Exceeding time")
+                        waiting = 0
                     
                     # In case waiting is always required
                     loads.append(filling * self.container.capacity)

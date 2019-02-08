@@ -148,7 +148,6 @@ def test_calc_restrictions(env, geometry_a, Mover, Processor, LocationWeather):
     mover.calc_depth_restrictions(location, crane)
     assert mover.depth_data[location.name][0.5]["Volume"] == 3_600
     assert mover.depth_data[location.name][0.5]["Draught"] == 5.5
-    assert mover.depth_data[location.name][0.5]["Series"][0] == datetime.datetime.fromtimestamp(env.now)
 
     # Test current draught of the mover (empty)
     assert mover.current_draught == 4.0
@@ -177,8 +176,6 @@ def test_calc_restrictions(env, geometry_a, Mover, Processor, LocationWeather):
     
     env.process(crane.process(origin = mover, destination = location, amount = 3_600))
     env.run()
-
     
-    # assert datetime.datetime.fromtimestamp(env.now) == datetime.datetime(2019, 1, 1, 18)
-
+    # There should be 3 hours of waiting, 1 hour of processing, so time should be start + 4 hours
     np.testing.assert_almost_equal(env.now, start + 3_600 + 3 * 3_600)
