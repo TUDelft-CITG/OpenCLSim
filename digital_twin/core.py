@@ -21,6 +21,7 @@ import datetime, time
 import copy
 import numpy as np
 import pandas as pd
+import networkx as nx
 
 logger = logging.getLogger(__name__)
 
@@ -671,7 +672,7 @@ class Routeable:
     """Something with a route (networkx format)
     route: a networkx path"""
 
-    def __init__(self, route, *args, **kwargs):
+    def __init__(self, route = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.route = route
@@ -725,16 +726,26 @@ class Movable(SimpyObject, Locatable):
 
         if hasattr(self.env, 'FG') and isinstance(self, Routeable):
             distance = 0
-            route = nx.dijkstra_path(self.env.FG, origin.name, destination.name)
+
+            # Origin is geom - convert to node on graph
+            geom = nx.get_node_attributes(self.env.FG, 'geometry')
+
+            for node in geom:
+                if origin.x == geom[node].x and origin.y == geom[node].y:
+                    origin = node
+                    break
             
+            route = nx.dijkstra_path(self.env.FG, origin, destination.name)
             for node in enumerate(route):
                 from_node = route[node[0]]
                 to_node = route[node[0] + 1]
 
-                orig = shapely.geometry.asShape(from_node.geometry)
-                dest = shapely.geometry.asShape(to_node.geometry)
+                orig = shapely.geometry.asShape(geom[from_node])
+                dest = shapely.geometry.asShape(geom[to_node])
                 
                 distance += self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
+                
+                self.log_entry("Sailing", self.env.now + distance / self.current_speed, 0, dest)
 
                 if node[0] + 2 == len(route):
                     break
