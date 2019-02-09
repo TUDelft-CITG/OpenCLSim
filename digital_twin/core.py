@@ -667,6 +667,16 @@ class HasDepthRestriction:
         return self.compute_draught(self.container.level / self.container.capacity)
 
 
+class Routeable:
+    """Something with a route (networkx format)
+    route: a networkx path"""
+
+    def __init__(self, route, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.route = route
+
+
 class Movable(SimpyObject, Locatable):
     """Movable class
 
@@ -712,9 +722,27 @@ class Movable(SimpyObject, Locatable):
         return distance < tolerance
 
     def get_distance(self, origin, destination):
-        orig = shapely.geometry.asShape(self.geometry)
-        dest = shapely.geometry.asShape(destination.geometry)
-        _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+
+        if hasattr(self.env, 'FG') and isinstance(self, Routeable):
+            distance = 0
+            route = nx.dijkstra_path(self.env.FG, origin.name, destination.name)
+            
+            for node in enumerate(route):
+                from_node = route[node[0]]
+                to_node = route[node[0] + 1]
+
+                orig = shapely.geometry.asShape(from_node.geometry)
+                dest = shapely.geometry.asShape(to_node.geometry)
+                
+                distance += self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
+
+                if node[0] + 2 == len(route):
+                    break
+
+        else:
+            orig = shapely.geometry.asShape(self.geometry)
+            dest = shapely.geometry.asShape(destination.geometry)
+            _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
         return distance
     
