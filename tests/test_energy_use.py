@@ -58,7 +58,7 @@ def locatable_b(geometry_b):
 
 @pytest.fixture
 def energy_use_sailing():
-    return lambda x: x * 2
+    return lambda x, y: (x / y) * 2
 
 
 @pytest.fixture
