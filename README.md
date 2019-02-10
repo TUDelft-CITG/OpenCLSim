@@ -19,7 +19,7 @@ Example notebooks:
 * **Example 03 - Tracking Spill** - Example of a project where sediment spill limits influence project progress.
 * **Example 04 - Building a Layered Dike** - Example of a construction challenge, with four separate activites, where each activity depends on the progress of the other activities.
 * **Example 05 - Basic Hopper Operation on route** - Example of a trailing suction hopper dredge shipping sediment from origin to destination site while following a graph path.
-* **Example 05 - Container Transfer Hub** - Example of a container transfer hub, where very large container vessels deliver containers, while smaller vessels take care of the distribution to the hinterland. Traffic follows a graph path.
+* **Example 06 - Container Transfer Hub** - Example of a container transfer hub, where very large container vessels deliver containers, while smaller vessels take care of the distribution to the hinterland. Traffic follows a graph path.
 
 Credits
 -------
