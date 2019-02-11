@@ -9,16 +9,22 @@ import shapely.geometry
 import logging
 import datetime
 import time
+import json
 import numpy as np
+
+import matplotlib
+from matplotlib.testing.decorators import image_comparison
+import matplotlib.pyplot as plt
 
 from click.testing import CliRunner
 
 from digital_twin import core
+from digital_twin import plot
 from digital_twin import cli
 
 logger = logging.getLogger(__name__)
 
-class BasicStorageUnit(core.HasContainer, core.HasResource, core.Log):
+class BasicStorageUnit(core.HasContainer, core.HasResource, core.Locatable, core.Log):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -52,7 +58,7 @@ def locatable_b(geometry_b):
 
 @pytest.fixture
 def energy_use_sailing():
-    return lambda x: x * 2
+    return lambda x, y: (x / y) * 2
 
 
 @pytest.fixture
@@ -92,23 +98,23 @@ def test_movable(env, geometry_a, locatable_a, locatable_b,
 
 
 # Test energy use processing
-def test_processor(env, energy_use_sailing, energy_use_loading, energy_use_unloading):
+def test_processor(env, geometry_a, energy_use_sailing, energy_use_loading, energy_use_unloading):
     
-    source = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=1)
-    dest = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
+    source = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=1)
+    dest = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=0, nr_resources=1)
 
-    processor = type("processor", (core.Processor, core.EnergyUse, core.Log), {})
+    processor = type("processor", (core.Processor, core.EnergyUse, core.Locatable, core.Log), {})
 
     data_processor = {"env": env,
                       "unloading_func": (lambda x: x / 2), 
                       "loading_func": (lambda x: x / 2),
+                      "geometry": geometry_a,
                       "energy_use_sailing": energy_use_sailing,
                       "energy_use_loading": energy_use_loading,
                       "energy_use_unloading": energy_use_unloading}
     
     processor = processor(**data_processor)
     processor.rate = processor.loading_func
-    processor.geometry = "Test location"
 
     # Log fuel use of the processor in step 1
     start = env.now
@@ -126,11 +132,11 @@ def test_processor(env, energy_use_sailing, energy_use_loading, energy_use_unloa
 
 
 # Test energy use of a TransportProcessingResource
-def test_TransportProcessingResource(env, geometry_a, locatable_a, locatable_b,
+def test_TransportProcessingResource(env, geometry_a, geometry_b, locatable_a, locatable_b,
                                      energy_use_sailing, energy_use_loading, energy_use_unloading):
 
-    source = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=1)
-    dest = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
+    source = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=1)
+    dest = BasicStorageUnit(env=env, geometry = geometry_b, capacity=1000, level=0, nr_resources=1)
 
     # The generic class for an object that can move and transport (a TSHD for example)
     TransportProcessingResource = type('TransportProcessingResource', 
@@ -189,8 +195,8 @@ def test_TransportProcessingResource(env, geometry_a, locatable_a, locatable_b,
 def test_Processor_ContainerDependentMovable(env, geometry_a, geometry_b, locatable_a, locatable_b,
                                              energy_use_sailing, energy_use_loading, energy_use_unloading):
 
-    source = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=1)
-    dest = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
+    source = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=1)
+    dest = BasicStorageUnit(env=env, geometry = geometry_b, capacity=1000, level=0, nr_resources=1)
 
     # The generic class for an object that can process (a quay crane for example)
     ProcessingResource = type('ProcessingResource', 

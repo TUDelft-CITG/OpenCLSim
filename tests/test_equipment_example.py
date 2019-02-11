@@ -34,6 +34,8 @@ def available_equipment(env):
             'type': 'Side stone dumping vessel',
             'speed loaded': 6.5,
             'tonnage': 2601,
+            'lat': 52.94239823421129,
+            'lon': 5.019298185633251,
             'tags': ['mover']
         },
         {
@@ -42,23 +44,29 @@ def available_equipment(env):
             'speed loaded': 7.0,
             'tonnage': 1824,
             'capacity': 10.3,
+            'lat': 52.94239823421129,
+            'lon': 5.019298185633251,
             'tags': ['loader', 'mover']
         },
         {
             'id': 'Loady McLoader',
             'type': 'Simple Loading Crane',
+            'lat': 52.94239823421129,
+            'lon': 5.019298185633251,
             'capacity': 13.2
         },
         {
             'id': 'Unloady McUnloader',
             'type': 'Simple Loading Crane',
+            'lat': 52.94042293840172,
+            'lon': 5.054676856441372,
             'capacity': 12.1
         }
     ]
 
     type_to_mixins_mapping = {
-        'Side stone dumping vessel': (core.Identifiable, core.Log, core.ContainerDependentMovable, core.HasResource),
-        'Multi purpose support vessel': (core.Identifiable, core.Log, core.ContainerDependentMovable, core.Processor, core.HasResource),
+        'Side stone dumping vessel': (core.Identifiable, core.Log, core.ContainerDependentMovable, core.HasResource, core.Locatable),
+        'Multi purpose support vessel': (core.Identifiable, core.Log, core.ContainerDependentMovable, core.Processor, core.HasResource, core.Locatable),
         'Simple Loading Crane': (core.Identifiable, core.Log, core.Processor, core.HasResource, core.Locatable)
     }
 
@@ -80,7 +88,7 @@ def available_equipment(env):
             kwargs['capacity'] = tonnage.magnitude
         if issubclass(klass, core.Locatable):
             # todo change this to something read from the database
-            kwargs['geometry'] = shapely.geometry.Point(4.066045, 51.985577)
+            kwargs['geometry'] = shapely.geometry.Point(data['lon'], data['lat'])
         if issubclass(klass, core.Movable):
             speed_loaded = (data['speed loaded'] * ureg.knot).to_base_units().magnitude
             if issubclass(klass, core.ContainerDependentMovable):
@@ -175,8 +183,8 @@ def test_activity_empty_origin(env, available_equipment, available_sites):
 
     kwargs = dict(env=env, name='MyFirstActivity',
                   origin=origin, destination=destination,
-                  loader=available_equipment['Loady McLoader'], mover=available_equipment['EGG123'],
-                  unloader=available_equipment['Unloady McUnloader'])
+                  loader=available_equipment['Unloady McUnloader'], mover=available_equipment['EGG123'],
+                  unloader=available_equipment['Loady McLoader'])
     model.Activity(**kwargs)
 
     assert origin.container.level == origin.container.capacity

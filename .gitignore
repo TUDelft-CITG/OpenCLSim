@@ -100,3 +100,12 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# visual studio code
+.vscode/settings.json
+
+# test images
+**/result_images
+
+# notebook results
+*.kml
