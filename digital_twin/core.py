@@ -10,6 +10,7 @@ import uuid
 # you need these dependencies (you can get these from anaconda)
 # package(s) related to the simulation
 import simpy
+import networkx as nx
 
 # spatial libraries
 import pyproj
@@ -21,7 +22,6 @@ import datetime, time
 import copy
 import numpy as np
 import pandas as pd
-import networkx as nx
 
 logger = logging.getLogger(__name__)
 

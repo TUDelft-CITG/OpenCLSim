@@ -15,14 +15,8 @@ Complex Logistics Simulation - Rule based planning of cyclic activities and in d
 
 Example notebooks:
 * **Example 01 - Basic Hopper Operation** - Example of a trailing suction hopper dredge shipping sediment from origin to destination site.
-* **Example 02 - Tracking Spill** - Example of a project where sediment spill limits influence project progress.
-* **Example 03 - Fuel Use** - Example of estimating fuel use on a project.
+* **Example 02 - Fuel Use** - Example of estimating fuel use on a project by keeping track of energy useage for each step of the production cycle.
+* **Example 03 - Tracking Spill** - Example of a project where sediment spill limits influence project progress.
 * **Example 04 - Building a Layered Dike** - Example of a construction challenge, with four separate activites, where each activity depends on the progress of the other activities.
-
-Credits
--------
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+* **Example 05 - Basic Hopper Operation on route** - Example of a trailing suction hopper dredge shipping sediment from origin to destination site while following a graph path.
+* **Example 06 - Container Transfer Hub** - Example of a container transfer hub, where very large container vessels deliver containers, while smaller vessels take care of the distribution to the hinterland. Traffic follows a graph path.
