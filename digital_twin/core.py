@@ -707,7 +707,7 @@ class Movable(SimpyObject, Locatable):
         self.geometry = shapely.geometry.asShape(destination.geometry)
 
         # Compute the energy use
-        self.energy_use(distance / speed, speed)
+        self.energy_use(distance, speed)
         
         # Debug logs
         logger.debug('  distance: ' + '%4.2f' % distance + ' m')
@@ -757,7 +757,7 @@ class Movable(SimpyObject, Locatable):
 
         return distance
     
-    def energy_use(self, duration, speed):
+    def energy_use(self, distance, speed):
         if isinstance(self, EnergyUse):
             # message depends on filling degree: if container is empty --> sailing empt
             if not isinstance(self, HasContainer):
@@ -767,7 +767,7 @@ class Movable(SimpyObject, Locatable):
             else:
                 message = "Energy use sailing full"
 
-            energy = self.energy_use_sailing(duration, speed)
+            energy = self.energy_use_sailing(distance, speed)
             self.log_entry(message, self.env.now, energy, self.geometry)
 
     @property
