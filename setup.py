@@ -23,7 +23,15 @@ requires = [
     "pandas",
     "numpy",
     "simpy",
-    "networkx"
+    "networkx",
+    "shapely",
+    "click",
+    "matplotlib",
+    "pint",
+    "pyproj",
+    "plotly",
+    "simplekml",
+    "nose",
 ]
 
 setup_requirements = [
