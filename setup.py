@@ -26,6 +26,10 @@ requires = [
     "networkx"
 ]
 
+setup_requirements = [
+    "pytest-runner", 
+]
+
 tests_require = [
     "pytest",
     "pytest-cov",
@@ -57,6 +61,7 @@ setup(
     keywords="Digital Twin",
     name="digital_twin",
     packages=find_packages(include=["digital_twin"]),
+    setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=tests_require,
     url="https://github.com/TUDelft-CITG/digital_twin",
