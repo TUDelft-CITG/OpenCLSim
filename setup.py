@@ -22,6 +22,8 @@ except VersionConflict:
 requires = [
     "pandas",
     "numpy",
+    "simpy",
+    "networkx"
 ]
 
 tests_require = [
