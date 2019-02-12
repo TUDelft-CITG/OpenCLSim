@@ -11,7 +11,7 @@
 import sys
 
 from pkg_resources import require, VersionConflict
-from setuptools import setup
+from setuptools import setup, find_packages
 
 try:
     require('setuptools>=38.3')
@@ -31,11 +31,9 @@ tests_require = [
 
 
 setup(
-    name="digital_twin",
-    version="0.2.0",
-    description="The Digital Twin package aims to facilitate basic nautical traffic simulations.",
-    long_description="",  # README + '\n\n' + CHANGES,
-        classifiers=[
+    author="Mark van Koningsveld",
+    author_email="m.vankoningsveld@tudelft.nl",
+    classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
         'Natural Language :: English',
@@ -45,18 +43,21 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-    author="Mark van Koningsveld",
-    author_email="m.vankoningsveld@tudelft.nl",
-    url="https://github.com/TUDelft-CITG/digital_twin",
-    keywords="digital_twin",
-    packages=find_packages(),
-    include_package_data=True,
-    zip_safe=False,
-    tests_require=tests_require,
-    install_requires=requires,
+    description="The Digital Twin package aims to facilitate basic nautical traffic simulations.",
     entry_points={
         'console_scripts': [
             'digital_twin=digital_twin.cli:main',
         ],
     },
+    install_requires=requires,
+    long_description="",  # README + '\n\n' + CHANGES,
+    include_package_data=True,
+    keywords="Digital Twin",
+    name="digital_twin",
+    packages=find_packages(include=["digital_twin"]),
+    test_suite="tests",
+    tests_require=tests_require,
+    url="https://github.com/TUDelft-CITG/digital_twin",
+    version="0.2.0",
+    zip_safe=False,
 )
