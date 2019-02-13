@@ -189,7 +189,7 @@ class Activity(core.Identifiable, core.Log):
         # keep moving substances until the stop condition is satisfied
         while not stop_condition.satisfied():
             if condition.satisfied():
-                yield from self.installation_process(origin, destination, loader, mover, unloader)
+                yield from perform_single_run(self.env, self, origin, destination, loader, mover, unloader, verbose=self.print)
             else:
                 yield self.env.timeout(3600)
 
@@ -197,8 +197,8 @@ class Activity(core.Identifiable, core.Log):
               + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' complete')
         self.log_entry("completed", self.env.now, -1, destination.geometry)
 
-    def installation_process(self, origin, destination,
-                             loader, mover, unloader):
+
+def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, verbose=False):
         """Installation process"""
         # estimate amount that should be transported
         amount = min(
@@ -215,35 +215,35 @@ class Activity(core.Identifiable, core.Log):
             origin.total_requested += amount
             destination.total_requested += amount
 
-            if self.print == True:
+            if verbose == True:
                 print('Using ' + mover.name + ' to process ' + str(amount))
-            self.log_entry("transporting start", self.env.now, amount, mover.geometry)
+            activity_log.log_entry("transporting start", environment.now, amount, mover.geometry)
 
             with mover.resource.request() as my_mover_turn:
                 yield my_mover_turn
 
                 # move to the origin if necessary
                 if not mover.is_at(origin):
-                    yield from self.__move_mover__(mover, origin, 'empty')
+                    yield from move_mover(environment, mover, origin, 'empty', verbose=verbose)
 
                 # load the mover
                 loader.rate = loader.loading_func        # rate is variable to loading / unloading
-                yield from self.__shift_amount__(amount, loader, origin, mover, destination_resource_request=my_mover_turn)
+                yield from shift_amount(environment, amount, loader, origin, mover, destination_resource_request=my_mover_turn, verbose=verbose)
 
                 # move the mover to the destination
-                yield from self.__move_mover__(mover, destination, 'full')
+                yield from move_mover(environment, mover, destination, 'full', verbose=verbose)
 
                 # unload the mover
                 unloader.rate = unloader.unloading_func  # rate is variable to loading / unloading
-                yield from self.__shift_amount__(amount, unloader, mover, destination, origin_resource_request=my_mover_turn)
+                yield from shift_amount(environment, amount, unloader, mover, destination, origin_resource_request=my_mover_turn, verbose=verbose)
 
-            self.log_entry("transporting stop", self.env.now, amount, mover.geometry)
+            activity_log.log_entry("transporting stop", environment.now, amount, mover.geometry)
         else:
             print('Nothing to move')
-            yield self.env.timeout(3600)
+            yield environment.timeout(3600)
 
-    def __shift_amount__(self, amount, processor, origin, destination,
-                         origin_resource_request=None, destination_resource_request=None):
+
+def shift_amount(environment, amount, processor, origin, destination, origin_resource_request=None, destination_resource_request=None, verbose=False):
         if id(origin) == id(processor) and origin_resource_request is not None or \
                 id(destination) == id(processor) and destination_resource_request is not None:
             
@@ -253,27 +253,28 @@ class Activity(core.Identifiable, core.Log):
             with processor.resource.request() as my_processor_turn:
                 yield my_processor_turn
 
-                processor.log_entry('processing start', self.env.now, amount, processor.geometry)
+                processor.log_entry('processing start', environment.now, amount, processor.geometry)
                 yield from processor.process(origin, destination, amount,
                                              origin_resource_request=origin_resource_request,
                                              destination_resource_request=destination_resource_request)
                 
-                processor.log_entry('processing stop', self.env.now, amount, processor.geometry)
+                processor.log_entry('processing stop', environment.now, amount, processor.geometry)
                     
-        if self.print == True:
+        if verbose == True:
             print('Processed {}:'.format(amount))
             print('  from:        ' + origin.name + ' contains: ' + str(origin.container.level))
             print('  by:          ' + processor.name)
             print('  to:          ' + destination.name + ' contains: ' + str(destination.container.level))
 
-    def __move_mover__(self, mover, origin, status):
+
+def move_mover(environment, mover, origin, status, verbose=False):
         old_location = mover.geometry
 
-        mover.log_entry('sailing ' + status + ' start', self.env.now, mover.container.level, mover.geometry)
+        mover.log_entry('sailing ' + status + ' start', environment.now, mover.container.level, mover.geometry)
         yield from mover.move(origin)
-        mover.log_entry('sailing ' + status + ' stop', self.env.now, mover.container.level, mover.geometry)
+        mover.log_entry('sailing ' + status + ' stop', environment.now, mover.container.level, mover.geometry)
 
-        if self.print == True:
+        if verbose == True:
             print('Moved:')
             print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
             print('  from:        ' + format(old_location.x, '02.5f') + ' ' + format(old_location.y, '02.5f'))
