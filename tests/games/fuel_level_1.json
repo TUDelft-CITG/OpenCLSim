@@ -1,0 +1,140 @@
+{
+    "sites": {
+        "LoadSite": {
+            "name": "Load Site",
+            "type": ["Locatable", "HasContainer", "HasResource"],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        0.0,
+                        0.0
+                    ]
+                },
+                "capacity": 500000,
+                "level": 500000
+            }
+        },
+        "DumpSite": {
+            "name": "Dump Site",
+            "type": ["Locatable", "HasContainer", "HasResource"],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        0.0,
+                        0.0
+                    ]
+                },
+                "capacity": 500000
+            }
+        }
+    },
+    "equipment": {
+        "Hopper": {
+            "name": "Boaty McBoatStone",
+            "type": ["ContainerDependentMovable", "Processor", "HasResource", "EnergyUse"],
+            "properties": {
+                "starting_location": "DumpSite",
+                "speed": [
+                    {
+                        "level": 0,
+                        "speed": 5.0
+                    }, {
+                        "level": 5000,
+                        "speed": 4.5
+                    }
+                ],
+                "capacity": 5000,
+                "loading_rate": [
+                    {
+                        "level": 0,
+                        "rate": 2.5
+                    },
+                    {
+                        "level": 1000,
+                        "rate": 2.3
+                    },
+                    {
+                        "level": 2000,
+                        "rate": 2.0
+                    },
+                    {
+                        "level": 3000,
+                        "rate": 1.2
+                    },
+                    {
+                        "level": 4000,
+                        "rate": 0.8
+                    },
+                    {
+                        "level": 5000,
+                        "rate": 0
+                    }
+                ],
+                "unloading_rate": [
+                    {
+                        "level": 5000,
+                        "rate": 2.5
+                    },
+                    {
+                       "level": 4000,
+                        "rate": 2.3
+                    },
+                    {
+                        "level": 3000,
+                        "rate": 2.0
+                    },
+                    {
+                        "level": 2000,
+                        "rate": 1.2
+                    },
+                    {
+                        "level": 1000,
+                        "rate": 0.8
+                    },
+                    {
+                        "level": 0,
+                        "rate": 0
+                    }
+                ]
+                "energy_use_sailing": [
+                    {
+                        "distance": 1000
+                        "speed": 5.0
+                        "fuel_use": 1000 
+                    }
+                ],
+                "energy_use_loading": [
+                    {
+                        "duration": 2000,
+                        "fuel_use": 2000
+                    },
+                    {
+                        "duration": 1000,
+                        "fuel_use": 1000
+                    }
+                ],
+                "energy_use_unloading": [
+                    {
+                        "duration": 2000,
+                        "fuel_use": 2000
+                    },
+                    {
+                        "duration": 1000,
+                        "fuel_use": 1000
+                    }
+                ]
+            }
+        }
+    },
+    "activities": {
+        "Main": {
+            "origin": "LoadSite",
+            "destination": "DumpSite",
+            "loader": "Hopper",
+            "mover": "Hopper",
+            "unloader": "Hopper"
+        }
+    }
+}
