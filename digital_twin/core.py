@@ -10,6 +10,7 @@ import uuid
 # you need these dependencies (you can get these from anaconda)
 # package(s) related to the simulation
 import simpy
+import networkx as nx
 
 # spatial libraries
 import pyproj
@@ -439,7 +440,7 @@ class HasWeather:
         """Initialization"""
         df = pd.read_csv(file)
         df.index = df[[year, month, day, hour]].apply(lambda s : datetime.datetime(*s), axis = 1)
-        df = df.drop([year, month, day, hour],axis=1)
+        df = df.drop([year, month, day, hour], axis = 1)
         
         self.timestep = datetime.timedelta(minutes = timestep)
 
@@ -508,65 +509,82 @@ class HasDepthRestriction:
 
         self.depth_data = {}
     
+    def calc_depth_restrictions(self, location, processor):
+        # Minimal waterdepth should be draught + ukc
+        # Waterdepth is tide - depth site
+        # For empty to full [20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%]
+
+        self.depth_data[location.name] = {}
+
+        for filling_degree in [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+            # Determine characteristics based on filling
+            draught = self.compute_draught(filling_degree)
+            duration = datetime.timedelta(seconds = processor.unloading_func(filling_degree * self.container.capacity))
+            
+            # Make dataframe based on characteristics
+            df = location.metocean_data.copy()
+            df["Required depth"] = df["Hs"].apply(lambda s : self.calc_required_depth(draught, s))
+            series = pd.Series(df["Required depth"] <= df["Water depth"])
+            
+            # Loop through series to find windows
+            index = series.index
+            values = series.values
+            in_range = False
+            ranges = []
+            
+            for i, value in enumerate(values):
+                if value == True:
+                    if i == 0:
+                        begin = index[i]
+                    elif not in_range:
+                        begin = index[i]
+                    
+                    in_range = True
+                elif in_range:
+                    in_range = False
+                    end = index[i]
+                    
+                    if (end - begin) >= duration:
+                        ranges.append((begin.to_datetime64(), (end - duration).to_datetime64()))
+            
+            self.depth_data[location.name][filling_degree] = \
+                                            {"Volume": filling_degree * self.container.capacity,
+                                            "Draught": draught,
+                                            "Ranges": np.array(ranges)}
+
+    
     def check_depth_restriction(self, location):
         fill_degree = self.container.level / self.container.capacity
-        time = datetime.datetime.utcfromtimestamp(self.env.now)
         waiting = 0
 
         for key in sorted(self.depth_data[location.name].keys()):
             if fill_degree <= key:
-                series = self.depth_data[location.name][key]["Series"]
+                ranges = self.depth_data[location.name][key]["Ranges"]
                 
-                if len(series) == 0:
+                if len(ranges) == 0:
                     print("No actual allowable draught available - starting anyway.")
                     waiting = 0
                 
                 else:
-                    a = series.values
-                    v = np.datetime64(time - location.timestep)
+                    t = datetime.datetime.fromtimestamp(self.env.now)
+                    t = pd.Timestamp(t).to_datetime64()
+                    i = ranges[:, 0].searchsorted(t)
 
-                    index = np.searchsorted(a, v, side='right')
-                    
-                    try:
-                        next_window = series[index] - time
-                    except IndexError:
-                        print("Length weather data exceeded - continuing without weather.")
-                        next_window = series[-1] - time
-
-                    waiting = max(next_window, datetime.timedelta(0)).total_seconds()
+                    if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
+                        waiting = pd.Timedelta(0).total_seconds()
+                    elif i + 1 < len(ranges):
+                        waiting = pd.Timedelta(ranges[i, 0] - t).total_seconds()
+                    else:
+                        print("Exceeding time")
+                        waiting = 0
 
                 break
-        
+
         if waiting != 0:
             self.log_entry('waiting for tide start', self.env.now, waiting, self.geometry)
             yield self.env.timeout(waiting)
             self.log_entry('waiting for tide stop', self.env.now, waiting, self.geometry)
 
-    def calc_depth_restrictions(self, location):
-        # Minimal waterdepth should be draught + ukc
-        # Waterdepth is tide - depth site
-        # For full to empty [0%, 20%, 40%, 60%, 80%, 100%]
-
-        self.depth_data[location.name] = {}
-
-        for i in np.linspace(0.20, 1, 9):
-            df = location.metocean_data.copy()
-            
-            draught = self.compute_draught(i)
-            df["Required depth"] = df["Hs"].apply(lambda s : self.calc_required_depth(draught, s))
-            series = pd.Series(df["Required depth"] < df["Water depth"])
-
-            # Make a series on which the activity can start
-            duration = self.unloading_func(i * self.container.capacity)
-            steps = max(int(duration / location.timestep.seconds + .5), 1)
-            windowed = series.rolling(steps)
-            windowed = windowed.max().shift(-steps + 1)
-            windowed = windowed[windowed.values == 1].index
-
-            self.depth_data[location.name][i] = {"Volume": i * self.container.capacity,
-                                                 "Draught": draught,
-                                                 "Series": windowed}
-    
     def calc_required_depth(self, draught, wave_height):
         required_depth = np.nan
 
@@ -577,13 +595,13 @@ class HasDepthRestriction:
         return required_depth
     
 
-    def check_optimal_filling(self, loader, origin, destination):
+    def check_optimal_filling(self, loader, unloader, origin, destination):
         # Calculate depth restrictions
         if not self.depth_data:
             if isinstance(origin, HasWeather):
-                self.calc_depth_restrictions(origin)
+                self.calc_depth_restrictions(origin, loader)
             if isinstance(destination, HasWeather):
-                self.calc_depth_restrictions(destination)
+                self.calc_depth_restrictions(destination, unloader)
         
         # If a filling degee has been specified
         if self.filling:
@@ -593,15 +611,15 @@ class HasDepthRestriction:
         else:
             loads = []
             waits = []
-
             amounts = []
-            time = datetime.datetime.utcfromtimestamp(self.env.now)
+
+            time = datetime.datetime.fromtimestamp(self.env.now)
             fill_degrees = self.depth_data[destination.name].keys()
 
             for filling in fill_degrees:
-                series = self.depth_data[destination.name][filling]["Series"]
+                ranges = self.depth_data[destination.name][filling]["Ranges"]
                 
-                if len(series) != 0:
+                if len(ranges) != 0:
                     # Determine length of cycle
                     loading = loader.loading_func(filling * self.container.capacity)
 
@@ -611,16 +629,20 @@ class HasDepthRestriction:
                     sailing_full = distance / self.compute_v(0)
                     sailing_full = distance / self.compute_v(filling)
 
-                    duration = datetime.timedelta(seconds = (sailing_full + loading + sailing_full))
+                    duration = sailing_full + loading + sailing_full
 
                     # Determine waiting time
-                    a = series.values
-                    v = np.datetime64(time + duration)
+                    t = datetime.datetime.fromtimestamp(self.env.now + duration)
+                    t = pd.Timestamp(t).to_datetime64()
+                    i = ranges[:, 0].searchsorted(t)
 
-                    index = np.searchsorted(a, v, side='right')
-                    next_window = series[index] - duration - time
-
-                    waiting = max(next_window, datetime.timedelta(0)).total_seconds()
+                    if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
+                        waiting = pd.Timedelta(0).total_seconds()
+                    elif i + 1 != len(ranges):
+                        waiting = pd.Timedelta(ranges[i, 0] - t).total_seconds()
+                    else:
+                        print("Exceeding time")
+                        waiting = 0
                     
                     # In case waiting is always required
                     loads.append(filling * self.container.capacity)
@@ -644,6 +666,16 @@ class HasDepthRestriction:
     @property
     def current_draught(self):
         return self.compute_draught(self.container.level / self.container.capacity)
+
+
+class Routeable:
+    """Something with a route (networkx format)
+    route: a networkx path"""
+
+    def __init__(self, route = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.route = route
 
 
 class Movable(SimpyObject, Locatable):
@@ -675,7 +707,7 @@ class Movable(SimpyObject, Locatable):
         self.geometry = shapely.geometry.asShape(destination.geometry)
 
         # Compute the energy use
-        self.energy_use(distance / speed)
+        self.energy_use(distance, speed)
         
         # Debug logs
         logger.debug('  distance: ' + '%4.2f' % distance + ' m')
@@ -691,13 +723,41 @@ class Movable(SimpyObject, Locatable):
         return distance < tolerance
 
     def get_distance(self, origin, destination):
-        orig = shapely.geometry.asShape(self.geometry)
-        dest = shapely.geometry.asShape(destination.geometry)
-        _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+
+        if hasattr(self.env, 'FG') and isinstance(self, Routeable):
+            distance = 0
+
+            # Origin is geom - convert to node on graph
+            geom = nx.get_node_attributes(self.env.FG, 'geometry')
+
+            for node in geom:
+                if origin.x == geom[node].x and origin.y == geom[node].y:
+                    origin = node
+                    break
+            
+            route = nx.dijkstra_path(self.env.FG, origin, destination.name)
+            for node in enumerate(route):
+                from_node = route[node[0]]
+                to_node = route[node[0] + 1]
+
+                orig = shapely.geometry.asShape(geom[from_node])
+                dest = shapely.geometry.asShape(geom[to_node])
+                
+                distance += self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
+                
+                self.log_entry("Sailing", self.env.now + distance / self.current_speed, 0, dest)
+
+                if node[0] + 2 == len(route):
+                    break
+
+        else:
+            orig = shapely.geometry.asShape(self.geometry)
+            dest = shapely.geometry.asShape(destination.geometry)
+            _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
         return distance
     
-    def energy_use(self, duration):
+    def energy_use(self, distance, speed):
         if isinstance(self, EnergyUse):
             # message depends on filling degree: if container is empty --> sailing empt
             if not isinstance(self, HasContainer):
@@ -707,7 +767,7 @@ class Movable(SimpyObject, Locatable):
             else:
                 message = "Energy use sailing full"
 
-            energy = self.energy_use_sailing(duration)
+            energy = self.energy_use_sailing(distance, speed)
             self.log_entry(message, self.env.now, energy, self.geometry)
 
     @property
@@ -809,31 +869,39 @@ class Processor(SimpyObject):
         """get amount from origin container, put amount in destination container,
         and yield the time it takes to process it"""
 
-        # Make sure all requests are granted
+        # Before starting to process, check the following requirements
+        # Make sure that the origin and destination have storage
         assert isinstance(origin, HasContainer) and isinstance(destination, HasContainer)
+        # Make sure that the origin and destination allow processing
         assert isinstance(origin, HasResource) and isinstance(destination, HasResource)
-        assert isinstance(origin, Log) and isinstance(destination, Log)
-
+        # Make sure that the processor, origin and destination can log the events
+        assert isinstance(self, Log) and isinstance(origin, Log) and isinstance(destination, Log)
+        # Make sure that the processor, origin and destination are all at the same location
+        assert self.geometry.x == origin.geometry.x == destination.geometry.x
+        assert self.geometry.y == origin.geometry.y == destination.geometry.y
+        # Make sure that the volume of the origin is equal, or smaller, than the requested amount
         assert origin.container.level >= amount
+        # Make sure that the container of the destination is sufficiently large
         assert destination.container.capacity - destination.container.level >= amount
 
+        # Make sure all requests are granted
+        # Request access to the origin
         my_origin_turn = origin_resource_request
         if my_origin_turn is None:
             my_origin_turn = origin.resource.request()
-
+        # Request access to the destination
         my_dest_turn = destination_resource_request
         if my_dest_turn is None:
             my_dest_turn = destination.resource.request()
-
+        # Yield the requests once granted
         yield my_origin_turn
         yield my_dest_turn
 
         # If requests are yielded, start activity
-
         # Activity can only start if environmental conditions allow it
-        # Waiting event should be combined to check if all conditions allow starting
         time = 0
 
+        # Waiting event should be combined to check if all conditions allow starting
         while time != self.env.now:
             time = self.env.now
 

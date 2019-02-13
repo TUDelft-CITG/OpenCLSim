@@ -104,18 +104,22 @@ def test_move_to_same_place(env, geometry_a, locatable_a):
     assert env.now == env.epoch
 
 
-class BasicStorageUnit(core.HasContainer, core.HasResource, core.Log):
+class BasicStorageUnit(core.HasContainer, core.HasResource, core.Locatable, core.Log):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-def test_basic_processor(env):
-    # move content from one container to another, then move some of it back again
-    source = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=1)
-    dest = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
+class Processor(core.Processor, core.Log):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    processor = core.Processor(env=env, loading_func=(lambda x: x / 2), unloading_func=(lambda x: x / 2))
+def test_basic_processor(env, geometry_a):
+    # move content from one container to another, then move some of it back again
+    source = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=1)
+    dest = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=0, nr_resources=1)
+
+    processor = Processor(env=env, loading_func=(lambda x: x / 2), unloading_func=(lambda x: x / 2))
     processor.rate = processor.loading_func
-    processor.geometry = "Test 1"
+    processor.geometry = geometry_a
 
     env.process(processor.process(source, dest, 600))
     env.run()
@@ -132,18 +136,18 @@ def test_basic_processor(env):
     assert dest.container.level == 300
 
 
-def test_dual_processors(env):
+def test_dual_processors(env, geometry_a):
     # move content from two different limited containers to an unlimited container at the same time
-    limited_container_1 = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
-    limited_container_2 = BasicStorageUnit(env=env, capacity=1000, level=0, nr_resources=1)
-    unlimited_container = BasicStorageUnit(env=env, capacity=2000, level=1000, nr_resources=100)
+    limited_container_1 = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=0, nr_resources=1)
+    limited_container_2 = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=0, nr_resources=1)
+    unlimited_container = BasicStorageUnit(env=env, geometry = geometry_a, capacity=2000, level=1000, nr_resources=100)
 
-    processor1 = core.Processor(env=env, loading_func=(lambda x: x / 2), unloading_func=(lambda x: x / 2))
-    processor2 = core.Processor(env=env, loading_func=(lambda x: x / 1), unloading_func=(lambda x: x / 1))
+    processor1 = Processor(env=env, loading_func=(lambda x: x / 2), unloading_func=(lambda x: x / 2))
+    processor2 = Processor(env=env, loading_func=(lambda x: x / 1), unloading_func=(lambda x: x / 1))
     processor1.rate = processor1.loading_func
     processor2.rate = processor2.loading_func
-    processor1.geometry = "Test 1"
-    processor2.geometry = "Test 2"
+    processor1.geometry = geometry_a
+    processor2.geometry = geometry_a
 
     env.process(processor1.process(unlimited_container, limited_container_1, 400))
     env.process(processor2.process(unlimited_container, limited_container_2, 400))
@@ -166,18 +170,18 @@ def test_dual_processors(env):
     assert limited_container_2.container.level == 300
 
 
-def test_dual_processors_with_limit(env):
+def test_dual_processors_with_limit(env, geometry_a):
     # move content into a limited container, have two process wait for each other to finish
-    unlimited_container_1 = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=100)
-    unlimited_container_2 = BasicStorageUnit(env=env, capacity=1000, level=1000, nr_resources=100)
-    limited_container = BasicStorageUnit(env=env, capacity=2000, level=0, nr_resources=1)
+    unlimited_container_1 = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=100)
+    unlimited_container_2 = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=100)
+    limited_container = BasicStorageUnit(env=env, geometry = geometry_a, capacity=2000, level=0, nr_resources=1)
 
-    processor1 = core.Processor(env=env, loading_func=(lambda x: x / 1), unloading_func=(lambda x: x / 1))
-    processor2 = core.Processor(env=env, loading_func=(lambda x: x / 2), unloading_func=(lambda x: x / 2))
+    processor1 = Processor(env=env, loading_func=(lambda x: x / 1), unloading_func=(lambda x: x / 1))
+    processor2 = Processor(env=env, loading_func=(lambda x: x / 2), unloading_func=(lambda x: x / 2))
     processor1.rate = processor1.loading_func
     processor2.rate = processor2.loading_func
-    processor1.geometry = "Test 1"
-    processor2.geometry = "Test 2"
+    processor1.geometry = geometry_a
+    processor2.geometry = geometry_a
 
     env.process(processor1.process(unlimited_container_1, limited_container, 400))
     env.process(processor2.process(unlimited_container_2, limited_container, 400))
