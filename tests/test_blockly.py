@@ -31,4 +31,4 @@ def test_blockly_callback(code):
     exec(ast, module.__dict__)
     # call the function
     result = module.callback()
-    assert result == 'calback called'
+    assert result == 'callback called'
