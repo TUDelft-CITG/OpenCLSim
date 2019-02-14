@@ -566,11 +566,17 @@ class HasDepthRestriction:
                                             "Ranges": np.array(ranges)}
 
     
-    def check_depth_restriction(self, location):
-        fill_degree = self.container.level / self.container.capacity
+    def check_depth_restriction(self, location, amount, in_or_out):
+
+        if in_or_out == "in":
+            fill_degree = (self.container.level + amount) / self.container.capacity
+        else:
+            fill_degree = (self.container.level) / self.container.capacity
+        
         waiting = 0
 
         for key in sorted(self.depth_data[location.name].keys()):
+
             if fill_degree <= key:
                 ranges = self.depth_data[location.name][key]["Ranges"]
                 
@@ -626,7 +632,7 @@ class HasDepthRestriction:
         # If a filling degee has been specified
         if self.filling is not None:
             return self.filling * self.container.capacity / 100
-        
+
         # If not, try to optimize the load with regard to the tidal window
         else:
             loads = []
@@ -928,10 +934,10 @@ class Processor(SimpyObject):
 
             # Check weather
             # yield from self.checkWeather()
-            
+
             # Check tide
-            yield from self.checkTide(origin, destination)
-            
+            yield from self.checkTide(origin, destination, amount)
+
             # Check spill
             yield from self.checkSpill(origin, destination, amount)
 
@@ -1081,11 +1087,11 @@ class Processor(SimpyObject):
                     self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
 
 
-    def checkTide(self, origin, destination):
+    def checkTide(self, origin, destination, amount):
         if isinstance(origin, HasDepthRestriction) and isinstance(origin, Movable) and isinstance(destination, HasWeather):
-            yield from origin.check_depth_restriction(destination)
+            yield from origin.check_depth_restriction(destination, amount, "out")
         elif isinstance(destination, HasDepthRestriction) and isinstance(destination, Movable) and isinstance(origin, HasWeather):
-            yield from destination.check_depth_restriction(origin)
+            yield from destination.check_depth_restriction(origin, amount, "in")
 
     def addSpill(self, origin, destination, amount, duration):
         """
