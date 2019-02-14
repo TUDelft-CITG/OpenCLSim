@@ -497,26 +497,39 @@ class HasDepthRestriction:
     draught: should be a lambda function with input variable container.volume
     waves: list with wave_heights
     ukc: list with ukc, corresponding to wave_heights
+
+    filling: filling degree [%]
+    min_filling: minimal filling degree [%]
+    max_filling: max filling degree [%]
     """
 
-    def __init__(self, compute_draught, waves, ukc, filling=1, *args, **kwargs):
+    def __init__(self, compute_draught, waves, ukc, 
+                 filling = None, min_filling = None, max_filling = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
+
+        # Information required to determine whether vessel can access an area
         self.compute_draught = compute_draught
         self.waves = waves
         self.ukc = ukc
-        self.filling = filling
+
+        # Information require to self-select filling degree
+        self.filling = int(filling) if filling is not None else None
+        self.min_filling = int(min_filling) if min_filling is not None else int(0)
+        self.max_filling = int(max_filling) if max_filling is not None else int(100)
 
         self.depth_data = {}
     
     def calc_depth_restrictions(self, location, processor):
         # Minimal waterdepth should be draught + ukc
         # Waterdepth is tide - depth site
-        # For empty to full [20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%]
+        # For empty to full [20%, 25%, 30%, ... 90%, 95%, 100%]
 
         self.depth_data[location.name] = {}
 
-        for filling_degree in [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+        for i in np.linspace(self.min_filling, self.max_filling, (self.max_filling - self.min_filling) + 1, dtype = int):
+            filling_degree = i / 100
+
             # Determine characteristics based on filling
             draught = self.compute_draught(filling_degree)
             duration = datetime.timedelta(seconds = processor.unloading_func(filling_degree * self.container.capacity))
@@ -562,8 +575,12 @@ class HasDepthRestriction:
                 ranges = self.depth_data[location.name][key]["Ranges"]
                 
                 if len(ranges) == 0:
-                    print("No actual allowable draught available - starting anyway.")
-                    waiting = 0
+                    print(fill_degree, self.compute_draught(fill_degree))
+                    print("\nSimulation cannot continue.\n")
+                    print("P80 of water depth at location:              {:04.2f}m.".format(np.percentile(location.metocean_data["Water depth"], 80)))
+                    print("Draught plus minimal under keel clearance:   {:04.2f}m.".format(self.compute_draught(fill_degree) + min(self.ukc)))
+
+                    self.env.exit()
                 
                 else:
                     t = datetime.datetime.fromtimestamp(self.env.now)
@@ -575,8 +592,10 @@ class HasDepthRestriction:
                     elif i + 1 < len(ranges):
                         waiting = pd.Timedelta(ranges[i, 0] - t).total_seconds()
                     else:
-                        print("Exceeding time")
-                        waiting = 0
+                        print("\nSimulation cannot continue.")
+                        print("Simulation time exceeded the available metocean data.")
+
+                        self.env.exit()
 
                 break
 
@@ -585,6 +604,7 @@ class HasDepthRestriction:
             yield self.env.timeout(waiting)
             self.log_entry('waiting for tide stop', self.env.now, waiting, self.geometry)
 
+    
     def calc_required_depth(self, draught, wave_height):
         required_depth = np.nan
 
@@ -604,8 +624,8 @@ class HasDepthRestriction:
                 self.calc_depth_restrictions(destination, unloader)
         
         # If a filling degee has been specified
-        if self.filling:
-            return self.filling * self.container.capacity
+        if self.filling is not None:
+            return self.filling * self.container.capacity / 100
         
         # If not, try to optimize the load with regard to the tidal window
         else:
@@ -613,7 +633,6 @@ class HasDepthRestriction:
             waits = []
             amounts = []
 
-            time = datetime.datetime.fromtimestamp(self.env.now)
             fill_degrees = self.depth_data[destination.name].keys()
 
             for filling in fill_degrees:
@@ -638,11 +657,13 @@ class HasDepthRestriction:
 
                     if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
                         waiting = pd.Timedelta(0).total_seconds()
-                    elif i + 1 != len(ranges):
+                    elif i != len(ranges):
                         waiting = pd.Timedelta(ranges[i, 0] - t).total_seconds()
                     else:
-                        print("Exceeding time")
-                        waiting = 0
+                        print("\nSimulation cannot continue.")
+                        print("Simulation time exceeded the available metocean data.")
+
+                        self.env.exit()
                     
                     # In case waiting is always required
                     loads.append(filling * self.container.capacity)
