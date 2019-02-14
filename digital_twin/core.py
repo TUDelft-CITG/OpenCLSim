@@ -612,7 +612,7 @@ class HasDepthRestriction:
         # If a filling degee has been specified
         if self.filling is not None:
             return self.filling * self.container.capacity / 100
-        
+
         # If not, try to optimize the load with regard to the tidal window
         else:
             loads = []
