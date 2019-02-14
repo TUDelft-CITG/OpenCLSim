@@ -285,6 +285,33 @@ def move_mover(environment, mover, origin, status, verbose=False):
 
 
 class Simulation(core.Identifiable, core.Log):
+    """The Simulation Class can be used to set up a full simulation using configuration dictionaries (json).
+
+    sites:  a dictionary where the keys are the names the classes will have and the id associated with
+            the constructed object (used to reference to the object in activities)
+            the values are another dictionary containing the keys "name", "type" and "properties"
+    equipment: a dictionary where the keys are the names the classes will have and the id associated with
+            the constructed object (used to reference to the object in activities)
+            the values are another dictionary containing the keys "name", "type" and "properties"
+    activities: a dictionary where the keys are the names the activities logging will be reported under,
+                the values are another dictionary containing the keys "origin", "destination", "loader",
+                "mover", "unloader", each of these has a string value corresponding to the key of the site or
+                equipment respectively. The keys given under "origin" and "destination" must be present in the
+                "sites" parameter, the keys given for the "loader", "mover" and "unloader" must be present in the
+                "equipment" parameter.
+    decision_code: will probably be used to pass the "decision code" constructed through blockly in the future.
+                   Has no effect for now.
+
+    Each of the values the sites and equipment dictionaries, are another dictionary specifying "name",
+    "type" and "properties". Here "name" is used to initialize the objects name (required by core.Identifiable).
+    The "type" must be a list of mixin class names which will be used to construct a dynamic class for the
+    object. For example: ["HasStorage", "HasResource", "Locatable"]. The core.Identifiable and core.Log class will
+    always be added automatically by the Simulation class.
+    The "properties" must be a dictionary which is used to construct the arguments for initializing the object.
+    For example, if "HasContainer" is included in the "type" list, the "properties" dictionary must include a "capacity"
+    which has the value that will be passed to the constructor of HasContainer. In this case, the "properties"
+    dictionary can also optionally specify the "level".
+    """
 
     def __init__(self, sites, equipment, activities, decision_code, *args, **kwargs):
         super().__init__(*args, **kwargs)
