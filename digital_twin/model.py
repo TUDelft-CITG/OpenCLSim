@@ -1,6 +1,9 @@
 import digital_twin.core as core
 import datetime
 import shapely
+import shapely.geometry
+import scipy.interpolate
+import pandas as pd
 import numpy as np
 
 
@@ -279,3 +282,234 @@ def move_mover(environment, mover, origin, status, verbose=False):
             print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
             print('  from:        ' + format(old_location.x, '02.5f') + ' ' + format(old_location.y, '02.5f'))
             print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))
+
+
+class Simulation(core.Identifiable, core.Log):
+
+    def __init__(self, sites, equipment, activities, decision_code, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.__init_sites(sites)
+        self.__init_equipment(equipment)
+        self.__init_activities(activities, decision_code)
+
+    def __init_sites(self, sites):
+        self.sites = {}
+        for (key, site) in sites.items():
+            self.sites[key] = self.__init_object_from_json(key, site)
+
+    def __init_equipment(self, equipment):
+        self.equipment = {}
+        for (key, value) in equipment.items():
+            self.equipment[key] = self.__init_object_from_json(key, value)
+
+    def __init_activities(self, activities, decision_code):
+        self.activities = {}
+        for key, activity in activities.items():
+            ship = self.equipment[activity["mover"]]
+            if not ship in self.activities:
+                self.activities[ship] = {}
+
+            klass = type(key, (core.Identifiable, core.Log), {})
+            kwargs = {
+                "env": self.env,
+                "name": key
+            }
+            activity_log = klass(**kwargs)
+            self.activities[ship][key] = {
+                "activity_log": activity_log,
+                "origin": self.sites[activity["origin"]],
+                "destination": self.sites[activity["destination"]],
+                "loader": self.equipment[activity["loader"]],
+                "mover": ship,
+                "unloader": self.equipment[activity["unloader"]]
+            }
+
+        # todo also extract decision_code for each ship and use it in process_control
+
+        for ship in self.activities.keys():
+            self.env.process(self.process_control(ship, decision_code))
+
+    def __init_object_from_json(self, class_name, object_json):
+        name = object_json["name"]
+        type = object_json["type"]
+        properties = object_json["properties"]
+
+        klass = get_class_from_type_list(class_name, type)
+        kwargs = get_kwargs_from_properties(self.env, name, properties, self.sites)
+
+        new_object = klass(**kwargs)
+
+        add_object_properties(new_object, properties)
+
+        return new_object
+
+    def process_control(self, ship, decision_code):
+        # todo actually write this code, for now it's just completing all activities
+
+        self.log_entry('started simulation of {}'.format(ship.name), self.env.now, -1, ship.geometry)
+        activities = self.activities[ship]
+        for key, activity in activities.items():
+            origin = activity["origin"]
+            destination = activity["destination"]
+            while origin.container.level > 0 and destination.container.level < destination.container.capacity:
+                yield from perform_single_run(self.env, **activity)
+
+        self.log_entry('completed simulation of {}'.format(ship.name), self.env.now, -1, ship.geometry)
+
+
+def get_class_from_type_list(class_name, type_list):
+    mixin_classes = [core.Identifiable, core.Log] + [string_to_class(text) for text in type_list]
+    return type(class_name, tuple(mixin_classes), {})
+
+
+def string_to_class(text):
+    # quick hack to get the classes, there is probably a better way...
+    class_dict = {
+        "Locatable": core.Locatable,
+        "HasContainer": core.HasContainer,
+        "EnergyUse": core.EnergyUse,
+        "HasPlume": core.HasPlume,
+        "HasSpillCondition": core.HasSpillCondition,
+        "HasSpill": core.HasSpill,
+        "HasSoil": core.HasSoil,
+        "HasWeather": core.HasWeather,
+        "HasWorkabilityCriteria": core.HasWorkabilityCriteria,
+        "HasDepthRestriction": core.HasDepthRestriction,
+        "Routable": core.Routeable,
+        "Movable": core.Movable,
+        "ContainerDependentMovable": core.ContainerDependentMovable,
+        "HasResource": core.HasResource,
+        "Processor": core.Processor
+    }
+    return class_dict[text]
+
+
+def get_kwargs_from_properties(environment, name, properties, sites):
+    kwargs = {
+        "env": environment,
+        "name": name
+    }
+
+    # some checks on the configuration could be added here,
+    # for example, if both level and capacity are given, is level <= capacity, level >= 0, capacity >= 0 etc.
+    # for compute functions:
+    # - check if there are enough entries for interp1d / interp2d,
+    # - check if functions of for example level have a range from 0 to max level (capacity)
+
+    # Locatable
+    if "geometry" in properties:
+        kwargs["geometry"] = shapely.geometry.asShape(properties["geometry"]).centroid
+    if "starting_location" in properties:
+        kwargs["geometry"] = sites[properties["starting_location"]].geometry
+
+    # HasContainer
+    if "capacity" in properties:
+        kwargs["capacity"] = properties["capacity"]
+    if "level" in properties:
+        kwargs["level"] = properties["level"]
+
+    # EnergyUse
+    if "energy_use_sailing" in properties:
+        pass # todo
+    if "energy_use_loading" in properties:
+        pass # todo
+    if "energy_use_unloading" in properties:
+        pass # todo
+
+    # HasPlume
+    if "sigma_d" in properties:
+        kwargs["sigma_d"] = properties["sigma_d"]
+    if "sigma_o" in properties:
+        kwargs["sigma_o"] = properties["sigma_o"]
+    if "sigma_p" in properties:
+        kwargs["sigma_p"] = properties["sigma_p"]
+    if "f_sett" in properties:
+        kwargs["f_sett"] = properties["f_sett"]
+    if "f_trap" in properties:
+        kwargs["f_trap"] = properties["f_trap"]
+
+    # HasSpillCondition
+    if "conditions" in properties:
+        condition_list = properties["conditions"]
+        condition_objects = [core.SpillCondition(**get_spill_condition_kwargs(environment, condition_dict))
+                             for condition_dict in condition_list]
+        kwargs["conditions"] = condition_objects
+
+    # HasWeather
+    if "file" in properties:
+        # todo fix file location, how is this passed to the server? always use same fake weather file?
+        kwargs["file"] = properties["file"]
+    if "year" in properties:
+        kwargs["year"] = properties["year"]
+    if "month" in properties:
+        kwargs["month"] = properties["month"]
+    if "day" in properties:
+        kwargs["day"] = properties["day"]
+    if "hour" in properties:
+        kwargs["hour"] = properties["hour"]
+    if "timestep" in properties:
+        kwargs["timestep"] = properties["timestep"]
+    if "bed" in properties:
+        kwargs["bed"] = properties["bed"]
+
+    # HasWorkabilityCriteria
+    # todo Movable has the same parameter v, so this value might be overwritten by speed!
+    if "v" in properties:
+        kwargs["v"] = properties["v"]
+
+    # HasDepthRestriction
+    if "draught" in properties:
+        kwargs["compute_draught"] = get_compute_function(properties["draught"], "level", "draught")
+    if "waves" in properties:
+        kwargs["waves"] = properties["waves"]
+    if "ukc" in properties:
+        kwargs["ukc"] = properties["ukc"]
+
+    # Routable arguments: route -> todo figure out how this would appear in properties and can be parsed into kwargs
+
+    # ContainerDependentMovable & Movable
+    if "speed" in properties:
+        speed = properties["speed"]
+        if isinstance(speed, list):
+            kwargs["compute_v"] = get_compute_function(speed, "level", "speed")
+        else:
+            kwargs["v"] = speed
+
+    # HasResource
+    if "nr_resources" in properties:
+        kwargs["nr_resources"] = properties["nr_resources"]
+
+    # Processor
+    # todo allow fixed rate by giving a fixed value instead of table list?
+    if "loading_rate" in properties:
+        kwargs["loading_func"] = get_compute_function(properties["loading_rate"], "level", "rate")
+    if "unloading_rate" in properties:
+        kwargs["unloading_func"] = get_compute_function(properties["unloading_rate"], "level", "rate")
+
+    return kwargs
+
+
+def add_object_properties(new_object, properties):
+    # HasSoil
+    if "layers" in properties:
+        layer_list = properties["layers"]
+        layer_objects = [core.SoilLayer(i, **layer_dict) for i, layer_dict in enumerate(layer_list)]
+        new_object.add_layers(layer_objects)
+
+
+def get_spill_condition_kwargs(environment, condition_dict):
+    kwargs = {}
+    kwargs["spill_limit"] = condition_dict["limit"]
+
+    # todo figure out some way to set initial time in environment from config
+    initial_time = datetime.datetime.fromtimestamp(environment.now)
+
+    kwargs["start"] = initial_time + datetime.timedelta(days=condition_dict["start"])
+    kwargs["end"] = initial_time + datetime.timedelta(days=condition_dict["end"])
+    return kwargs
+
+
+def get_compute_function(table_entry_list, x_key, y_key):
+    df = pd.DataFrame(table_entry_list)
+    return scipy.interpolate.interp1d(df[x_key], df[y_key])

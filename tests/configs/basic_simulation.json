@@ -22,8 +22,8 @@
                 "geometry": {
                     "type": "Point",
                     "coordinates": [
-                        0.0,
-                        0.0
+                        1.0,
+                        1.0
                     ]
                 },
                 "capacity": 500000
@@ -33,7 +33,7 @@
     "equipment": {
         "Hopper": {
             "name": "Boaty McBoatStone",
-            "type": ["ContainerDependentMovable", "Processor", "HasResource", "EnergyUse"],
+            "type": ["ContainerDependentMovable", "Processor", "HasResource"],
             "properties": {
                 "starting_location": "DumpSite",
                 "speed": [
@@ -96,33 +96,6 @@
                     {
                         "level": 0,
                         "rate": 0
-                    }
-                ]
-                "energy_use_sailing": [
-                    {
-                        "distance": 1000
-                        "speed": 5.0
-                        "fuel_use": 1000 
-                    }
-                ],
-                "energy_use_loading": [
-                    {
-                        "duration": 2000,
-                        "fuel_use": 2000
-                    },
-                    {
-                        "duration": 1000,
-                        "fuel_use": 1000
-                    }
-                ],
-                "energy_use_unloading": [
-                    {
-                        "duration": 2000,
-                        "fuel_use": 2000
-                    },
-                    {
-                        "duration": 1000,
-                        "fuel_use": 1000
                     }
                 ]
             }
