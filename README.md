@@ -38,7 +38,7 @@ Once the the Flask server is running and serving, you can start the Vue applicat
 
 ``` bash
 # Go to correct folder
-cd ../digital-twin-static
+cd app-Hydraulic-Infrastructure
 
 # Run app
 npm run serve
