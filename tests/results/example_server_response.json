@@ -1,0 +1,549 @@
+{
+  "completion_time": 1550341884.1882129,
+  "logging": {
+    "simulation": [
+      {
+        "message": "started simulation of Boaty McBoatStone",
+        "time": 1550153595,
+        "value": -1,
+        "geometry_log": {
+          "type": "Point",
+          "coordinates": [
+            1,
+            1
+          ]
+        }
+      },
+      {
+        "message": "completed simulation of Boaty McBoatStone",
+        "time": 1550341884,
+        "value": -1,
+        "geometry_log": {
+          "type": "Point",
+          "coordinates": [
+            1,
+            1
+          ]
+        }
+      }
+    ],
+    "sites": {
+      "LoadSite": [
+        {
+          "message": "unloading start",
+          "time": 1550184974,
+          "value": 12000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "unloading stop",
+          "time": 1550184974,
+          "value": 7000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "unloading start",
+          "time": 1550247737,
+          "value": 7000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "unloading stop",
+          "time": 1550247737,
+          "value": 2000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "unloading start",
+          "time": 1550310500,
+          "value": 2000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "unloading stop",
+          "time": 1550310502,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "DumpSite": [
+        {
+          "message": "loading start",
+          "time": 1550216355,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "loading stop",
+          "time": 1550216357,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "loading start",
+          "time": 1550279118,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "loading stop",
+          "time": 1550279120,
+          "value": 10000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "loading start",
+          "time": 1550341882,
+          "value": 10000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "loading stop",
+          "time": 1550341884,
+          "value": 12000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    "equipment": {
+      "Hopper": [
+        {
+          "message": "sailing empty start",
+          "time": 1550153595,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "sailing empty stop",
+          "time": 1550184974,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "loading start",
+          "time": 1550184974,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "loading stop",
+          "time": 1550184974,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "sailing full start",
+          "time": 1550184974,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "sailing full stop",
+          "time": 1550216355,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "unloading start",
+          "time": 1550216355,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "unloading stop",
+          "time": 1550216357,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "sailing empty start",
+          "time": 1550216357,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "sailing empty stop",
+          "time": 1550247737,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "loading start",
+          "time": 1550247737,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "loading stop",
+          "time": 1550247737,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "sailing full start",
+          "time": 1550247737,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "sailing full stop",
+          "time": 1550279118,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "unloading start",
+          "time": 1550279118,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "unloading stop",
+          "time": 1550279120,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "sailing empty start",
+          "time": 1550279120,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "sailing empty stop",
+          "time": 1550310500,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "loading start",
+          "time": 1550310500,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "loading stop",
+          "time": 1550310502,
+          "value": 2000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "sailing full start",
+          "time": 1550310502,
+          "value": 2000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "message": "sailing full stop",
+          "time": 1550341882,
+          "value": 2000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "unloading start",
+          "time": 1550341882,
+          "value": 2000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "unloading stop",
+          "time": 1550341884,
+          "value": 0,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    "activities": {
+      "Main": [
+        {
+          "message": "transporting start",
+          "time": 1550153595,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "transporting stop",
+          "time": 1550216357,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "transporting start",
+          "time": 1550216357,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "transporting stop",
+          "time": 1550279120,
+          "value": 5000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "transporting start",
+          "time": 1550279120,
+          "value": 2000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "message": "transporting stop",
+          "time": 1550341884,
+          "value": 2000,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              1,
+              1
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

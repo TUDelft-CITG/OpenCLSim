@@ -297,14 +297,3 @@ def test_and_condition(env, geometry_a, geometry_b, Location, TransportProcessin
 
     # Test time of the simulation
     assert time.mktime(time_condition.start.timetuple()) <= env.now <= time.mktime(time_condition.stop.timetuple())
-
-
-def test_simulation(env):
-    with open('tests/configs/basic_simulation.json') as f:
-        config = json.load(f)
-
-    simulation = model.Simulation(config["sites"], config["equipment"], config["activities"], "", env=env, name="test simulation")
-
-    env.run()
-
-    # todo add actual checks on if simulation ran as expected

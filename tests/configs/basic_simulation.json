@@ -11,8 +11,8 @@
                         0.0
                     ]
                 },
-                "capacity": 500000,
-                "level": 500000
+                "capacity": 12000,
+                "level": 12000
             }
         },
         "DumpSite": {
@@ -26,7 +26,7 @@
                         1.0
                     ]
                 },
-                "capacity": 500000
+                "capacity": 50000
             }
         }
     },

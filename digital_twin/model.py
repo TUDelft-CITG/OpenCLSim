@@ -357,6 +357,27 @@ class Simulation(core.Identifiable, core.Log):
 
         self.log_entry('completed simulation of {}'.format(ship.name), self.env.now, -1, ship.geometry)
 
+    def get_logging(self):
+        json = {"simulation": self.get_log_as_json()}
+
+        sites_logging = {}
+        for key, site in self.sites.items():
+            sites_logging[key] = site.get_log_as_json()
+        json["sites"] = sites_logging
+
+        equipment_logging = {}
+        for key, equipment in self.equipment.items():
+            equipment_logging[key] = equipment.get_log_as_json()
+        json["equipment"] = equipment_logging
+
+        activity_logging = {}
+        for activity_dict in self.activities.values():
+            for key, activity in activity_dict.items():
+                activity_logging[key] = activity["activity_log"].get_log_as_json()
+        json["activities"] = activity_logging
+
+        return json
+
 
 def get_class_from_type_list(class_name, type_list):
     mixin_classes = [core.Identifiable, core.Log] + [string_to_class(text) for text in type_list]
@@ -502,7 +523,6 @@ def get_spill_condition_kwargs(environment, condition_dict):
     kwargs = {}
     kwargs["spill_limit"] = condition_dict["limit"]
 
-    # todo figure out some way to set initial time in environment from config
     initial_time = datetime.datetime.fromtimestamp(environment.now)
 
     kwargs["start"] = initial_time + datetime.timedelta(days=condition_dict["start"])
