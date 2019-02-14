@@ -25,6 +25,7 @@ requires = [
     "simpy",
     "networkx",
     "shapely",
+    "scipy",
     "click",
     "matplotlib",
     "pint",
