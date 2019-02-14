@@ -300,7 +300,7 @@ def test_and_condition(env, geometry_a, geometry_b, Location, TransportProcessin
 
 
 def test_simulation(env):
-    with open('configs/basic_simulation.json') as f:
+    with open('tests/configs/basic_simulation.json') as f:
         config = json.load(f)
 
     simulation = model.Simulation(config["sites"], config["equipment"], config["activities"], "", env=env, name="test simulation")
