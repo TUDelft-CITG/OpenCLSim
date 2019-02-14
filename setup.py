@@ -33,7 +33,8 @@ requires = [
     "plotly",
     "simplekml",
     "nose",
-    "flask"
+    "flask",
+    "flask_cors"
 ]
 
 setup_requirements = [
