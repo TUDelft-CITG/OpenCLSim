@@ -438,6 +438,16 @@ class HasWeather:
     def __init__(self, dataframe, timestep=10, bed=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
+        df = pd.read_csv(file, header=[2,3])
+        df.columns.values[0] = ('YYYY', '')
+        df.columns = df.columns.map('{0[0]} {0[1]}'.format)
+        df.columns = df.columns.map(str.strip)
+
+        df.index = df[['YYYY', 'MM', 'DD', 'HH [UTC]']].apply(lambda s : datetime.datetime(*s),axis = 1)
+        df.fillna(0, inplace=True)
+
+        df = df.drop(['YYYY', 'MM', 'DD', 'HH [UTC]'],axis=1)
+        
         self.timestep = datetime.timedelta(minutes = timestep)
 
         data = {}
@@ -455,7 +465,7 @@ class HasWeather:
         self.metocean_data.drop(["Index"], axis = 1, inplace = True)
 
         if bed:
-            self.metocean_data["Water depth"] = self.metocean_data["Tide"] - bed
+            self.metocean_data["Water depth"] = self.metocean_data["Tide [m]"] - bed
 
 
 class HasWorkabilityCriteria:
@@ -528,10 +538,34 @@ class HasDepthRestriction:
 
             # Determine characteristics based on filling
             draught = self.compute_draught(filling_degree)
-            duration = datetime.timedelta(seconds = processor.unloading_func(self.container.level, filling_degree * self.container.capacity))
-
-            ranges = self.viable_time_windows(draught, duration, location.metocean_data)
-
+            duration = datetime.timedelta(seconds = processor.unloading_func(filling_degree * self.container.capacity))
+            
+            # Make dataframe based on characteristics
+            df = location.metocean_data.copy()
+            df["Required depth"] = df["Hm0 [m]"].apply(lambda s : self.calc_required_depth(draught, s))
+            series = pd.Series(df["Required depth"] <= df["Water depth"])
+            
+            # Loop through series to find windows
+            index = series.index
+            values = series.values
+            in_range = False
+            ranges = []
+            
+            for i, value in enumerate(values):
+                if value == True:
+                    if i == 0:
+                        begin = index[i]
+                    elif not in_range:
+                        begin = index[i]
+                    
+                    in_range = True
+                elif in_range:
+                    in_range = False
+                    end = index[i]
+                    
+                    if (end - begin) >= duration:
+                        ranges.append((begin.to_datetime64(), (end - duration).to_datetime64()))
+            
             self.depth_data[location.name][filling_degree] = \
                                             {"Volume": filling_degree * self.container.capacity,
                                             "Draught": draught,
