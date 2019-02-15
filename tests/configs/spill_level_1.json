@@ -195,7 +195,7 @@
                     },
                     {
                         "level": 5000,
-                        "rate": 0
+                        "rate": 0.1
                     }
                 ],
                 "unloading_rate": [
@@ -221,7 +221,7 @@
                     },
                     {
                         "level": 0,
-                        "rate": 0
+                        "rate": 0.1
                     }
                 ]
             }

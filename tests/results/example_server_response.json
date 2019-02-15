@@ -1,10 +1,10 @@
 {
-  "completion_time": 1550341884.1882129,
+  "completion_time": 1550433650.489982,
   "logging": {
     "simulation": [
       {
         "message": "started simulation of Boaty McBoatStone",
-        "time": 1550153595,
+        "time": 1550218480,
         "value": -1,
         "geometry_log": {
           "type": "Point",
@@ -16,7 +16,7 @@
       },
       {
         "message": "completed simulation of Boaty McBoatStone",
-        "time": 1550341884,
+        "time": 1550433650,
         "value": -1,
         "geometry_log": {
           "type": "Point",
@@ -31,7 +31,7 @@
       "LoadSite": [
         {
           "message": "unloading start",
-          "time": 1550184974,
+          "time": 1550249859,
           "value": 12000,
           "geometry_log": {
             "type": "Point",
@@ -43,7 +43,7 @@
         },
         {
           "message": "unloading stop",
-          "time": 1550184974,
+          "time": 1550255365,
           "value": 7000,
           "geometry_log": {
             "type": "Point",
@@ -55,7 +55,7 @@
         },
         {
           "message": "unloading start",
-          "time": 1550247737,
+          "time": 1550323631,
           "value": 7000,
           "geometry_log": {
             "type": "Point",
@@ -67,7 +67,7 @@
         },
         {
           "message": "unloading stop",
-          "time": 1550247737,
+          "time": 1550329137,
           "value": 2000,
           "geometry_log": {
             "type": "Point",
@@ -79,7 +79,7 @@
         },
         {
           "message": "unloading start",
-          "time": 1550310500,
+          "time": 1550397403,
           "value": 2000,
           "geometry_log": {
             "type": "Point",
@@ -91,7 +91,7 @@
         },
         {
           "message": "unloading stop",
-          "time": 1550310502,
+          "time": 1550398286,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -105,7 +105,7 @@
       "DumpSite": [
         {
           "message": "loading start",
-          "time": 1550216355,
+          "time": 1550286746,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -117,7 +117,7 @@
         },
         {
           "message": "loading stop",
-          "time": 1550216357,
+          "time": 1550292251,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -129,7 +129,7 @@
         },
         {
           "message": "loading start",
-          "time": 1550279118,
+          "time": 1550360517,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -141,7 +141,7 @@
         },
         {
           "message": "loading stop",
-          "time": 1550279120,
+          "time": 1550366023,
           "value": 10000,
           "geometry_log": {
             "type": "Point",
@@ -153,7 +153,7 @@
         },
         {
           "message": "loading start",
-          "time": 1550341882,
+          "time": 1550429666,
           "value": 10000,
           "geometry_log": {
             "type": "Point",
@@ -165,7 +165,7 @@
         },
         {
           "message": "loading stop",
-          "time": 1550341884,
+          "time": 1550433650,
           "value": 12000,
           "geometry_log": {
             "type": "Point",
@@ -181,7 +181,7 @@
       "Hopper": [
         {
           "message": "sailing empty start",
-          "time": 1550153595,
+          "time": 1550218480,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -193,7 +193,7 @@
         },
         {
           "message": "sailing empty stop",
-          "time": 1550184974,
+          "time": 1550249859,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -205,7 +205,7 @@
         },
         {
           "message": "loading start",
-          "time": 1550184974,
+          "time": 1550249859,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -217,7 +217,7 @@
         },
         {
           "message": "loading stop",
-          "time": 1550184974,
+          "time": 1550255365,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -229,7 +229,7 @@
         },
         {
           "message": "sailing full start",
-          "time": 1550184974,
+          "time": 1550255365,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -241,7 +241,7 @@
         },
         {
           "message": "sailing full stop",
-          "time": 1550216355,
+          "time": 1550286746,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -253,7 +253,7 @@
         },
         {
           "message": "unloading start",
-          "time": 1550216355,
+          "time": 1550286746,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -265,7 +265,7 @@
         },
         {
           "message": "unloading stop",
-          "time": 1550216357,
+          "time": 1550292251,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -277,7 +277,7 @@
         },
         {
           "message": "sailing empty start",
-          "time": 1550216357,
+          "time": 1550292251,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -289,7 +289,7 @@
         },
         {
           "message": "sailing empty stop",
-          "time": 1550247737,
+          "time": 1550323631,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -301,7 +301,7 @@
         },
         {
           "message": "loading start",
-          "time": 1550247737,
+          "time": 1550323631,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -313,7 +313,7 @@
         },
         {
           "message": "loading stop",
-          "time": 1550247737,
+          "time": 1550329137,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -325,7 +325,7 @@
         },
         {
           "message": "sailing full start",
-          "time": 1550247737,
+          "time": 1550329137,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -337,7 +337,7 @@
         },
         {
           "message": "sailing full stop",
-          "time": 1550279118,
+          "time": 1550360517,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -349,7 +349,7 @@
         },
         {
           "message": "unloading start",
-          "time": 1550279118,
+          "time": 1550360517,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -361,7 +361,7 @@
         },
         {
           "message": "unloading stop",
-          "time": 1550279120,
+          "time": 1550366023,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -373,7 +373,7 @@
         },
         {
           "message": "sailing empty start",
-          "time": 1550279120,
+          "time": 1550366023,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -385,7 +385,7 @@
         },
         {
           "message": "sailing empty stop",
-          "time": 1550310500,
+          "time": 1550397403,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -397,7 +397,7 @@
         },
         {
           "message": "loading start",
-          "time": 1550310500,
+          "time": 1550397403,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -409,7 +409,7 @@
         },
         {
           "message": "loading stop",
-          "time": 1550310502,
+          "time": 1550398286,
           "value": 2000,
           "geometry_log": {
             "type": "Point",
@@ -421,7 +421,7 @@
         },
         {
           "message": "sailing full start",
-          "time": 1550310502,
+          "time": 1550398286,
           "value": 2000,
           "geometry_log": {
             "type": "Point",
@@ -433,7 +433,7 @@
         },
         {
           "message": "sailing full stop",
-          "time": 1550341882,
+          "time": 1550429666,
           "value": 2000,
           "geometry_log": {
             "type": "Point",
@@ -445,7 +445,7 @@
         },
         {
           "message": "unloading start",
-          "time": 1550341882,
+          "time": 1550429666,
           "value": 2000,
           "geometry_log": {
             "type": "Point",
@@ -457,7 +457,7 @@
         },
         {
           "message": "unloading stop",
-          "time": 1550341884,
+          "time": 1550433650,
           "value": 0,
           "geometry_log": {
             "type": "Point",
@@ -473,7 +473,7 @@
       "Main": [
         {
           "message": "transporting start",
-          "time": 1550153595,
+          "time": 1550218480,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -485,7 +485,7 @@
         },
         {
           "message": "transporting stop",
-          "time": 1550216357,
+          "time": 1550292251,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -497,7 +497,7 @@
         },
         {
           "message": "transporting start",
-          "time": 1550216357,
+          "time": 1550292251,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -509,7 +509,7 @@
         },
         {
           "message": "transporting stop",
-          "time": 1550279120,
+          "time": 1550366023,
           "value": 5000,
           "geometry_log": {
             "type": "Point",
@@ -521,7 +521,7 @@
         },
         {
           "message": "transporting start",
-          "time": 1550279120,
+          "time": 1550366023,
           "value": 2000,
           "geometry_log": {
             "type": "Point",
@@ -533,7 +533,7 @@
         },
         {
           "message": "transporting stop",
-          "time": 1550341884,
+          "time": 1550433650,
           "value": 2000,
           "geometry_log": {
             "type": "Point",

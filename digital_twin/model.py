@@ -3,6 +3,7 @@ import datetime
 import shapely
 import shapely.geometry
 import scipy.interpolate
+import scipy.integrate
 import pandas as pd
 import numpy as np
 
@@ -529,11 +530,10 @@ def get_kwargs_from_properties(environment, name, properties, sites):
         kwargs["nr_resources"] = properties["nr_resources"]
 
     # Processor
-    # todo allow fixed rate by giving a fixed value instead of table list?
     if "loading_rate" in properties:
-        kwargs["loading_func"] = get_compute_function(properties["loading_rate"], "level", "rate")
+        kwargs["loading_func"] = get_rate_compute_function(properties["loading_rate"])
     if "unloading_rate" in properties:
-        kwargs["unloading_func"] = get_compute_function(properties["unloading_rate"], "level", "rate")
+        kwargs["unloading_func"] = get_rate_compute_function(properties["unloading_rate"])
 
     return kwargs
 
@@ -560,3 +560,15 @@ def get_spill_condition_kwargs(environment, condition_dict):
 def get_compute_function(table_entry_list, x_key, y_key):
     df = pd.DataFrame(table_entry_list)
     return scipy.interpolate.interp1d(df[x_key], df[y_key])
+
+
+def get_rate_compute_function(property):
+    if isinstance(property, list):
+        # given property is a list of data points
+        rate_function = get_compute_function(property, "level", "rate")
+        inversed_rate_function = lambda x: 1 / rate_function(x)
+        # assumes the container is empty at the start of loading!
+        return lambda x: scipy.integrate.quad(inversed_rate_function, 0, x)[0]
+    else:
+        # given property is a flat rate
+        return lambda x: x / property
