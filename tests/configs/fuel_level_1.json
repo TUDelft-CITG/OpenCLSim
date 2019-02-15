@@ -100,8 +100,8 @@
                 ],
                 "energy_use_sailing": [
                     {
-                        "distance": 1000
-                        "speed": 5.0
+                        "distance": 1000,
+                        "speed": 5.0,
                         "fuel_use": 1000 
                     }
                 ],
