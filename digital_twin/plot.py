@@ -283,10 +283,10 @@ def energy_use(vessel, testing = False):
             "Sailing empty",
             "Waiting"]
     colors = [(55/255,126/255,184/255), 
-            (98/255, 192/255, 122/255), 
-            (255/255,150/255,0/255), 
-            (98/255, 141/255, 122/255),
-            (124/255, 10/255, 2/255)]
+              (255/255, 150/255, 122/255), 
+              (98/255,192/255,122/255), 
+              (98/255, 141/255, 122/255),
+              (255/255, 0/255, 0/255)]
 
     positions = np.arange(len(labels))
     ax1.bar(positions, height, color = colors)
@@ -327,6 +327,98 @@ def energy_use(vessel, testing = False):
     ax1.set_xticks(positions)
     ax1.set_xticklabels(labels, size = 12)
     plt.title("Energy use - {}".format(vessel.name), size = 15)
+
+    if testing == False:
+        plt.show()
+
+def activity_distribution(vessel, testing = False):
+    activities = ["loading", "unloading", "sailing full", "sailing empty", "waiting"]
+    activities_times = [0, 0, 0, 0, 0]
+
+    for i, activity in enumerate(activities):
+        starts = []
+        stops = []
+        
+        for j, message in enumerate(vessel.log["Message"]):
+            if activity != "waiting":
+                if message == activity + ' start':
+                    starts.append(vessel.log["Timestamp"][j])
+                if message == activity + ' stop':
+                    stops.append(vessel.log["Timestamp"][j])
+            else:
+                if message[:7] == activity and message[-5:] == 'start':
+                    starts.append(vessel.log["Timestamp"][j])
+                if message[:7] == activity and message[-4:] == 'stop':
+                    stops.append(vessel.log["Timestamp"][j])
+        
+        for j, _ in enumerate(starts):
+            activities_times[i] += ((stops[j] - starts[j]).total_seconds() / (3600 * 24))
+
+    loading, unloading, sailing_full, sailing_empty, waiting =  activities_times[0], \
+                                                                activities_times[1], \
+                                                                activities_times[2], \
+                                                                activities_times[3], \
+                                                                activities_times[4]
+
+    # For the total plot
+    fig, ax1 = plt.subplots(figsize = [15, 10])
+
+    # For the barchart
+    height = [loading, 
+              unloading, 
+              sailing_full, 
+              sailing_empty,
+              waiting]
+    labels = ["Loading", 
+              "Unloading", 
+              "Sailing full", 
+              "Sailing empty",
+              "Waiting"]
+    colors = [(55/255,126/255,184/255), 
+              (255/255, 150/255, 122/255), 
+              (98/255,192/255,122/255), 
+              (98/255, 141/255, 122/255),
+              (255/255, 0/255, 0/255)]
+
+    positions = np.arange(len(labels))
+    ax1.bar(positions, height, color = colors)
+
+    # For the cumulative percentages
+    total = sum([loading, 
+                 unloading, 
+                 sailing_full, 
+                 sailing_empty,
+                 waiting])
+
+    unloading += loading
+    sailing_full += unloading
+    sailing_empty += sailing_full
+    waiting += sailing_empty
+    y = [loading, 
+         unloading, 
+         sailing_full, 
+         sailing_empty, 
+         waiting]
+    n = [loading / total,
+         unloading / total,
+         sailing_full / total,
+         sailing_empty / total,
+         waiting / total]
+
+    ax1.plot(positions, y, 'ko', markersize=10)
+    ax1.plot(positions, y, 'k')
+
+    for i, txt in enumerate(n):
+        x_txt = positions[i] + 0.1
+        y_txt = y[i] * 0.95
+        ax1.annotate("{:02.1f}%".format(txt * 100), 
+                    (x_txt, y_txt), size = 12)
+
+    # Further markup
+    plt.ylabel("Total time spend on activities [Days]", size = 12)
+    ax1.set_xticks(positions)
+    ax1.set_xticklabels(labels, size = 12)
+    plt.title("Distribution of spend time - {}".format(vessel.name), size = 15)
 
     if testing == False:
         plt.show()
