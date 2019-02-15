@@ -3,7 +3,7 @@ FROM continuumio/miniconda3
 
 # Install conda stuff first
 RUN conda install numpy pandas nomkl pyproj
-RUN pip install pint
+RUN pip install pint Flask
 
 WORKDIR /Hydraulic-Infrastructure-Realisation
 ADD . /Hydraulic-Infrastructure-Realisation

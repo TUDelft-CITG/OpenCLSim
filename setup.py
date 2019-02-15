@@ -25,6 +25,7 @@ requires = [
     "simpy",
     "networkx",
     "shapely",
+    "scipy",
     "click",
     "matplotlib",
     "pint",
@@ -32,6 +33,8 @@ requires = [
     "plotly",
     "simplekml",
     "nose",
+    "Flask",
+    "Flask-cors"
 ]
 
 setup_requirements = [

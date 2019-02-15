@@ -1,6 +1,10 @@
 import digital_twin.core as core
 import datetime
 import shapely
+import shapely.geometry
+import scipy.interpolate
+import scipy.integrate
+import pandas as pd
 import numpy as np
 
 
@@ -189,7 +193,7 @@ class Activity(core.Identifiable, core.Log):
         # keep moving substances until the stop condition is satisfied
         while not stop_condition.satisfied():
             if condition.satisfied():
-                yield from self.installation_process(origin, destination, loader, mover, unloader)
+                yield from perform_single_run(self.env, self, origin, destination, loader, mover, unloader, verbose=self.print)
             else:
                 yield self.env.timeout(3600)
 
@@ -197,8 +201,8 @@ class Activity(core.Identifiable, core.Log):
               + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' complete')
         self.log_entry("completed", self.env.now, -1, destination.geometry)
 
-    def installation_process(self, origin, destination,
-                             loader, mover, unloader):
+
+def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, verbose=False):
         """Installation process"""
         # estimate amount that should be transported
         amount = min(
@@ -215,35 +219,35 @@ class Activity(core.Identifiable, core.Log):
             origin.total_requested += amount
             destination.total_requested += amount
 
-            if self.print == True:
+            if verbose == True:
                 print('Using ' + mover.name + ' to process ' + str(amount))
-            self.log_entry("transporting start", self.env.now, amount, mover.geometry)
+            activity_log.log_entry("transporting start", environment.now, amount, mover.geometry)
 
             with mover.resource.request() as my_mover_turn:
                 yield my_mover_turn
 
                 # move to the origin if necessary
                 if not mover.is_at(origin):
-                    yield from self.__move_mover__(mover, origin, 'empty')
+                    yield from move_mover(environment, mover, origin, 'empty', verbose=verbose)
 
                 # load the mover
                 loader.rate = loader.loading_func        # rate is variable to loading / unloading
-                yield from self.__shift_amount__(amount, loader, origin, mover, destination_resource_request=my_mover_turn)
+                yield from shift_amount(environment, amount, loader, origin, mover, destination_resource_request=my_mover_turn, verbose=verbose)
 
                 # move the mover to the destination
-                yield from self.__move_mover__(mover, destination, 'full')
+                yield from move_mover(environment, mover, destination, 'full', verbose=verbose)
 
                 # unload the mover
                 unloader.rate = unloader.unloading_func  # rate is variable to loading / unloading
-                yield from self.__shift_amount__(amount, unloader, mover, destination, origin_resource_request=my_mover_turn)
+                yield from shift_amount(environment, amount, unloader, mover, destination, origin_resource_request=my_mover_turn, verbose=verbose)
 
-            self.log_entry("transporting stop", self.env.now, amount, mover.geometry)
+            activity_log.log_entry("transporting stop", environment.now, amount, mover.geometry)
         else:
             print('Nothing to move')
-            yield self.env.timeout(3600)
+            yield environment.timeout(3600)
 
-    def __shift_amount__(self, amount, processor, origin, destination,
-                         origin_resource_request=None, destination_resource_request=None):
+
+def shift_amount(environment, amount, processor, origin, destination, origin_resource_request=None, destination_resource_request=None, verbose=False):
         if id(origin) == id(processor) and origin_resource_request is not None or \
                 id(destination) == id(processor) and destination_resource_request is not None:
             
@@ -253,28 +257,318 @@ class Activity(core.Identifiable, core.Log):
             with processor.resource.request() as my_processor_turn:
                 yield my_processor_turn
 
-                processor.log_entry('processing start', self.env.now, amount, processor.geometry)
+                processor.log_entry('processing start', environment.now, amount, processor.geometry)
                 yield from processor.process(origin, destination, amount,
                                              origin_resource_request=origin_resource_request,
                                              destination_resource_request=destination_resource_request)
                 
-                processor.log_entry('processing stop', self.env.now, amount, processor.geometry)
+                processor.log_entry('processing stop', environment.now, amount, processor.geometry)
                     
-        if self.print == True:
+        if verbose == True:
             print('Processed {}:'.format(amount))
             print('  from:        ' + origin.name + ' contains: ' + str(origin.container.level))
             print('  by:          ' + processor.name)
             print('  to:          ' + destination.name + ' contains: ' + str(destination.container.level))
 
-    def __move_mover__(self, mover, origin, status):
+
+def move_mover(environment, mover, origin, status, verbose=False):
         old_location = mover.geometry
 
-        mover.log_entry('sailing ' + status + ' start', self.env.now, mover.container.level, mover.geometry)
+        mover.log_entry('sailing ' + status + ' start', environment.now, mover.container.level, mover.geometry)
         yield from mover.move(origin)
-        mover.log_entry('sailing ' + status + ' stop', self.env.now, mover.container.level, mover.geometry)
+        mover.log_entry('sailing ' + status + ' stop', environment.now, mover.container.level, mover.geometry)
 
-        if self.print == True:
+        if verbose == True:
             print('Moved:')
             print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
             print('  from:        ' + format(old_location.x, '02.5f') + ' ' + format(old_location.y, '02.5f'))
             print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))
+
+
+class Simulation(core.Identifiable, core.Log):
+    """The Simulation Class can be used to set up a full simulation using configuration dictionaries (json).
+
+    sites:  a dictionary where the keys are the names the classes will have and the id associated with
+            the constructed object (used to reference to the object in activities)
+            the values are another dictionary containing the keys "name", "type" and "properties"
+    equipment: a dictionary where the keys are the names the classes will have and the id associated with
+            the constructed object (used to reference to the object in activities)
+            the values are another dictionary containing the keys "name", "type" and "properties"
+    activities: a dictionary where the keys are the names the activities logging will be reported under,
+                the values are another dictionary containing the keys "origin", "destination", "loader",
+                "mover", "unloader", each of these has a string value corresponding to the key of the site or
+                equipment respectively. The keys given under "origin" and "destination" must be present in the
+                "sites" parameter, the keys given for the "loader", "mover" and "unloader" must be present in the
+                "equipment" parameter.
+    decision_code: will probably be used to pass the "decision code" constructed through blockly in the future.
+                   Has no effect for now.
+
+    Each of the values the sites and equipment dictionaries, are another dictionary specifying "name",
+    "type" and "properties". Here "name" is used to initialize the objects name (required by core.Identifiable).
+    The "type" must be a list of mixin class names which will be used to construct a dynamic class for the
+    object. For example: ["HasStorage", "HasResource", "Locatable"]. The core.Identifiable and core.Log class will
+    always be added automatically by the Simulation class.
+    The "properties" must be a dictionary which is used to construct the arguments for initializing the object.
+    For example, if "HasContainer" is included in the "type" list, the "properties" dictionary must include a "capacity"
+    which has the value that will be passed to the constructor of HasContainer. In this case, the "properties"
+    dictionary can also optionally specify the "level".
+    """
+
+    def __init__(self, sites, equipment, activities, decision_code, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.__init_sites(sites)
+        self.__init_equipment(equipment)
+        self.__init_activities(activities, decision_code)
+
+    def __init_sites(self, sites):
+        self.sites = {}
+        for (key, site) in sites.items():
+            self.sites[key] = self.__init_object_from_json(key, site)
+
+    def __init_equipment(self, equipment):
+        self.equipment = {}
+        for (key, value) in equipment.items():
+            self.equipment[key] = self.__init_object_from_json(key, value)
+
+    def __init_activities(self, activities, decision_code):
+        self.activities = {}
+        for key, activity in activities.items():
+            ship = self.equipment[activity["mover"]]
+            if not ship in self.activities:
+                self.activities[ship] = {}
+
+            klass = type(key, (core.Identifiable, core.Log), {})
+            kwargs = {
+                "env": self.env,
+                "name": key
+            }
+            activity_log = klass(**kwargs)
+            self.activities[ship][key] = {
+                "activity_log": activity_log,
+                "origin": self.sites[activity["origin"]],
+                "destination": self.sites[activity["destination"]],
+                "loader": self.equipment[activity["loader"]],
+                "mover": ship,
+                "unloader": self.equipment[activity["unloader"]]
+            }
+
+        # todo also extract decision_code for each ship and use it in process_control
+
+        for ship in self.activities.keys():
+            self.env.process(self.process_control(ship, decision_code))
+
+    def __init_object_from_json(self, class_name, object_json):
+        name = object_json["name"]
+        type = object_json["type"]
+        properties = object_json["properties"]
+
+        klass = get_class_from_type_list(class_name, type)
+        kwargs = get_kwargs_from_properties(self.env, name, properties, self.sites)
+
+        new_object = klass(**kwargs)
+
+        add_object_properties(new_object, properties)
+
+        return new_object
+
+    def process_control(self, ship, decision_code):
+        # todo actually write this code, for now it's just completing all activities
+
+        self.log_entry('started simulation of {}'.format(ship.name), self.env.now, -1, ship.geometry)
+        activities = self.activities[ship]
+        for key, activity in activities.items():
+            origin = activity["origin"]
+            destination = activity["destination"]
+            while origin.container.level > 0 and destination.container.level < destination.container.capacity:
+                yield from perform_single_run(self.env, **activity)
+
+        self.log_entry('completed simulation of {}'.format(ship.name), self.env.now, -1, ship.geometry)
+
+    def get_logging(self):
+        json = {"simulation": self.get_log_as_json()}
+
+        sites_logging = {}
+        for key, site in self.sites.items():
+            sites_logging[key] = site.get_log_as_json()
+        json["sites"] = sites_logging
+
+        equipment_logging = {}
+        for key, equipment in self.equipment.items():
+            equipment_logging[key] = equipment.get_log_as_json()
+        json["equipment"] = equipment_logging
+
+        activity_logging = {}
+        for activity_dict in self.activities.values():
+            for key, activity in activity_dict.items():
+                activity_logging[key] = activity["activity_log"].get_log_as_json()
+        json["activities"] = activity_logging
+
+        return json
+
+
+def get_class_from_type_list(class_name, type_list):
+    mixin_classes = [core.Identifiable, core.Log] + [string_to_class(text) for text in type_list]
+    return type(class_name, tuple(mixin_classes), {})
+
+
+def string_to_class(text):
+    # quick hack to get the classes, there is probably a better way...
+    class_dict = {
+        "Locatable": core.Locatable,
+        "HasContainer": core.HasContainer,
+        "EnergyUse": core.EnergyUse,
+        "HasPlume": core.HasPlume,
+        "HasSpillCondition": core.HasSpillCondition,
+        "HasSpill": core.HasSpill,
+        "HasSoil": core.HasSoil,
+        "HasWeather": core.HasWeather,
+        "HasWorkabilityCriteria": core.HasWorkabilityCriteria,
+        "HasDepthRestriction": core.HasDepthRestriction,
+        "Routable": core.Routeable,
+        "Movable": core.Movable,
+        "ContainerDependentMovable": core.ContainerDependentMovable,
+        "HasResource": core.HasResource,
+        "Processor": core.Processor
+    }
+    return class_dict[text]
+
+
+def get_kwargs_from_properties(environment, name, properties, sites):
+    kwargs = {
+        "env": environment,
+        "name": name
+    }
+
+    # some checks on the configuration could be added here,
+    # for example, if both level and capacity are given, is level <= capacity, level >= 0, capacity >= 0 etc.
+    # for compute functions:
+    # - check if there are enough entries for interp1d / interp2d,
+    # - check if functions of for example level have a range from 0 to max level (capacity)
+
+    # Locatable
+    if "geometry" in properties:
+        kwargs["geometry"] = shapely.geometry.asShape(properties["geometry"]).centroid
+    if "starting_location" in properties:
+        kwargs["geometry"] = sites[properties["starting_location"]].geometry
+
+    # HasContainer
+    if "capacity" in properties:
+        kwargs["capacity"] = properties["capacity"]
+    if "level" in properties:
+        kwargs["level"] = properties["level"]
+
+    # EnergyUse
+    if "energy_use_sailing" in properties:
+        pass # todo
+    if "energy_use_loading" in properties:
+        pass # todo
+    if "energy_use_unloading" in properties:
+        pass # todo
+
+    # HasPlume
+    if "sigma_d" in properties:
+        kwargs["sigma_d"] = properties["sigma_d"]
+    if "sigma_o" in properties:
+        kwargs["sigma_o"] = properties["sigma_o"]
+    if "sigma_p" in properties:
+        kwargs["sigma_p"] = properties["sigma_p"]
+    if "f_sett" in properties:
+        kwargs["f_sett"] = properties["f_sett"]
+    if "f_trap" in properties:
+        kwargs["f_trap"] = properties["f_trap"]
+
+    # HasSpillCondition
+    if "conditions" in properties:
+        condition_list = properties["conditions"]
+        condition_objects = [core.SpillCondition(**get_spill_condition_kwargs(environment, condition_dict))
+                             for condition_dict in condition_list]
+        kwargs["conditions"] = condition_objects
+
+    # HasWeather
+    if "file" in properties:
+        # todo fix file location, how is this passed to the server? always use same fake weather file?
+        kwargs["file"] = properties["file"]
+    if "year" in properties:
+        kwargs["year"] = properties["year"]
+    if "month" in properties:
+        kwargs["month"] = properties["month"]
+    if "day" in properties:
+        kwargs["day"] = properties["day"]
+    if "hour" in properties:
+        kwargs["hour"] = properties["hour"]
+    if "timestep" in properties:
+        kwargs["timestep"] = properties["timestep"]
+    if "bed" in properties:
+        kwargs["bed"] = properties["bed"]
+
+    # HasWorkabilityCriteria
+    # todo Movable has the same parameter v, so this value might be overwritten by speed!
+    if "v" in properties:
+        kwargs["v"] = properties["v"]
+
+    # HasDepthRestriction
+    if "draught" in properties:
+        kwargs["compute_draught"] = get_compute_function(properties["draught"], "level", "draught")
+    if "waves" in properties:
+        kwargs["waves"] = properties["waves"]
+    if "ukc" in properties:
+        kwargs["ukc"] = properties["ukc"]
+
+    # Routable arguments: route -> todo figure out how this would appear in properties and can be parsed into kwargs
+
+    # ContainerDependentMovable & Movable
+    if "speed" in properties:
+        speed = properties["speed"]
+        if isinstance(speed, list):
+            kwargs["compute_v"] = get_compute_function(speed, "level", "speed")
+        else:
+            kwargs["v"] = speed
+
+    # HasResource
+    if "nr_resources" in properties:
+        kwargs["nr_resources"] = properties["nr_resources"]
+
+    # Processor
+    if "loading_rate" in properties:
+        kwargs["loading_func"] = get_rate_compute_function(properties["loading_rate"])
+    if "unloading_rate" in properties:
+        kwargs["unloading_func"] = get_rate_compute_function(properties["unloading_rate"])
+
+    return kwargs
+
+
+def add_object_properties(new_object, properties):
+    # HasSoil
+    if "layers" in properties:
+        layer_list = properties["layers"]
+        layer_objects = [core.SoilLayer(i, **layer_dict) for i, layer_dict in enumerate(layer_list)]
+        new_object.add_layers(layer_objects)
+
+
+def get_spill_condition_kwargs(environment, condition_dict):
+    kwargs = {}
+    kwargs["spill_limit"] = condition_dict["limit"]
+
+    initial_time = datetime.datetime.fromtimestamp(environment.now)
+
+    kwargs["start"] = initial_time + datetime.timedelta(days=condition_dict["start"])
+    kwargs["end"] = initial_time + datetime.timedelta(days=condition_dict["end"])
+    return kwargs
+
+
+def get_compute_function(table_entry_list, x_key, y_key):
+    df = pd.DataFrame(table_entry_list)
+    return scipy.interpolate.interp1d(df[x_key], df[y_key])
+
+
+def get_rate_compute_function(property):
+    if isinstance(property, list):
+        # given property is a list of data points
+        rate_function = get_compute_function(property, "level", "rate")
+        inversed_rate_function = lambda x: 1 / rate_function(x)
+        # assumes the container is empty at the start of loading!
+        return lambda x: scipy.integrate.quad(inversed_rate_function, 0, x)[0]
+    else:
+        # given property is a flat rate
+        return lambda x: x / property

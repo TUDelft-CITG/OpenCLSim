@@ -3,20 +3,18 @@
 
 """Tests for `digital_twin` package."""
 
-import pytest
-import simpy
-import shapely.geometry
-import logging
 import datetime
+import logging
 import time
-import pyproj
-import numpy as np
 
-from click.testing import CliRunner
+import numpy as np
+import pytest
+import pyproj
+import shapely.geometry
+import simpy
 
 from digital_twin import model
 from digital_twin import core
-from digital_twin import cli
 
 logger = logging.getLogger(__name__)
 

@@ -1,0 +1,185 @@
+{
+    "sites": {
+        "LoadSite": {
+            "name": "Loading Site",
+            "type": ["Locatable", "HasContainer", "HasResource"],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        0.0,
+                        0.0
+                    ]
+                },
+                "capacity": 2000000,
+                "level": 2000000
+            }
+        },
+        "Site1": {
+            "name": "Dump Site 1",
+            "type": ["Locatable", "HasContainer", "HasResource", "HasWeather"],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        0.0,
+                        0.0
+                    ]
+                },
+                "capacity": 500000,
+                "file": "wheater_site1.csv",
+                "year": "Year",
+                "month": "Month",
+                "day": "Day",
+                "hour": "Hour",
+                "bed": -7
+            }
+        },
+        "Site2": {
+            "name": "Dump Site 2",
+            "type": ["Locatable", "HasContainer", "HasResource", "HasWeather"],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        0.0,
+                        0.0
+                    ]
+                },
+                "capacity": 500000,
+                "file": "wheater_site2.csv",
+                "year": "Year",
+                "month": "Month",
+                "day": "Day",
+                "hour": "Hour",
+                "bed": -10
+            }
+        },
+        "Site3": {
+            "name": "Dump Site 3",
+            "type": ["Locatable", "HasContainer", "HasResource", "HasWeather"],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        0.0,
+                        0.0
+                    ]
+                },
+                "capacity": 500000,
+                "file": "wheater_site3.csv",
+                "year": "Year",
+                "month": "Month",
+                "day": "Day",
+                "hour": "Hour",
+                "bed": -5
+            }
+        }
+    },
+    "equipment": {
+        "Hopper": {
+            "name": "Hopper",
+            "type": ["ContainerDependentMovable", "Processor", "HasResource", "HasDepthRestriction"],
+            "properties": {
+                "starting_location": "LoadSite",
+                "speed": [
+                    {
+                        "level": 0,
+                        "speed": 5.0
+                    }, {
+                        "level": 5000,
+                        "speed": 4.5
+                    }
+                ],
+                "capacity": 5000,
+                "loading_rate": [
+                    {
+                        "level": 0,
+                        "rate": 2.5
+                    },
+                    {
+                        "level": 1000,
+                        "rate": 2.3
+                    },
+                    {
+                        "level": 2000,
+                        "rate": 2.0
+                    },
+                    {
+                        "level": 3000,
+                        "rate": 1.2
+                    },
+                    {
+                        "level": 4000,
+                        "rate": 0.8
+                    },
+                    {
+                        "level": 5000,
+                        "rate": 0.1
+                    }
+                ],
+                "unloading_rate": [
+                    {
+                        "level": 5000,
+                        "rate": 2.5
+                    },
+                    {
+                       "level": 4000,
+                        "rate": 2.3
+                    },
+                    {
+                        "level": 3000,
+                        "rate": 2.0
+                    },
+                    {
+                        "level": 2000,
+                        "rate": 1.2
+                    },
+                    {
+                        "level": 1000,
+                        "rate": 0.8
+                    },
+                    {
+                        "level": 0,
+                        "rate": 0.1
+                    }
+                ],
+                "draught": [
+                    {
+                        "level": 0,
+                        "draught": 7.0
+                    },
+                    {
+                        "level": 5000,
+                        "draught": 4.0
+                    }
+                ],
+                "waves": [0.5, 1],
+                "ukc": [0.75, 1]
+            }
+        }
+    },
+    "activities": {
+        "SupplySite1": {
+            "origin": "LoadSite",
+            "destination": "Site1",
+            "loader": "Hopper",
+            "mover": "Hopper",
+            "unloader": "Hopper"
+        },
+        "SupplySite2": {
+            "origin": "LoadSite",
+            "destination": "Site2",
+            "loader": "Hopper",
+            "mover": "Hopper",
+            "unloader": "Hopper"
+        },
+        "SupplySite3": {
+            "origin": "LoadSite",
+            "destination": "Site3",
+            "loader": "Hopper",
+            "mover": "Hopper",
+            "unloader": "Hopper"
+        }
+    }
+}
