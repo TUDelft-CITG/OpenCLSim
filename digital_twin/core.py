@@ -438,9 +438,15 @@ class HasWeather:
     def __init__(self, file, year, month, day, hour, timestep=10, bed=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        df = pd.read_csv(file)
-        df.index = df[[year, month, day, hour]].apply(lambda s : datetime.datetime(*s), axis = 1)
-        df = df.drop([year, month, day, hour], axis = 1)
+        df = pd.read_csv(file, header=[2,3])
+        df.columns.values[0] = ('YYYY', '')
+        df.columns = df.columns.map('{0[0]} {0[1]}'.format)
+        df.columns = df.columns.map(str.strip)
+
+        df.index = df[['YYYY', 'MM', 'DD', 'HH [UTC]']].apply(lambda s : datetime.datetime(*s),axis = 1)
+        df.fillna(0, inplace=True)
+
+        df = df.drop(['YYYY', 'MM', 'DD', 'HH [UTC]'],axis=1)
         
         self.timestep = datetime.timedelta(minutes = timestep)
 
@@ -459,7 +465,7 @@ class HasWeather:
         self.metocean_data.drop(["Index"], axis = 1, inplace = True)
 
         if bed:
-            self.metocean_data["Water depth"] = self.metocean_data["Tide"] - bed
+            self.metocean_data["Water depth"] = self.metocean_data["Tide [m]"] - bed
 
 
 class HasWorkabilityCriteria:
@@ -536,7 +542,7 @@ class HasDepthRestriction:
             
             # Make dataframe based on characteristics
             df = location.metocean_data.copy()
-            df["Required depth"] = df["Hs"].apply(lambda s : self.calc_required_depth(draught, s))
+            df["Required depth"] = df["Hm0 [m]"].apply(lambda s : self.calc_required_depth(draught, s))
             series = pd.Series(df["Required depth"] <= df["Water depth"])
             
             # Loop through series to find windows
