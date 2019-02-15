@@ -27,7 +27,10 @@ def simulate():
 
 
 def simulate_from_json(json):
-    simulation_start = datetime.datetime.now()  # todo add option to configure this through json
+    if "initial_time" in json:
+        simulation_start = datetime.datetime.fromtimestamp(json["initial_time"])
+    else:
+        simulation_start = datetime.datetime.now()
     env = simpy.Environment(initial_time=time.mktime(simulation_start.timetuple()))
 
     simulation = model.Simulation(
