@@ -11,5 +11,7 @@ def test_simulation():
     # checks if result can indeed be turned into json
     result_json = json.dumps(result)
 
-    i = 0
-    # todo add actual checks on if simulation ran as expected
+    with open('tests/results/basic_simulation_result.json') as f:
+        expected_result = f.read()
+
+    assert result_json == expected_result
