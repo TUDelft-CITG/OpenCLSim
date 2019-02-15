@@ -27,6 +27,7 @@ def simulate():
 
 
 def simulate_from_json(json):
+      """Create a simulation and run it, based on a json input file"""
     if "initial_time" in json:
         simulation_start = datetime.datetime.fromtimestamp(json["initial_time"])
     else:
