@@ -3,6 +3,7 @@ from digital_twin import server
 
 
 def test_simulation():
+      """Run a basic simulation and check the output."""
     with open('tests/configs/basic_simulation.json') as f:
         config = json.load(f)
 
