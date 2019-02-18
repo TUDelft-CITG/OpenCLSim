@@ -1,0 +1,42 @@
+{
+  "completion_time": 111167.9466418451,
+  "logging": {
+    "simulation": [],
+    "sites": {
+      "afsluitdijk": [],
+      "maasvlakte": [],
+      "home": []
+    },
+    "equipment": {
+      "hopper": []
+    },
+    "activities": {
+      "sailing": [
+        {
+          "message": "started move activity of Boaty McBoatstone to Maasvlakte",
+          "time": 0,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        },
+        {
+          "message": "completed move activity of Boaty McBoatstone to Maasvlakte",
+          "time": 111167,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

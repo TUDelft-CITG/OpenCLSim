@@ -22,7 +22,7 @@ def test_move_activity():
     run_and_compare_output(
         config_file='tests/configs/move_activity.json',
         expected_result_file='tests/results/move_activity_result.json'
-    )
+    )  # todo current result contains no logging for mover, move logging from Activity to move method
 
 
 def test_single_run_activity():
