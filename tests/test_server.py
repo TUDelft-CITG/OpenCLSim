@@ -2,9 +2,8 @@ import json
 from digital_twin import server
 
 
-def test_simulation():
-    """Run a basic simulation and check the output."""
-    with open('tests/configs/basic_simulation.json') as f:
+def run_and_compare_output(config_file, expected_result_file):
+    with open(config_file) as f:
         config = json.load(f)
 
     result = server.simulate_from_json(config)
@@ -12,7 +11,29 @@ def test_simulation():
     # checks if result can indeed be turned into json
     result_json = json.dumps(result)
 
-    with open('tests/results/basic_simulation_result.json') as f:
+    with open(expected_result_file) as f:
         expected_result = f.read()
 
     assert result_json == expected_result
+
+
+def test_move_activity():
+    """Run a basic simulation containing a single move activity and check the output."""
+    run_and_compare_output(
+        config_file='tests/configs/move_activity.json',
+        expected_result_file='tests/results/move_activity_result.json'
+    )
+
+
+def test_single_run_activity():
+    run_and_compare_output(
+        config_file='tests/configs/single_run_activity.json',
+        expected_result_file='tests/results/single_run_activity_result.json'
+    )
+
+
+def test_conditional_activity():
+    run_and_compare_output(
+        config_file='tests/configs/conditional_activity.json',
+        expected_result_file='tests/results/conditional_activity_result.json'
+    )
