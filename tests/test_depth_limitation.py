@@ -148,7 +148,7 @@ def test_calc_restrictions(env, geometry_a, Mover, Processor, LocationWeather):
     # Process an amount of 3_600 from the location into the mover
     # This takes 3_600 seconds and should be able to start right away
     start = env.now
-    env.process(crane.process(origin = location, destination = mover, amount = 3_600))
+    env.process(crane.process(site = location, ship = mover, desired_level = 3_600))
     env.run()
     
     np.testing.assert_almost_equal(env.now, start + 3_600)
@@ -167,7 +167,7 @@ def test_calc_restrictions(env, geometry_a, Mover, Processor, LocationWeather):
     assert location.metocean_data["Water depth"][datetime.datetime(2019, 1, 1, 21)] == 6.5
     assert mover.container.level / mover.container.capacity in list(mover.depth_data[location.name].keys())
     
-    env.process(crane.process(origin = mover, destination = location, amount = 3_600))
+    env.process(crane.process(ship = mover, site = location, desired_level = 0))
     env.run()
     
     # There should be 3 hours of waiting, 1 hour of processing, so time should be start + 4 hours
