@@ -14,6 +14,7 @@ import numpy as np
 from click.testing import CliRunner
 
 from digital_twin import core
+from digital_twin import model
 from digital_twin import cli
 
 logger = logging.getLogger(__name__)
@@ -105,19 +106,11 @@ def test_calc_restrictions(env, geometry_a, Mover, Processor, LocationWeather):
     
     mover = Mover(**data)
     
-
-    # Initialize the Processor
-    def compute_loading(rate):
-        return lambda x: x / rate
-
-    def compute_unloading(rate):
-        return lambda x: x / rate
-    
     data = {"env": env,                                       # The simpy environment 
             "name": "Quay Crane",                             # Name
             "geometry": geometry_a,                           # It starts at the "from site"
-            "loading_func": compute_loading(1.0),             # Loading rate
-            "unloading_func": compute_unloading(1.0)}         # Unloading rate
+            "loading_func": model.get_loading_func(1.0),             # Loading rate
+            "unloading_func": model.get_unloading_func(1.0)}         # Unloading rate
     
     crane = Processor(**data)
     crane.rate = crane.loading_func

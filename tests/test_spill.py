@@ -14,6 +14,7 @@ import numpy as np
 from click.testing import CliRunner
 
 from digital_twin import core
+from digital_twin import model
 from digital_twin import cli
 
 logger = logging.getLogger(__name__)
@@ -149,14 +150,13 @@ def test_spill_dredging(env, Location, Processor, Soil):
     # make the processor with source terms
     data_processor = {"env": env,                           # The simpy environment
                       "geometry": location,                 # The coordinates of the "processore"
-                      "unloading_func": (lambda x: x / 1),  # The unloading function 1 amount per second
-                      "loading_func": (lambda x: x / 1)}    # The unloading function 1 amount per second
+                      "unloading_func": model.get_unloading_func(1),   # Unloading production is 1 amount / s
+                      "loading_func": model.get_loading_func(1)}     # Loading production is 1 amount / s
     
     processor = Processor(**data_processor)
-    processor.rate = (lambda x: x / 1)
 
     # Log fuel use of the processor in step 1
-    env.process(processor.process(from_site, to_site, 1000))
+    env.process(processor.process(from_site, 0, to_site))
     env.run()
     assert from_site.log["Message"][-2] == "fines released"
     np.testing.assert_almost_equal(from_site.log["Value"][-2], 2700)
@@ -188,9 +188,9 @@ def test_spill_placement(env, Location, Mover, Processor, Soil):
     # make the processor with source terms
     data_processor = {"env": env,                           # The simpy environment
                       "geometry": location,                 # The coordinates of the "processore"
-                      "unloading_func": (lambda x: x / 1),  # The unloading function 1 amount per second
-                      "loading_func": (lambda x: x / 1)}    # The unloading function 1 amount per second
-    
+                      "unloading_func": model.get_unloading_func(1),   # Unloading production is 1 amount / s
+                      "loading_func": model.get_loading_func(1)}     # Loading production is 1 amount / s
+
     processor = Processor(**data_processor)
     processor.rate = (lambda x: x / 1)
 
@@ -203,14 +203,14 @@ def test_spill_placement(env, Location, Mover, Processor, Soil):
     mover = Mover(**data_mover)
 
     # Log fuel use of the processor in step 1
-    env.process(processor.process(from_site, mover, 1000))
+    env.process(processor.process(mover, 1000, from_site))
     env.run()
 
     assert from_site.log["Message"][-2] == "fines released"
     np.testing.assert_almost_equal(from_site.log["Value"][-2], 2700)
 
     # Log fuel use of the processor in step 1
-    env.process(processor.process(mover, to_site, 1000))
+    env.process(processor.process(mover, 0, to_site))
     env.run()
     
     assert to_site.log["Message"][-2] == "fines released"
@@ -247,14 +247,14 @@ def test_spill_requirement(env, LocationReq, Location, Processor, Soil):
     # make the processor with source terms
     data_processor = {"env": env,                           # The simpy environment
                       "geometry": location,                 # The coordinates of the "processore"
-                      "unloading_func": (lambda x: x / 1),  # The unloading function 1 amount per second
-                      "loading_func": (lambda x: x / 1)}    # The unloading function 1 amount per second
+                      "unloading_func": model.get_unloading_func(1),   # Unloading production is 1 amount / s
+                      "loading_func": model.get_loading_func(1)}     # Loading production is 1 amount / s
     
     processor = Processor(**data_processor)
     processor.rate = (lambda x: x / 1)
 
     # Log fuel use of the processor in step 1
-    env.process(processor.process(from_site, to_site, 1000))
+    env.process(processor.process(from_site, 0, to_site))
     env.run()
     assert processor.log["Message"][0] == "waiting for spill start"
 
