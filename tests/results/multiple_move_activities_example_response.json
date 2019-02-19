@@ -1,0 +1,269 @@
+{
+  "completion_time": 378505.53115130647,
+  "logging": {
+    "simulation": [],
+    "sites": {
+      "afsluitdijk": [],
+      "maasvlakte": [],
+      "home": []
+    },
+    "equipment": {
+      "hopper": [
+        {
+          "message": "sailing start",
+          "time": 0,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        },
+        {
+          "message": "sailing stop",
+          "time": 111167,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          }
+        },
+        {
+          "message": "sailing start",
+          "time": 111167,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          }
+        },
+        {
+          "message": "sailing stop",
+          "time": 221746,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          }
+        },
+        {
+          "message": "sailing start",
+          "time": 221746,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          }
+        },
+        {
+          "message": "sailing stop",
+          "time": 378505,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        }
+      ],
+      "barge": [
+        {
+          "message": "sailing start",
+          "time": 0,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        },
+        {
+          "message": "sailing stop",
+          "time": 156759,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          }
+        },
+        {
+          "message": "sailing start",
+          "time": 156759,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          }
+        },
+        {
+          "message": "sailing stop",
+          "time": 313518,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        }
+      ]
+    },
+    "activities": {
+      "sailing 1": [
+        {
+          "message": "started move activity of Boaty McBoatstone to Maasvlakte",
+          "time": 0,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        },
+        {
+          "message": "completed move activity of Boaty McBoatstone to Maasvlakte",
+          "time": 111167,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          }
+        }
+      ],
+      "sailing 2": [
+        {
+          "message": "started move activity of Boaty McBoatstone to Afsluitdijk",
+          "time": 0,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        },
+        {
+          "message": "completed move activity of Boaty McBoatstone to Afsluitdijk",
+          "time": 221746,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          }
+        }
+      ],
+      "sailing 3": [
+        {
+          "message": "started move activity of Boaty McBoatstone to Home",
+          "time": 0,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        },
+        {
+          "message": "completed move activity of Boaty McBoatstone to Home",
+          "time": 378505,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        }
+      ],
+      "sailing 4": [
+        {
+          "message": "started move activity of SS Agua to Afsluitdijk",
+          "time": 0,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        },
+        {
+          "message": "completed move activity of SS Agua to Afsluitdijk",
+          "time": 156759,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          }
+        }
+      ],
+      "sailing 5": [
+        {
+          "message": "started move activity of SS Agua to Home",
+          "time": 0,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        },
+        {
+          "message": "completed move activity of SS Agua to Home",
+          "time": 313518,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

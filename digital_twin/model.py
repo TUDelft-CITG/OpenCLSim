@@ -364,7 +364,9 @@ class Simulation(core.Identifiable, core.Log):
         activity_log.log_entry('started move activity of {} to {}'.format(mover.name, destination.name),
                                self.env.now, -1, mover.geometry)
 
-        yield from mover.move(destination)
+        with mover.resource.request() as my_mover_turn:
+            yield my_mover_turn
+            yield from mover.move(destination)
 
         activity_log.log_entry('completed move activity of {} to {}'.format(mover.name, destination.name),
                                self.env.now, -1, mover.geometry)

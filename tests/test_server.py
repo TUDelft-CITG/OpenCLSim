@@ -25,6 +25,14 @@ def test_move_activity():
     )
 
 
+def test_multiple_move_activities():
+    """Run a basic simulation containing multiple move activities and check the output."""
+    run_and_compare_output(
+        config_file='tests/configs/multiple_move_activities.json',
+        expected_result_file='tests/results/multiple_move_activities_result.json'
+    )
+
+
 def test_single_run_activity():
     run_and_compare_output(
         config_file='tests/configs/single_run_activity.json',
