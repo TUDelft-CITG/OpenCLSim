@@ -8,7 +8,32 @@
       "home": []
     },
     "equipment": {
-      "hopper": []
+      "hopper": [
+        {
+          "message": "sailing start",
+          "time": 0,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          }
+        },
+        {
+          "message": "sailing stop",
+          "time": 111167,
+          "value": -1,
+          "geometry_log": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          }
+        }
+      ]
     },
     "activities": {
       "sailing": [

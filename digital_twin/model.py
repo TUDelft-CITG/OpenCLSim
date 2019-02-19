@@ -228,14 +228,14 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
 
                 # move to the origin if necessary
                 if not mover.is_at(origin):
-                    yield from move_mover(environment, mover, origin, 'empty', verbose=verbose)
+                    yield from move_mover(environment, mover, origin, verbose=verbose)
 
                 # load the mover
                 loader.rate = loader.loading_func        # rate is variable to loading / unloading
                 yield from shift_amount(environment, amount, loader, origin, mover, destination_resource_request=my_mover_turn, verbose=verbose)
 
                 # move the mover to the destination
-                yield from move_mover(environment, mover, destination, 'full', verbose=verbose)
+                yield from move_mover(environment, mover, destination, verbose=verbose)
 
                 # unload the mover
                 unloader.rate = unloader.unloading_func  # rate is variable to loading / unloading
@@ -271,12 +271,10 @@ def shift_amount(environment, amount, processor, origin, destination, origin_res
             print('  to:          ' + destination.name + ' contains: ' + str(destination.container.level))
 
 
-def move_mover(environment, mover, origin, status, verbose=False):
+def move_mover(environment, mover, origin, verbose=False):
         old_location = mover.geometry
 
-        mover.log_entry('sailing ' + status + ' start', environment.now, mover.container.level, mover.geometry)
         yield from mover.move(origin)
-        mover.log_entry('sailing ' + status + ' stop', environment.now, mover.container.level, mover.geometry)
 
         if verbose == True:
             print('Moved:')
