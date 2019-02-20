@@ -14,6 +14,7 @@ import numpy as np
 from click.testing import CliRunner
 
 from digital_twin import core
+from digital_twin import model
 from digital_twin import cli
 
 logger = logging.getLogger(__name__)
@@ -105,19 +106,11 @@ def test_calc_restrictions(env, geometry_a, Mover, Processor, LocationWeather):
     
     mover = Mover(**data)
     
-
-    # Initialize the Processor
-    def compute_loading(rate):
-        return lambda x: x / rate
-
-    def compute_unloading(rate):
-        return lambda x: x / rate
-    
     data = {"env": env,                                       # The simpy environment 
             "name": "Quay Crane",                             # Name
             "geometry": geometry_a,                           # It starts at the "from site"
-            "loading_func": compute_loading(1.0),             # Loading rate
-            "unloading_func": compute_unloading(1.0)}         # Unloading rate
+            "loading_func": model.get_loading_func(1.0),             # Loading rate
+            "unloading_func": model.get_unloading_func(1.0)}         # Unloading rate
     
     crane = Processor(**data)
     crane.rate = crane.loading_func
@@ -155,7 +148,7 @@ def test_calc_restrictions(env, geometry_a, Mover, Processor, LocationWeather):
     # Process an amount of 3_600 from the location into the mover
     # This takes 3_600 seconds and should be able to start right away
     start = env.now
-    env.process(crane.process(origin = location, destination = mover, amount = 3_600))
+    env.process(crane.process(site = location, ship = mover, desired_level = 3_600))
     env.run()
     
     np.testing.assert_almost_equal(env.now, start + 3_600)
@@ -174,7 +167,7 @@ def test_calc_restrictions(env, geometry_a, Mover, Processor, LocationWeather):
     assert location.metocean_data["Water depth"][datetime.datetime(2019, 1, 1, 21)] == 6.5
     assert mover.container.level / mover.container.capacity in list(mover.depth_data[location.name].keys())
     
-    env.process(crane.process(origin = mover, destination = location, amount = 3_600))
+    env.process(crane.process(ship = mover, site = location, desired_level = 0))
     env.run()
     
     # There should be 3 hours of waiting, 1 hour of processing, so time should be start + 4 hours

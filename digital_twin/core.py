@@ -519,7 +519,7 @@ class HasDepthRestriction:
         for filling_degree in [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
             # Determine characteristics based on filling
             draught = self.compute_draught(filling_degree)
-            duration = datetime.timedelta(seconds = processor.unloading_func(filling_degree * self.container.capacity))
+            duration = datetime.timedelta(seconds = processor.unloading_func(self.container.level, filling_degree * self.container.capacity))
             
             # Make dataframe based on characteristics
             df = location.metocean_data.copy()
@@ -865,20 +865,35 @@ class Processor(SimpyObject):
         self.unloading_func = unloading_func
 
     # noinspection PyUnresolvedReferences
-    def process(self, origin, destination, amount, origin_resource_request=None, destination_resource_request=None):
-        """get amount from origin container, put amount in destination container,
-        and yield the time it takes to process it"""
+    def process(self, ship, desired_level, site,
+                ship_resource_request=None, site_resource_request=None):
+        """Moves content from ship to the site or from the site to the ship to ensure that the ship's container reaches
+        the desired level. Yields the time it takes to process."""
 
         # Before starting to process, check the following requirements
-        # Make sure that the origin and destination have storage
-        assert isinstance(origin, HasContainer) and isinstance(destination, HasContainer)
-        # Make sure that the origin and destination allow processing
-        assert isinstance(origin, HasResource) and isinstance(destination, HasResource)
-        # Make sure that the processor, origin and destination can log the events
-        assert isinstance(self, Log) and isinstance(origin, Log) and isinstance(destination, Log)
+        # Make sure that both objects have storage
+        assert isinstance(ship, HasContainer) and isinstance(site, HasContainer)
+        # Make sure that both objects allow processing
+        assert isinstance(ship, HasResource) and isinstance(site, HasResource)
+        # Make sure that the processor (self), container and site can log the events
+        assert isinstance(self, Log) and isinstance(ship, Log) and isinstance(site, Log)
         # Make sure that the processor, origin and destination are all at the same location
-        assert self.geometry.x == origin.geometry.x == destination.geometry.x
-        assert self.geometry.y == origin.geometry.y == destination.geometry.y
+        assert self.geometry.x == ship.geometry.x == site.geometry.x
+        assert self.geometry.y == ship.geometry.y == site.geometry.y
+
+        current_level = ship.container.level
+        if current_level < desired_level:
+            amount = desired_level - current_level
+            origin = site
+            destination = ship
+            rate = self.loading_func
+        else:
+            amount = current_level - desired_level
+            origin = ship
+            destination = site
+            rate = self.unloading_func
+
+        # we will move amount from origin to destination
         # Make sure that the volume of the origin is equal, or smaller, than the requested amount
         assert origin.container.level >= amount
         # Make sure that the container of the destination is sufficiently large
@@ -886,16 +901,16 @@ class Processor(SimpyObject):
 
         # Make sure all requests are granted
         # Request access to the origin
-        my_origin_turn = origin_resource_request
-        if my_origin_turn is None:
-            my_origin_turn = origin.resource.request()
+        my_ship_turn = ship_resource_request
+        if my_ship_turn is None:
+            my_ship_turn = ship.resource.request()
         # Request access to the destination
-        my_dest_turn = destination_resource_request
-        if my_dest_turn is None:
-            my_dest_turn = destination.resource.request()
+        my_site_turn = site_resource_request
+        if my_site_turn is None:
+            my_site_turn = site.resource.request()
         # Yield the requests once granted
-        yield my_origin_turn
-        yield my_dest_turn
+        yield my_ship_turn
+        yield my_site_turn
 
         # If requests are yielded, start activity
         # Activity can only start if environmental conditions allow it
@@ -907,10 +922,10 @@ class Processor(SimpyObject):
 
             # Check weather
             # yield from self.checkWeather()
-            
+
             # Check tide
             yield from self.checkTide(origin, destination)
-            
+
             # Check spill
             yield from self.checkSpill(origin, destination, amount)
 
@@ -918,7 +933,8 @@ class Processor(SimpyObject):
         destination.log_entry('loading start', self.env.now, destination.container.level, self.geometry)
 
         # Add spill the location where processing is taking place
-        self.addSpill(origin, destination, amount, self.rate(amount))
+        duration = rate(current_level, desired_level)
+        self.addSpill(origin, destination, amount, duration)
 
         # Shift soil from container volumes
         self.shiftSoil(origin, destination, amount)
@@ -928,23 +944,22 @@ class Processor(SimpyObject):
         destination.container.put(amount)
 
         # Checkout the time
-        yield self.env.timeout(self.rate(amount))
+        yield self.env.timeout(duration)
 
         # Compute the energy use
-        self.computeEnergy(self.rate(amount), origin, destination)
+        self.computeEnergy(duration, origin, destination)
 
         # Log the end of the activity
         origin.log_entry('unloading stop', self.env.now, origin.container.level, self.geometry)
         destination.log_entry('loading stop', self.env.now, destination.container.level, self.geometry)
 
-        logger.debug('  process:        ' + '%4.2f' % ((self.rate(amount)) / 3600) + ' hrs')
+        logger.debug('  process:        ' + '%4.2f' % (duration / 3600) + ' hrs')
 
-        if origin_resource_request is None:
-            origin.resource.release(my_origin_turn)
-        if destination_resource_request is None:
-            destination.resource.release(my_dest_turn)
-    
-    
+        if ship_resource_request is None:
+            ship.resource.release(my_ship_turn)
+        if site_resource_request is None:
+            site.resource.release(my_site_turn)
+
     def computeEnergy(self, duration, origin, destination):
         """
         duration: duration of the activity in seconds
@@ -994,7 +1009,7 @@ class Processor(SimpyObject):
                 message = "Energy use loading"
                 destination.log_entry(message, self.env.now, energy, destination.geometry)
 
-    
+
     def checkSpill(self, origin, destination, amount):
         """
         duration: duration of the activity in seconds
@@ -1016,7 +1031,7 @@ class Processor(SimpyObject):
                 spill = self.sigma_d * density * fines * amount
 
                 waiting = destination.check_conditions(spill)
-                
+
                 if 0 < waiting:
                     self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
                     yield self.env.timeout(waiting - self.env.now)
@@ -1029,7 +1044,7 @@ class Processor(SimpyObject):
                 spill = self.sigma_d * density * fines * amount
 
                 waiting = origin.check_conditions(spill)
-                
+
                 if 0 < waiting:
                     self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
                     yield self.env.timeout(waiting - self.env.now)
@@ -1042,18 +1057,18 @@ class Processor(SimpyObject):
                 spill = self.sigma_d * density * fines * amount
 
                 waiting = destination.check_conditions(spill)
-                
+
                 if 0 < waiting:
                     self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
-            
+
             elif isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
                 density, fines = origin.get_properties(amount)
                 spill = self.sigma_d * density * fines * amount
 
                 waiting = origin.check_conditions(spill)
-                
+
                 if 0 < waiting:
                     self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
                     yield self.env.timeout(waiting - self.env.now)
@@ -1109,14 +1124,14 @@ class Processor(SimpyObject):
                     if 0 < spill and isinstance(destination, HasSpillCondition):
                         for condition in destination.SpillConditions["Spill limit"]:
                             condition.put(spill)
-                
+
                 if isinstance(self, HasPlume) and isinstance(origin, HasSpill):
                     spill = origin.spillDredging(self, self, density, fines, amount, duration)
 
                     if 0 < spill and isinstance(origin, HasSpillCondition):
                         for condition in origin.SpillConditions["Spill limit"]:
                             condition.put(spill)
-    
+
 
     def shiftSoil(self, origin, destination, amount):
         """
@@ -1126,14 +1141,14 @@ class Processor(SimpyObject):
 
         Can only occur if both the origin and the destination have soil objects (mix-ins)
         """
-        
+
         if isinstance(origin, HasSoil) and isinstance(destination, HasSoil):
             soil = origin.get_soil(amount)
             destination.put_soil(soil)
 
         elif isinstance(origin, HasSoil):
             soil = origin.get_soil(amount)
-        
+
         elif isinstance(destination, HasSoil):
             soil = SoilLayer(0, amount, "Unknown", 0, 0)
             destination.put_soil(soil)
