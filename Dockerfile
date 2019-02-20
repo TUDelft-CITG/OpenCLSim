@@ -13,6 +13,6 @@ WORKDIR /Hydraulic-Infrastructure-Realisation
 RUN pip install -e .
 
 # expose port 80
-EXPOSE 8080/tcp
+EXPOSE 8080
 # Serve on port 80
 CMD digital_twin serve --port 8080
