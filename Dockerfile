@@ -3,11 +3,16 @@ FROM continuumio/miniconda3
 
 # Install conda stuff first
 RUN conda install numpy pandas nomkl pyproj
+# Then install rest via pip
 RUN pip install pint Flask
 
-WORKDIR /Hydraulic-Infrastructure-Realisation
 ADD . /Hydraulic-Infrastructure-Realisation
+WORKDIR /Hydraulic-Infrastructure-Realisation
 
-# Then install rest via pip
-RUN python setup.py develop
-CMD digital_twin serve --no-debug
+# Install the application
+RUN pip install -e .
+
+# expose port 80
+EXPOSE 8080/tcp
+# Serve on port 80
+CMD digital_twin serve --port 8080
