@@ -200,6 +200,9 @@ class Activity(core.Identifiable, core.Log):
     def installation_process(self, origin, destination,
                              loader, mover, unloader):
         """Installation process"""
+        # calulate all possible restrictions
+        self.calc_restrictions(loader, unloader, mover, origin, destination)
+
         # estimate amount that should be transported
         amount = min(
             mover.container.capacity - mover.container.level,
@@ -278,3 +281,31 @@ class Activity(core.Identifiable, core.Log):
             print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
             print('  from:        ' + format(old_location.x, '02.5f') + ' ' + format(old_location.y, '02.5f'))
             print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))
+    
+    def calc_restrictions(self, loader, unloader, mover, origin, destination):
+        # For the loader
+        if isinstance(loader, core.HasDepthRestriction) and isinstance(origin, core.HasWeather) and not origin.name in list(loader.depth_data.keys()):
+                loader.calc_depth_restrictions(origin, loader)
+        
+        if isinstance(loader, core.HasWorkabilityCriteria) and isinstance(origin, core.HasWeather) and not origin.name in list(loader.work_restrictions.keys()):
+                loader.calc_work_restrictions(origin)
+
+        # For the unloader
+        if isinstance(unloader, core.HasDepthRestriction) and isinstance(destination, core.HasWeather) and not destination.name in list(unloader.depth_data.keys()):
+                unloader.calc_depth_restrictions(destination, unloader)
+        
+        if isinstance(unloader, core.HasWorkabilityCriteria) and isinstance(destination, core.HasWeather) and not destination.name in list(unloader.work_restrictions.keys()):
+                unloader.calc_work_restrictions(destination)
+
+        # For the mover
+        if isinstance(mover, core.HasDepthRestriction):
+            if isinstance(origin, core.HasWeather) and not origin.name in list(mover.depth_data.keys()):
+                mover.calc_depth_restrictions(origin, loader)
+            if isinstance(destination, core.HasWeather) and not destination.name in list(mover.depth_data.keys()):
+                mover.calc_depth_restrictions(destination, unloader)
+        
+        if isinstance(mover, core.HasWorkabilityCriteria):
+            if isinstance(origin, core.HasWeather) and not origin.name in list(mover.work_restrictions.keys()):
+                mover.calc_work_restrictions(origin)
+            if isinstance(destination, core.HasWeather) and not destination.name in list(mover.work_restrictions.keys()):
+                mover.calc_work_restrictions(destination)
