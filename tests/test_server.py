@@ -40,6 +40,13 @@ def test_single_run_activity():
     )
 
 
+def test_multiple_single_run_activities():
+    run_and_compare_output(
+        config_file='tests/configs/multiple_single_run_activities.json',
+        expected_result_file='tests/results/multiple_single_run_activities_result.json'
+    )
+
+
 def test_conditional_activity():
     run_and_compare_output(
         config_file='tests/configs/conditional_activity.json',
