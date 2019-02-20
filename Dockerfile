@@ -10,4 +10,4 @@ ADD . /Hydraulic-Infrastructure-Realisation
 
 # Then install rest via pip
 RUN python setup.py develop
-CMD digital_twin serve --production
+CMD digital_twin serve --no-debug
