@@ -393,24 +393,38 @@ class Simulation(core.Identifiable, core.Log):
         return new_object
 
     def get_logging(self):
-        json = {"simulation": self.get_log_as_json()}
+        json = {}
 
-        sites_logging = {}
+        sites_logging = []
         for key, site in self.sites.items():
-            sites_logging[key] = site.get_log_as_json()
+            sites_logging.append(
+                self.get_as_feature_collection(key, site.get_log_as_json())
+            )
         json["sites"] = sites_logging
 
-        equipment_logging = {}
+        equipment_logging = []
         for key, equipment in self.equipment.items():
-            equipment_logging[key] = equipment.get_log_as_json()
+            equipment_logging.append(
+                self.get_as_feature_collection(key, equipment.get_log_as_json())
+            )
         json["equipment"] = equipment_logging
 
-        activity_logging = {}
+        activity_logging = []
         for key, activity in self.activities.items():
-            activity_logging[key] = activity["activity_log"].get_log_as_json()
+            activity_logging.append(
+                self.get_as_feature_collection(key, activity["activity_log"].get_log_as_json())
+            )
         json["activities"] = activity_logging
 
         return json
+
+    @staticmethod
+    def get_as_feature_collection(id, features):
+        return dict(
+            type="FeatureCollection",
+            id=id,
+            features=features
+        )
 
 
 def get_class_from_type_list(class_name, type_list):

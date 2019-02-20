@@ -845,7 +845,15 @@ class Log(SimpyObject):
     def get_log_as_json(self):
         json = []
         for msg, t, value, geometry_log in zip(self.log["Message"], self.log["Timestamp"], self.log["Value"], self.log["Geometry"]):
-            json.append(dict(message=msg, time=time.mktime(t.timetuple()), value=value, geometry_log=shapely.geometry.mapping(geometry_log)))
+            json.append(dict(
+                type="Feature",
+                geometry=shapely.geometry.mapping(geometry_log),
+                properties=dict(
+                    message=msg,
+                    time=time.mktime(t.timetuple()),
+                    value=value
+                )
+            ))
         return json
 
 

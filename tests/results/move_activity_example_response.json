@@ -1,67 +1,96 @@
 {
-  "completion_time": 111167.9466418451,
-  "logging": {
-    "simulation": [],
-    "sites": {
-      "afsluitdijk": [],
-      "maasvlakte": [],
-      "home": []
+  "sites": [
+    {
+      "type": "FeatureCollection",
+      "id": "afsluitdijk",
+      "features": []
     },
-    "equipment": {
-      "hopper": [
+    {
+      "type": "FeatureCollection",
+      "id": "maasvlakte",
+      "features": []
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "home",
+      "features": []
+    }
+  ],
+  "equipment": [
+    {
+      "type": "FeatureCollection",
+      "id": "hopper",
+      "features": [
         {
-          "message": "sailing start",
-          "time": 0,
-          "value": -1,
-          "geometry_log": {
+          "type": "Feature",
+          "geometry": {
             "type": "Point",
             "coordinates": [
               52,
               3
             ]
+          },
+          "properties": {
+            "message": "sailing start",
+            "time": 0,
+            "value": -1
           }
         },
         {
-          "message": "sailing stop",
-          "time": 111167,
-          "value": -1,
-          "geometry_log": {
+          "type": "Feature",
+          "geometry": {
             "type": "Point",
             "coordinates": [
               53,
               3
             ]
-          }
-        }
-      ]
-    },
-    "activities": {
-      "sailing": [
-        {
-          "message": "started move activity of Boaty McBoatstone to Maasvlakte",
-          "time": 0,
-          "value": -1,
-          "geometry_log": {
-            "type": "Point",
-            "coordinates": [
-              52,
-              3
-            ]
-          }
-        },
-        {
-          "message": "completed move activity of Boaty McBoatstone to Maasvlakte",
-          "time": 111167,
-          "value": -1,
-          "geometry_log": {
-            "type": "Point",
-            "coordinates": [
-              53,
-              3
-            ]
+          },
+          "properties": {
+            "message": "sailing stop",
+            "time": 111167,
+            "value": -1
           }
         }
       ]
     }
-  }
+  ],
+  "activities": [
+    {
+      "type": "FeatureCollection",
+      "id": "sailing",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "started move activity of Boaty McBoatstone to Maasvlakte",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "completed move activity of Boaty McBoatstone to Maasvlakte",
+            "time": 111167,
+            "value": -1
+          }
+        }
+      ]
+    }
+  ],
+  "completionTime": 111167.9466418451
 }

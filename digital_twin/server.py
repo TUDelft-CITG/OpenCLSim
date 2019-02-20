@@ -43,9 +43,7 @@ def simulate_from_json(json):
     )
     env.run()
 
-    result = dict(
-        completion_time=env.now,
-        logging=simulation.get_logging()
-    )
+    result = simulation.get_logging()
+    result["completionTime"] = env.now
 
     return result
