@@ -1,3 +1,4 @@
+from flask import abort
 from flask import Flask
 from flask import jsonify
 from flask import request
@@ -20,7 +21,9 @@ def main():
 def simulate():
     """run a simulation"""
     if not request.is_json:
-        return "content type should be json!"
+        abort(400, description="content type should be json")
+        return
+
     json = request.get_json(force=True)
 
     return jsonify(simulate_from_json(json))
