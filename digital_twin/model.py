@@ -340,25 +340,33 @@ class Simulation(core.Identifiable, core.Log):
         self.activities = {}
         for activity in activities:
             id = activity['id']
-            type = activity['type']
-
             activity_log = ActivityLog(env=self.env, name=id)
 
-            if type == 'move':
-                mover = self.equipment[activity['mover']]
-                destination = self.sites[activity['destination']]
-                process = self.env.process(self.move_process_control(activity_log, mover, destination))
-            elif type == 'single_run':
-                pass  # todo
-            elif type == 'conditional_run':
-                pass  # todo
-            else:
-                raise RuntimeError('Unrecognized activity type: ' + type)
+            process = self.env.process(self.get_process_control(activity_log, activity))
 
             self.activities[id] = {
                 "activity_log": activity_log,
                 "process": process
             }
+
+    def get_process_control(self, activity_log, activity):
+        type = activity['type']
+
+        if type == 'move':
+            mover = self.equipment[activity['mover']]
+            destination = self.sites[activity['destination']]
+            return self.move_process_control(activity_log, mover, destination)
+        if type == 'single_run':
+            mover = self.equipment[activity['mover']]
+            origin = self.sites[activity['origin']]
+            destination = self.sites[activity['destination']]
+            loader = self.equipment[activity['loader']]
+            unloader = self.equipment[activity['unloader']]
+            return self.single_run_process_control(activity_log, origin, destination, loader, mover, unloader)
+        if type == 'conditional_run':
+            pass  # todo
+        else:
+            raise RuntimeError('Unrecognized activity type: ' + type)
 
     def move_process_control(self, activity_log, mover, destination):
         activity_log.log_entry('started move activity of {} to {}'.format(mover.name, destination.name),
@@ -372,7 +380,14 @@ class Simulation(core.Identifiable, core.Log):
                                self.env.now, -1, mover.geometry)
 
     def single_run_process_control(self, activity_log, origin, destination, loader, mover, unloader):
-        pass  # todo
+        activity_description = 'single_run activity loading {} at {} with {} ' \
+                               'and transporting to {} unloading with {}'\
+                               .format(mover.name, origin.name, loader.name, destination.name, unloader.name)
+        activity_log.log_entry('started ' + activity_description, self.env.now, -1, mover.geometry)
+
+        yield from perform_single_run(self.env, activity_log, origin, destination, loader, mover, unloader)
+
+        activity_log.log_entry('completed ' + activity_description, self.env.now, -1, mover.geometry)
 
     def conditional_process_control(self, activity_log, condition, activities):
         pass  # todo
@@ -550,10 +565,10 @@ def get_kwargs_from_properties(environment, name, properties, sites):
         kwargs["nr_resources"] = properties["nr_resources"]
 
     # Processor
-    if "loading_rate" in properties:
-        kwargs["loading_func"] = get_rate_compute_function(properties["loading_rate"])
-    if "unloading_rate" in properties:
-        kwargs["unloading_func"] = get_rate_compute_function(properties["unloading_rate"])
+    if "loadingRate" in properties:
+        kwargs["loading_func"] = get_rate_compute_function(properties["loadingRate"])
+    if "unloadingRate" in properties:
+        kwargs["unloading_func"] = get_rate_compute_function(properties["unloadingRate"])
 
     return kwargs
 
