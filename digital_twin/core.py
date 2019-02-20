@@ -474,11 +474,37 @@ class HasWorkabilityCriteria:
     Used to add workability criteria
     """
 
-    def __init__(self, v=1, *args, **kwargs):
+    def __init__(self, criteria, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.v = v
-        self.wgs84 = pyproj.Geod(ellps='WGS84')
+        self.criteria = criteria
+        self.work_restrictions = {}
+    
+
+    def calc_work_restrictions(self, location):
+        # Loop through series to find windows
+        for criterion in self.criteria:    
+            index = location.metocean_data[criterion.condition].index
+            values = location.metocean_data[criterion.condition].values
+            in_range = False
+            ranges = []
+            
+            for i, value in enumerate(values):
+                if value <= criterion.maximum:
+                    if i == 0:
+                        begin = index[i]
+                    elif not in_range:
+                        begin = index[i]
+                    
+                    in_range = True
+                elif in_range:
+                    in_range = False
+                    end = index[i]
+                    
+                    if (end - begin) >= criterion.window_length:
+                        ranges.append((begin.to_datetime64(), (end - criterion.window_length).to_datetime64()))
+            
+            self.work_restrictions[location][criterion.condition] = ranges
 
 
 class WorkabilityCriterion:
@@ -487,13 +513,14 @@ class WorkabilityCriterion:
     Used to add limits to vessels (and therefore acitivities)
     condition: column name of the metocean data (Hs, Tp, etc.)
     maximum: maximum value 
-    minimum: minimum value
     window_length: minimal length of the window (minutes)"""
 
-    def __init__(self, prop, max, min, value, *args, **kwargs):
+    def __init__(self, condition, maximum = math.inf, window_length = datetime.timedelta(minutes = 60), *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.wgs84 = pyproj.Geod(ellps='WGS84')
+        self.condition = condition
+        self.maximum = maximum
+        self.window_length = window_length
 
 
 class HasDepthRestriction:
@@ -520,6 +547,9 @@ class HasDepthRestriction:
         self.ukc = ukc
 
         # Information require to self-select filling degree
+        if min_filling is not None and max_filling is not None:
+            assert min_filling <= max_filling
+        
         self.filling = int(filling) if filling is not None else None
         self.min_filling = int(min_filling) if min_filling is not None else int(0)
         self.max_filling = int(max_filling) if max_filling is not None else int(100)
@@ -533,7 +563,12 @@ class HasDepthRestriction:
 
         self.depth_data[location.name] = {}
 
-        for i in np.linspace(self.min_filling, self.max_filling, (self.max_filling - self.min_filling) + 1, dtype = int):
+        if not self.filling:
+            filling_degrees = np.linspace(self.min_filling, self.max_filling, (self.max_filling - self.min_filling) + 1, dtype = int)
+        else:
+            filling_degrees = [self.filling]
+
+        for i in filling_degrees:
             filling_degree = i / 100
 
             # Determine characteristics based on filling
