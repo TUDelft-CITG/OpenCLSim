@@ -205,6 +205,9 @@ class Activity(core.Identifiable, core.Log):
 
 def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, engine_order=1.0, filling=1.0, verbose=False):
         """Installation process"""
+        # calulate all possible restrictions
+        self.calc_restrictions(loader, unloader, mover, origin, destination)
+
         # estimate amount that should be transported
         amount = min(
             mover.container.capacity * filling - mover.container.level,

@@ -482,6 +482,8 @@ class HasWorkabilityCriteria:
     
 
     def calc_work_restrictions(self, location):
+        self.work_restrictions[location.name] = {}
+        
         # Loop through series to find windows
         for criterion in self.criteria:    
             index = location.metocean_data[criterion.condition].index
@@ -504,7 +506,7 @@ class HasWorkabilityCriteria:
                     if (end - begin) >= criterion.window_length:
                         ranges.append((begin.to_datetime64(), (end - criterion.window_length).to_datetime64()))
             
-            self.work_restrictions[location][criterion.condition] = ranges
+            self.work_restrictions[location.name][criterion.condition] = ranges
 
 
 class WorkabilityCriterion:
