@@ -506,7 +506,32 @@ class HasWorkabilityCriteria:
                     if (end - begin) >= criterion.window_length:
                         ranges.append((begin.to_datetime64(), (end - criterion.window_length).to_datetime64()))
             
-            self.work_restrictions[location.name][criterion.condition] = ranges
+            self.work_restrictions[location.name][criterion.condition] = np.array(ranges)
+    
+    def check_weather_restriction(self, location, amount):
+        waiting = []
+
+        for criterion in sorted(self.work_restrictions[location.name].keys()):
+            ranges = self.work_restrictions[location.name][criterion]
+            
+            t = datetime.datetime.fromtimestamp(self.env.now)
+            t = pd.Timestamp(t).to_datetime64()
+            i = ranges[:, 0].searchsorted(t)
+
+            if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
+                waiting.append(pd.Timedelta(0).total_seconds())
+            elif i + 1 < len(ranges):
+                waiting.append(pd.Timedelta(ranges[i, 0] - t).total_seconds())
+            else:
+                print("\nSimulation cannot continue.")
+                print("Simulation time exceeded the available metocean data.")
+
+                self.env.exit()
+
+        if waiting:
+            self.log_entry('waiting for weather start', self.env.now, waiting, self.geometry)
+            yield self.env.timeout(np.max(waiting))
+            self.log_entry('waiting for weather stop', self.env.now, waiting, self.geometry)
 
 
 class WorkabilityCriterion:
@@ -1023,7 +1048,7 @@ class Processor(SimpyObject):
             time = self.env.now
 
             # Check weather
-            # yield from self.checkWeather()
+            yield from self.checkWeather(origin, destination, amount)
 
             # Check tide
             yield from self.checkTide(ship=ship, site=site, desired_level=desired_level, duration=duration)
@@ -1181,6 +1206,13 @@ class Processor(SimpyObject):
             max_level = max(ship.container.level, desired_level)
             fill_degree = max_level / ship.container.capacity
             yield from ship.check_depth_restriction(site, fill_degree, duration)
+    
+
+    def checkWeather(self, origin, destination, amount):
+        if isinstance(origin, HasWorkabilityCriteria) and isinstance(origin, Movable) and isinstance(destination, HasWeather):
+            yield from origin.check_weather_restriction(destination, amount)
+        elif isinstance(destination, HasWorkabilityCriteria) and isinstance(destination, Movable) and isinstance(origin, HasWeather):
+            yield from destination.check_weather_restriction(origin, amount)
 
     def addSpill(self, origin, destination, amount, duration):
         """
