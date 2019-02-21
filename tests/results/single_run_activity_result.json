@@ -51,7 +51,7 @@
           },
           "properties": {
             "message": "loading start",
-            "time": 65347,
+            "time": 145767,
             "value": 0
           }
         },
@@ -66,7 +66,7 @@
           },
           "properties": {
             "message": "loading stop",
-            "time": 69184,
+            "time": 149605,
             "value": 3000
           }
         }
@@ -169,7 +169,7 @@
           },
           "properties": {
             "message": "sailing filled stop",
-            "time": 65347,
+            "time": 145767,
             "value": 3000
           }
         },
@@ -184,7 +184,7 @@
           },
           "properties": {
             "message": "unloading start",
-            "time": 65347,
+            "time": 145767,
             "value": 3000
           }
         },
@@ -199,7 +199,7 @@
           },
           "properties": {
             "message": "unloading stop",
-            "time": 69184,
+            "time": 149605,
             "value": 0
           }
         }
@@ -252,7 +252,7 @@
           },
           "properties": {
             "message": "transporting stop",
-            "time": 69184,
+            "time": 149605,
             "value": 3000
           }
         },
@@ -267,12 +267,12 @@
           },
           "properties": {
             "message": "completed single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
-            "time": 69184,
+            "time": 149605,
             "value": -1
           }
         }
       ]
     }
   ],
-  "completionTime": 69184.86906023216
+  "completionTime": 149605.554210496
 }

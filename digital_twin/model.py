@@ -588,7 +588,9 @@ def get_kwargs_from_properties(environment, name, properties, sites):
     if "speed" in properties:
         speed = properties["speed"]
         if isinstance(speed, list):
-            compute_function = get_compute_function(speed, "level", "speed")
+            df = pd.DataFrame(speed)
+            df["filling_degree"] = df["level"] / kwargs["capacity"]
+            compute_function = scipy.interpolate.interp1d(df["filling_degree"], df["speed"])
             kwargs["compute_v"] = compute_function
             v_empty = compute_function(0)
             v_full = compute_function(1)

@@ -45,7 +45,7 @@
           },
           "properties": {
             "message": "unloading start",
-            "time": 112206,
+            "time": 212732,
             "value": 7000
           }
         },
@@ -60,7 +60,7 @@
           },
           "properties": {
             "message": "unloading stop",
-            "time": 116044,
+            "time": 216570,
             "value": 4000
           }
         },
@@ -75,7 +75,7 @@
           },
           "properties": {
             "message": "unloading start",
-            "time": 185223,
+            "time": 386275,
             "value": 4000
           }
         },
@@ -90,7 +90,7 @@
           },
           "properties": {
             "message": "unloading stop",
-            "time": 189061,
+            "time": 390113,
             "value": 1000
           }
         },
@@ -105,7 +105,7 @@
           },
           "properties": {
             "message": "unloading start",
-            "time": 258241,
+            "time": 559818,
             "value": 1000
           }
         },
@@ -120,7 +120,7 @@
           },
           "properties": {
             "message": "unloading stop",
-            "time": 258835,
+            "time": 560413,
             "value": 0
           }
         }
@@ -141,7 +141,7 @@
           },
           "properties": {
             "message": "loading start",
-            "time": 80724,
+            "time": 181250,
             "value": 0
           }
         },
@@ -156,7 +156,7 @@
           },
           "properties": {
             "message": "loading stop",
-            "time": 84562,
+            "time": 185088,
             "value": 3000
           }
         },
@@ -171,7 +171,7 @@
           },
           "properties": {
             "message": "loading start",
-            "time": 153741,
+            "time": 354793,
             "value": 3000
           }
         },
@@ -186,7 +186,7 @@
           },
           "properties": {
             "message": "loading stop",
-            "time": 157579,
+            "time": 358631,
             "value": 6000
           }
         },
@@ -201,7 +201,7 @@
           },
           "properties": {
             "message": "loading start",
-            "time": 226758,
+            "time": 528336,
             "value": 6000
           }
         },
@@ -216,7 +216,7 @@
           },
           "properties": {
             "message": "loading stop",
-            "time": 230596,
+            "time": 532174,
             "value": 9000
           }
         },
@@ -231,7 +231,7 @@
           },
           "properties": {
             "message": "loading start",
-            "time": 289177,
+            "time": 598110,
             "value": 9000
           }
         },
@@ -246,7 +246,7 @@
           },
           "properties": {
             "message": "loading stop",
-            "time": 291487,
+            "time": 600420,
             "value": 10000
           }
         }
@@ -379,8 +379,8 @@
           },
           "properties": {
             "message": "Energy use sailing filled",
-            "time": 80724,
-            "value": 57653.67295577117
+            "time": 181250,
+            "value": 211396.8008378276
           }
         },
         {
@@ -394,7 +394,7 @@
           },
           "properties": {
             "message": "sailing filled stop",
-            "time": 80724,
+            "time": 181250,
             "value": 3000
           }
         },
@@ -409,7 +409,7 @@
           },
           "properties": {
             "message": "unloading start",
-            "time": 80724,
+            "time": 181250,
             "value": 3000
           }
         },
@@ -424,7 +424,7 @@
           },
           "properties": {
             "message": "Energy use unloading",
-            "time": 84562,
+            "time": 185088,
             "value": 7750.970468129518
           }
         },
@@ -439,7 +439,7 @@
           },
           "properties": {
             "message": "unloading stop",
-            "time": 84562,
+            "time": 185088,
             "value": 0
           }
         },
@@ -454,7 +454,7 @@
           },
           "properties": {
             "message": "sailing empty start",
-            "time": 84562,
+            "time": 185088,
             "value": 0
           }
         },
@@ -469,7 +469,7 @@
           },
           "properties": {
             "message": "Energy use sailing empty",
-            "time": 112206,
+            "time": 212732,
             "value": 42279.36016756553
           }
         },
@@ -484,7 +484,7 @@
           },
           "properties": {
             "message": "sailing empty stop",
-            "time": 112206,
+            "time": 212732,
             "value": 0
           }
         },
@@ -499,7 +499,7 @@
           },
           "properties": {
             "message": "loading start",
-            "time": 112206,
+            "time": 212732,
             "value": 0
           }
         },
@@ -514,7 +514,7 @@
           },
           "properties": {
             "message": "Energy use loading",
-            "time": 116044,
+            "time": 216570,
             "value": 9856.343411955098
           }
         },
@@ -529,7 +529,7 @@
           },
           "properties": {
             "message": "loading stop",
-            "time": 116044,
+            "time": 216570,
             "value": 3000
           }
         },
@@ -544,7 +544,7 @@
           },
           "properties": {
             "message": "sailing filled start",
-            "time": 116044,
+            "time": 216570,
             "value": 3000
           }
         },
@@ -559,8 +559,8 @@
           },
           "properties": {
             "message": "Energy use sailing filled",
-            "time": 153741,
-            "value": 57653.67295577117
+            "time": 354793,
+            "value": 211396.8008378276
           }
         },
         {
@@ -574,7 +574,7 @@
           },
           "properties": {
             "message": "sailing filled stop",
-            "time": 153741,
+            "time": 354793,
             "value": 3000
           }
         },
@@ -589,7 +589,7 @@
           },
           "properties": {
             "message": "unloading start",
-            "time": 153741,
+            "time": 354793,
             "value": 3000
           }
         },
@@ -604,7 +604,7 @@
           },
           "properties": {
             "message": "Energy use unloading",
-            "time": 157579,
+            "time": 358631,
             "value": 7750.970468129518
           }
         },
@@ -619,7 +619,7 @@
           },
           "properties": {
             "message": "unloading stop",
-            "time": 157579,
+            "time": 358631,
             "value": 0
           }
         },
@@ -634,7 +634,7 @@
           },
           "properties": {
             "message": "sailing empty start",
-            "time": 157579,
+            "time": 358631,
             "value": 0
           }
         },
@@ -649,7 +649,7 @@
           },
           "properties": {
             "message": "Energy use sailing empty",
-            "time": 185223,
+            "time": 386275,
             "value": 42279.36016756553
           }
         },
@@ -664,7 +664,7 @@
           },
           "properties": {
             "message": "sailing empty stop",
-            "time": 185223,
+            "time": 386275,
             "value": 0
           }
         },
@@ -679,7 +679,7 @@
           },
           "properties": {
             "message": "loading start",
-            "time": 185223,
+            "time": 386275,
             "value": 0
           }
         },
@@ -694,7 +694,7 @@
           },
           "properties": {
             "message": "Energy use loading",
-            "time": 189061,
+            "time": 390113,
             "value": 9856.343411955098
           }
         },
@@ -709,7 +709,7 @@
           },
           "properties": {
             "message": "loading stop",
-            "time": 189061,
+            "time": 390113,
             "value": 3000
           }
         },
@@ -724,7 +724,7 @@
           },
           "properties": {
             "message": "sailing filled start",
-            "time": 189061,
+            "time": 390113,
             "value": 3000
           }
         },
@@ -739,8 +739,8 @@
           },
           "properties": {
             "message": "Energy use sailing filled",
-            "time": 226758,
-            "value": 57653.67295577117
+            "time": 528336,
+            "value": 211396.8008378276
           }
         },
         {
@@ -754,7 +754,7 @@
           },
           "properties": {
             "message": "sailing filled stop",
-            "time": 226758,
+            "time": 528336,
             "value": 3000
           }
         },
@@ -769,7 +769,7 @@
           },
           "properties": {
             "message": "unloading start",
-            "time": 226758,
+            "time": 528336,
             "value": 3000
           }
         },
@@ -784,7 +784,7 @@
           },
           "properties": {
             "message": "Energy use unloading",
-            "time": 230596,
+            "time": 532174,
             "value": 7750.970468129518
           }
         },
@@ -799,7 +799,7 @@
           },
           "properties": {
             "message": "unloading stop",
-            "time": 230596,
+            "time": 532174,
             "value": 0
           }
         },
@@ -814,7 +814,7 @@
           },
           "properties": {
             "message": "sailing empty start",
-            "time": 230596,
+            "time": 532174,
             "value": 0
           }
         },
@@ -829,7 +829,7 @@
           },
           "properties": {
             "message": "Energy use sailing empty",
-            "time": 258241,
+            "time": 559818,
             "value": 42279.36016756553
           }
         },
@@ -844,7 +844,7 @@
           },
           "properties": {
             "message": "sailing empty stop",
-            "time": 258241,
+            "time": 559818,
             "value": 0
           }
         },
@@ -859,7 +859,7 @@
           },
           "properties": {
             "message": "loading start",
-            "time": 258241,
+            "time": 559818,
             "value": 0
           }
         },
@@ -874,7 +874,7 @@
           },
           "properties": {
             "message": "Energy use loading",
-            "time": 258835,
+            "time": 560413,
             "value": 1526.7669128044072
           }
         },
@@ -889,7 +889,7 @@
           },
           "properties": {
             "message": "loading stop",
-            "time": 258835,
+            "time": 560413,
             "value": 1000
           }
         },
@@ -904,7 +904,7 @@
           },
           "properties": {
             "message": "sailing filled start",
-            "time": 258835,
+            "time": 560413,
             "value": 1000
           }
         },
@@ -919,8 +919,8 @@
           },
           "properties": {
             "message": "Energy use sailing filled",
-            "time": 289177,
-            "value": 52689.42279052441
+            "time": 598110,
+            "value": 911744.8069394885
           }
         },
         {
@@ -934,7 +934,7 @@
           },
           "properties": {
             "message": "sailing filled stop",
-            "time": 289177,
+            "time": 598110,
             "value": 1000
           }
         },
@@ -949,7 +949,7 @@
           },
           "properties": {
             "message": "unloading start",
-            "time": 289177,
+            "time": 598110,
             "value": 1000
           }
         },
@@ -964,7 +964,7 @@
           },
           "properties": {
             "message": "Energy use unloading",
-            "time": 291487,
+            "time": 600420,
             "value": 4666.5492128253345
           }
         },
@@ -979,7 +979,7 @@
           },
           "properties": {
             "message": "unloading stop",
-            "time": 291487,
+            "time": 600420,
             "value": 0
           }
         }
@@ -1032,7 +1032,7 @@
           },
           "properties": {
             "message": "transporting stop",
-            "time": 84562,
+            "time": 185088,
             "value": 3000
           }
         },
@@ -1047,7 +1047,7 @@
           },
           "properties": {
             "message": "completed single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
-            "time": 84562,
+            "time": 185088,
             "value": -1
           }
         },
@@ -1062,7 +1062,7 @@
           },
           "properties": {
             "message": "started single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
-            "time": 84562,
+            "time": 185088,
             "value": -1
           }
         },
@@ -1077,7 +1077,7 @@
           },
           "properties": {
             "message": "transporting start",
-            "time": 84562,
+            "time": 185088,
             "value": 3000
           }
         },
@@ -1092,7 +1092,7 @@
           },
           "properties": {
             "message": "transporting stop",
-            "time": 157579,
+            "time": 358631,
             "value": 3000
           }
         },
@@ -1107,7 +1107,7 @@
           },
           "properties": {
             "message": "completed single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
-            "time": 157579,
+            "time": 358631,
             "value": -1
           }
         },
@@ -1122,7 +1122,7 @@
           },
           "properties": {
             "message": "started single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
-            "time": 157579,
+            "time": 358631,
             "value": -1
           }
         },
@@ -1137,7 +1137,7 @@
           },
           "properties": {
             "message": "transporting start",
-            "time": 157579,
+            "time": 358631,
             "value": 3000
           }
         },
@@ -1152,7 +1152,7 @@
           },
           "properties": {
             "message": "transporting stop",
-            "time": 230596,
+            "time": 532174,
             "value": 3000
           }
         },
@@ -1167,7 +1167,7 @@
           },
           "properties": {
             "message": "completed single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
-            "time": 230596,
+            "time": 532174,
             "value": -1
           }
         },
@@ -1182,7 +1182,7 @@
           },
           "properties": {
             "message": "started single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
-            "time": 230596,
+            "time": 532174,
             "value": -1
           }
         },
@@ -1197,7 +1197,7 @@
           },
           "properties": {
             "message": "transporting start",
-            "time": 230596,
+            "time": 532174,
             "value": 1000
           }
         },
@@ -1212,7 +1212,7 @@
           },
           "properties": {
             "message": "transporting stop",
-            "time": 291487,
+            "time": 600420,
             "value": 1000
           }
         },
@@ -1227,12 +1227,12 @@
           },
           "properties": {
             "message": "completed single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
-            "time": 291487,
+            "time": 600420,
             "value": -1
           }
         }
       ]
     }
   ],
-  "completionTime": 291487.6511255606
+  "completionTime": 600420.7709101104
 }
