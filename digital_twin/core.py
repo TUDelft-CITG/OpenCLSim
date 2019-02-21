@@ -692,6 +692,13 @@ class Movable(SimpyObject, Locatable):
         self.wgs84 = pyproj.Geod(ellps='WGS84')
 
     def move(self, destination):
+        if isinstance(self, Log):
+            if isinstance(self, HasContainer):
+                status = 'filled' if self.container.level > 0 else 'empty'
+                self.log_entry('sailing ' + status + ' start', self.env.now, self.container.level, self.geometry)
+            else:
+                self.log_entry('sailing start', self.env.now, -1, self.geometry)
+
         """determine distance between origin and destination, and
         yield the time it takes to travel it"""
         # Determine distance based on geometry objects
@@ -713,6 +720,13 @@ class Movable(SimpyObject, Locatable):
         logger.debug('  distance: ' + '%4.2f' % distance + ' m')
         logger.debug('  sailing:  ' + '%4.2f' % speed + ' m/s')
         logger.debug('  duration: ' + '%4.2f' % ((distance / speed) / 3600) + ' hrs')
+
+        if isinstance(self, Log):
+            if isinstance(self, HasContainer):
+                status = 'filled' if self.container.level > 0 else 'empty'
+                self.log_entry('sailing ' + status + ' stop', self.env.now, self.container.level, self.geometry)
+            else:
+                self.log_entry('sailing stop', self.env.now, -1, self.geometry)
 
     def is_at(self, locatable, tolerance=100):
         current_location = shapely.geometry.asShape(self.geometry)
@@ -831,7 +845,15 @@ class Log(SimpyObject):
     def get_log_as_json(self):
         json = []
         for msg, t, value, geometry_log in zip(self.log["Message"], self.log["Timestamp"], self.log["Value"], self.log["Geometry"]):
-            json.append(dict(message=msg, time=time.mktime(t.timetuple()), value=value, geometry_log=shapely.geometry.mapping(geometry_log)))
+            json.append(dict(
+                type="Feature",
+                geometry=shapely.geometry.mapping(geometry_log),
+                properties=dict(
+                    message=msg,
+                    time=time.mktime(t.timetuple()),
+                    value=value
+                )
+            ))
         return json
 
 

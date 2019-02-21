@@ -38,7 +38,7 @@ requires = [
 ]
 
 setup_requirements = [
-    "pytest-runner", 
+    "pytest-runner",
 ]
 
 tests_require = [
@@ -63,7 +63,7 @@ setup(
     description="The Digital Twin package aims to facilitate basic nautical traffic simulations.",
     entry_points={
         'console_scripts': [
-            'digital_twin=digital_twin.cli:main',
+            'digital_twin=digital_twin.cli:cli',
         ],
     },
     install_requires=requires,

@@ -228,13 +228,13 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
 
                 # move to the origin if necessary
                 if not mover.is_at(origin):
-                    yield from move_mover(environment, mover, origin, 'empty', verbose=verbose)
+                    yield from move_mover(environment, mover, origin, verbose=verbose)
 
                 # load the mover
                 yield from shift_amount(environment, loader, mover, mover.container.level + amount, origin, ship_resource_request=my_mover_turn, verbose=verbose)
 
                 # move the mover to the destination
-                yield from move_mover(environment, mover, destination, 'full', verbose=verbose)
+                yield from move_mover(environment, mover, destination, verbose=verbose)
 
                 # unload the mover
                 yield from shift_amount(environment, unloader, mover, mover.container.level - amount, destination, ship_resource_request=my_mover_turn, verbose=verbose)
@@ -271,18 +271,23 @@ def shift_amount(environment, processor, ship, desired_level, site, ship_resourc
         print('  site:        ' + site.name + ' contains: ' + str(site.container.level))
 
 
-def move_mover(environment, mover, origin, status, verbose=False):
+def move_mover(environment, mover, origin, verbose=False):
         old_location = mover.geometry
 
-        mover.log_entry('sailing ' + status + ' start', environment.now, mover.container.level, mover.geometry)
         yield from mover.move(origin)
-        mover.log_entry('sailing ' + status + ' stop', environment.now, mover.container.level, mover.geometry)
 
         if verbose == True:
             print('Moved:')
             print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
             print('  from:        ' + format(old_location.x, '02.5f') + ' ' + format(old_location.y, '02.5f'))
             print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))
+
+
+class ActivityLog(core.Identifiable, core.Log):
+    """A basic class that can be used to log activities."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Simulation(core.Identifiable, core.Log):
@@ -314,51 +319,101 @@ class Simulation(core.Identifiable, core.Log):
     dictionary can also optionally specify the "level".
     """
 
-    def __init__(self, sites, equipment, activities, decision_code, *args, **kwargs):
+    def __init__(self, sites, equipment, activities, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.__init_sites(sites)
         self.__init_equipment(equipment)
-        self.__init_activities(activities, decision_code)
+        self.__init_activities(activities)
 
     def __init_sites(self, sites):
         self.sites = {}
-        for (key, site) in sites.items():
-            self.sites[key] = self.__init_object_from_json(key, site)
+        for site in sites:
+            self.sites[site['id']] = self.__init_object_from_json(site)
 
     def __init_equipment(self, equipment):
         self.equipment = {}
-        for (key, value) in equipment.items():
-            self.equipment[key] = self.__init_object_from_json(key, value)
+        for equipment_piece in equipment:
+            self.equipment[equipment_piece['id']] = self.__init_object_from_json(equipment_piece)
 
-    def __init_activities(self, activities, decision_code):
+    def __init_activities(self, activities):
         self.activities = {}
-        for key, activity in activities.items():
-            ship = self.equipment[activity["mover"]]
-            if not ship in self.activities:
-                self.activities[ship] = {}
+        for activity in activities:
+            id = activity['id']
+            activity_log = ActivityLog(env=self.env, name=id)
 
-            klass = type(key, (core.Identifiable, core.Log), {})
-            kwargs = {
-                "env": self.env,
-                "name": key
-            }
-            activity_log = klass(**kwargs)
-            self.activities[ship][key] = {
+            process = self.env.process(self.get_process_control(activity_log, activity))
+
+            self.activities[id] = {
                 "activity_log": activity_log,
-                "origin": self.sites[activity["origin"]],
-                "destination": self.sites[activity["destination"]],
-                "loader": self.equipment[activity["loader"]],
-                "mover": ship,
-                "unloader": self.equipment[activity["unloader"]]
+                "process": process
             }
 
-        # todo also extract decision_code for each ship and use it in process_control
+    def get_process_control(self, activity_log, activity):
+        type = activity['type']
 
-        for ship in self.activities.keys():
-            self.env.process(self.process_control(ship, decision_code))
+        if type == 'move':
+            mover = self.equipment[activity['mover']]
+            destination = self.sites[activity['destination']]
+            return self.move_process_control(activity_log, mover, destination)
+        if type == 'single_run':
+            mover = self.equipment[activity['mover']]
+            origin = self.sites[activity['origin']]
+            destination = self.sites[activity['destination']]
+            loader = self.equipment[activity['loader']]
+            unloader = self.equipment[activity['unloader']]
+            return self.single_run_process_control(activity_log, origin, destination, loader, mover, unloader)
+        if type == 'conditional':
+            condition = activity['condition']
+            activities = activity['activities']
+            return self.conditional_process_control(activity_log, condition, activities)
+        else:
+            raise RuntimeError('Unrecognized activity type: ' + type)
 
-    def __init_object_from_json(self, class_name, object_json):
+    def move_process_control(self, activity_log, mover, destination):
+        activity_log.log_entry('started move activity of {} to {}'.format(mover.name, destination.name),
+                               self.env.now, -1, mover.geometry)
+
+        with mover.resource.request() as my_mover_turn:
+            yield my_mover_turn
+            yield from mover.move(destination)
+
+        activity_log.log_entry('completed move activity of {} to {}'.format(mover.name, destination.name),
+                               self.env.now, -1, mover.geometry)
+
+    def single_run_process_control(self, activity_log, origin, destination, loader, mover, unloader):
+        activity_description = 'single_run activity loading {} at {} with {} ' \
+                               'and transporting to {} unloading with {}'\
+                               .format(mover.name, origin.name, loader.name, destination.name, unloader.name)
+        activity_log.log_entry('started ' + activity_description, self.env.now, -1, mover.geometry)
+
+        yield from perform_single_run(self.env, activity_log, origin, destination, loader, mover, unloader)
+
+        activity_log.log_entry('completed ' + activity_description, self.env.now, -1, mover.geometry)
+
+    def conditional_process_control(self, activity_log, condition, activities):
+        condition_checker = self.get_condition_checker(condition)
+
+        while condition_checker():
+            for activity in activities:
+                yield from self.get_process_control(activity_log, activity)
+
+    def get_condition_checker(self, condition):
+        operator = condition['operator']
+        operand_key = condition['operand']
+        operand = self.sites[operand_key] if operand_key in self.sites else self.equipment[operand_key]
+
+        if operator == 'is_full':
+            return lambda: operand.container.level == operand.container.capacity
+        elif operator == 'is_filled':
+            return lambda: operand.container.level > 0
+        elif operator == 'is_empty':
+            return lambda: operand.container.level == 0
+        else:
+            raise RuntimeError('Unrecognized operator type: ' + operator)
+
+    def __init_object_from_json(self, object_json):
+        class_name = object_json["id"]
         name = object_json["name"]
         type = object_json["type"]
         properties = object_json["properties"]
@@ -372,39 +427,39 @@ class Simulation(core.Identifiable, core.Log):
 
         return new_object
 
-    def process_control(self, ship, decision_code):
-        # todo actually write this code, for now it's just completing all activities
-
-        self.log_entry('started simulation of {}'.format(ship.name), self.env.now, -1, ship.geometry)
-        activities = self.activities[ship]
-        for key, activity in activities.items():
-            origin = activity["origin"]
-            destination = activity["destination"]
-            while origin.container.level > 0 and destination.container.level < destination.container.capacity:
-                yield from perform_single_run(self.env, **activity)
-
-        self.log_entry('completed simulation of {}'.format(ship.name), self.env.now, -1, ship.geometry)
-
     def get_logging(self):
-        json = {"simulation": self.get_log_as_json()}
+        json = {}
 
-        sites_logging = {}
+        sites_logging = []
         for key, site in self.sites.items():
-            sites_logging[key] = site.get_log_as_json()
+            sites_logging.append(
+                self.get_as_feature_collection(key, site.get_log_as_json())
+            )
         json["sites"] = sites_logging
 
-        equipment_logging = {}
+        equipment_logging = []
         for key, equipment in self.equipment.items():
-            equipment_logging[key] = equipment.get_log_as_json()
+            equipment_logging.append(
+                self.get_as_feature_collection(key, equipment.get_log_as_json())
+            )
         json["equipment"] = equipment_logging
 
-        activity_logging = {}
-        for activity_dict in self.activities.values():
-            for key, activity in activity_dict.items():
-                activity_logging[key] = activity["activity_log"].get_log_as_json()
+        activity_logging = []
+        for key, activity in self.activities.items():
+            activity_logging.append(
+                self.get_as_feature_collection(key, activity["activity_log"].get_log_as_json())
+            )
         json["activities"] = activity_logging
 
         return json
+
+    @staticmethod
+    def get_as_feature_collection(id, features):
+        return dict(
+            type="FeatureCollection",
+            id=id,
+            features=features
+        )
 
 
 def get_class_from_type_list(class_name, type_list):
@@ -449,8 +504,8 @@ def get_kwargs_from_properties(environment, name, properties, sites):
     # Locatable
     if "geometry" in properties:
         kwargs["geometry"] = shapely.geometry.asShape(properties["geometry"]).centroid
-    if "starting_location" in properties:
-        kwargs["geometry"] = sites[properties["starting_location"]].geometry
+    if "location" in properties:
+        kwargs["geometry"] = sites[properties["location"]].geometry
 
     # HasContainer
     if "capacity" in properties:
@@ -530,10 +585,10 @@ def get_kwargs_from_properties(environment, name, properties, sites):
         kwargs["nr_resources"] = properties["nr_resources"]
 
     # Processor
-    if "loading_rate" in properties:
-        kwargs["loading_func"] = get_loading_func(properties["loading_rate"])
-    if "unloading_rate" in properties:
-        kwargs["unloading_func"] = get_unloading_func(properties["unloading_rate"])
+    if "loadingRate" in properties:
+        kwargs["loading_func"] = get_loading_func(properties["loadingRate"])
+    if "unloadingRate" in properties:
+        kwargs["unloading_func"] = get_unloading_func(properties["unloadingRate"])
 
     return kwargs
 

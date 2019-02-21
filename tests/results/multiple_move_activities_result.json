@@ -1,0 +1,366 @@
+{
+  "sites": [
+    {
+      "type": "FeatureCollection",
+      "id": "afsluitdijk",
+      "features": []
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "maasvlakte",
+      "features": []
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "home",
+      "features": []
+    }
+  ],
+  "equipment": [
+    {
+      "type": "FeatureCollection",
+      "id": "hopper",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing start",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing stop",
+            "time": 111167,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing start",
+            "time": 111167,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "sailing stop",
+            "time": 221746,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "sailing start",
+            "time": 221746,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing stop",
+            "time": 378505,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "barge",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing start",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "sailing stop",
+            "time": 156759,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "sailing start",
+            "time": 156759,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing stop",
+            "time": 313518,
+            "value": -1
+          }
+        }
+      ]
+    }
+  ],
+  "activities": [
+    {
+      "type": "FeatureCollection",
+      "id": "sailing 1",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "started move activity of Boaty McBoatstone to Maasvlakte",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "completed move activity of Boaty McBoatstone to Maasvlakte",
+            "time": 111167,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "sailing 2",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "started move activity of Boaty McBoatstone to Afsluitdijk",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "completed move activity of Boaty McBoatstone to Afsluitdijk",
+            "time": 221746,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "sailing 3",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "started move activity of Boaty McBoatstone to Home",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "completed move activity of Boaty McBoatstone to Home",
+            "time": 378505,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "sailing 4",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "started move activity of SS Agua to Afsluitdijk",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "completed move activity of SS Agua to Afsluitdijk",
+            "time": 156759,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "sailing 5",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "started move activity of SS Agua to Home",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "completed move activity of SS Agua to Home",
+            "time": 313518,
+            "value": -1
+          }
+        }
+      ]
+    }
+  ],
+  "completionTime": 378505.53115130647
+}

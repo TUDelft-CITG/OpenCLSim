@@ -1,3 +1,4 @@
+from flask import abort
 from flask import Flask
 from flask import jsonify
 from flask import request
@@ -20,7 +21,9 @@ def main():
 def simulate():
     """run a simulation"""
     if not request.is_json:
-        return "content type should be json!"
+        abort(400, description="content type should be json")
+        return
+
     json = request.get_json(force=True)
 
     return jsonify(simulate_from_json(json))
@@ -28,8 +31,8 @@ def simulate():
 
 def simulate_from_json(json):
     """Create a simulation and run it, based on a json input file"""
-    if "initial_time" in json:
-        simulation_start = datetime.datetime.fromtimestamp(json["initial_time"])
+    if "initialTime" in json:
+        simulation_start = datetime.datetime.fromtimestamp(json["initialTime"])
     else:
         simulation_start = datetime.datetime.now()
     env = simpy.Environment(initial_time=time.mktime(simulation_start.timetuple()))
@@ -39,14 +42,11 @@ def simulate_from_json(json):
         name="server simulation",
         sites=json["sites"],
         equipment=json["equipment"],
-        activities=json["activities"],
-        decision_code=""  # todo add option to configure decision_code (blockly code) through json
+        activities=json["activities"]
     )
     env.run()
 
-    result = dict(
-        completion_time=env.now,
-        logging=simulation.get_logging()
-    )
+    result = simulation.get_logging()
+    result["completionTime"] = env.now
 
     return result
