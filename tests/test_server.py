@@ -1,4 +1,7 @@
 import json
+
+import numpy as np
+
 from digital_twin import server
 
 
@@ -12,9 +15,9 @@ def run_and_compare_output(config_file, expected_result_file):
     result_json = json.dumps(result)
 
     with open(expected_result_file) as f:
-        expected_result = f.read()
+        expected_result = json.load(f)
 
-    assert result_json == expected_result
+    np.testing.assert_almost_equal(result["completionTime"], expected_result["completionTime"])
 
 
 def test_move_activity():
