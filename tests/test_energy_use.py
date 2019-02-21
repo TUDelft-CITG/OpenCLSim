@@ -89,13 +89,13 @@ def test_movable(env, geometry_a, locatable_a, locatable_b,
     start = env.now
     env.process(mover.move(locatable_b))
     env.run()
-    np.testing.assert_almost_equal(mover.log["Value"][-1], (env.now - start) * 2)
+    np.testing.assert_almost_equal(mover.log["Value"][-2], (env.now - start) * 2)
     
     # Moving from b to a - energy use should be equal to duration * 2
     start = env.now
     env.process(mover.move(locatable_a))
     env.run()
-    np.testing.assert_almost_equal(mover.log["Value"][-1], (env.now - start) * 2)
+    np.testing.assert_almost_equal(mover.log["Value"][-2], (env.now - start) * 2)
 
 
 # Test energy use processing
@@ -178,7 +178,7 @@ def test_TransportProcessingResource(env, geometry_a, geometry_b, locatable_a, l
     env.process(hopper.move(locatable_b))
     env.run()
     
-    np.testing.assert_almost_equal(np.ceil(hopper.log["Value"][-1]), np.ceil((env.now - start)) * 2)
+    np.testing.assert_almost_equal(np.ceil(hopper.log["Value"][-2]), np.ceil((env.now - start)) * 2)
 
 
     # Simulation ends with unloading
@@ -258,7 +258,7 @@ def test_Processor_ContainerDependentMovable(env, geometry_a, geometry_b, locata
     env.process(containervessel.move(locatable_b))
     env.run()
     
-    np.testing.assert_almost_equal(np.ceil(containervessel.log["Value"][-1]), np.ceil((env.now - start)) * 2)
+    np.testing.assert_almost_equal(np.ceil(containervessel.log["Value"][-2]), np.ceil((env.now - start)) * 2)
 
 
     # Simulation ends with unloading
