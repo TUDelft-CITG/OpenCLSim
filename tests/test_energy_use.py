@@ -59,7 +59,7 @@ def locatable_b(geometry_b):
 
 @pytest.fixture
 def energy_use_sailing():
-    return lambda x, y: (x / y) * 2
+    return lambda x, y, z: (x / y) * 2 + z * (x / y) * 1
 
 
 @pytest.fixture
@@ -151,10 +151,10 @@ def test_TransportProcessingResource(env, geometry_a, geometry_b, locatable_a, l
     # TSHD variables
     data_hopper = {"env": env,                                     # The simpy environment
                    "name": "Hopper",                               # Name
-                   "geometry": geometry_a,                         # It starts at the "from site"
+                   "geometry": geometry_b,                         # It starts at the "to site"
                    "unloading_func": model.get_unloading_func (1), # Unloading rate
                    "loading_func": model.get_loading_func(2),      # Loading rate
-                   "capacity": 5_000,                              # Capacity of the hopper
+                   "capacity": 500,                              # Capacity of the hopper
                    "compute_v": lambda x: 1,                       # Variable speed
                    "energy_use_loading": energy_use_loading,       # Variable fuel use
                    "energy_use_sailing": energy_use_sailing,       # Variable fuel use
@@ -162,8 +162,16 @@ def test_TransportProcessingResource(env, geometry_a, geometry_b, locatable_a, l
 
     # The simulation object
     hopper = TransportProcessingResource(**data_hopper)
-    
-    # Simulation starts with loading
+
+    # Simulation starts with moving to A
+    start = env.now
+    env.process(hopper.move(source))
+    env.run()
+
+    # moving empty to energy use is 2 per second
+    np.testing.assert_almost_equal(hopper.log["Value"][-2], (env.now - start) * 2, decimal=5)
+
+    # Simulation continues with loading
     start = env.now
     env.process(hopper.process(hopper, 500, source))
     env.run()
@@ -177,8 +185,9 @@ def test_TransportProcessingResource(env, geometry_a, geometry_b, locatable_a, l
     start = env.now
     env.process(hopper.move(locatable_b))
     env.run()
-    
-    np.testing.assert_almost_equal(np.ceil(hopper.log["Value"][-2]), np.ceil((env.now - start)) * 2)
+
+    # moving full so energy use is 3 per second
+    np.testing.assert_almost_equal(hopper.log["Value"][-2], (env.now - start) * 3, decimal=5)
 
 
     # Simulation ends with unloading
@@ -258,7 +267,7 @@ def test_Processor_ContainerDependentMovable(env, geometry_a, geometry_b, locata
     env.process(containervessel.move(locatable_b))
     env.run()
     
-    np.testing.assert_almost_equal(np.ceil(containervessel.log["Value"][-2]), np.ceil((env.now - start)) * 2)
+    np.testing.assert_almost_equal(containervessel.log["Value"][-2], (env.now - start) * 2.5, decimal=5)
 
 
     # Simulation ends with unloading
