@@ -293,23 +293,13 @@ class ActivityLog(core.Identifiable, core.Log):
 class Simulation(core.Identifiable, core.Log):
     """The Simulation Class can be used to set up a full simulation using configuration dictionaries (json).
 
-    sites:  a dictionary where the keys are the names the classes will have and the id associated with
-            the constructed object (used to reference to the object in activities)
-            the values are another dictionary containing the keys "name", "type" and "properties"
-    equipment: a dictionary where the keys are the names the classes will have and the id associated with
-            the constructed object (used to reference to the object in activities)
-            the values are another dictionary containing the keys "name", "type" and "properties"
-    activities: a dictionary where the keys are the names the activities logging will be reported under,
-                the values are another dictionary containing the keys "origin", "destination", "loader",
-                "mover", "unloader", each of these has a string value corresponding to the key of the site or
-                equipment respectively. The keys given under "origin" and "destination" must be present in the
-                "sites" parameter, the keys given for the "loader", "mover" and "unloader" must be present in the
-                "equipment" parameter.
-    decision_code: will probably be used to pass the "decision code" constructed through blockly in the future.
-                   Has no effect for now.
+    sites:  a list of dictionaries specifying which site objects should be constructed
+    equipment: a list of dictionaries specifying which equipment objects should be constructed
+    activities: list of dictionaries specifying which activities should be performed during the simulation
 
-    Each of the values the sites and equipment dictionaries, are another dictionary specifying "name",
-    "type" and "properties". Here "name" is used to initialize the objects name (required by core.Identifiable).
+    Each of the values the sites and equipment lists, are a dictionary specifying "id", "name",
+    "type" and "properties". Here "id" can be used to refer to this site / equipment in other parts of the
+    configuration, "name" is used to initialize the objects name (required by core.Identifiable).
     The "type" must be a list of mixin class names which will be used to construct a dynamic class for the
     object. For example: ["HasStorage", "HasResource", "Locatable"]. The core.Identifiable and core.Log class will
     always be added automatically by the Simulation class.
@@ -317,6 +307,19 @@ class Simulation(core.Identifiable, core.Log):
     For example, if "HasContainer" is included in the "type" list, the "properties" dictionary must include a "capacity"
     which has the value that will be passed to the constructor of HasContainer. In this case, the "properties"
     dictionary can also optionally specify the "level".
+
+    Each of the values of the activities list, is a dictionary specifying an "id", "type", and other fields depending
+    on the type. The supported types are "move", "single_run", and "conditional".
+    For a "move" type activity, the dictionary should also contain a "mover", "destination" and can optionally contain
+    a "moverProperties" dictionary containing an "engineOrder".
+    For a "single_run" type activity, the dictionary should also contain an "origin", "destination", "loader", "mover",
+    "unloader" and can optionally contain a "moverProperties" dictionary containing an "engineOrder" and/or "load".
+    For a "conditional" type activity, the dictionary should also contain a "condition" and "activities", where the
+    "activities" is another list of activities which will be performed while the condition is true.
+    The "condition" of a "conditional" type activity is a dictionary containing an "operator" and an "operand". The
+    operator can be "is_full", "is_filled" or "is_empty". The "operand" must be the id of the object (site or equipment)
+    of which the container level will be checked on if it is full (equal to capacity), filled (greater than 0) or empty
+    (equal to 0) respectively.
     """
 
     def __init__(self, sites, equipment, activities, *args, **kwargs):
