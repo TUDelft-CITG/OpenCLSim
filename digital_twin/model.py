@@ -553,19 +553,11 @@ def get_kwargs_from_properties(environment, name, properties, sites):
         kwargs["conditions"] = condition_objects
 
     # HasWeather
-    if "file" in properties:
-        # todo fix file location, how is this passed to the server? always use same fake weather file?
-        kwargs["file"] = properties["file"]
-    if "year" in properties:
-        kwargs["year"] = properties["year"]
-    if "month" in properties:
-        kwargs["month"] = properties["month"]
-    if "day" in properties:
-        kwargs["day"] = properties["day"]
-    if "hour" in properties:
-        kwargs["hour"] = properties["hour"]
-    if "timestep" in properties:
-        kwargs["timestep"] = properties["timestep"]
+    if "weather" in properties:
+        df = pd.DataFrame(properties["weather"])
+        df.index = df["time"].apply(datetime.datetime.fromtimestamp)
+        df = df.drop(columns=["time"])
+        kwargs["dataframe"] = df.rename(columns={"tide": "Tide", "hs": "Hs"})
     if "bed" in properties:
         kwargs["bed"] = properties["bed"]
 
@@ -576,7 +568,9 @@ def get_kwargs_from_properties(environment, name, properties, sites):
 
     # HasDepthRestriction
     if "draught" in properties:
-        kwargs["compute_draught"] = get_compute_function(properties["draught"], "level", "draught")
+        df = pd.DataFrame(properties["draught"])
+        df["filling_degree"] = df["level"] / kwargs["capacity"]
+        kwargs["compute_draught"] = scipy.interpolate.interp1d(df["filling_degree"], df["draught"])
     if "waves" in properties:
         kwargs["waves"] = properties["waves"]
     if "ukc" in properties:

@@ -10,6 +10,7 @@ import logging
 import datetime
 import time
 import numpy as np
+import pandas as pd
 
 from click.testing import CliRunner
 
@@ -41,6 +42,13 @@ def locatable_a(geometry_a):
 @pytest.fixture
 def locatable_b(geometry_b):
     return core.Locatable(geometry_b)
+
+@pytest.fixture
+def weather_data():
+    df = pd.read_csv('tests/test_weather.csv')
+    df.index = df[["Year", "Month", "Day", "Hour"]].apply(lambda s: datetime.datetime(*s), axis=1)
+    df = df.drop(["Year", "Month", "Day", "Hour"], axis=1)
+    return df
 
 # make a location with metocean data
 @pytest.fixture
@@ -88,7 +96,7 @@ def Mover():
             {})
 
 # Test calculating restrictions
-def test_calc_restrictions(env, geometry_a, Mover, Processor, LocationWeather):
+def test_calc_restrictions(env, geometry_a, Mover, Processor, LocationWeather, weather_data):
 
     # Initialize the Mover
     def compute_draught(draught_empty, draught_full):
@@ -122,11 +130,7 @@ def test_calc_restrictions(env, geometry_a, Mover, Processor, LocationWeather):
             "geometry": geometry_a,           # Location
             "capacity": 500_000,              # The capacity of the site
             "level": 500_000,                 # The actual volume of the site
-            "file": "tests/test_weather.csv", # The name of the file with metocean data
-            "year": "Year",                   # The header of the column specifying the year 
-            "month": "Month",                 # The header of the column specifying the month
-            "day": "Day",                     # The header of the column specifying the day
-            "hour": "Hour",                   # The header of the column specifying the hour
+            "dataframe": weather_data,        # The dataframe containing the weather data
             "bed": -7}                        # The level of the seabed with respect to CD 
     
     location = LocationWeather(**data)

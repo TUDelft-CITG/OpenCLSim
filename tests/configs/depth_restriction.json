@@ -1,0 +1,531 @@
+{
+    "level": 3,
+    "initialTime": 0,
+    "sites": [
+        {
+            "id": "afsluitdijk",
+            "name": "Afsluitdijk",
+            "type": [
+                "Locatable", "HasResource", "HasContainer", "HasWeather"
+            ],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        53,
+                        4
+                    ]
+                },
+                "capacity": 10000,
+                "level": 10000,
+                "weather": [
+                    {
+                      "time": 0,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 22200,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 44400,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 66600,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 88800,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 111000,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 133200,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 155400,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 177600,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 199800,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 222000,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 244200,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 266400,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 288600,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 310800,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 333000,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 355200,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 377400,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 399600,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 421800,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 444000,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 466200,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 488400,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 510600,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 532800,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 555000,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 577200,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 599400,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 621600,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 643800,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 666000,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 688200,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 710400,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 732600,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 754800,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 777000,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 799200,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 821400,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 843600,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 865800,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 888000,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 910200,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 932400,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 954600,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 976800,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 999000,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1021200,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1043400,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1065600,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1087800,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1110000,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1132200,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1154400,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1176600,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1198800,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1221000,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1243200,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1265400,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1287600,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1309800,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1332000,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1354200,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1376400,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1398600,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1420800,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1443000,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1465200,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1487400,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1509600,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1531800,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1554000,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1576200,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1598400,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1620600,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1642800,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1665000,
+                      "tide": -1,
+                      "hs": 1
+                    },
+                    {
+                      "time": 1687200,
+                      "tide": 1,
+                      "hs": 0.5
+                    },
+                    {
+                      "time": 1709400,
+                      "tide": -1,
+                      "hs": 1
+                    }
+                  ],
+                "bed": -7
+            }
+        },
+        {
+            "id": "maasvlakte",
+            "name": "Maasvlakte",
+            "type": [
+                "Locatable", "HasResource", "HasContainer"
+            ],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        53,
+                        3
+                    ]
+                },
+                "capacity": 50000,
+                "level": 0
+
+            }
+        },
+        {
+            "id": "home",
+            "name": "Home",
+            "type": [
+                "Locatable"
+            ],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        52,
+                        3
+                    ]
+                }
+            }
+        }
+    ],
+    "equipment": [
+        {
+            "id": "hopper",
+            "name": "Boaty McBoatstone",
+            "type": [
+                "ContainerDependentMovable", "HasResource", "Processor", "HasDepthRestriction"
+            ],
+            "properties": {
+                "speed": [
+                    {
+                        "level": 0,
+                        "speed": 5
+                    },
+                    {
+                        "level": 3000,
+                        "speed": 1
+                    }
+                ],
+                "location": "home",
+                "capacity": 3000,
+                "loadingRate": [
+                    {
+                        "level": 0,
+                        "rate": 2
+                    },
+                    {
+                        "level": 3000,
+                        "rate": 0.2
+                    }
+                ],
+                "unloadingRate": [
+                    {
+                        "level": 3000,
+                        "rate": 2
+                    },
+                    {
+                        "level": 0,
+                        "rate": 0.2
+                    }
+                ],
+                "draught": [
+                    {
+                        "level": 0,
+                        "draught": 4.0
+                    },
+                    {
+                        "level": 3000,
+                        "draught": 7.0
+                    }
+                ],
+                "waves": [0.5, 1],
+                "ukc": [0.75, 1]
+            }
+        }
+    ],
+    "activities": [
+        {
+            "id": "conditional_dredging",
+            "type": "conditional",
+            "condition": {
+                "operator": "is_filled",
+                "operand": "afsluitdijk"
+            },
+            "activities": [
+                {
+                    "id": "dredge_run",
+                    "type": "single_run",
+                    "origin": "afsluitdijk",
+                    "destination": "maasvlakte",
+                    "loader": "hopper",
+                    "mover": "hopper",
+                    "unloader": "hopper",
+                    "moverProperties": {
+                        "load": 0.8
+                    }
+                }
+            ]
+        }
+    ]
+}
