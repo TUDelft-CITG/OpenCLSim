@@ -91,3 +91,11 @@ def test_energy_use():
             energy_use += log_entry["properties"]["value"]
 
     np.testing.assert_almost_equal(energy_use, 1791724.970386777)
+
+
+def test_depth_restriction():
+    """Run a simulation including depth restrictions."""
+    run_and_compare_completion_time(
+        config_file='tests/configs/depth_restriction.json',
+        expected_result_file='tests/results/depth_restriction_result.json'
+    )

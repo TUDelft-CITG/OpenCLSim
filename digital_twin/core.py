@@ -435,18 +435,14 @@ class HasWeather:
     bed: level of the seabed / riverbed with respect to CD (meters)
     """
 
-    def __init__(self, file, year, month, day, hour, timestep=10, bed=None, *args, **kwargs):
+    def __init__(self, dataframe, timestep=10, bed=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        df = pd.read_csv(file)
-        df.index = df[[year, month, day, hour]].apply(lambda s : datetime.datetime(*s), axis = 1)
-        df = df.drop([year, month, day, hour], axis = 1)
-        
         self.timestep = datetime.timedelta(minutes = timestep)
 
         data = {}
-        for key in df:
-            series = (pd.Series(df[key], index = df.index)
+        for key in dataframe:
+            series = (pd.Series(dataframe[key], index = dataframe.index)
                       .fillna(0)
                       .resample(self.timestep)
                       .interpolate("linear"))
@@ -520,65 +516,61 @@ class HasDepthRestriction:
             # Determine characteristics based on filling
             draught = self.compute_draught(filling_degree)
             duration = datetime.timedelta(seconds = processor.unloading_func(self.container.level, filling_degree * self.container.capacity))
-            
-            # Make dataframe based on characteristics
-            df = location.metocean_data.copy()
-            df["Required depth"] = df["Hs"].apply(lambda s : self.calc_required_depth(draught, s))
-            series = pd.Series(df["Required depth"] <= df["Water depth"])
-            
-            # Loop through series to find windows
-            index = series.index
-            values = series.values
-            in_range = False
-            ranges = []
-            
-            for i, value in enumerate(values):
-                if value == True:
-                    if i == 0:
-                        begin = index[i]
-                    elif not in_range:
-                        begin = index[i]
-                    
-                    in_range = True
-                elif in_range:
-                    in_range = False
-                    end = index[i]
-                    
-                    if (end - begin) >= duration:
-                        ranges.append((begin.to_datetime64(), (end - duration).to_datetime64()))
-            
+
+            ranges = self.viable_time_windows(draught, duration, location.metocean_data)
+
             self.depth_data[location.name][filling_degree] = \
                                             {"Volume": filling_degree * self.container.capacity,
                                             "Draught": draught,
                                             "Ranges": np.array(ranges)}
 
-    
-    def check_depth_restriction(self, location):
-        fill_degree = self.container.level / self.container.capacity
-        waiting = 0
+    def viable_time_windows(self, draught, duration, metocean_data):
+        # Make dataframe based on characteristics
+        df = metocean_data.copy()
+        df["Required depth"] = df["Hs"].apply(lambda s: self.calc_required_depth(draught, s))
+        series = pd.Series(df["Required depth"] <= df["Water depth"])
+        # Loop through series to find windows
+        index = series.index
+        values = series.values
+        in_range = False
+        ranges = []
+        for i, value in enumerate(values):
+            if value == True:
+                if i == 0:
+                    begin = index[i]
+                elif not in_range:
+                    begin = index[i]
 
-        for key in sorted(self.depth_data[location.name].keys()):
-            if fill_degree <= key:
-                ranges = self.depth_data[location.name][key]["Ranges"]
-                
-                if len(ranges) == 0:
-                    print("No actual allowable draught available - starting anyway.")
-                    waiting = 0
-                
-                else:
-                    t = datetime.datetime.fromtimestamp(self.env.now)
-                    t = pd.Timestamp(t).to_datetime64()
-                    i = ranges[:, 0].searchsorted(t)
+                in_range = True
+            elif in_range:
+                in_range = False
+                end = index[i]
 
-                    if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
-                        waiting = pd.Timedelta(0).total_seconds()
-                    elif i + 1 < len(ranges):
-                        waiting = pd.Timedelta(ranges[i, 0] - t).total_seconds()
-                    else:
-                        print("Exceeding time")
-                        waiting = 0
+                if (end - begin) >= duration:
+                    ranges.append((begin.to_datetime64(), (end - duration).to_datetime64()))
+        return ranges
 
-                break
+    def check_depth_restriction(self, location, fill_degree, duration):
+        draught = self.compute_draught(fill_degree)
+        ranges = self.viable_time_windows(draught, datetime.timedelta(seconds=duration), location.metocean_data)
+        ranges = np.array(ranges)
+
+        if len(ranges) == 0:
+            self.log_entry("No actual allowable draught available - starting anyway", self.env.now, -1, self.geometry)
+            waiting = 0
+
+        else:
+            t = datetime.datetime.fromtimestamp(self.env.now)
+            t = pd.Timestamp(t).to_datetime64()
+            i = ranges[:, 0].searchsorted(t)
+
+            if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
+                waiting = pd.Timedelta(0).total_seconds()
+            elif i + 1 < len(ranges):
+                waiting = pd.Timedelta(ranges[i, 0] - t).total_seconds()
+            else:
+                print("Exceeding time")
+                waiting = 0
 
         if waiting != 0:
             self.log_entry('waiting for tide start', self.env.now, waiting, self.geometry)
@@ -938,6 +930,8 @@ class Processor(SimpyObject):
         # Activity can only start if environmental conditions allow it
         time = 0
 
+        duration = rate(current_level, desired_level)
+
         # Waiting event should be combined to check if all conditions allow starting
         while time != self.env.now:
             time = self.env.now
@@ -946,7 +940,7 @@ class Processor(SimpyObject):
             # yield from self.checkWeather()
 
             # Check tide
-            yield from self.checkTide(origin, destination)
+            yield from self.checkTide(ship=ship, site=site, desired_level=desired_level, duration=duration)
 
             # Check spill
             yield from self.checkSpill(origin, destination, amount)
@@ -955,7 +949,6 @@ class Processor(SimpyObject):
         destination.log_entry('loading start', self.env.now, destination.container.level, self.geometry)
 
         # Add spill the location where processing is taking place
-        duration = rate(current_level, desired_level)
         self.addSpill(origin, destination, amount, duration)
 
         # Shift soil from container volumes
@@ -1097,11 +1090,11 @@ class Processor(SimpyObject):
                     self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
 
 
-    def checkTide(self, origin, destination):
-        if isinstance(origin, HasDepthRestriction) and isinstance(origin, Movable) and isinstance(destination, HasWeather):
-            yield from origin.check_depth_restriction(destination)
-        elif isinstance(destination, HasDepthRestriction) and isinstance(destination, Movable) and isinstance(origin, HasWeather):
-            yield from destination.check_depth_restriction(origin)
+    def checkTide(self, ship, site, desired_level, duration):
+        if isinstance(ship, HasDepthRestriction) and isinstance(site, HasWeather):
+            max_level = max(ship.container.level, desired_level)
+            fill_degree = max_level / ship.container.capacity
+            yield from ship.check_depth_restriction(site, fill_degree, duration)
 
     def addSpill(self, origin, destination, amount, duration):
         """
