@@ -202,11 +202,11 @@ class Activity(core.Identifiable, core.Log):
         self.log_entry("completed", self.env.now, -1, destination.geometry)
 
 
-def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, verbose=False):
+def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, engine_order=1.0, filling=1.0, verbose=False):
         """Installation process"""
         # estimate amount that should be transported
         amount = min(
-            mover.container.capacity - mover.container.level,
+            mover.container.capacity * filling - mover.container.level,
             origin.container.level,
             origin.container.capacity - origin.total_requested,
             destination.container.capacity - destination.container.level,
@@ -228,13 +228,13 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
 
                 # move to the origin if necessary
                 if not mover.is_at(origin):
-                    yield from move_mover(environment, mover, origin, verbose=verbose)
+                    yield from move_mover(mover, origin, engine_order=engine_order, verbose=verbose)
 
                 # load the mover
                 yield from shift_amount(environment, loader, mover, mover.container.level + amount, origin, ship_resource_request=my_mover_turn, verbose=verbose)
 
                 # move the mover to the destination
-                yield from move_mover(environment, mover, destination, verbose=verbose)
+                yield from move_mover(mover, destination, engine_order=engine_order, verbose=verbose)
 
                 # unload the mover
                 yield from shift_amount(environment, unloader, mover, mover.container.level - amount, destination, ship_resource_request=my_mover_turn, verbose=verbose)
@@ -271,10 +271,10 @@ def shift_amount(environment, processor, ship, desired_level, site, ship_resourc
         print('  site:        ' + site.name + ' contains: ' + str(site.container.level))
 
 
-def move_mover(environment, mover, origin, verbose=False):
+def move_mover(mover, origin, engine_order=1.0, verbose=False):
         old_location = mover.geometry
 
-        yield from mover.move(origin)
+        yield from mover.move(origin, engine_order=engine_order)
 
         if verbose == True:
             print('Moved:')
@@ -293,23 +293,13 @@ class ActivityLog(core.Identifiable, core.Log):
 class Simulation(core.Identifiable, core.Log):
     """The Simulation Class can be used to set up a full simulation using configuration dictionaries (json).
 
-    sites:  a dictionary where the keys are the names the classes will have and the id associated with
-            the constructed object (used to reference to the object in activities)
-            the values are another dictionary containing the keys "name", "type" and "properties"
-    equipment: a dictionary where the keys are the names the classes will have and the id associated with
-            the constructed object (used to reference to the object in activities)
-            the values are another dictionary containing the keys "name", "type" and "properties"
-    activities: a dictionary where the keys are the names the activities logging will be reported under,
-                the values are another dictionary containing the keys "origin", "destination", "loader",
-                "mover", "unloader", each of these has a string value corresponding to the key of the site or
-                equipment respectively. The keys given under "origin" and "destination" must be present in the
-                "sites" parameter, the keys given for the "loader", "mover" and "unloader" must be present in the
-                "equipment" parameter.
-    decision_code: will probably be used to pass the "decision code" constructed through blockly in the future.
-                   Has no effect for now.
+    sites:  a list of dictionaries specifying which site objects should be constructed
+    equipment: a list of dictionaries specifying which equipment objects should be constructed
+    activities: list of dictionaries specifying which activities should be performed during the simulation
 
-    Each of the values the sites and equipment dictionaries, are another dictionary specifying "name",
-    "type" and "properties". Here "name" is used to initialize the objects name (required by core.Identifiable).
+    Each of the values the sites and equipment lists, are a dictionary specifying "id", "name",
+    "type" and "properties". Here "id" can be used to refer to this site / equipment in other parts of the
+    configuration, "name" is used to initialize the objects name (required by core.Identifiable).
     The "type" must be a list of mixin class names which will be used to construct a dynamic class for the
     object. For example: ["HasStorage", "HasResource", "Locatable"]. The core.Identifiable and core.Log class will
     always be added automatically by the Simulation class.
@@ -317,6 +307,19 @@ class Simulation(core.Identifiable, core.Log):
     For example, if "HasContainer" is included in the "type" list, the "properties" dictionary must include a "capacity"
     which has the value that will be passed to the constructor of HasContainer. In this case, the "properties"
     dictionary can also optionally specify the "level".
+
+    Each of the values of the activities list, is a dictionary specifying an "id", "type", and other fields depending
+    on the type. The supported types are "move", "single_run", and "conditional".
+    For a "move" type activity, the dictionary should also contain a "mover", "destination" and can optionally contain
+    a "moverProperties" dictionary containing an "engineOrder".
+    For a "single_run" type activity, the dictionary should also contain an "origin", "destination", "loader", "mover",
+    "unloader" and can optionally contain a "moverProperties" dictionary containing an "engineOrder" and/or "load".
+    For a "conditional" type activity, the dictionary should also contain a "condition" and "activities", where the
+    "activities" is another list of activities which will be performed while the condition is true.
+    The "condition" of a "conditional" type activity is a dictionary containing an "operator" and an "operand". The
+    operator can be "is_full", "is_filled" or "is_empty". The "operand" must be the id of the object (site or equipment)
+    of which the container level will be checked on if it is full (equal to capacity), filled (greater than 0) or empty
+    (equal to 0) respectively.
     """
 
     def __init__(self, sites, equipment, activities, *args, **kwargs):
@@ -354,15 +357,17 @@ class Simulation(core.Identifiable, core.Log):
 
         if type == 'move':
             mover = self.equipment[activity['mover']]
+            kwargs = self.get_mover_properties_kwargs(activity)
             destination = self.sites[activity['destination']]
-            return self.move_process_control(activity_log, mover, destination)
+            return self.move_process_control(activity_log, mover, destination, **kwargs)
         if type == 'single_run':
             mover = self.equipment[activity['mover']]
+            kwargs = self.get_mover_properties_kwargs(activity)
             origin = self.sites[activity['origin']]
             destination = self.sites[activity['destination']]
             loader = self.equipment[activity['loader']]
             unloader = self.equipment[activity['unloader']]
-            return self.single_run_process_control(activity_log, origin, destination, loader, mover, unloader)
+            return self.single_run_process_control(activity_log, origin, destination, loader, mover, unloader, **kwargs)
         if type == 'conditional':
             condition = activity['condition']
             activities = activity['activities']
@@ -370,24 +375,38 @@ class Simulation(core.Identifiable, core.Log):
         else:
             raise RuntimeError('Unrecognized activity type: ' + type)
 
-    def move_process_control(self, activity_log, mover, destination):
+    @staticmethod
+    def get_mover_properties_kwargs(activity):
+        if "moverProperties" not in activity:
+            return {}
+
+        kwargs = {}
+        mover_options = activity["moverProperties"]
+        if "engineOrder" in mover_options:
+            kwargs["engine_order"] = mover_options["engineOrder"]
+        if "load" in mover_options:
+            kwargs["filling"] = mover_options["load"]
+
+        return kwargs
+
+    def move_process_control(self, activity_log, mover, destination, **kwargs):
         activity_log.log_entry('started move activity of {} to {}'.format(mover.name, destination.name),
                                self.env.now, -1, mover.geometry)
 
         with mover.resource.request() as my_mover_turn:
             yield my_mover_turn
-            yield from mover.move(destination)
+            yield from mover.move(destination, **kwargs)
 
         activity_log.log_entry('completed move activity of {} to {}'.format(mover.name, destination.name),
                                self.env.now, -1, mover.geometry)
 
-    def single_run_process_control(self, activity_log, origin, destination, loader, mover, unloader):
+    def single_run_process_control(self, activity_log, origin, destination, loader, mover, unloader, **kwargs):
         activity_description = 'single_run activity loading {} at {} with {} ' \
                                'and transporting to {} unloading with {}'\
                                .format(mover.name, origin.name, loader.name, destination.name, unloader.name)
         activity_log.log_entry('started ' + activity_description, self.env.now, -1, mover.geometry)
 
-        yield from perform_single_run(self.env, activity_log, origin, destination, loader, mover, unloader)
+        yield from perform_single_run(self.env, activity_log, origin, destination, loader, mover, unloader, **kwargs)
 
         activity_log.log_entry('completed ' + activity_description, self.env.now, -1, mover.geometry)
 
