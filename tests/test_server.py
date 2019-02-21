@@ -57,21 +57,21 @@ def test_conditional_activity():
     )
 
 
-def test_mover_options_engine_order():
+def test_mover_properties_engine_order():
     """Run a basic simulation containing a single move activity and check the output.
     We give an engine order of 0.8 instead of the default 1.0 used for test_move_activity.
     The completionTime of this test's results should be 25% slower than that of test_move_activity."""
     run_and_compare_output(
-        config_file='tests/configs/mover_options_engine_order.json',
-        expected_result_file='tests/results/mover_options_engine_order_result.json'
+        config_file='tests/configs/mover_properties_engine_order.json',
+        expected_result_file='tests/results/mover_properties_engine_order_result.json'
    )
 
 
-def test_mover_options_load():
+def test_mover_properties_load():
     """Run a basic conditional simulation.
     We order to load up to 0.8. Capacity of the ship is 2500 and 10.000 units need to be transported.
     Without the load order this would take 4 trips, it should now take 5."""
     run_and_compare_output(
-        config_file='tests/configs/mover_options_load.json',
-        expected_result_file='tests/results/mover_options_load_result.json'
+        config_file='tests/configs/mover_properties_load.json',
+        expected_result_file='tests/results/mover_properties_load_result.json'
     )
