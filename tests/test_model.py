@@ -81,8 +81,8 @@ def test_model_one_trip(env, geometry_a, geometry_b, Location, TransportProcessi
     data_vessel = {"env": env,                     # The simpy environment 
                 "name": "Vessel 01",               # Name of the vessel
                 "geometry": geometry_a,            # It is located at the "from location"
-                "unloading_func": (lambda x: x),   # Unloading production is 1 amount / s
-                "loading_func": (lambda x: x),     # Loading production is 1 amount / s
+                "unloading_func": model.get_unloading_func(1),   # Unloading production is 1 amount / s
+                "loading_func": model.get_loading_func(1),     # Loading production is 1 amount / s
                 "capacity": 1_000,                 # Capacity of the vessel
                 "compute_v": (lambda x: 1)}        # Speed is always 1 m / s
 
@@ -137,8 +137,8 @@ def test_model_multiple_trips(env, geometry_a, geometry_b, Location, TransportPr
     data_vessel = {"env": env,                     # The simpy environment 
                 "name": "Vessel 01",               # Name of the vessel
                 "geometry": geometry_a,            # It is located at the "from location"
-                "unloading_func": (lambda x: x),   # Unloading production is 1 amount / s
-                "loading_func": (lambda x: x),     # Loading production is 1 amount / s
+                "unloading_func": model.get_unloading_func(1),   # Unloading production is 1 amount / s
+                "loading_func": model.get_loading_func(1),     # Loading production is 1 amount / s
                 "capacity": 1_000,                 # Capacity of the vessel
                 "compute_v": (lambda x: 1)}        # Speed is always 1 m / s
 
@@ -192,8 +192,8 @@ def test_start_condition(env, geometry_a, geometry_b, Location, TransportProcess
     data_vessel = {"env": env,                     # The simpy environment 
                 "name": "Vessel 01",               # Name of the vessel
                 "geometry": geometry_a,            # It is located at the "from location"
-                "unloading_func": (lambda x: x),   # Unloading production is 1 amount / s
-                "loading_func": (lambda x: x),     # Loading production is 1 amount / s
+                "unloading_func": model.get_unloading_func(1),   # Unloading production is 1 amount / s
+                "loading_func": model.get_loading_func(1),     # Loading production is 1 amount / s
                 "capacity": 1_000,                 # Capacity of the vessel
                 "compute_v": (lambda x: 1)}        # Speed is always 1 m / s
 
@@ -250,8 +250,8 @@ def test_and_condition(env, geometry_a, geometry_b, Location, TransportProcessin
     data_vessel = {"env": env,                     # The simpy environment 
                 "name": "Vessel 01",               # Name of the vessel
                 "geometry": geometry_a,            # It is located at the "from location"
-                "unloading_func": (lambda x: x),   # Unloading production is 1 amount / s
-                "loading_func": (lambda x: x),     # Loading production is 1 amount / s
+                "unloading_func": model.get_unloading_func(1),   # Unloading production is 1 amount / s
+                "loading_func": model.get_loading_func(1),     # Loading production is 1 amount / s
                 "capacity": 1_000,                 # Capacity of the vessel
                 "compute_v": (lambda x: 1)}        # Speed is always 1 m / s
 

@@ -231,15 +231,13 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
                     yield from move_mover(environment, mover, origin, verbose=verbose)
 
                 # load the mover
-                loader.rate = loader.loading_func        # rate is variable to loading / unloading
-                yield from shift_amount(environment, amount, loader, origin, mover, destination_resource_request=my_mover_turn, verbose=verbose)
+                yield from shift_amount(environment, loader, mover, mover.container.level + amount, origin, ship_resource_request=my_mover_turn, verbose=verbose)
 
                 # move the mover to the destination
                 yield from move_mover(environment, mover, destination, verbose=verbose)
 
                 # unload the mover
-                unloader.rate = unloader.unloading_func  # rate is variable to loading / unloading
-                yield from shift_amount(environment, amount, unloader, mover, destination, origin_resource_request=my_mover_turn, verbose=verbose)
+                yield from shift_amount(environment, unloader, mover, mover.container.level - amount, destination, ship_resource_request=my_mover_turn, verbose=verbose)
 
             activity_log.log_entry("transporting stop", environment.now, amount, mover.geometry)
         else:
@@ -247,28 +245,30 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
             yield environment.timeout(3600)
 
 
-def shift_amount(environment, amount, processor, origin, destination, origin_resource_request=None, destination_resource_request=None, verbose=False):
-        if id(origin) == id(processor) and origin_resource_request is not None or \
-                id(destination) == id(processor) and destination_resource_request is not None:
-            
-            yield from processor.process(origin, destination, amount, origin_resource_request=origin_resource_request,
-                                         destination_resource_request=destination_resource_request)
-        else:
-            with processor.resource.request() as my_processor_turn:
-                yield my_processor_turn
+def shift_amount(environment, processor, ship, desired_level, site, ship_resource_request=None, site_resource_request=None, verbose=False):
+    amount = np.abs(ship.container.level - desired_level)
 
-                processor.log_entry('processing start', environment.now, amount, processor.geometry)
-                yield from processor.process(origin, destination, amount,
-                                             origin_resource_request=origin_resource_request,
-                                             destination_resource_request=destination_resource_request)
-                
-                processor.log_entry('processing stop', environment.now, amount, processor.geometry)
-                    
-        if verbose == True:
-            print('Processed {}:'.format(amount))
-            print('  from:        ' + origin.name + ' contains: ' + str(origin.container.level))
-            print('  by:          ' + processor.name)
-            print('  to:          ' + destination.name + ' contains: ' + str(destination.container.level))
+    if id(ship) == id(processor) and ship_resource_request is not None or \
+            id(site) == id(processor) and site_resource_request is not None:
+
+        yield from processor.process(ship, desired_level, site, ship_resource_request=ship_resource_request,
+                                     site_resource_request=site_resource_request)
+    else:
+        with processor.resource.request() as my_processor_turn:
+            yield my_processor_turn
+
+            processor.log_entry('processing start', environment.now, amount, processor.geometry)
+            yield from processor.process(ship, desired_level, site,
+                                         ship_resource_request=ship_resource_request,
+                                         site_resource_request=site_resource_request)
+
+            processor.log_entry('processing stop', environment.now, amount, processor.geometry)
+
+    if verbose == True:
+        print('Processed {}:'.format(amount))
+        print('  by:          ' + processor.name)
+        print('  ship:        ' + ship.name + ' contains: ' + str(ship.container.level))
+        print('  site:        ' + site.name + ' contains: ' + str(site.container.level))
 
 
 def move_mover(environment, mover, origin, verbose=False):
@@ -586,9 +586,9 @@ def get_kwargs_from_properties(environment, name, properties, sites):
 
     # Processor
     if "loadingRate" in properties:
-        kwargs["loading_func"] = get_rate_compute_function(properties["loadingRate"])
+        kwargs["loading_func"] = get_loading_func(properties["loadingRate"])
     if "unloadingRate" in properties:
-        kwargs["unloading_func"] = get_rate_compute_function(properties["unloadingRate"])
+        kwargs["unloading_func"] = get_unloading_func(properties["unloadingRate"])
 
     return kwargs
 
@@ -617,13 +617,35 @@ def get_compute_function(table_entry_list, x_key, y_key):
     return scipy.interpolate.interp1d(df[x_key], df[y_key])
 
 
-def get_rate_compute_function(property):
+def get_loading_func(property):
+    """Returns a loading_func based on the given input property.
+    Input can be a flat rate or a table defining the rate depending on the level.
+    In the second case, note that by definition the rate is the derivative of the level with respect to time.
+    Therefore d level / dt = f(level), from which we can obtain that the time taken for loading can be calculated
+    by integrating 1 / f(level) from current_level to desired_level."""
     if isinstance(property, list):
         # given property is a list of data points
         rate_function = get_compute_function(property, "level", "rate")
         inversed_rate_function = lambda x: 1 / rate_function(x)
-        # assumes the container is empty at the start of loading!
-        return lambda x: scipy.integrate.quad(inversed_rate_function, 0, x)[0]
+        return lambda current_level, desired_level: \
+            scipy.integrate.quad(inversed_rate_function, current_level, desired_level)[0]
     else:
         # given property is a flat rate
-        return lambda x: x / property
+        return lambda current_level, desired_level: (desired_level - current_level) / property
+
+
+def get_unloading_func(property):
+    """Returns an unloading_funct based on the given input property.
+    Input can be a flat rate or a table defining the rate depending on the level.
+    In the second case, note that by definition the rate is -1 times the derivative of the level with respect to time.
+    Therefore d level / dt = - f(level), from which we can obtain the the time taken for unloading can be calculated
+    by integrating 1 / f(level) from desired_level to current_level."""
+    if isinstance(property, list):
+        # given property is a list of data points
+        rate_function = get_compute_function(property, "level", "rate")
+        inversed_rate_function = lambda x: 1 / rate_function(x)
+        return lambda current_level, desired_level: \
+            scipy.integrate.quad(inversed_rate_function, desired_level, current_level)[0]
+    else:
+        # given property is a flat rate
+        return lambda current_level, desired_level: (current_level - desired_level) / property

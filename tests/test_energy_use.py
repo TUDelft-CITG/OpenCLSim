@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 from click.testing import CliRunner
 
 from digital_twin import core
+from digital_twin import model
 from digital_twin import plot
 from digital_twin import cli
 
@@ -106,26 +107,25 @@ def test_processor(env, geometry_a, energy_use_sailing, energy_use_loading, ener
     processor = type("processor", (core.Processor, core.EnergyUse, core.Locatable, core.Log), {})
 
     data_processor = {"env": env,
-                      "unloading_func": (lambda x: x / 2), 
-                      "loading_func": (lambda x: x / 2),
+                      "unloading_func": model.get_unloading_func(2),
+                      "loading_func": model.get_loading_func(2),
                       "geometry": geometry_a,
                       "energy_use_sailing": energy_use_sailing,
                       "energy_use_loading": energy_use_loading,
                       "energy_use_unloading": energy_use_unloading}
     
     processor = processor(**data_processor)
-    processor.rate = processor.loading_func
 
     # Log fuel use of the processor in step 1
     start = env.now
-    env.process(processor.process(source, dest, 600))
+    env.process(processor.process(source, 400, dest))
     env.run()
 
     np.testing.assert_almost_equal(processor.log["Value"][-1], (env.now - start) * 4)
 
     # Log fuel use of the processor in step 2
     start = env.now
-    env.process(processor.process(dest, source, 300))
+    env.process(processor.process(dest, 300, source))
     env.run()
 
     np.testing.assert_almost_equal(processor.log["Value"][-1], (env.now - start) * 4)
@@ -149,24 +149,23 @@ def test_TransportProcessingResource(env, geometry_a, geometry_b, locatable_a, l
                                     {})
 
     # TSHD variables
-    data_hopper = {"env": env,                                    # The simpy environment 
-                   "name": "Hopper",                              # Name
-                   "geometry": geometry_a,                        # It starts at the "from site"
-                   "unloading_func": (lambda x: x / 1),           # Unloading rate 
-                   "loading_func": (lambda x: x / 2),             # Loading rate
-                   "capacity": 5_000,                             # Capacity of the hopper
-                   "compute_v": lambda x: 1,                      # Variable speed 
-                   "energy_use_loading": energy_use_loading,      # Variable fuel use
-                   "energy_use_sailing": energy_use_sailing,      # Variable fuel use
-                   "energy_use_unloading": energy_use_unloading}  # Variable fuel use
+    data_hopper = {"env": env,                                     # The simpy environment
+                   "name": "Hopper",                               # Name
+                   "geometry": geometry_a,                         # It starts at the "from site"
+                   "unloading_func": model.get_unloading_func (1), # Unloading rate
+                   "loading_func": model.get_loading_func(2),      # Loading rate
+                   "capacity": 5_000,                              # Capacity of the hopper
+                   "compute_v": lambda x: 1,                       # Variable speed
+                   "energy_use_loading": energy_use_loading,       # Variable fuel use
+                   "energy_use_sailing": energy_use_sailing,       # Variable fuel use
+                   "energy_use_unloading": energy_use_unloading}   # Variable fuel use
 
     # The simulation object
     hopper = TransportProcessingResource(**data_hopper)
     
     # Simulation starts with loading
-    hopper.rate = hopper.loading_func
     start = env.now
-    env.process(hopper.process(source, hopper, 500))
+    env.process(hopper.process(hopper, 500, source))
     env.run()
     
     # Duration should be amount / 2
@@ -185,7 +184,7 @@ def test_TransportProcessingResource(env, geometry_a, geometry_b, locatable_a, l
     # Simulation ends with unloading
     hopper.rate = hopper.unloading_func
     start = env.now
-    env.process(hopper.process(hopper, dest, 500))
+    env.process(hopper.process(hopper, 0, dest))
     env.run()
     
     np.testing.assert_almost_equal(hopper.log["Value"][-2], (env.now - start) * 3)
@@ -211,16 +210,16 @@ def test_Processor_ContainerDependentMovable(env, geometry_a, geometry_b, locata
     processor_1 = {"env": env,                                    # The simpy environment
                    "name": "Processor 1",                         # Name
                    "geometry": geometry_a,                        # It is located at location A
-                   "unloading_func": (lambda x: x / 1),           # Unloading rate 
-                   "loading_func": (lambda x: x / 2),             # Loading rate
+                   "unloading_func": model.get_unloading_func(1), # Unloading rate
+                   "loading_func": model.get_loading_func(2),     # Loading rate
                    "energy_use_loading": energy_use_loading,      # Variable fuel use
                    "energy_use_sailing": energy_use_sailing,      # Variable fuel use
                    "energy_use_unloading": energy_use_loading}    # Variable fuel use
     processor_2 = {"env": env,                                    # The simpy environment
                    "name": "Processor 2",                         # Name
                    "geometry": geometry_b,                        # It is located at location B
-                   "unloading_func": (lambda x: x / 1),           # Unloading rate 
-                   "loading_func": (lambda x: x / 2),             # Loading rate
+                   "unloading_func": model.get_unloading_func(1), # Unloading rate
+                   "loading_func": model.get_loading_func(2),     # Loading rate
                    "energy_use_loading": energy_use_unloading,    # Variable fuel use
                    "energy_use_sailing": energy_use_sailing,      # Variable fuel use
                    "energy_use_unloading": energy_use_unloading}  # Variable fuel use
@@ -247,9 +246,8 @@ def test_Processor_ContainerDependentMovable(env, geometry_a, geometry_b, locata
     containervessel = mover(**data_mover)
     
     # Simulation starts with loading
-    processor_1.rate = processor_1.loading_func
     start = env.now
-    env.process(processor_1.process(source, containervessel, 500))
+    env.process(processor_1.process(containervessel, 500, source))
     env.run()
     
     np.testing.assert_almost_equal(processor_1.log["Value"][-1], (env.now - start) * 4)
@@ -264,9 +262,8 @@ def test_Processor_ContainerDependentMovable(env, geometry_a, geometry_b, locata
 
 
     # Simulation ends with unloading
-    processor_2.rate = processor_2.unloading_func
     start = env.now
-    env.process(processor_2.process(containervessel, dest, 500))
+    env.process(processor_2.process(containervessel, 0, dest))
     env.run()
     
     np.testing.assert_almost_equal(processor_2.log["Value"][-1], (env.now - start) * 3)
