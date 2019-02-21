@@ -202,11 +202,11 @@ class Activity(core.Identifiable, core.Log):
         self.log_entry("completed", self.env.now, -1, destination.geometry)
 
 
-def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, engine_order=1.0, verbose=False):
+def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, engine_order=1.0, filling=1.0, verbose=False):
         """Installation process"""
         # estimate amount that should be transported
         amount = min(
-            mover.container.capacity - mover.container.level,
+            mover.container.capacity * filling - mover.container.level,
             origin.container.level,
             origin.container.capacity - origin.total_requested,
             destination.container.capacity - destination.container.level,
@@ -381,6 +381,8 @@ class Simulation(core.Identifiable, core.Log):
         mover_options = activity["moverProperties"]
         if "engineOrder" in mover_options:
             kwargs["engine_order"] = mover_options["engineOrder"]
+        if "load" in mover_options:
+            kwargs["filling"] = mover_options["load"]
 
         return kwargs
 
