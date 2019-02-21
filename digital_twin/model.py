@@ -1,3 +1,4 @@
+from functools import partial
 import digital_twin.core as core
 import datetime
 import shapely
@@ -532,14 +533,6 @@ def get_kwargs_from_properties(environment, name, properties, sites):
     if "level" in properties:
         kwargs["level"] = properties["level"]
 
-    # EnergyUse
-    if "energy_use_sailing" in properties:
-        pass # todo
-    if "energy_use_loading" in properties:
-        pass # todo
-    if "energy_use_unloading" in properties:
-        pass # todo
-
     # HasPlume
     if "sigma_d" in properties:
         kwargs["sigma_d"] = properties["sigma_d"]
@@ -595,9 +588,31 @@ def get_kwargs_from_properties(environment, name, properties, sites):
     if "speed" in properties:
         speed = properties["speed"]
         if isinstance(speed, list):
-            kwargs["compute_v"] = get_compute_function(speed, "level", "speed")
+            compute_function = get_compute_function(speed, "level", "speed")
+            kwargs["compute_v"] = compute_function
+            v_empty = compute_function(0)
+            v_full = compute_function(1)
         else:
             kwargs["v"] = speed
+            v_empty = speed
+            v_full = speed
+
+        # EnergyUse
+        if "energyUseSailing" in properties:
+            energy_use_sailing_dict = properties["energyUseSailing"]
+            max_propulsion = energy_use_sailing_dict["maxPropulsion"]
+            boardnet = energy_use_sailing_dict["boardnet"]
+            kwargs["energy_use_sailing"] = partial(energy_use_sailing,
+                                                   speed_max_full=v_full,
+                                                   speed_max_empty=v_empty,
+                                                   propulsion_power_max=max_propulsion,
+                                                   boardnet_power=boardnet)
+
+    # EnergyUse
+    if "energyUseLoading" in properties:
+        kwargs["energy_use_loading"] = partial(energy_use_processing, constant_hourly_use=properties["energyUseLoading"])
+    if "energyUseUnloading" in properties:
+        kwargs["energy_use_unloading"] = partial(energy_use_processing, constant_hourly_use=properties["energyUseUnloading"])
 
     # HasResource
     if "nr_resources" in properties:
@@ -668,3 +683,19 @@ def get_unloading_func(property):
     else:
         # given property is a flat rate
         return lambda current_level, desired_level: (current_level - desired_level) / property
+
+
+def energy_use_sailing(distance, current_speed, filling_degree, speed_max_full, speed_max_empty,
+                       propulsion_power_max, boardnet_power):
+    duration_seconds = distance / current_speed
+    duration_hours = duration_seconds / 3600
+    speed_factor_full = current_speed / speed_max_full
+    speed_factor_empty = current_speed / speed_max_empty
+    energy_use_sailing_full = duration_hours * (speed_factor_full ** 3 * propulsion_power_max + boardnet_power * 0.6)
+    energy_use_sailing_empty = duration_hours * (speed_factor_empty ** 3 * propulsion_power_max + boardnet_power * 0.6)
+    return filling_degree * (energy_use_sailing_full - energy_use_sailing_empty) + energy_use_sailing_empty
+
+
+def energy_use_processing(duration_seconds, constant_hourly_use):
+    duration_hours = duration_seconds / 3600
+    return duration_hours * constant_hourly_use

@@ -774,14 +774,14 @@ class Movable(SimpyObject, Locatable):
     def energy_use(self, distance, speed):
         if isinstance(self, EnergyUse):
             # message depends on filling degree: if container is empty --> sailing empt
-            if not isinstance(self, HasContainer):
+            if not isinstance(self, HasContainer) or self.container.level == 0:
                 message = "Energy use sailing empty"
-            elif self.container.level == 0:
-                message = "Energy use sailing empty"
+                filling = 0.0
             else:
-                message = "Energy use sailing full"
+                message = "Energy use sailing filled"
+                filling = self.container.level / self.container.capacity
 
-            energy = self.energy_use_sailing(distance, speed)
+            energy = self.energy_use_sailing(distance, speed, filling)
             self.log_entry(message, self.env.now, energy, self.geometry)
 
     @property
