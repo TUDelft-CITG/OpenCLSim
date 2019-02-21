@@ -45,7 +45,7 @@ class TimeCondition:
         self.env = environment
         self.start = start if start is not None else datetime.datetime.fromtimestamp(self.env.now)
         self.stop = stop if stop is not None else datetime.datetime.fromtimestamp(self.env.now)
-    
+
     def satisfied(self):
         current_time = datetime.datetime.fromtimestamp(self.env.now)
         return self.start <= current_time >= self.stop
@@ -212,7 +212,7 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
             origin.container.capacity - origin.total_requested,
             destination.container.capacity - destination.container.level,
             destination.container.capacity - destination.total_requested)
-        
+
         if isinstance(mover, core.HasDepthRestriction): amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
 
         if amount > 0:
@@ -489,6 +489,7 @@ def get_class_from_type_list(class_name, type_list):
 
 def string_to_class(text):
     # quick hack to get the classes, there is probably a better way...
+    # TODO: replace by importlib/getattr(core, text)
     class_dict = {
         "Locatable": core.Locatable,
         "HasContainer": core.HasContainer,

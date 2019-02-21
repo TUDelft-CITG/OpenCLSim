@@ -56,7 +56,11 @@ class Locatable:
     geometry: can be a point as well as a polygon"""
 
     def __init__(self, geometry, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        try:
+            super().__init__(*args, **kwargs)
+        except TypeError:
+            logger.warn('Instantiated Locatable with %s and %s', args, kwargs)
+            raise
         """Initialization"""
         self.geometry = geometry
 
@@ -77,12 +81,12 @@ class HasContainer(SimpyObject):
 
 class EnergyUse(SimpyObject):
     """EnergyUse class
-    
+
     energy_use_sailing:   function that specifies the fuel use during sailing activity   - input should be time
     energy_use_loading:   function that specifies the fuel use during loading activity   - input should be time
     energy_use_unloading: function that specifies the fuel use during unloading activity - input should be time
 
-    At the moment "keeping track of fuel" is not added to the digital twin. 
+    At the moment "keeping track of fuel" is not added to the digital twin.
 
     Example function could be as follows.
     The energy use of the loading event is equal to: duration * power_use.
@@ -129,7 +133,7 @@ class HasSpillCondition(SimpyObject):
 
     limit = limit of kilograms spilled material
     start = start of the condition
-    end   = end of the condition 
+    end   = end of the condition
     """
 
     def __init__(self, conditions, *args, **kwargs):
@@ -149,11 +153,11 @@ class HasSpillCondition(SimpyObject):
             limits.append(simpy.Container(self.env, capacity = conditions.spill_limit))
             starts.append(time.mktime(conditions.start.timetuple()))
             ends.append(time.mktime(conditions.end.timetuple()))
-            
+
         self.SpillConditions = pd.DataFrame.from_dict({"Spill limit": limits,
                                                        "Criterion start": starts,
                                                        "Criterion end": ends})
-    
+
     def check_conditions(self, spill):
         tolerance = math.inf
         waiting = 0
@@ -162,15 +166,15 @@ class HasSpillCondition(SimpyObject):
 
             if self.SpillConditions["Criterion start"][i] <= self.env.now and self.env.now <= self.SpillConditions["Criterion end"][i]:
                 tolerance = self.SpillConditions["Spill limit"][i].capacity - self.SpillConditions["Spill limit"][i].level
-                
+
                 if tolerance < spill:
                     waiting = self.SpillConditions["Criterion end"][i]
 
-                while i + 1 != len(self.SpillConditions.index) and tolerance < spill:                    
+                while i + 1 != len(self.SpillConditions.index) and tolerance < spill:
                     if self.SpillConditions["Criterion end"][i] == self.SpillConditions["Criterion start"][i + 1]:
                         tolerance = self.SpillConditions["Spill limit"][i + 1].capacity - self.SpillConditions["Spill limit"][i + 1].level
                         waiting = self.SpillConditions["Criterion end"][i + 1]
-                    
+
                     i += 1
 
         return waiting
@@ -181,7 +185,7 @@ class SpillCondition():
 
     limit = limit of kilograms spilled material
     start = start of the condition
-    end   = end of the condition 
+    end   = end of the condition
     """
 
     def __init__(self, spill_limit, start, end, *args, **kwargs):
@@ -198,20 +202,20 @@ class HasSpill(SimpyObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-    
+
     def spillDredging(self, processor, mover, density, fines, volume, dredging_duration, overflow_duration = 0):
         """Calculate the spill due to the dredging activity
-        
+
         density = the density of the dredged material
         fines   = the percentage of fines in the dredged material
         volume  = the dredged volume
         dredging_duration = duration of the dredging event
         overflow_duration = duration of the dredging event whilst overflowing
-        
+
         m_t = total mass of dredged fines per cycle
         m_d = total mass of spilled fines during one dredging event
         m_h = total mass of dredged fines that enter the hopper
-        
+
         m_o  = total mass of fine material that leaves the hopper during overflow
         m_op = total mass of fines that are released during overflow that end in dredging plume
         m_r  = total mass of fines that remain within the hopper"""
@@ -219,7 +223,7 @@ class HasSpill(SimpyObject):
         m_t = density * fines * volume
         m_d = processor.sigma_d * m_t
         m_h = m_t - m_d
-        
+
         m_o = (overflow_duration / dredging_duration) * (1 - mover.f_sett) * (1 - mover.f_trap) * m_h
         m_op = mover.sigma_o * m_o
         mover.m_r = m_h - m_o
@@ -267,7 +271,7 @@ class HasSoil:
         """Initialization"""
 
         self.soil = {}
-    
+
     def add_layer(self, soillayer):
         """Add a layer based on a SoilLayer object."""
         for key in self.soil:
@@ -287,29 +291,29 @@ class HasSoil:
 
         for key in sorted(soil):
             self.soil[key] = soil[key]
-    
+
     def add_layers(self, soillayers):
         """Add a list layers based on a SoilLayer object."""
         for layer in soillayers:
             self.add_layer(layer)
-    
+
     def total_volume(self):
         """Determine the total volume of soil."""
         total_volume = 0
 
         for layer in self.soil:
             total_volume += self.soil[layer]["Volume"]
-        
+
         return total_volume
-    
+
     def weighted_average(self, layers, volumes):
         """Create a new SoilLayer object based on the weighted average parameters of extracted layers.
-        
+
         len(layers) should be len(volumes)"""
         densities = []
         fines = []
         name = "Mixture of: "
-    
+
         for i, layer in enumerate(layers):
             if 0 < volumes[i]:
                 densities.append(self.soil[layer]["Density"])
@@ -319,9 +323,9 @@ class HasSoil:
                 densities.append(0)
                 fines.append(0)
 
-        return SoilLayer(0, sum(volumes), name.rstrip(", "), np.average(np.asarray(densities), weights = np.asarray(volumes)), 
+        return SoilLayer(0, sum(volumes), name.rstrip(", "), np.average(np.asarray(densities), weights = np.asarray(volumes)),
                                                              np.average(np.asarray(fines), weights = np.asarray(volumes)))
-    
+
     def get_soil(self, volume):
         """Remove soil from self."""
 
@@ -342,16 +346,16 @@ class HasSoil:
             removed_volume = 0
             layers = []
             volumes = []
-            
+
             for layer in sorted(self.soil):
                 if (volume - removed_volume) <= self.soil[layer]["Volume"]:
                     layers.append(layer)
                     volumes.append(volume - removed_volume)
-                    
+
                     self.soil[layer]["Volume"] -= (volume - removed_volume)
-                    
+
                     break
-                
+
                 else:
                     removed_volume += self.soil[layer]["Volume"]
                     layers.append(layer)
@@ -360,10 +364,10 @@ class HasSoil:
                     self.soil[layer]["Volume"] = 0
 
             return self.weighted_average(layers, volumes)
-    
+
     def put_soil(self, soillayer):
         """Add soil to self.
-        
+
         Add a layer based on a SoilLayer object."""
         # If already soil available
         if self.soil:
@@ -374,14 +378,14 @@ class HasSoil:
             # Can be site --> add layer or add volume
             else:
                 top_layer = list(sorted(self.soil.keys()))[0]
-            
+
                 # If toplayer material is similar to added material --> add volume
                 if (self.soil[top_layer]["Material"] == soillayer.material and \
                     self.soil[top_layer]["Density"] == soillayer.density and \
                     self.soil[top_layer]["Fines"] == soillayer.fines):
 
                     self.soil[top_layer]["Volume"] += soillayer.volume
-                
+
                 # If not --> add layer
                 else:
                     layers = copy.deepcopy(self.soil)
@@ -390,16 +394,16 @@ class HasSoil:
 
                     for key in sorted(layers):
                         layers[key]["Layer"] += 1
-                        self.add_layer(SoilLayer(layers[key]["Layer"], 
-                                                 layers[key]["Volume"], 
-                                                 layers[key]["Material"], 
-                                                 layers[key]["Density"], 
+                        self.add_layer(SoilLayer(layers[key]["Layer"],
+                                                 layers[key]["Volume"],
+                                                 layers[key]["Material"],
+                                                 layers[key]["Density"],
                                                  layers[key]["Fines"]))
 
         # If no soil yet available, add layer
         else:
             self.add_layer(soillayer)
-    
+
     def get_properties(self, amount):
         """Get the soil properties for a certain amount"""
         volumes = []
@@ -446,7 +450,7 @@ class HasWeather:
                       .fillna(0)
                       .resample(self.timestep)
                       .interpolate("linear"))
-            
+
             data[key] = series.values
 
         data["Index"] = series.index
@@ -476,7 +480,7 @@ class WorkabilityCriterion:
 
     Used to add limits to vessels (and therefore acitivities)
     condition: column name of the metocean data (Hs, Tp, etc.)
-    maximum: maximum value 
+    maximum: maximum value
     minimum: minimum value
     window_length: minimal length of the window (minutes)"""
 
@@ -504,7 +508,7 @@ class HasDepthRestriction:
         self.filling = filling
 
         self.depth_data = {}
-    
+
     def calc_depth_restrictions(self, location, processor):
         # Minimal waterdepth should be draught + ukc
         # Waterdepth is tide - depth site
@@ -583,9 +587,9 @@ class HasDepthRestriction:
         for i, wave in enumerate(self.waves):
             if wave_height <= wave:
                 required_depth = self.ukc[i] + draught
-        
+
         return required_depth
-    
+
 
     def check_optimal_filling(self, loader, unloader, origin, destination):
         # Calculate depth restrictions
@@ -594,11 +598,11 @@ class HasDepthRestriction:
                 self.calc_depth_restrictions(origin, loader)
             if isinstance(destination, HasWeather):
                 self.calc_depth_restrictions(destination, unloader)
-        
+
         # If a filling degee has been specified
         if self.filling:
             return self.filling * self.container.capacity
-        
+
         # If not, try to optimize the load with regard to the tidal window
         else:
             loads = []
@@ -610,7 +614,7 @@ class HasDepthRestriction:
 
             for filling in fill_degrees:
                 ranges = self.depth_data[destination.name][filling]["Ranges"]
-                
+
                 if len(ranges) != 0:
                     # Determine length of cycle
                     loading = loader.loading_func(filling * self.container.capacity)
@@ -635,7 +639,7 @@ class HasDepthRestriction:
                     else:
                         print("Exceeding time")
                         waiting = 0
-                    
+
                     # In case waiting is always required
                     loads.append(filling * self.container.capacity)
                     waits.append(waiting)
@@ -648,7 +652,7 @@ class HasDepthRestriction:
                 return max(amounts)
             elif loads:
                 cargo = 0
-                
+
                 for i, _ in enumerate(loads):
                     if waits[i] == min(waits):
                         cargo = loads[i]
@@ -701,13 +705,13 @@ class Movable(SimpyObject, Locatable):
 
         # Check out the time based on duration of sailing event
         yield self.env.timeout(distance / speed)
-        
+
         # Set mover geometry to destination geometry
         self.geometry = shapely.geometry.asShape(destination.geometry)
 
         # Compute the energy use
         self.energy_use(distance, speed)
-        
+
         # Debug logs
         logger.debug('  distance: ' + '%4.2f' % distance + ' m')
         logger.debug('  sailing:  ' + '%4.2f' % speed + ' m/s')
@@ -725,7 +729,7 @@ class Movable(SimpyObject, Locatable):
         other_location = shapely.geometry.asShape(locatable.geometry)
         _, _, distance = self.wgs84.inv(current_location.x, current_location.y,
                                         other_location.x, other_location.y)
-        
+
         return distance < tolerance
 
     def get_distance(self, origin, destination):
@@ -740,7 +744,7 @@ class Movable(SimpyObject, Locatable):
                 if origin.x == geom[node].x and origin.y == geom[node].y:
                     origin = node
                     break
-            
+
             route = nx.dijkstra_path(self.env.FG, origin, destination.name)
             for node in enumerate(route):
                 from_node = route[node[0]]
@@ -748,9 +752,9 @@ class Movable(SimpyObject, Locatable):
 
                 orig = shapely.geometry.asShape(geom[from_node])
                 dest = shapely.geometry.asShape(geom[to_node])
-                
+
                 distance += self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
-                
+
                 self.log_entry("Sailing", self.env.now + distance / self.current_speed, 0, dest)
 
                 if node[0] + 2 == len(route):
@@ -762,7 +766,7 @@ class Movable(SimpyObject, Locatable):
             _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
         return distance
-    
+
     def energy_use(self, distance, speed):
         if isinstance(self, EnergyUse):
             # message depends on filling degree: if container is empty --> sailing empt
@@ -852,16 +856,16 @@ class Log(SimpyObject):
 class Processor(SimpyObject):
     """Processor class
 
-    loading_func:   lambda function to determine the duration of loading event based on input parameter amount 
-    unloading_func: lambda function to determine the duration of unloading event based on input parameter amount 
-    
+    loading_func:   lambda function to determine the duration of loading event based on input parameter amount
+    unloading_func: lambda function to determine the duration of unloading event based on input parameter amount
+
     Example function could be as follows.
     The duration of the loading event is equal to: amount / rate.
 
     def loading_func(loading_rate):
         return lambda x: x / loading_rate
 
-    
+
     A more complex example function could be as follows.
     The duration of the loading event is equal to: manoeuvring + amount / rate + cleaning.
 
