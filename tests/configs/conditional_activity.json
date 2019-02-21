@@ -6,7 +6,7 @@
             "id": "afsluitdijk",
             "name": "Afsluitdijk",
             "type": [
-                "Locatable", "HasResource", "HasStorage"
+                "Locatable", "HasResource", "HasContainer"
             ],
             "properties": {
                 "geometry": {
@@ -16,8 +16,8 @@
                         4
                     ]
                 },
-                "capacity": 10,
-                "level": 10
+                "capacity": 10000,
+                "level": 10000
                 
             }
         },
@@ -25,7 +25,7 @@
             "id": "maasvlakte",
             "name": "Maasvlakte",
             "type": [
-                "Locatable", "HasResource", "HasStorage"
+                "Locatable", "HasResource", "HasContainer"
             ],
             "properties": {
                 "geometry": {
@@ -35,7 +35,7 @@
                         3
                     ]
                 },
-                "capacity": 50,
+                "capacity": 50000,
                 "level": 0
                 
             }
@@ -76,20 +76,20 @@
                     }
                 ],
                 "location": "home",
-                "capacity": 3,
+                "capacity": 3000,
                 "loadingRate": [
                     {
                         "level": 0,
                         "rate": 2
                     },
                     {
-                        "level": 3,
+                        "level": 3000,
                         "rate": 0.2
                     }
                 ],
                 "unloadingRate": [
                     {
-                        "level": 3,
+                        "level": 3000,
                         "rate": 2
                     },
                     {
@@ -102,23 +102,15 @@
     ],
     "activities": [
         {
+            "id": "conditional_dredging",
             "type": "conditional",
-            "condtion": {
+            "condition": {
                 "operator": "is_filled",
                 "operand": "afsluitdijk"
             },
             "activities": [
                 {
-                    "id": "dredge_run_1",
-                    "type": "single_run",
-                    "origin": "afsluitdijk",
-                    "destination": "maasvlakte",
-                    "loader": "hopper",
-                    "mover": "hopper",
-                    "unloader": "hopper"
-                },
-                {
-                    "id": "dredge_run_2",
+                    "id": "dredge_run",
                     "type": "single_run",
                     "origin": "afsluitdijk",
                     "destination": "maasvlakte",
@@ -126,7 +118,6 @@
                     "mover": "hopper",
                     "unloader": "hopper"
                 }
-                
             ]
         }
     ]
