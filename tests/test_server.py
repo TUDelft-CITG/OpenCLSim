@@ -90,4 +90,4 @@ def test_energy_use():
         if "Energy use" in log_entry["properties"]["message"]:
             energy_use += log_entry["properties"]["value"]
 
-    np.testing.assert_almost_equal(energy_use, 471440.2025916437)
+    np.testing.assert_almost_equal(energy_use, 1791724.970386777)
