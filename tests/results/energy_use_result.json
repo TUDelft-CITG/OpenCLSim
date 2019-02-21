@@ -1,0 +1,1238 @@
+{
+  "sites": [
+    {
+      "type": "FeatureCollection",
+      "id": "afsluitdijk",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 39189,
+            "value": 10000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 43027,
+            "value": 7000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 112206,
+            "value": 7000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 116044,
+            "value": 4000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 185223,
+            "value": 4000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 189061,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 258241,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 258835,
+            "value": 0
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "maasvlakte",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 80724,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 84562,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 153741,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 157579,
+            "value": 6000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 226758,
+            "value": 6000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 230596,
+            "value": 9000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 289177,
+            "value": 9000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 291487,
+            "value": 10000
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "home",
+      "features": []
+    }
+  ],
+  "equipment": [
+    {
+      "type": "FeatureCollection",
+      "id": "hopper",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 0,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "Energy use sailing empty",
+            "time": 39189,
+            "value": 59936.42266522563
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 39189,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 39189,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "Energy use loading",
+            "time": 43027,
+            "value": 9856.343411955098
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 43027,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 43027,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "Energy use sailing filled",
+            "time": 80724,
+            "value": 57653.67295577117
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 80724,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 80724,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "Energy use unloading",
+            "time": 84562,
+            "value": 7750.970468129518
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 84562,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 84562,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "Energy use sailing empty",
+            "time": 112206,
+            "value": 42279.36016756553
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 112206,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 112206,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "Energy use loading",
+            "time": 116044,
+            "value": 9856.343411955098
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 116044,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 116044,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "Energy use sailing filled",
+            "time": 153741,
+            "value": 57653.67295577117
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 153741,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 153741,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "Energy use unloading",
+            "time": 157579,
+            "value": 7750.970468129518
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 157579,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 157579,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "Energy use sailing empty",
+            "time": 185223,
+            "value": 42279.36016756553
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 185223,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 185223,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "Energy use loading",
+            "time": 189061,
+            "value": 9856.343411955098
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 189061,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 189061,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "Energy use sailing filled",
+            "time": 226758,
+            "value": 57653.67295577117
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 226758,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 226758,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "Energy use unloading",
+            "time": 230596,
+            "value": 7750.970468129518
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 230596,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 230596,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "Energy use sailing empty",
+            "time": 258241,
+            "value": 42279.36016756553
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 258241,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 258241,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "Energy use loading",
+            "time": 258835,
+            "value": 1526.7669128044072
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 258835,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              4
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 258835,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "Energy use sailing filled",
+            "time": 289177,
+            "value": 52689.42279052441
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 289177,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 289177,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "Energy use unloading",
+            "time": 291487,
+            "value": 4666.5492128253345
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 291487,
+            "value": 0
+          }
+        }
+      ]
+    }
+  ],
+  "activities": [
+    {
+      "type": "FeatureCollection",
+      "id": "conditional_dredging",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "started single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              52,
+              3
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 0,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 84562,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "completed single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
+            "time": 84562,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "started single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
+            "time": 84562,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 84562,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 157579,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "completed single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
+            "time": 157579,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "started single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
+            "time": 157579,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 157579,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 230596,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "completed single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
+            "time": 230596,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "started single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
+            "time": 230596,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 230596,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 291487,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              53,
+              3
+            ]
+          },
+          "properties": {
+            "message": "completed single_run activity loading Boaty McBoatstone at Afsluitdijk with Boaty McBoatstone and transporting to Maasvlakte unloading with Boaty McBoatstone",
+            "time": 291487,
+            "value": -1
+          }
+        }
+      ]
+    }
+  ],
+  "completionTime": 291487.6511255606
+}
