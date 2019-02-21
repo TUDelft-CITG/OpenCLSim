@@ -55,3 +55,13 @@ def test_conditional_activity():
         config_file='tests/configs/conditional_activity.json',
         expected_result_file='tests/results/conditional_activity_result.json'
     )
+
+
+def test_mover_options_engine_order():
+    """Run a basic simulation containing a single move activity and check the output.
+    We give an engine order of 0.8 instead of the default 1.0 used for test_move_activity.
+    The completionTime of this test's results should be 25% slower than that of test_move_activity."""
+    run_and_compare_output(
+        config_file='tests/configs/mover_options_engine_order.json',
+        expected_result_file='tests/results/mover_options_engine_order_result.json'
+   )

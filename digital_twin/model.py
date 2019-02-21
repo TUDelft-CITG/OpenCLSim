@@ -202,7 +202,7 @@ class Activity(core.Identifiable, core.Log):
         self.log_entry("completed", self.env.now, -1, destination.geometry)
 
 
-def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, verbose=False):
+def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, engine_order=1.0, verbose=False):
         """Installation process"""
         # estimate amount that should be transported
         amount = min(
@@ -228,13 +228,13 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
 
                 # move to the origin if necessary
                 if not mover.is_at(origin):
-                    yield from move_mover(environment, mover, origin, verbose=verbose)
+                    yield from move_mover(mover, origin, engine_order=engine_order, verbose=verbose)
 
                 # load the mover
                 yield from shift_amount(environment, loader, mover, mover.container.level + amount, origin, ship_resource_request=my_mover_turn, verbose=verbose)
 
                 # move the mover to the destination
-                yield from move_mover(environment, mover, destination, verbose=verbose)
+                yield from move_mover(mover, destination, engine_order=engine_order, verbose=verbose)
 
                 # unload the mover
                 yield from shift_amount(environment, unloader, mover, mover.container.level - amount, destination, ship_resource_request=my_mover_turn, verbose=verbose)
@@ -271,10 +271,10 @@ def shift_amount(environment, processor, ship, desired_level, site, ship_resourc
         print('  site:        ' + site.name + ' contains: ' + str(site.container.level))
 
 
-def move_mover(environment, mover, origin, verbose=False):
+def move_mover(mover, origin, engine_order=1.0, verbose=False):
         old_location = mover.geometry
 
-        yield from mover.move(origin)
+        yield from mover.move(origin, engine_order=engine_order)
 
         if verbose == True:
             print('Moved:')
@@ -354,15 +354,17 @@ class Simulation(core.Identifiable, core.Log):
 
         if type == 'move':
             mover = self.equipment[activity['mover']]
+            kwargs = self.get_mover_properties_kwargs(activity)
             destination = self.sites[activity['destination']]
-            return self.move_process_control(activity_log, mover, destination)
+            return self.move_process_control(activity_log, mover, destination, **kwargs)
         if type == 'single_run':
             mover = self.equipment[activity['mover']]
+            kwargs = self.get_mover_properties_kwargs(activity)
             origin = self.sites[activity['origin']]
             destination = self.sites[activity['destination']]
             loader = self.equipment[activity['loader']]
             unloader = self.equipment[activity['unloader']]
-            return self.single_run_process_control(activity_log, origin, destination, loader, mover, unloader)
+            return self.single_run_process_control(activity_log, origin, destination, loader, mover, unloader, **kwargs)
         if type == 'conditional':
             condition = activity['condition']
             activities = activity['activities']
@@ -370,24 +372,36 @@ class Simulation(core.Identifiable, core.Log):
         else:
             raise RuntimeError('Unrecognized activity type: ' + type)
 
-    def move_process_control(self, activity_log, mover, destination):
+    @staticmethod
+    def get_mover_properties_kwargs(activity):
+        if "moverProperties" not in activity:
+            return {}
+
+        kwargs = {}
+        mover_options = activity["moverProperties"]
+        if "engineOrder" in mover_options:
+            kwargs["engine_order"] = mover_options["engineOrder"]
+
+        return kwargs
+
+    def move_process_control(self, activity_log, mover, destination, **kwargs):
         activity_log.log_entry('started move activity of {} to {}'.format(mover.name, destination.name),
                                self.env.now, -1, mover.geometry)
 
         with mover.resource.request() as my_mover_turn:
             yield my_mover_turn
-            yield from mover.move(destination)
+            yield from mover.move(destination, **kwargs)
 
         activity_log.log_entry('completed move activity of {} to {}'.format(mover.name, destination.name),
                                self.env.now, -1, mover.geometry)
 
-    def single_run_process_control(self, activity_log, origin, destination, loader, mover, unloader):
+    def single_run_process_control(self, activity_log, origin, destination, loader, mover, unloader, **kwargs):
         activity_description = 'single_run activity loading {} at {} with {} ' \
                                'and transporting to {} unloading with {}'\
                                .format(mover.name, origin.name, loader.name, destination.name, unloader.name)
         activity_log.log_entry('started ' + activity_description, self.env.now, -1, mover.geometry)
 
-        yield from perform_single_run(self.env, activity_log, origin, destination, loader, mover, unloader)
+        yield from perform_single_run(self.env, activity_log, origin, destination, loader, mover, unloader, **kwargs)
 
         activity_log.log_entry('completed ' + activity_description, self.env.now, -1, mover.geometry)
 

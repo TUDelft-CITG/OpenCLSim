@@ -691,7 +691,7 @@ class Movable(SimpyObject, Locatable):
         self.v = v
         self.wgs84 = pyproj.Geod(ellps='WGS84')
 
-    def move(self, destination):
+    def move(self, destination, engine_order=1.0):
         if isinstance(self, Log):
             if isinstance(self, HasContainer):
                 status = 'filled' if self.container.level > 0 else 'empty'
@@ -705,7 +705,7 @@ class Movable(SimpyObject, Locatable):
         distance = self.get_distance(self.geometry, destination)
 
         # Determine speed based on filling degree
-        speed = self.current_speed
+        speed = self.current_speed * engine_order
 
         # Check out the time based on duration of sailing event
         yield self.env.timeout(distance / speed)
