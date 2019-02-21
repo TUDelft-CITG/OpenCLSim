@@ -7,7 +7,6 @@ import click
 import digital_twin.server
 
 
-
 @click.group()
 def cli(args=None):
     """Digital twin simulation."""
@@ -15,6 +14,7 @@ def cli(args=None):
                "digital_twin.cli.main")
     click.echo("See click documentation at http://click.pocoo.org/")
     return 0
+
 
 @cli.command()
 @click.option('--host', default='0.0.0.0')
@@ -26,4 +26,4 @@ def serve(host, port, debug, args=None):
     app.run(host=host, debug=debug, port=port)
 
 if __name__ == "__main__":
-    sys.exit(main())  # pragma: no cover
+    sys.exit(cli())  # pragma: no cover
