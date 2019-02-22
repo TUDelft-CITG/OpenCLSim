@@ -412,23 +412,49 @@ class Simulation(core.Identifiable, core.Log):
         activity_log.log_entry('completed ' + activity_description, self.env.now, -1, mover.geometry)
 
     def conditional_process_control(self, activity_log, condition, activities):
-        condition_checker = self.get_condition_checker(condition)
-
-        while condition_checker():
-            for activity in activities:
-                yield from self.get_process_control(activity_log, activity)
-
-    def get_condition_checker(self, condition):
         operator = condition['operator']
         operand_key = condition['operand']
         operand = self.sites[operand_key] if operand_key in self.sites else self.equipment[operand_key]
 
+        condition_checker = self.get_condition_checker(operator, operand)
+
+        no_progress_counter = 0
+        while condition_checker():
+            old_level = operand.container.level
+
+            for activity in activities:
+                yield from self.get_process_control(activity_log, activity)
+
+            new_level = operand.container.level
+            no_progress_counter = self.update_no_progress_counter(no_progress_counter, operator, old_level, new_level)
+            if no_progress_counter >= 10:
+                activity_log.log_entry('No progress detected for the last 10 runs, aborting activity',
+                                       self.env.now, -1, shapely.geometry.Point(0,0))
+                break
+
+    @staticmethod
+    def get_condition_checker(operator, operand):
         if operator == 'is_full':
             return lambda: operand.container.level == operand.container.capacity
         elif operator == 'is_filled':
             return lambda: operand.container.level > 0
         elif operator == 'is_empty':
             return lambda: operand.container.level == 0
+        else:
+            raise RuntimeError('Unrecognized operator type: ' + operator)
+
+    @staticmethod
+    def update_no_progress_counter(counter, operator, old_level, new_level):
+        if operator == 'is_full' or operator == 'is_empty':
+            if old_level < new_level:
+                return 0
+            else:
+                return counter + 1
+        elif operator == 'is_filled':
+            if new_level < old_level:
+                return 0
+            else:
+                return counter + 1
         else:
             raise RuntimeError('Unrecognized operator type: ' + operator)
 
