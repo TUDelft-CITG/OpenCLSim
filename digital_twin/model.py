@@ -176,14 +176,14 @@ class Activity(core.Identifiable, core.Log):
         while not start_condition.satisfied():
             if not shown:
                 print('\nTime = ' + '{:%Y-%m-%d %H:%M}'.format(datetime.datetime.fromtimestamp(self.env.now)) + '\n' + self.name +
-                      ' to ' + destination.name + ' suspended')
+                      ' to ' + destination.name + ' suspended.')
                 self.log_entry("suspended", self.env.now, -1, origin.geometry)
                 shown = True
             yield self.env.timeout(3600)  # step 3600 time units ahead
 
         # todo add nice printing to the conditions, then print them here
         print('\nTime = ' + '{:%Y-%m-%d %H:%M}'.format(datetime.datetime.fromtimestamp(self.env.now)) + '\nStart condition is satisfied, '
-              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' started')
+              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' started.')
         self.log_entry("started", self.env.now, -1, origin.geometry)
 
         # keep moving substances until the stop condition is satisfied
@@ -194,7 +194,7 @@ class Activity(core.Identifiable, core.Log):
                 yield self.env.timeout(3600)
 
         print('\nTime = ' + '{:%Y-%m-%d %H:%M}'.format(datetime.datetime.fromtimestamp(self.env.now)) + '\nStop condition is satisfied, '
-              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' complete')
+              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' completed.')
         self.log_entry("completed", self.env.now, -1, destination.geometry)
 
     def installation_process(self, origin, destination,
