@@ -214,7 +214,8 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
             destination.container.capacity - destination.container.level,
             destination.container.capacity - destination.total_requested)
 
-        if isinstance(mover, core.HasDepthRestriction): amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
+        if isinstance(mover, core.HasDepthRestriction) and isinstance(destination, core.HasWeather): \
+            amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
         
         if amount > 0:
             # request access to the transport_resource
