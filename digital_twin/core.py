@@ -455,7 +455,7 @@ class HasWeather:
         self.metocean_data.drop(["Index"], axis = 1, inplace = True)
 
         if bed:
-            self.metocean_data["Water depth"] = self.metocean_data["Tide"] - bed
+            self.metocean_data["Water depth"] = self.metocean_data["Tide [m]"] - bed
 
 
 class HasWorkabilityCriteria:
@@ -464,11 +464,64 @@ class HasWorkabilityCriteria:
     Used to add workability criteria
     """
 
-    def __init__(self, v=1, *args, **kwargs):
+    def __init__(self, criteria, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.v = v
-        self.wgs84 = pyproj.Geod(ellps='WGS84')
+        self.criteria = criteria
+        self.work_restrictions = {}
+    
+
+    def calc_work_restrictions(self, location):
+        self.work_restrictions[location.name] = {}
+        
+        # Loop through series to find windows
+        for criterion in self.criteria:    
+            index = location.metocean_data[criterion.condition].index
+            values = location.metocean_data[criterion.condition].values
+            in_range = False
+            ranges = []
+            
+            for i, value in enumerate(values):
+                if value <= criterion.maximum:
+                    if i == 0:
+                        begin = index[i]
+                    elif not in_range:
+                        begin = index[i]
+                    
+                    in_range = True
+                elif in_range:
+                    in_range = False
+                    end = index[i]
+                    
+                    if (end - begin) >= criterion.window_length:
+                        ranges.append((begin.to_datetime64(), (end - criterion.window_length).to_datetime64()))
+            
+            self.work_restrictions[location.name][criterion.condition] = np.array(ranges)
+    
+    def check_weather_restriction(self, location, amount):
+        waiting = []
+
+        for criterion in sorted(self.work_restrictions[location.name].keys()):
+            ranges = self.work_restrictions[location.name][criterion]
+            
+            t = datetime.datetime.fromtimestamp(self.env.now)
+            t = pd.Timestamp(t).to_datetime64()
+            i = ranges[:, 0].searchsorted(t)
+
+            if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
+                waiting.append(pd.Timedelta(0).total_seconds())
+            elif i + 1 < len(ranges):
+                waiting.append(pd.Timedelta(ranges[i, 0] - t).total_seconds())
+            else:
+                print("\nSimulation cannot continue.")
+                print("Simulation time exceeded the available metocean data.")
+
+                self.env.exit()
+
+        if waiting:
+            self.log_entry('waiting for weather start', self.env.now, waiting, self.geometry)
+            yield self.env.timeout(np.max(waiting))
+            self.log_entry('waiting for weather stop', self.env.now, waiting, self.geometry)
 
 
 class WorkabilityCriterion:
@@ -477,13 +530,14 @@ class WorkabilityCriterion:
     Used to add limits to vessels (and therefore acitivities)
     condition: column name of the metocean data (Hs, Tp, etc.)
     maximum: maximum value 
-    minimum: minimum value
     window_length: minimal length of the window (minutes)"""
 
-    def __init__(self, prop, max, min, value, *args, **kwargs):
+    def __init__(self, condition, maximum = math.inf, window_length = datetime.timedelta(minutes = 60), *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.wgs84 = pyproj.Geod(ellps='WGS84')
+        self.condition = condition
+        self.maximum = maximum
+        self.window_length = window_length
 
 
 class HasDepthRestriction:
@@ -493,32 +547,77 @@ class HasDepthRestriction:
     draught: should be a lambda function with input variable container.volume
     waves: list with wave_heights
     ukc: list with ukc, corresponding to wave_heights
+
+    filling: filling degree [%]
+    min_filling: minimal filling degree [%]
+    max_filling: max filling degree [%]
     """
 
-    def __init__(self, compute_draught, waves, ukc, filling=1, *args, **kwargs):
+    def __init__(self, compute_draught, waves, ukc, 
+                 filling = None, min_filling = None, max_filling = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
+
+        # Information required to determine whether vessel can access an area
         self.compute_draught = compute_draught
         self.waves = waves
         self.ukc = ukc
-        self.filling = filling
+
+        # Information require to self-select filling degree
+        if min_filling is not None and max_filling is not None:
+            assert min_filling <= max_filling
+        
+        self.filling = int(filling) if filling is not None else None
+        self.min_filling = int(min_filling) if min_filling is not None else int(0)
+        self.max_filling = int(max_filling) if max_filling is not None else int(100)
 
         self.depth_data = {}
     
     def calc_depth_restrictions(self, location, processor):
         # Minimal waterdepth should be draught + ukc
         # Waterdepth is tide - depth site
-        # For empty to full [20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%]
+        # For empty to full [20%, 25%, 30%, ... 90%, 95%, 100%]
 
         self.depth_data[location.name] = {}
 
-        for filling_degree in [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+        if not self.filling:
+            filling_degrees = np.linspace(self.min_filling, self.max_filling, (self.max_filling - self.min_filling) + 1, dtype = int)
+        else:
+            filling_degrees = [self.filling]
+
+        for i in filling_degrees:
+            filling_degree = i / 100
+
             # Determine characteristics based on filling
             draught = self.compute_draught(filling_degree)
             duration = datetime.timedelta(seconds = processor.unloading_func(self.container.level, filling_degree * self.container.capacity))
-
-            ranges = self.viable_time_windows(draught, duration, location.metocean_data)
-
+            
+            # Make dataframe based on characteristics
+            df = location.metocean_data.copy()
+            df["Required depth"] = df["Hm0 [m]"].apply(lambda s : self.calc_required_depth(draught, s))
+            series = pd.Series(df["Required depth"] <= df["Water depth"])
+            
+            # Loop through series to find windows
+            index = series.index
+            values = series.values
+            in_range = False
+            ranges = []
+            
+            for i, value in enumerate(values):
+                if value == True:
+                    if i == 0:
+                        begin = index[i]
+                    elif not in_range:
+                        begin = index[i]
+                    
+                    in_range = True
+                elif in_range:
+                    in_range = False
+                    end = index[i]
+                    
+                    if (end - begin) >= duration:
+                        ranges.append((begin.to_datetime64(), (end - duration).to_datetime64()))
+            
             self.depth_data[location.name][filling_degree] = \
                                             {"Volume": filling_degree * self.container.capacity,
                                             "Draught": draught,
@@ -527,7 +626,7 @@ class HasDepthRestriction:
     def viable_time_windows(self, draught, duration, metocean_data):
         # Make dataframe based on characteristics
         df = metocean_data.copy()
-        df["Required depth"] = df["Hs"].apply(lambda s: self.calc_required_depth(draught, s))
+        df["Required depth"] = df["Hm0 [m]"].apply(lambda s: self.calc_required_depth(draught, s))
         series = pd.Series(df["Required depth"] <= df["Water depth"])
         # Loop through series to find windows
         index = series.index
@@ -577,6 +676,7 @@ class HasDepthRestriction:
             yield self.env.timeout(waiting)
             self.log_entry('waiting for tide stop', self.env.now, waiting, self.geometry)
 
+    
     def calc_required_depth(self, draught, wave_height):
         required_depth = np.nan
 
@@ -596,16 +696,15 @@ class HasDepthRestriction:
                 self.calc_depth_restrictions(destination, unloader)
         
         # If a filling degee has been specified
-        if self.filling:
-            return self.filling * self.container.capacity
-        
+        if self.filling is not None:
+            return self.filling * self.container.capacity / 100
+
         # If not, try to optimize the load with regard to the tidal window
         else:
             loads = []
             waits = []
             amounts = []
 
-            time = datetime.datetime.fromtimestamp(self.env.now)
             fill_degrees = self.depth_data[destination.name].keys()
 
             for filling in fill_degrees:
@@ -630,11 +729,13 @@ class HasDepthRestriction:
 
                     if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
                         waiting = pd.Timedelta(0).total_seconds()
-                    elif i + 1 != len(ranges):
+                    elif i != len(ranges):
                         waiting = pd.Timedelta(ranges[i, 0] - t).total_seconds()
                     else:
-                        print("Exceeding time")
-                        waiting = 0
+                        print("\nSimulation cannot continue.")
+                        print("Simulation time exceeded the available metocean data.")
+
+                        self.env.exit()
                     
                     # In case waiting is always required
                     loads.append(filling * self.container.capacity)
@@ -937,7 +1038,7 @@ class Processor(SimpyObject):
             time = self.env.now
 
             # Check weather
-            # yield from self.checkWeather()
+            yield from self.checkWeather(origin, destination, amount)
 
             # Check tide
             yield from self.checkTide(ship=ship, site=site, desired_level=desired_level, duration=duration)
@@ -1095,6 +1196,13 @@ class Processor(SimpyObject):
             max_level = max(ship.container.level, desired_level)
             fill_degree = max_level / ship.container.capacity
             yield from ship.check_depth_restriction(site, fill_degree, duration)
+    
+
+    def checkWeather(self, origin, destination, amount):
+        if isinstance(origin, HasWorkabilityCriteria) and isinstance(origin, Movable) and isinstance(destination, HasWeather):
+            yield from origin.check_weather_restriction(destination, amount)
+        elif isinstance(destination, HasWorkabilityCriteria) and isinstance(destination, Movable) and isinstance(origin, HasWeather):
+            yield from destination.check_weather_restriction(origin, amount)
 
     def addSpill(self, origin, destination, amount, duration):
         """

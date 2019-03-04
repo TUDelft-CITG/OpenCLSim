@@ -180,15 +180,15 @@ class Activity(core.Identifiable, core.Log):
         shown = False
         while not start_condition.satisfied():
             if not shown:
-                print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + self.name +
-                      ' to ' + destination.name + ' suspended')
+                print('\nTime = ' + '{:%Y-%m-%d %H:%M}'.format(datetime.datetime.fromtimestamp(self.env.now)) + '\n' + self.name +
+                      ' to ' + destination.name + ' suspended.')
                 self.log_entry("suspended", self.env.now, -1, origin.geometry)
                 shown = True
             yield self.env.timeout(3600)  # step 3600 time units ahead
 
         # todo add nice printing to the conditions, then print them here
-        print('T=' + '{:06.2f}'.format(self.env.now) + ' Start condition is satisfied, '
-              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' started')
+        print('\nTime = ' + '{:%Y-%m-%d %H:%M}'.format(datetime.datetime.fromtimestamp(self.env.now)) + '\nStart condition is satisfied, '
+              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' started.')
         self.log_entry("started", self.env.now, -1, origin.geometry)
 
         # keep moving substances until the stop condition is satisfied
@@ -198,13 +198,14 @@ class Activity(core.Identifiable, core.Log):
             else:
                 yield self.env.timeout(3600)
 
-        print('T=' + '{:06.2f}'.format(self.env.now) + ' Stop condition is satisfied, '
-              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' complete')
+        print('\nTime = ' + '{:%Y-%m-%d %H:%M}'.format(datetime.datetime.fromtimestamp(self.env.now)) + '\nStop condition is satisfied, '
+              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' completed.')
         self.log_entry("completed", self.env.now, -1, destination.geometry)
 
 
 def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, engine_order=1.0, filling=1.0, verbose=False):
         """Installation process"""
+
         # estimate amount that should be transported
         amount = min(
             mover.container.capacity * filling - mover.container.level,
@@ -212,9 +213,10 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
             origin.container.capacity - origin.total_requested,
             destination.container.capacity - destination.container.level,
             destination.container.capacity - destination.total_requested)
-        
-        if isinstance(mover, core.HasDepthRestriction): amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
 
+        if isinstance(mover, core.HasDepthRestriction) and isinstance(destination, core.HasWeather): \
+            amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
+        
         if amount > 0:
             # request access to the transport_resource
             origin.total_requested += amount
