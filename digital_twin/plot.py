@@ -247,7 +247,7 @@ def graph_kml(env,
 
 def energy_use(vessel, testing = False):
     energy_use_loading = 0            # concumption between loading start and loading stop
-    energy_use_sailing_filled = 0       # concumption between sailing full start and sailing full stop
+    energy_use_sailing_filled = 0     # concumption between sailing filled start and sailing filled stop
     energy_use_unloading = 0          # concumption between unloading  start and unloading  stop
     energy_use_sailing_empty = 0      # concumption between sailing empty start and sailing empty stop
     energy_use_waiting = 0            # concumption between waiting start and waiting stop
