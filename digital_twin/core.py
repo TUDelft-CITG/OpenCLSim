@@ -435,7 +435,11 @@ class HasWeather:
     bed: level of the seabed / riverbed with respect to CD (meters)
     """
 
-    def __init__(self, dataframe, timestep=10, bed=None, *args, **kwargs):
+    def __init__(self, dataframe, timestep=10, bed=None, 
+                 waveheight_column = "Hm0 [m]",
+                 waveperiod_column = "Tp [s]",
+                 waterlevel_column = "Tide [m]",
+                 *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.timestep = datetime.timedelta(minutes = timestep)
@@ -454,8 +458,14 @@ class HasWeather:
         self.metocean_data.index = self.metocean_data["Index"]
         self.metocean_data.drop(["Index"], axis = 1, inplace = True)
 
+        # Column names
+        self.waveheight = waveheight_column
+        self.waveperiod = waveperiod_column
+        self.waterlevel = waterlevel_column
+        self.waterdepth = "Water depth"
+
         if bed:
-            self.metocean_data["Water depth"] = self.metocean_data["Tide [m]"] - bed
+            self.metocean_data[self.waterdepth] = self.metocean_data[waterlevel_column] - bed
 
 
 class HasWorkabilityCriteria:
@@ -594,8 +604,8 @@ class HasDepthRestriction:
             
             # Make dataframe based on characteristics
             df = location.metocean_data.copy()
-            df["Required depth"] = df["Hm0 [m]"].apply(lambda s : self.calc_required_depth(draught, s))
-            series = pd.Series(df["Required depth"] <= df["Water depth"])
+            df["Required depth"] = df[location.waveheight].apply(lambda s : self.calc_required_depth(draught, s))
+            series = pd.Series(df["Required depth"] <= df[location.waterdepth])
             
             # Loop through series to find windows
             index = series.index
@@ -623,11 +633,11 @@ class HasDepthRestriction:
                                             "Draught": draught,
                                             "Ranges": np.array(ranges)}
 
-    def viable_time_windows(self, draught, duration, metocean_data):
+    def viable_time_windows(self, draught, duration, location):
         # Make dataframe based on characteristics
-        df = metocean_data.copy()
-        df["Required depth"] = df["Hm0 [m]"].apply(lambda s: self.calc_required_depth(draught, s))
-        series = pd.Series(df["Required depth"] <= df["Water depth"])
+        df = location.metocean_data.copy()
+        df["Required depth"] = df[location.waveheight].apply(lambda s : self.calc_required_depth(draught, s))
+        series = pd.Series(df["Required depth"] <= df[location.waterdepth])
         # Loop through series to find windows
         index = series.index
         values = series.values
@@ -651,7 +661,7 @@ class HasDepthRestriction:
 
     def check_depth_restriction(self, location, fill_degree, duration):
         draught = self.compute_draught(fill_degree)
-        ranges = self.viable_time_windows(draught, datetime.timedelta(seconds=duration), location.metocean_data)
+        ranges = self.viable_time_windows(draught, datetime.timedelta(seconds=duration), location)
         ranges = np.array(ranges)
 
         if len(ranges) == 0:
