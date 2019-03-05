@@ -712,7 +712,7 @@ class HasDepthRestriction:
                 
                 if len(ranges) != 0:
                     # Determine length of cycle
-                    loading = loader.loading_func(filling * self.container.capacity)
+                    loading = loader.loading_func(self.container.level, filling * self.container.capacity)
 
                     orig = shapely.geometry.asShape(origin.geometry)
                     dest = shapely.geometry.asShape(destination.geometry)
