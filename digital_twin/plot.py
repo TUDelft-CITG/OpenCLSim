@@ -247,7 +247,7 @@ def graph_kml(env,
 
 def energy_use(vessel, testing = False):
     energy_use_loading = 0            # concumption between loading start and loading stop
-    energy_use_sailing_full = 0       # concumption between sailing full start and sailing full stop
+    energy_use_sailing_filled = 0       # concumption between sailing full start and sailing full stop
     energy_use_unloading = 0          # concumption between unloading  start and unloading  stop
     energy_use_sailing_empty = 0      # concumption between sailing empty start and sailing empty stop
     energy_use_waiting = 0            # concumption between waiting start and waiting stop
@@ -256,8 +256,8 @@ def energy_use(vessel, testing = False):
         if vessel.log["Message"][i] == "Energy use loading":
             energy_use_loading += vessel.log["Value"][i]
 
-        elif vessel.log["Message"][i] == "Energy use sailing full":
-            energy_use_sailing_full += vessel.log["Value"][i]
+        elif vessel.log["Message"][i] == "Energy use sailing filled":
+            energy_use_sailing_filled += vessel.log["Value"][i]
 
         elif vessel.log["Message"][i] == "Energy use unloading":
             energy_use_unloading += vessel.log["Value"][i]
@@ -274,12 +274,12 @@ def energy_use(vessel, testing = False):
     # For the barchart
     height = [energy_use_loading, 
             energy_use_unloading, 
-            energy_use_sailing_full, 
+            energy_use_sailing_filled,
             energy_use_sailing_empty,
             energy_use_waiting]
     labels = ["Loading", 
             "Unloading", 
-            "Sailing full", 
+            "Sailing filled",
             "Sailing empty",
             "Waiting"]
     colors = [(55/255,126/255,184/255), 
@@ -294,22 +294,22 @@ def energy_use(vessel, testing = False):
     # For the cumulative percentages
     total_use = sum([energy_use_loading, 
                     energy_use_unloading, 
-                    energy_use_sailing_full, 
+                    energy_use_sailing_filled,
                     energy_use_sailing_empty,
                     energy_use_waiting])
 
     energy_use_unloading += energy_use_loading
-    energy_use_sailing_full += energy_use_unloading
-    energy_use_sailing_empty += energy_use_sailing_full
+    energy_use_sailing_filled += energy_use_unloading
+    energy_use_sailing_empty += energy_use_sailing_filled
     energy_use_waiting += energy_use_sailing_empty
     y = [energy_use_loading, 
         energy_use_unloading, 
-        energy_use_sailing_full, 
+        energy_use_sailing_filled,
         energy_use_sailing_empty, 
         energy_use_waiting]
     n = [energy_use_loading / total_use,
         energy_use_unloading / total_use,
-        energy_use_sailing_full / total_use,
+        energy_use_sailing_filled / total_use,
         energy_use_sailing_empty / total_use,
         energy_use_waiting / total_use,]
 
@@ -323,7 +323,7 @@ def energy_use(vessel, testing = False):
                     (x_txt, y_txt), size = 12)
 
     # Further markup
-    plt.ylabel("Energy useage in KWH", size = 12)
+    plt.ylabel("Energy useage in kWh", size = 12)
     ax1.set_xticks(positions)
     ax1.set_xticklabels(labels, size = 12)
     plt.title("Energy use - {}".format(vessel.name), size = 15)
