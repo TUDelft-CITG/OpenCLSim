@@ -59,6 +59,15 @@ class Locatable:
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.geometry = geometry
+        self.wgs84 = pyproj.Geod(ellps='WGS84')
+    
+    def is_at(self, locatable, tolerance=100):
+        current_location = shapely.geometry.asShape(self.geometry)
+        other_location = shapely.geometry.asShape(locatable.geometry)
+        _, _, distance = self.wgs84.inv(current_location.x, current_location.y,
+                                        other_location.x, other_location.y)
+        
+        return distance < tolerance
 
 
 class HasContainer(SimpyObject):
@@ -792,7 +801,6 @@ class Movable(SimpyObject, Locatable):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.v = v
-        self.wgs84 = pyproj.Geod(ellps='WGS84')
 
     def move(self, destination, engine_order=1.0):
         if isinstance(self, Log):
@@ -831,14 +839,7 @@ class Movable(SimpyObject, Locatable):
             else:
                 self.log_entry('sailing stop', self.env.now, -1, self.geometry)
 
-    def is_at(self, locatable, tolerance=100):
-        current_location = shapely.geometry.asShape(self.geometry)
-        other_location = shapely.geometry.asShape(locatable.geometry)
-        _, _, distance = self.wgs84.inv(current_location.x, current_location.y,
-                                        other_location.x, other_location.y)
-        
-        return distance < tolerance
-
+    
     def get_distance(self, origin, destination):
 
         if hasattr(self.env, 'FG') and isinstance(self, Routeable):
@@ -1003,8 +1004,8 @@ class Processor(SimpyObject):
         # Make sure that the processor (self), container and site can log the events
         assert isinstance(self, Log) and isinstance(ship, Log) and isinstance(site, Log)
         # Make sure that the processor, origin and destination are all at the same location
-        assert self.geometry.x == ship.geometry.x == site.geometry.x
-        assert self.geometry.y == ship.geometry.y == site.geometry.y
+        assert self.is_at(site)
+        assert ship.is_at(site)
 
         current_level = ship.container.level
         if current_level < desired_level:
