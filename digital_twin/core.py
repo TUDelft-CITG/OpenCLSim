@@ -520,6 +520,9 @@ class HasWorkabilityCriteria:
     def check_weather_restriction(self, location, amount):
         waiting = []
 
+        if location.name not in self.work_restrictions.keys():
+            self.calc_work_restrictions(location)
+
         for criterion in sorted(self.work_restrictions[location.name].keys()):
             ranges = self.work_restrictions[location.name][criterion]
             
