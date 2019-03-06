@@ -110,7 +110,7 @@ class BasicStorageUnit(core.HasContainer, core.HasResource, core.Locatable, core
         super().__init__(*args, **kwargs)
 
 
-class Processor(core.Processor, core.Log):
+class Processor(core.Processor, core.Log, core.Locatable):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -120,8 +120,7 @@ def test_basic_processor(env, geometry_a):
     source = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=1)
     dest = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=0, nr_resources=1)
 
-    processor = Processor(env=env, loading_func=model.get_loading_func(2), unloading_func=model.get_unloading_func(2))
-    processor.geometry = geometry_a
+    processor = Processor(env=env, loading_func=model.get_loading_func(2), unloading_func=model.get_unloading_func(2), geometry = geometry_a)
 
     env.process(processor.process(source, 400, dest))
     env.run()
@@ -144,10 +143,8 @@ def test_dual_processors(env, geometry_a):
     limited_container_2 = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=0, nr_resources=1)
     unlimited_container = BasicStorageUnit(env=env, geometry = geometry_a, capacity=2000, level=1000, nr_resources=100)
 
-    processor1 = Processor(env=env, loading_func=model.get_loading_func(2), unloading_func=model.get_unloading_func(2))
-    processor2 = Processor(env=env, loading_func=model.get_loading_func(1), unloading_func=model.get_unloading_func(1))
-    processor1.geometry = geometry_a
-    processor2.geometry = geometry_a
+    processor1 = Processor(env=env, loading_func=model.get_loading_func(2), unloading_func=model.get_unloading_func(2), geometry = geometry_a)
+    processor2 = Processor(env=env, loading_func=model.get_loading_func(1), unloading_func=model.get_unloading_func(1), geometry = geometry_a)
 
     env.process(processor1.process(limited_container_1, 400, unlimited_container))
     env.process(processor2.process(limited_container_2, 400, unlimited_container))
@@ -176,10 +173,8 @@ def test_dual_processors_with_limit(env, geometry_a):
     unlimited_container_2 = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=100)
     limited_container = BasicStorageUnit(env=env, geometry = geometry_a, capacity=2000, level=0, nr_resources=1)
 
-    processor1 = Processor(env=env, loading_func=model.get_loading_func(2), unloading_func=model.get_unloading_func(2))
-    processor2 = Processor(env=env, loading_func=model.get_loading_func(1), unloading_func=model.get_unloading_func(1))
-    processor1.geometry = geometry_a
-    processor2.geometry = geometry_a
+    processor1 = Processor(env=env, loading_func=model.get_loading_func(2), unloading_func=model.get_unloading_func(2), geometry = geometry_a)
+    processor2 = Processor(env=env, loading_func=model.get_loading_func(1), unloading_func=model.get_unloading_func(1), geometry = geometry_a)
 
     env.process(processor1.process(unlimited_container_1, 600, limited_container))
     env.process(processor2.process(unlimited_container_2, 600, limited_container))
