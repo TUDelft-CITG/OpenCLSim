@@ -225,7 +225,7 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
             if verbose == True:
                 print('Using ' + mover.name + ' to process ' + str(amount))
             activity_log.log_entry("transporting start", environment.now, amount, mover.geometry)
-
+            
             with mover.resource.request() as my_mover_turn:
                 yield my_mover_turn
 
@@ -234,12 +234,18 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
                     yield from move_mover(mover, origin, engine_order=engine_order, verbose=verbose)
 
                 # load the mover
+                if not loader.geometry == origin.geometry:
+                    yield from move_mover(loader, origin, engine_order=engine_order, verbose=verbose)
+
                 yield from shift_amount(environment, loader, mover, mover.container.level + amount, origin, ship_resource_request=my_mover_turn, verbose=verbose)
 
                 # move the mover to the destination
                 yield from move_mover(mover, destination, engine_order=engine_order, verbose=verbose)
 
                 # unload the mover
+                if not unloader.geometry == destination.geometry:
+                    yield from move_mover(unloader, destination, engine_order=engine_order, verbose=verbose)
+
                 yield from shift_amount(environment, unloader, mover, mover.container.level - amount, destination, ship_resource_request=my_mover_turn, verbose=verbose)
 
             activity_log.log_entry("transporting stop", environment.now, amount, mover.geometry)
