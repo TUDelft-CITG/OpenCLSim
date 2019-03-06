@@ -672,12 +672,13 @@ class HasDepthRestriction:
         return ranges
 
     def check_depth_restriction(self, location, fill_degree, duration):
-        fill_degree = int(fill_degree * 100) / 100
-        draught = self.compute_draught(fill_degree)
-        duration = datetime.timedelta(seconds = duration)
-
         if fill_degree not in self.depth_data[location.name].keys():
+            fill_degree = int(fill_degree * 100) / 100
+            draught = self.compute_draught(fill_degree)
+            duration = datetime.timedelta(seconds = duration)
+
             ranges = np.array(self.viable_time_windows(draught, duration, location))
+        
         else:
             ranges = self.depth_data[location.name][int(fill_degree * 100) / 100]["Ranges"]
 
