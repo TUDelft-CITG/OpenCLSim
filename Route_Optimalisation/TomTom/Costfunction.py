@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
-import main
-import Create_Graph
+import TomTom.main as main
+import TomTom.Create_Graph as Create_Graph
 import pickle
 
 class Has_costfunction_space:

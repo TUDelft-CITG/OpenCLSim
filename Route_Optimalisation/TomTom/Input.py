@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
-import main
+import TomTom.main as main
 import pickle
 
 
@@ -17,8 +17,11 @@ class Has_start_and_target:
         self.vship = vship
         self.Ng = Ng
 
-        self.L = np.absolute(self.x_target - self.x_start)*1.25
-        self.B = np.absolute(self.y_target - self.y_start)*1.25
+        self.L = np.maximum(10, np.absolute(self.x_target - self.x_start)*1.25)
+        self.B = np.maximum(10, np.absolute(self.y_target - self.y_start)*1.25)
+
+        self.Xg_start = np.minimum(self.x_start, self.x_target) - self.L * 0.1
+        self.Yg_start = np.minimum(self.y_start, self.y_target) - self.B * 0.1
 
         self.N = self.Ng
         self.M = self.Ng
@@ -26,11 +29,11 @@ class Has_start_and_target:
         self.dx = self.L/self.N
         self.dy = self.B/self.M
 
-        self.n_start = int(self.L * 0.1 / self.dx)
-        self.n_target = int(self.L * 0.9 / self.dx)
+        self.n_start = int(self.L * ((self.x_start-self.Xg_start)/self.L) / self.dx)
+        self.n_target = int(self.L * ((self.x_target-self.Xg_start)/self.L) / self.dx)
 
-        self.m_start = int(self.B * 0.1 / self.dy)
-        self.m_target = int(self.B * 0.9 / self.dy)
+        self.m_start = int(self.B * ((self.y_start-self.Yg_start)/self.B) / self.dy)
+        self.m_target = int(self.B *((self.y_target-self.Yg_start)/self.B) / self.dy)
         
 class Has_flow_testcase:
     def __init__(self, Lf, Bf, Nf, *args, **kwargs):

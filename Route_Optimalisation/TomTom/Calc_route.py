@@ -2,14 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 import pickle
-import main
+import TomTom.main as main
 
 class Path_Dijkstra:
     def __init__(self, Graph, Data, *args,**kwargs):
         super().__init__(Graph,*args,**kwargs)
         self.route = np.array(nx.dijkstra_path(Graph.G, (Graph.n_start,Graph.m_start), (Graph.n_target,Graph.m_target)))
-        self.route[:,0] = self.route[:,0]* Data.dx + Data.x_start - Data.L * 0.1
-        self.route[:,1] = self.route[:,1]* Data.dy + Data.y_start - Data.B * 0.1
+        self.route[:,0] = self.route[:,0]* Data.dx + Data.Xg_start
+        self.route[:,1] = self.route[:,1]* Data.dy + Data.Yg_start
 
 class Path_length_Dijkstra:
     def __init__(self, Graph,*args,**kwargs):

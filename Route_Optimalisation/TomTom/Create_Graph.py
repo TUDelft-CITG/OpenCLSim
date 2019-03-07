@@ -4,14 +4,14 @@ import time
 import networkx as nx
 from scipy.interpolate import griddata
 import pickle
-import main
+import  TomTom.main as main
 
 class Has_grid_flow:
     def __init__(self,Data,*args,**kwargs):
         super().__init__(Data,*args,**kwargs)
         Xg, Yg = np.mgrid[0:Data.N, 0:Data.M]
-        self.Xg = Xg * Data.dx + Data.x_start - Data.L * 0.1
-        self.Yg = Yg * Data.dy + Data.y_start - Data.B * 0.1
+        self.Xg = Xg * Data.dx + Data.Xg_start
+        self.Yg = Yg * Data.dy + Data.Yg_start
         
         Xf_temp = Data.Xf.reshape(Data.Xf.size)
         Yf_temp = Data.Yf.reshape(Data.Yf.size)
