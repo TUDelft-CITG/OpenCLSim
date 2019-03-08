@@ -91,8 +91,6 @@ class EnergyUse(SimpyObject):
     energy_use_loading:   function that specifies the fuel use during loading activity   - input should be time
     energy_use_unloading: function that specifies the fuel use during unloading activity - input should be time
 
-    At the moment "keeping track of fuel" is not added to the digital twin. 
-
     Example function could be as follows.
     The energy use of the loading event is equal to: duration * power_use.
 
