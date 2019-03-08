@@ -4,9 +4,9 @@ import numpy as np
 import uuid
 import simpy
 
-import dill
-import pickle
+import dill as pickle
 
+import digital_twin.model as model
 
 class ToSave:
     """
@@ -14,10 +14,31 @@ class ToSave:
     """
     
     def __init__(self, data_type, data, *args, **kwargs):
-        self.type = data_type
-        self.data = data
 
-        self.data["env"] = None
+        # This is the case for activities
+        if data_type == model.Activity:
+            self.data_type = "Activity"
+            
+            self.data = {"name": data["name"],
+                         "mover": data["mover"].name,
+                         "loader": data["loader"].name,
+                         "unloader": data["unloader"].name,
+                         "origin": data["origin"].name,
+                         "destination": data["destination"].name,
+                         "stop_condition": None, #data["stop_condition"],
+                         "start_condition": None, #data["start_condition"],
+                         "condition": None} #data["condition"]}
+        
+        # This is the case for equipment and sites
+        elif type(data_type) == type:
+            self.data_type = []
+
+            for subclass in data_type.__mro__:
+                if subclass.__module__ == "digital_twin.core" and subclass.__name__ not in ["Identifiable", "Log", "SimpyObject"] :
+                    self.data_type.append(subclass.__name__)
+            
+            self.data = data
+            self.data["env"] = None
 
 
 class DataExtraction:
@@ -38,8 +59,7 @@ class DataExtraction:
 
         # Save the environment
         #assert type(environment) == simpy.core.Environment
-        self.environment = environment
-        self.start = environment.now
+        self.simulation_start = environment.now
 
         # Save all properties
         assert type(activities) == list
@@ -61,7 +81,7 @@ class DataExtraction:
         Save all properties of the simulation
         """
 
-        simulation_setup = {"Environment": self.environment,
+        simulation_setup = {"Simulation start": self.simulation_start,
                             "Activities": self.activities,
                             "Equipment": self.equipment,
                             "Sites": self.sites}
@@ -77,8 +97,18 @@ class DataExtraction:
         If location is "", the init will be saved in the current working directory.
         """
 
+        if len(location) != 0 and location[-1] != "/":
+            location += "/"
+
         file_name = location + self.id
 
+
+class LogSaver():
+    """
+    """
+
+    def __init__():
+        pass
     
     def save_all_logs(self, location = ""):
         """
