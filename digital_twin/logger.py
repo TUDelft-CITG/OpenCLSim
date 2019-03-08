@@ -80,14 +80,12 @@ class DataExtraction:
         """
         Save all properties of the simulation
         """
-
-        simulation_setup = {"Simulation start": self.simulation_start,
-                            "Activities": self.activities,
-                            "Equipment": self.equipment,
-                            "Sites": self.sites}
         
-        return pickle.dumps(simulation_setup)
-
+        return {"Simulation start": self.simulation_start,
+                "Activities": self.activities,
+                "Equipment": self.equipment,
+                "Sites": self.sites}
+        
     
     def save_ini_file(self, location = ""):
         """
@@ -100,7 +98,22 @@ class DataExtraction:
         if len(location) != 0 and location[-1] != "/":
             location += "/"
 
-        file_name = location + self.id
+        file_name = location + self.id + ".pkl"
+
+        with open(file_name, 'wb') as file:
+            pickle.dump(self.init, file)
+    
+
+    def open_ini_file(self, file_name):
+        """
+        For all items of the simulation, save the properties and generate an initialization file.
+        This file should be a JSON format and readable to start a new simulation.
+
+        If location is "", the init will be saved in the current working directory.
+        """
+
+        with open(file_name, 'rb') as file:
+            return pickle.load(file)
 
 
 class LogSaver():
