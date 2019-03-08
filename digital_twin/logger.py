@@ -131,7 +131,7 @@ class SimulationOpen:
         with open(file_name, 'rb') as file:
             return pickle.load(file)
     
-    def run_simulation(self):
+    def extract_files(self):
         environment = simpy.Environment(initial_time = self.simulation["Simulation start"])
         environment.epoch = time.mktime(datetime.datetime.fromtimestamp(self.simulation["Simulation start"]).timetuple())
 
