@@ -173,24 +173,36 @@ class SimulationOpen:
         return sites, equipment, activities, environment
 
 
-class LogSaver():
+class LogSaver:
     """
-    """
-
-    def __init__():
-        pass
+    LogSaver allow saving all logs as .csv files.
     
-    def save_all_logs(self, location = ""):
+    Objects should be a list containing the activities, sites and equipment.
+    The ID could be the ID that is saved to the .pkl file, entering an ID is optional.
+    If location is "", the files will be saved in the current working directory.
+    """ 
+
+    def __init__(self, objects, ID = "", location = ""):
+        """ Initialization """
+
+        assert type(objects) == list
+        self.objects = objects
+        self.ID = ID
+        self.location = location
+
+        self.save_all_logs()
+    
+    
+    def save_all_logs(self):
         """
         Save all logs to a specified location.
         If location is "", the logs will be saved in the current working directory.
         """
 
-        file_name = location + self.id
+        if len(self.location) != 0 and self.location[-1] != "/":
+            self.location += "/"
+        
+        file_name = self.location + self.ID + " - "
 
-        for activity in self.activities:
-            pd.DataFrame.from_dict(activity.log).to_csv(file_name + activity.name)
-        for piece in self.equipment:
-            pd.DataFrame.from_dict(piece.log).to_csv(file_name + piece.name)
-        for site in self.sites:
-            pd.DataFrame.from_dict(site.log).to_csv(file_name + site.name)
+        for item in self.objects:
+            pd.DataFrame.from_dict(item.log).to_csv(file_name + item.name + ".csv")
