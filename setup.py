@@ -34,7 +34,7 @@ requires = [
     "simplekml",
     "nose",
     "Flask",
-    "Flask-cors"
+    "Flask-cors",
     "Dill",
 ]
 
