@@ -8,12 +8,14 @@ import uuid
 import simpy
 
 import dill as pickle
-
 import digital_twin.model as model
 
 class ToSave:
     """
     Class that defines objects that have to be saved.
+
+    data_type is the object type: ship, site, crane, etc.
+    data: is the dictionary that is used to fill the data_type
     """
     
     def __init__(self, data_type, data, *args, **kwargs):
