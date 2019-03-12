@@ -184,13 +184,24 @@ class LogSaver:
     If location is "", the files will be saved in the current working directory.
     """ 
 
-    def __init__(self, objects, ID = "", location = ""):
+    def __init__(self, sites, equipment, activities, ID = "", location = ""):
         """ Initialization """
 
-        assert type(objects) == list
-        self.objects = objects
+        # Save all properties
+        assert type(activities) == list
+        self.activities = activities
+        
+        assert type(equipment) == list
+        self.equipment = equipment
+
+        assert type(sites) == list
+        self.sites = sites
+
         self.ID = ID
         self.location = location
+
+        if len(self.location) != 0 and self.location[-1] != "/":
+            self.location += "/"
 
         self.save_all_logs()
     
@@ -199,12 +210,53 @@ class LogSaver:
         """
         Save all logs to a specified location.
         If location is "", the logs will be saved in the current working directory.
+
+        A file is saved with unique activity names
+        A file is saved with simulation specific information
+        A file is saved with equipment specific information
+        A file is saved with site specific information
+
         """
 
-        if len(self.location) != 0 and self.location[-1] != "/":
-            self.location += "/"
-        
-        file_name = self.location + self.ID + " - "
+        # Obtain unique events and objects
+        self.unique_events = {"IDs": [],
+                              "Names": []}
+        self.unique_objects = {"IDs": [],
+                               "Names": []}
 
-        for item in self.objects:
-            pd.DataFrame.from_dict(item.log).to_csv(file_name + item.name + ".csv")
+        for vessel in self.equipment:
+            self.get_unique_events(vessel)
+            self.get_unique_objects(vessel)
+        for site in self.sites:
+            self.get_unique_events(site)
+            self.get_unique_objects(site)
+        for activity in self.activities:
+            self.get_unique_events(activity)
+            self.get_unique_objects(activity)
+
+
+    def get_unique_objects(self, item):
+        """
+        Create a list of unique objects
+        """
+
+        if item.id not in self.unique_objects:
+            self.unique_objects["IDs"].append(item.id)
+            self.unique_objects["Names"].append(item.name)
+
+    
+    def get_unique_events(self, item):
+        """
+        Create a list of unique events
+        """
+
+        log = pd.DataFrame.from_dict(item.log)
+        events = list(log["Message"].unique())
+
+        for event in events:
+            event = event.replace(" start", "")
+            event = event.replace(" stop", "")
+
+            if event not in self.unique_events["Names"]:        
+                self.unique_events["IDs"].append(str(uuid.uuid1()))
+                self.unique_events["Names"].append(event)
