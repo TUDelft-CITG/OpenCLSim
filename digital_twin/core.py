@@ -679,6 +679,7 @@ class HasDepthRestriction:
     def check_depth_restriction(self, location, fill_degree, duration):
         if location.name not in self.depth_data.keys():
             fill_degree = int(fill_degree * 100) / 100
+            self.depth_data[location.name] = {}
             self.viable_time_windows(fill_degree, duration, location)
 
         elif fill_degree not in self.depth_data[location.name].keys():
