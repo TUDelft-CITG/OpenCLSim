@@ -671,6 +671,7 @@ class HasDepthRestriction:
 
     def check_depth_restriction(self, location, fill_degree, duration):
         if location.name not in self.depth_data.keys():
+            draught = self.compute_draught(fill_degree)
             ranges = np.array(self.viable_time_windows(draught, duration, location))
 
         if fill_degree not in self.depth_data[location.name].keys():
