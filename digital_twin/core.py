@@ -644,6 +644,8 @@ class HasDepthRestriction:
                                             "Ranges": np.array(ranges)}
 
     def viable_time_windows(self, draught, duration, location):
+        duration = datetime.timedelta(seconds = duration)
+
         # Make dataframe based on characteristics
         df = location.metocean_data.copy()
         df["Required depth"] = df[location.waveheight].apply(lambda s : self.calc_required_depth(draught, s))
