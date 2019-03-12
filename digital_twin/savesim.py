@@ -222,20 +222,65 @@ class LogSaver:
         self.unique_events = {"IDs": [],
                               "Names": []}
         self.unique_objects = {"IDs": [],
-                               "Names": []}
+                               "Names": [],
+                               "Type": []}
 
         for vessel in self.equipment:
             self.get_unique_events(vessel)
-            self.get_unique_objects(vessel)
+            self.get_unique_objects(vessel, "Equipment")
         for site in self.sites:
             self.get_unique_events(site)
-            self.get_unique_objects(site)
+            self.get_unique_objects(site, "Location")
         for activity in self.activities:
             self.get_unique_events(activity)
-            self.get_unique_objects(activity)
+            self.get_unique_objects(activity, "Activity")
+        
+        # Obtain generalized event log
+        self.all_logs = {"Object": [],
+                         "Event": [],
+                         "Starts": [],
+                         "Stops": [],
+                         "Value": [],
+                         "Longitude start": [],
+                         "Latitude start": [],
+                         "Longitude stop": [],
+                         "Latitude stop": []}
 
+        for vessel in self.equipment:
+            self.get_logs(vessel)
+        for site in self.sites:
+            self.get_logs(site)
+        for activity in self.activities:
+            self.get_logs(activity)
 
-    def get_unique_objects(self, item):
+        self.all_logs = pd.DataFrame.from_dict(self.all_logs)
+        self.all_logs["Duration"] = self.all_logs["Stops"] - self.all_logs["Starts"]
+    
+
+    def get_logs(self, item):
+        """
+        Create a generalized equipment log
+        """
+
+        object_log = pd.DataFrame.from_dict(item.log)
+
+        for i, message in enumerate(object_log["Message"]):
+            for j, event in enumerate(self.unique_events["Names"]):
+                if message == event + " start":
+                    self.all_logs["Object"].append(item.id)
+                    self.all_logs["Event"].append(self.unique_events["IDs"][j])
+                    self.all_logs["Starts"].append(object_log["Timestamp"][i])
+                    self.all_logs["Longitude start"].append(object_log["Geometry"][i].x)
+                    self.all_logs["Latitude start"].append(object_log["Geometry"][i].y)
+                
+                elif message == event + " stop":
+                    self.all_logs["Stops"].append(object_log["Timestamp"][i])
+                    self.all_logs["Value"].append(object_log["Value"][i])
+                    self.all_logs["Longitude stop"].append(object_log["Geometry"][i].x)
+                    self.all_logs["Latitude stop"].append(object_log["Geometry"][i].y)
+
+    
+    def get_unique_objects(self, item, object_type):
         """
         Create a list of unique objects
         """
@@ -243,6 +288,7 @@ class LogSaver:
         if item.id not in self.unique_objects:
             self.unique_objects["IDs"].append(item.id)
             self.unique_objects["Names"].append(item.name)
+            self.unique_objects["Type"].append(object_type)
 
     
     def get_unique_events(self, item):
