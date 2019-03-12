@@ -643,8 +643,9 @@ class HasDepthRestriction:
                                             "Draught": draught,
                                             "Ranges": np.array(ranges)}
 
-    def viable_time_windows(self, draught, duration, location):
+    def viable_time_windows(self, fill_degree, duration, location):
         duration = datetime.timedelta(seconds = duration)
+        draught = self.compute_draught(fill_degree)
 
         # Make dataframe based on characteristics
         df = location.metocean_data.copy()
@@ -669,19 +670,20 @@ class HasDepthRestriction:
 
                 if (end - begin) >= duration:
                     ranges.append((begin.to_datetime64(), (end - duration).to_datetime64()))
-        return ranges
+        
+        self.depth_data[location.name][filling_degree] = \
+                                            {"Volume": filling_degree * self.container.capacity,
+                                             "Draught": draught,
+                                             "Ranges": np.array(ranges)}
 
     def check_depth_restriction(self, location, fill_degree, duration):
         if location.name not in self.depth_data.keys():
-            draught = self.compute_draught(fill_degree)
-            ranges = np.array(self.viable_time_windows(draught, duration, location))
-
-        if fill_degree not in self.depth_data[location.name].keys():
             fill_degree = int(fill_degree * 100) / 100
-            draught = self.compute_draught(fill_degree)
-            duration = datetime.timedelta(seconds = duration)
+            self.viable_time_windows(draught, fill_degree, location)
 
-            ranges = np.array(self.viable_time_windows(draught, duration, location))
+        elif fill_degree not in self.depth_data[location.name].keys():
+            fill_degree = int(fill_degree * 100) / 100
+            self.viable_time_windows(draught, fill_degree, location)
         
         else:
             ranges = self.depth_data[location.name][int(fill_degree * 100) / 100]["Ranges"]
