@@ -59,6 +59,15 @@ class Locatable:
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.geometry = geometry
+        self.wgs84 = pyproj.Geod(ellps='WGS84')
+    
+    def is_at(self, locatable, tolerance=100):
+        current_location = shapely.geometry.asShape(self.geometry)
+        other_location = shapely.geometry.asShape(locatable.geometry)
+        _, _, distance = self.wgs84.inv(current_location.x, current_location.y,
+                                        other_location.x, other_location.y)
+        
+        return distance < tolerance
 
 
 class HasContainer(SimpyObject):
@@ -81,8 +90,6 @@ class EnergyUse(SimpyObject):
     energy_use_sailing:   function that specifies the fuel use during sailing activity   - input should be time
     energy_use_loading:   function that specifies the fuel use during loading activity   - input should be time
     energy_use_unloading: function that specifies the fuel use during unloading activity - input should be time
-
-    At the moment "keeping track of fuel" is not added to the digital twin. 
 
     Example function could be as follows.
     The energy use of the loading event is equal to: duration * power_use.
@@ -435,7 +442,11 @@ class HasWeather:
     bed: level of the seabed / riverbed with respect to CD (meters)
     """
 
-    def __init__(self, dataframe, timestep=10, bed=None, *args, **kwargs):
+    def __init__(self, dataframe, timestep=10, bed=None, 
+                 waveheight_column = "Hm0 [m]",
+                 waveperiod_column = "Tp [s]",
+                 waterlevel_column = "Tide [m]",
+                 *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.timestep = datetime.timedelta(minutes = timestep)
@@ -454,8 +465,14 @@ class HasWeather:
         self.metocean_data.index = self.metocean_data["Index"]
         self.metocean_data.drop(["Index"], axis = 1, inplace = True)
 
+        # Column names
+        self.waveheight = waveheight_column
+        self.waveperiod = waveperiod_column
+        self.waterlevel = waterlevel_column
+        self.waterdepth = "Water depth"
+
         if bed:
-            self.metocean_data["Water depth"] = self.metocean_data["Tide [m]"] - bed
+            self.metocean_data[self.waterdepth] = self.metocean_data[waterlevel_column] - bed
 
 
 class HasWorkabilityCriteria:
@@ -500,6 +517,9 @@ class HasWorkabilityCriteria:
     
     def check_weather_restriction(self, location, amount):
         waiting = []
+
+        if location.name not in self.work_restrictions.keys():
+            self.calc_work_restrictions(location)
 
         for criterion in sorted(self.work_restrictions[location.name].keys()):
             ranges = self.work_restrictions[location.name][criterion]
@@ -594,8 +614,8 @@ class HasDepthRestriction:
             
             # Make dataframe based on characteristics
             df = location.metocean_data.copy()
-            df["Required depth"] = df["Hm0 [m]"].apply(lambda s : self.calc_required_depth(draught, s))
-            series = pd.Series(df["Required depth"] <= df["Water depth"])
+            df["Required depth"] = df[location.waveheight].apply(lambda s : self.calc_required_depth(draught, s))
+            series = pd.Series(df["Required depth"] <= df[location.waterdepth])
             
             # Loop through series to find windows
             index = series.index
@@ -623,11 +643,14 @@ class HasDepthRestriction:
                                             "Draught": draught,
                                             "Ranges": np.array(ranges)}
 
-    def viable_time_windows(self, draught, duration, metocean_data):
+    def viable_time_windows(self, fill_degree, duration, location):
+        duration = datetime.timedelta(seconds = duration)
+        draught = self.compute_draught(fill_degree)
+
         # Make dataframe based on characteristics
-        df = metocean_data.copy()
-        df["Required depth"] = df["Hm0 [m]"].apply(lambda s: self.calc_required_depth(draught, s))
-        series = pd.Series(df["Required depth"] <= df["Water depth"])
+        df = location.metocean_data.copy()
+        df["Required depth"] = df[location.waveheight].apply(lambda s : self.calc_required_depth(draught, s))
+        series = pd.Series(df["Required depth"] <= df[location.waterdepth])
         # Loop through series to find windows
         index = series.index
         values = series.values
@@ -647,12 +670,28 @@ class HasDepthRestriction:
 
                 if (end - begin) >= duration:
                     ranges.append((begin.to_datetime64(), (end - duration).to_datetime64()))
-        return ranges
+        
+        self.depth_data[location.name][fill_degree] = \
+                                            {"Volume": fill_degree * self.container.capacity,
+                                             "Draught": draught,
+                                             "Ranges": np.array(ranges)}
 
     def check_depth_restriction(self, location, fill_degree, duration):
-        draught = self.compute_draught(fill_degree)
-        ranges = self.viable_time_windows(draught, datetime.timedelta(seconds=duration), location.metocean_data)
-        ranges = np.array(ranges)
+        if location.name not in self.depth_data.keys():
+            fill_degree = int(fill_degree * 100) / 100
+            self.depth_data[location.name] = {}
+            self.viable_time_windows(fill_degree, duration, location)
+
+            ranges = self.depth_data[location.name][int(fill_degree * 100) / 100]["Ranges"]
+
+        elif fill_degree not in self.depth_data[location.name].keys():
+            fill_degree = int(fill_degree * 100) / 100
+            self.viable_time_windows(fill_degree, duration, location)
+
+            ranges = self.depth_data[location.name][int(fill_degree * 100) / 100]["Ranges"]
+        
+        else:
+            ranges = self.depth_data[location.name][int(fill_degree * 100) / 100]["Ranges"]
 
         if len(ranges) == 0:
             self.log_entry("No actual allowable draught available - starting anyway", self.env.now, -1, self.geometry)
@@ -782,7 +821,6 @@ class Movable(SimpyObject, Locatable):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.v = v
-        self.wgs84 = pyproj.Geod(ellps='WGS84')
 
     def move(self, destination, engine_order=1.0):
         if isinstance(self, Log):
@@ -821,14 +859,7 @@ class Movable(SimpyObject, Locatable):
             else:
                 self.log_entry('sailing stop', self.env.now, -1, self.geometry)
 
-    def is_at(self, locatable, tolerance=100):
-        current_location = shapely.geometry.asShape(self.geometry)
-        other_location = shapely.geometry.asShape(locatable.geometry)
-        _, _, distance = self.wgs84.inv(current_location.x, current_location.y,
-                                        other_location.x, other_location.y)
-        
-        return distance < tolerance
-
+    
     def get_distance(self, origin, destination):
 
         if hasattr(self.env, 'FG') and isinstance(self, Routeable):
@@ -993,8 +1024,8 @@ class Processor(SimpyObject):
         # Make sure that the processor (self), container and site can log the events
         assert isinstance(self, Log) and isinstance(ship, Log) and isinstance(site, Log)
         # Make sure that the processor, origin and destination are all at the same location
-        assert self.geometry.x == ship.geometry.x == site.geometry.x
-        assert self.geometry.y == ship.geometry.y == site.geometry.y
+        assert self.is_at(site)
+        assert ship.is_at(site)
 
         current_level = ship.container.level
         if current_level < desired_level:
