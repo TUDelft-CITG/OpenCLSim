@@ -671,19 +671,19 @@ class HasDepthRestriction:
                 if (end - begin) >= duration:
                     ranges.append((begin.to_datetime64(), (end - duration).to_datetime64()))
         
-        self.depth_data[location.name][filling_degree] = \
-                                            {"Volume": filling_degree * self.container.capacity,
+        self.depth_data[location.name][fill_degree] = \
+                                            {"Volume": fill_degree * self.container.capacity,
                                              "Draught": draught,
                                              "Ranges": np.array(ranges)}
 
     def check_depth_restriction(self, location, fill_degree, duration):
         if location.name not in self.depth_data.keys():
             fill_degree = int(fill_degree * 100) / 100
-            self.viable_time_windows(draught, fill_degree, location)
+            self.viable_time_windows(fill_degree, duration, location)
 
         elif fill_degree not in self.depth_data[location.name].keys():
             fill_degree = int(fill_degree * 100) / 100
-            self.viable_time_windows(draught, fill_degree, location)
+            self.viable_time_windows(fill_degree, duration, location)
         
         else:
             ranges = self.depth_data[location.name][int(fill_degree * 100) / 100]["Ranges"]
