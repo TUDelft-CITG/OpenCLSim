@@ -184,7 +184,7 @@ class LogSaver:
     If location is "", the files will be saved in the current working directory.
     """ 
 
-    def __init__(self, sites, equipment, activities, ID = "", location = ""):
+    def __init__(self, sites, equipment, activities, simulation_id = "", simulation_name = "", location = ""):
         """ Initialization """
 
         # Save all properties
@@ -197,12 +197,17 @@ class LogSaver:
         assert type(sites) == list
         self.sites = sites
 
-        self.ID = ID
+        # Save simulation id and simulation name
+        self.simulation_id = simulation_id if simulation_id else str(uuid.uuid1())
+        self.simulation_name = simulation_name if simulation_name else self.simulation_id
+
+        # Define location to save files
         self.location = location
 
         if len(self.location) != 0 and self.location[-1] != "/":
             self.location += "/"
 
+        # Finally save all items
         self.save_all_logs()
     
     
@@ -217,6 +222,12 @@ class LogSaver:
         A file is saved with site specific information
 
         """
+
+        # Obtain unique information on simulation
+        self.unique_simulation = {"ID": [self.simulation_id],
+                                  "Name": [self.simulation_name]}
+
+        self.unique_simulation = pd.DataFrame.from_dict(self.unique_simulation)
 
         # Obtain unique events and objects
         self.unique_events = {"IDs": [],
@@ -234,6 +245,9 @@ class LogSaver:
         for activity in self.activities:
             self.get_unique_events(activity)
             self.get_unique_objects(activity, "Activity")
+
+        self.unique_events = pd.DataFrame.from_dict(self.unique_events)
+        self.unique_objects = pd.DataFrame.from_dict(self.unique_objects)
         
         # Obtain generalized event log
         self.all_logs = {"Object": [],
@@ -254,7 +268,20 @@ class LogSaver:
             self.get_logs(activity)
 
         self.all_logs = pd.DataFrame.from_dict(self.all_logs)
-        self.all_logs["Duration"] = self.all_logs["Stops"] - self.all_logs["Starts"]
+        durations = self.all_logs["Stops"] - self.all_logs["Starts"]
+        durations_days = []
+
+        for duration in durations:
+            durations_days.append(duration.total_seconds() / 3600 / 24)
+        
+        self.all_logs["Duration"] = durations_days
+
+        # Finally, check if other simulations are already saved
+        # Append data are save new files
+        self.all_logs.to_csv(self.location + "logs.csv", index = False)
+        self.unique_objects.to_csv(self.location + "objects.csv", index = False)
+        self.unique_events.to_csv(self.location + "activities.csv", index = False)
+        self.unique_simulation.to_csv(self.location + "simulations.csv", index = False)
     
 
     def get_logs(self, item):
