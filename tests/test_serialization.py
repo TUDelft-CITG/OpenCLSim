@@ -23,6 +23,8 @@ def test_store_crane(env):
     txt = core.serialize(crane)
     data = json.loads(txt)
     print(data)
+    data["ID"] = data["id"]
+    del data["id"]
     crane2 = Crane(env=env, **data)
     assert crane2.container.capacity == 3
 
@@ -35,5 +37,7 @@ def test_store_stockpile(env):
     txt = core.serialize(stockpile)
     data = json.loads(txt)
     print(data)
+    data["ID"] = data["id"]
+    del data["id"]
     stockpile2 = Stockpile(env=env, **data)
     assert stockpile2.resource.capacity == 3
