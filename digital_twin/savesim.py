@@ -339,6 +339,19 @@ class LogSaver:
                     object_dict["Value"].append(object_log["Value"][i])
                     object_dict["Longitude stop"].append(object_log["Geometry"][i].x)
                     object_dict["Latitude stop"].append(object_log["Geometry"][i].y)
+                
+                elif message == event:
+                    object_dict["Simulation"].append(self.simulation_id)
+                    object_dict["Object"].append(item.id)
+                    object_dict["Event"].append(self.unique_events["ID"][j])
+                    object_dict["Start"].append(object_log["Timestamp"][i])
+                    object_dict["Longitude start"].append(object_log["Geometry"][i].x)
+                    object_dict["Latitude start"].append(object_log["Geometry"][i].y)
+                    object_dict["Stop"].append(object_log["Timestamp"][i])
+                    object_dict["Value"].append(object_log["Value"][i])
+                    object_dict["Longitude stop"].append(object_log["Geometry"][i].x)
+                    object_dict["Latitude stop"].append(object_log["Geometry"][i].y)
+
 
         object_dict = pd.DataFrame.from_dict(object_dict)
         object_dict["Duration"] = object_dict["Stop"] - object_dict["Start"]
