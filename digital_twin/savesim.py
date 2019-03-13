@@ -354,7 +354,13 @@ class LogSaver:
 
 
         object_dict = pd.DataFrame.from_dict(object_dict)
-        object_dict["Duration"] = object_dict["Stop"] - object_dict["Start"]
+        durations = (object_dict["Stop"] - object_dict["Start"])
+        durations_days = []
+        
+        for event in durations:
+            durations_days.append(event.total_seconds() / 3600 / 24)
+
+        object_dict["Duration"] = durations_days
 
         # Check if combination of simulation ID and object ID already exists
         if len(self.all_logs["Simulation"]) == 0:
