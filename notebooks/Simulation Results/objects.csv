@@ -1,4 +1,4 @@
-ID,Name,Type
+ObjectID,ObjectName,ObjectType
 6dbbbdf6-4589-11e9-95a2-b469212bff5b,Hopper 01,Equipment
 6dbbbdf4-4589-11e9-a501-b469212bff5b,Winlocatie,Location
 6dbbbdf5-4589-11e9-82b2-b469212bff5b,Dumplocatie,Location

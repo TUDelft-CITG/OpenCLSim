@@ -219,50 +219,33 @@ class LogSaver:
         Save all logs to a specified location.
         If location is "", the logs will be saved in the current working directory.
 
-        A file is saved with unique activity names
-        A file is saved with simulation specific information
-        A file is saved with equipment specific information
-        A file is saved with site specific information
-
+        A file is saved with unique events          -- events.csv
+        A file is saved with unique objects         -- objects.csv
+        A file is saved with unique simulations     -- simulations.csv
+        
+        A file is saved with equipment logs         -- equipment_log.csv
+        A file is saved with energy use             -- energy_use.csv
+        A file is saved with dredging spill info    -- dredging_spill.csv
         """
 
         # Obtain unique information on simulation
         # Check if folder already contains simulation information
-        try:
-            self.unique_simulation = pd.read_csv(self.location + "simulations.csv")
+        self.get_unique_simulations()
 
-            if self.simulation_id not in list(self.unique_simulation["ID"]):
-                self.unique_simulation = self.unique_simulation.append({"ID": self.simulation_id, "Name": self.simulation_name}, ignore_index=True)
-            
-            elif self.overwrite == True:
-                self.unique_simulation = self.unique_simulation[self.unique_simulation["ID"] != self.simulation_id]
-                self.unique_simulation = self.unique_simulation.append({"ID": self.simulation_id, "Name": self.simulation_name}, ignore_index=True)
-
-            else:
-                raise KeyError("Simulation ID or simulation name already exist. " + 
-                               "If you wish to overwrite the existing data, set overwrite to True")
-                    
-        except FileNotFoundError:
-            self.unique_simulation = {"ID": [self.simulation_id],
-                                      "Name": [self.simulation_name]}
-
-            self.unique_simulation = pd.DataFrame.from_dict(self.unique_simulation)
-
-        
         # Obtain unique events and objects
         # Check if folder already contains simulation information
         try:
             self.unique_events = pd.read_csv(self.location + "events.csv")
         except FileNotFoundError:
-            self.unique_events = pd.DataFrame.from_dict({"ID": [],
-                                                         "Name": []})
+            self.unique_events = pd.DataFrame.from_dict({"EventID": [],
+                                                         "EventName": []})
         
         try:
             self.unique_objects = pd.read_csv(self.location + "objects.csv")
         except FileNotFoundError:
-            self.unique_objects = pd.DataFrame.from_dict({"ID": [],
-                                                          "Name": [],
-                                                          "Type": []})
+            self.unique_objects = pd.DataFrame.from_dict({"ObjectID": [],
+                                                          "ObjectName": [],
+                                                          "ObjectType": []})
 
         for vessel in self.equipment:
             self.get_unique_events(vessel)
@@ -274,47 +257,101 @@ class LogSaver:
             self.get_unique_events(activity)
             self.get_unique_objects(activity, "Activity")
 
-
-        # Obtain unique events and objects
-        # Obtain generalized event log
+        # Obtain generalized equipment log
         try:
-            self.all_logs = pd.read_csv(self.location + "logs.csv")
+            self.equipment_log = pd.read_csv(self.location + "equipment_log.csv")
         except FileNotFoundError:
-            self.all_logs = pd.DataFrame.from_dict({"Simulation": [],
-                                                    "Object": [],
-                                                    "Event": [],
-                                                    "Starts": [],
-                                                    "Stops": [],
-                                                    "Value": [],
-                                                    "Longitude start": [],
-                                                    "Latitude start": [],
-                                                    "Longitude stop": [],
-                                                    "Latitude stop": []})
+            self.equipment_log = pd.DataFrame.from_dict({"SimulationID": [],
+                                                         "ObjectID": [],
+                                                         "Event": [],
+                                                         "Starts": [],
+                                                         "Stops": [],
+                                                         "Value": [],
+                                                         "Longitude start": [],
+                                                         "Latitude start": [],
+                                                         "Longitude stop": [],
+                                                         "Latitude stop": []})
 
         for vessel in self.equipment:
-            self.get_logs(vessel)
-        for site in self.sites:
-            self.get_logs(site)
-        for activity in self.activities:
-            self.get_logs(activity)
+            self.get_equipment_log(vessel)
 
-        # Finally, check if other simulations are already saved
+        # Obtain energy use log
+        try:
+            self.energy_use = pd.read_csv(self.location + "energy_use.csv")
+        except FileNotFoundError:
+            self.energy_use = pd.DataFrame.from_dict({"SimulationID": [],
+                                                      "ObjectID": [],
+                                                      "Event": [],
+                                                      "Value": []})
+
+        for vessel in self.equipment:
+            self.get_energy_use(vessel)
+
+        # Finally, check if other simulations are already saved energy_use.csv
         # Append data are save new files
-        self.all_logs.to_csv(self.location + "logs.csv", index = False)
+        self.energy_use.to_csv(self.location + "energy_use.csv", index = False)
+        self.equipment_log.to_csv(self.location + "equipment_log.csv", index = False)
         self.unique_objects.to_csv(self.location + "objects.csv", index = False)
         self.unique_events.to_csv(self.location + "events.csv", index = False)
         self.unique_simulation.to_csv(self.location + "simulations.csv", index = False)
     
 
-    def get_logs(self, item):
+    def get_energy_use(self, item):
+        """
+        Create a generalized log of energy use
+        """
+
+        object_log = pd.DataFrame.from_dict(item.log)
+        object_dict = {"SimulationID": [],
+                       "ObjectID": [],
+                       "EventID": [],
+                       "Value": []}
+
+        for i, message in enumerate(object_log["Message"]):
+            for eventID in self.unique_events["EventID"]:
+                if "Energy use" in message:
+                    object_dict["SimulationID"].append(self.simulation_id)
+                    object_dict["ObjectID"].append(item.id)
+                    object_dict["EventID"].append(eventID)
+                    object_dict["Value"].append(object_log["Value"][i])
+
+        object_dict = pd.DataFrame.from_dict(object_dict)
+
+        if len(self.energy_use["SimulationID"]) == 0:
+            self.energy_use = object_dict
+            
+        elif not ((self.energy_use["SimulationID"] == self.simulation_id) & (self.energy_use["ObjectID"] == item.id)).any():
+            self.energy_use = pd.concat([self.energy_use, object_dict], ignore_index = True)
+        
+        elif self.overwrite == True:
+            drop_rows = []
+
+            for i, row in enumerate((self.energy_use["SimulationID"] == self.simulation_id) & (self.energy_use["ObjectID"] == item.id)):
+                if row == True:
+                    drop_rows.append(i)
+            
+            self.energy_use = self.energy_use.drop(drop_rows, axis = 0)
+            self.energy_use = pd.concat([self.energy_use, object_dict], ignore_index = True)
+        
+        else:
+            raise KeyError("Simulation ID or simulation name already exist. " + 
+                           "If you wish to overwrite the existing data, set overwrite to True")
+
+    def get_dredging_spill(self, item):
+        """
+        Create a generalized log of dredging spill
+        """
+
+    
+    def get_equipment_log(self, item):
         """
         Create a generalized equipment log
         """
 
         object_log = pd.DataFrame.from_dict(item.log)
-        object_dict = {"Simulation": [],
-                       "Object": [],
-                       "Event": [],
+        object_dict = {"SimulationID": [],
+                       "ObjectID": [],
+                       "EventID": [],
                        "Start": [],
                        "Stop": [],
                        "Value": [],
@@ -324,12 +361,12 @@ class LogSaver:
                        "Latitude stop": []}
 
         for i, message in enumerate(object_log["Message"]):
-            for j, event in enumerate(self.unique_events["Name"]):
+            for j, event in enumerate(self.unique_events["EventName"]):
 
                 if message == event + " start":
-                    object_dict["Simulation"].append(self.simulation_id)
-                    object_dict["Object"].append(item.id)
-                    object_dict["Event"].append(self.unique_events["ID"][j])
+                    object_dict["SimulationID"].append(self.simulation_id)
+                    object_dict["ObjectID"].append(item.id)
+                    object_dict["EventID"].append(self.unique_events["EventID"][j])
                     object_dict["Start"].append(object_log["Timestamp"][i])
                     object_dict["Longitude start"].append(object_log["Geometry"][i].x)
                     object_dict["Latitude start"].append(object_log["Geometry"][i].y)
@@ -339,19 +376,6 @@ class LogSaver:
                     object_dict["Value"].append(object_log["Value"][i])
                     object_dict["Longitude stop"].append(object_log["Geometry"][i].x)
                     object_dict["Latitude stop"].append(object_log["Geometry"][i].y)
-                
-                elif message == event:
-                    object_dict["Simulation"].append(self.simulation_id)
-                    object_dict["Object"].append(item.id)
-                    object_dict["Event"].append(self.unique_events["ID"][j])
-                    object_dict["Start"].append(object_log["Timestamp"][i])
-                    object_dict["Longitude start"].append(object_log["Geometry"][i].x)
-                    object_dict["Latitude start"].append(object_log["Geometry"][i].y)
-                    object_dict["Stop"].append(object_log["Timestamp"][i])
-                    object_dict["Value"].append(object_log["Value"][i])
-                    object_dict["Longitude stop"].append(object_log["Geometry"][i].x)
-                    object_dict["Latitude stop"].append(object_log["Geometry"][i].y)
-
 
         object_dict = pd.DataFrame.from_dict(object_dict)
         durations = (object_dict["Stop"] - object_dict["Start"])
@@ -363,21 +387,21 @@ class LogSaver:
         object_dict["Duration"] = durations_days
 
         # Check if combination of simulation ID and object ID already exists
-        if len(self.all_logs["Simulation"]) == 0:
-            self.all_logs = object_dict
+        if len(self.equipment_log["SimulationID"]) == 0:
+            self.equipment_log = object_dict
             
-        elif not ((self.all_logs["Simulation"] == self.simulation_id) & (self.all_logs["Object"] == item.id)).any():
-            self.all_logs = pd.concat([self.all_logs, object_dict], ignore_index = True)
+        elif not ((self.equipment_log["SimulationID"] == self.simulation_id) & (self.equipment_log["ObjectID"] == item.id)).any():
+            self.equipment_log = pd.concat([self.equipment_log, object_dict], ignore_index = True)
         
         elif self.overwrite == True:
             drop_rows = []
 
-            for i, row in enumerate((self.all_logs["Simulation"] == self.simulation_id) & (self.all_logs["Object"] == item.id)):
+            for i, row in enumerate((self.equipment_log["SimulationID"] == self.simulation_id) & (self.equipment_log["ObjectID"] == item.id)):
                 if row == True:
                     drop_rows.append(i)
             
-            self.all_logs = self.all_logs.drop(drop_rows, axis = 0)
-            self.all_logs = pd.concat([self.all_logs, object_dict], ignore_index = True)
+            self.equipment_log = self.equipment_log.drop(drop_rows, axis = 0)
+            self.equipment_log = pd.concat([self.equipment_log, object_dict], ignore_index = True)
         
         else:
             raise KeyError("Simulation ID or simulation name already exist. " + 
@@ -389,16 +413,42 @@ class LogSaver:
         Create a list of unique objects
         """
 
-        if item.id not in list(self.unique_objects["ID"]):
-            self.unique_objects = self.unique_objects.append({"ID": item.id, "Name": item.name, "Type": object_type}, ignore_index=True)
+        if item.id not in list(self.unique_objects["ObjectID"]):
+            self.unique_objects = self.unique_objects.append({"ObjectID": item.id, "ObjectName": item.name, "ObjectType": object_type}, ignore_index=True)
         
         elif self.overwrite == True:
             self.unique_objects = self.unique_objects[self.unique_objects["ID"] != item.id]
-            self.unique_objects = self.unique_objects.append({"ID": item.id, "Name": item.name, "Type": object_type}, ignore_index=True)
+            self.unique_objects = self.unique_objects.append({"ObjectID": item.id, "ObjectName": item.name, "ObjectType": object_type}, ignore_index=True)
         
         else:
             raise KeyError("Simulation ID or simulation name already exist. " + 
                            "If you wish to overwrite the existing data, set overwrite to True")
+
+
+    def get_unique_simulations(self):
+        """
+        Create a list of unique simulations
+        """
+
+        try:
+            self.unique_simulation = pd.read_csv(self.location + "simulations.csv")
+
+            if self.simulation_id not in list(self.unique_simulation["SimulationID"]):
+                self.unique_simulation = self.unique_simulation.append({"SimulationID": self.simulation_id, "SimulationName": self.simulation_name}, ignore_index=True)
+            
+            elif self.overwrite == True:
+                self.unique_simulation = self.unique_simulation[self.unique_simulation["SimulationID"] != self.simulation_id]
+                self.unique_simulation = self.unique_simulation.append({"SimulationID": self.simulation_id, "SimulationName": self.simulation_name}, ignore_index=True)
+
+            else:
+                raise KeyError("Simulation ID or simulation name already exist. " + 
+                               "If you wish to overwrite the existing data, set overwrite to True")
+                    
+        except FileNotFoundError:
+            self.unique_simulation = {"SimulationID": [self.simulation_id],
+                                      "SimulationName": [self.simulation_name]}
+
+            self.unique_simulation = pd.DataFrame.from_dict(self.unique_simulation)
 
     
     def get_unique_events(self, item):
@@ -413,5 +463,5 @@ class LogSaver:
             event = event.replace(" start", "")
             event = event.replace(" stop", "")
 
-            if event not in list(self.unique_events["Name"]):
-                self.unique_events = self.unique_events.append({"ID": str(uuid.uuid1()), "Name": event}, ignore_index=True)
+            if event not in list(self.unique_events["EventName"]):
+                self.unique_events = self.unique_events.append({"EventID": str(uuid.uuid1()), "EventName": event}, ignore_index=True)
