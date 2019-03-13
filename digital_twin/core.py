@@ -42,12 +42,12 @@ class Identifiable:
     name: a name
     id: a unique id generated with uuid"""
 
-    def __init__(self, name, id=None, *args, **kwargs):
+    def __init__(self, name, ID=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.name = name
         # generate some id, in this case based on m
-        self.id = id if id else str(uuid.uuid1())
+        self.id = ID if ID else str(uuid.uuid1())
 
 
 class Locatable:

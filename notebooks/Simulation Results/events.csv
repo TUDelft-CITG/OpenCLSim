@@ -1,0 +1,8 @@
+ID,Name
+066e1650-458b-11e9-9602-b469212bff5b,loading
+066e3d52-458b-11e9-8a1d-b469212bff5b,sailing filled
+066e646e-458b-11e9-801a-b469212bff5b,unloading
+066e8b76-458b-11e9-9c29-b469212bff5b,sailing empty
+066f9d0c-458b-11e9-a131-b469212bff5b,started
+066fc41e-458b-11e9-a38d-b469212bff5b,transporting
+066feb30-458b-11e9-bda8-b469212bff5b,completed
