@@ -383,7 +383,7 @@ class LogSaver:
 
                         for k, LocationID in enumerate(self.unique_locations["LocationID"]):
                             if x == self.unique_locations["Longitude"][k] and y == self.unique_locations["Latitude"][k]:
-                                object_dict["LocationID"] = LocationID
+                                object_dict["LocationID"].append(LocationID)
                     
                     elif message == event + " stop":
                         object_dict["EventStop"].append(object_log["Timestamp"][i])
@@ -469,7 +469,7 @@ class LogSaver:
 
                             for k, LocationID in enumerate(self.unique_locations["LocationID"]):
                                 if x == self.unique_locations["Longitude"][k] and y == self.unique_locations["Latitude"][k]:
-                                    object_dict["LocationID"] = LocationID
+                                    object_dict["LocationID"].append(LocationID)
 
         object_df = pd.DataFrame.from_dict(object_dict)
 
@@ -542,7 +542,7 @@ class LogSaver:
 
                             for k, LocationID in enumerate(self.unique_locations["LocationID"]):
                                 if x == self.unique_locations["Longitude"][k] and y == self.unique_locations["Latitude"][k]:
-                                    object_dict["LocationID"] = LocationID
+                                    object_dict["LocationID"].append(LocationID)
 
         object_df = pd.DataFrame.from_dict(object_dict)
 
