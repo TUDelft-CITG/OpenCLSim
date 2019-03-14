@@ -201,7 +201,7 @@ class LogSaver:
 
         # Save simulation id and simulation name
         self.id = simulation_id if simulation_id else str(uuid.uuid1())
-        self.name = simulation_name if simulation_name else self.simulation_id
+        self.name = simulation_name if simulation_name else self.id
 
         # Define location to save files
         self.location = location
@@ -245,7 +245,7 @@ class LogSaver:
 
         # Obtain information on locations
         location_dict = {"LocationID": [], "LocationName": [], "Longitude": [], "Latitude": []}
-        self.get_unique_properties("sites", location_dict)
+        self.get_unique_properties("location", location_dict)
 
         # Obtain information on events
         event_dict = {"EventID": [], "EventName": []}
@@ -283,16 +283,27 @@ class LogSaver:
         
         elif object_type == "activities":
             for activity in self.activities:
-                self.unique_activities = self.append_dataframe(unique_df, activity, "Activity")
+                unique_df = self.append_dataframe(unique_df, activity, "Activity")
+            
+            self.unique_activities = unique_df
         
-        elif object_type == "equipment" or object_type == "event":
+        elif object_type == "equipment":
             for piece in self.equipment:
-                self.unique_equipment = self.append_dataframe(unique_df, piece, "Equipment")
-                self.unique_events = self.event_dataframe(unique_df, piece)
+                unique_df = self.append_dataframe(unique_df, piece, "Equipment")
+            
+            self.unique_equipment = unique_df
+
+        elif object_type == "events":
+            for piece in self.equipment:                
+                unique_df = self.event_dataframe(unique_df, piece)
+            
+            self.unique_events = unique_df
         
         elif object_type == "location":
             for site in self.sites:
-                self.unique_locations = self.append_dataframe(unique_df, site, "Location")
+                unique_df = self.append_dataframe(unique_df, site, "Location")
+            
+            self.unique_locations = unique_df
 
 
     def append_dataframe(self, existing_df, object_id, object_type):
@@ -330,7 +341,7 @@ class LogSaver:
         If it is filled with similar values, raise an error unless self.overwrite == True.
         """
         
-        log = pd.DataFrame.from_dict(item.log)
+        log = pd.DataFrame.from_dict(piece.log)
         events = list(log["Message"].unique())
 
         for event in events:
@@ -362,14 +373,14 @@ class LogSaver:
                 for j, event in enumerate(self.unique_events["EventName"]):
 
                     if message == event + " start":
-                        object_dict["SimulationID"].append(self.simulation_id)
+                        object_dict["SimulationID"].append(self.id)
                         object_dict["ObjectID"].append(piece.id)
                         object_dict["EventID"].append(self.unique_events["EventID"][j])
                         object_dict["EventStart"].append(object_log["Timestamp"][i])
 
                         x, y = object_log["Geometry"][i].x, object_log["Geometry"][i].y
 
-                        for k, LocationID in enumerate(self.unique_locations):
+                        for k, LocationID in enumerate(self.unique_locations["LocationID"]):
                             if x == self.unique_locations["Longitude"][k] and y == self.unique_locations["Latitude"][k]:
                                 object_dict["LocationID"] = LocationID
                     
@@ -396,7 +407,7 @@ class LogSaver:
         elif self.overwrite == True:
             drop_rows = []
 
-            for i, row in enumerate((unique_df["SimulationID"] == self.simulation_id) & (unique_df["ObjectID"] == item.id)):
+            for i, row in enumerate(unique_df["SimulationID"] == self.id):
                 if row == True:
                     drop_rows.append(i)
             
@@ -427,32 +438,35 @@ class LogSaver:
 
             for i, message in enumerate(object_log["Message"]):
                 if message == "fines released":
-                    for j, event_message in enumerate(object_log["Message"][i:0]):
+                    loop_list = list(object_log["Message"][0:i])
+                    for j, event_message in enumerate(loop_list[::-1]):
                         if "start" in event_message:
-                            event_start_time = object_log["Timestamp"][i:0][j]
+                            event_start_time = object_log["Timestamp"][i - j]
                             event_start_msg = event_message.replace(" start", "")
                             break
                     
-                    for j, event_message in enumerate(object_log["Message"][i:-1]):
+                    loop_list = list(object_log["Message"][i::])
+                    for j, event_message in enumerate(loop_list):
                         if "stop" in event_message:
-                            event_stop = object_log["Timestamp"][i:-1][j]
+                            event_stop_time = object_log["Timestamp"][i + j]
                             event_stop_msg = event_message.replace(" stop", "")
                             break
 
                     assert event_start_msg == event_stop_msg
+
                     for j, event in enumerate(self.unique_events["EventName"]):
                         if event_start_msg == event:
-                            object_dict["SimulationID"].append(self.simulation_id)
+                            object_dict["SimulationID"].append(self.id)
                             object_dict["ObjectID"].append(piece.id)
                             object_dict["EventID"].append(self.unique_events["EventID"][j])
-                            object_dict["SpillStart"].append(event_start)
-                            object_dict["SpillStop"].append(event_stop)
-                            object_dict["SpillDuration"].append(event_stop - event_start)
+                            object_dict["SpillStart"].append(event_start_time)
+                            object_dict["SpillStop"].append(event_stop_time)
+                            object_dict["SpillDuration"].append(event_stop_time - event_start_time)
                             object_dict["Spill"].append(object_log["Value"][i])
 
                             x, y = object_log["Geometry"][i].x, object_log["Geometry"][i].y
 
-                            for k, LocationID in enumerate(self.unique_locations):
+                            for k, LocationID in enumerate(self.unique_locations["LocationID"]):
                                 if x == self.unique_locations["Longitude"][k] and y == self.unique_locations["Latitude"][k]:
                                     object_dict["LocationID"] = LocationID
 
@@ -497,32 +511,35 @@ class LogSaver:
 
             for i, message in enumerate(object_log["Message"]):
                 if "Energy use" in message:
-                    for j, event_message in enumerate(object_log["Message"][i:0]):
+                    loop_list = list(object_log["Message"][0:i])
+                    for j, event_message in enumerate(loop_list[::-1]):
                         if "start" in event_message:
-                            event_start_time = object_log["Timestamp"][i:0][j]
+                            event_start_time = object_log["Timestamp"][i - j]
                             event_start_msg = event_message.replace(" start", "")
                             break
                     
-                    for j, event_message in enumerate(object_log["Message"][i:-1]):
+                    loop_list = list(object_log["Message"][i::])
+                    for j, event_message in enumerate(loop_list):
                         if "stop" in event_message:
-                            event_stop = object_log["Timestamp"][i:-1][j]
+                            event_stop_time = object_log["Timestamp"][i + j]
                             event_stop_msg = event_message.replace(" stop", "")
                             break
 
                     assert event_start_msg == event_stop_msg
+                    
                     for j, event in enumerate(self.unique_events["EventName"]):
                         if event_start_msg == event:
-                            object_dict["SimulationID"].append(self.simulation_id)
+                            object_dict["SimulationID"].append(self.id)
                             object_dict["ObjectID"].append(piece.id)
                             object_dict["EventID"].append(self.unique_events["EventID"][j])
-                            object_dict["EnergyUseStart"].append(event_start)
-                            object_dict["EnergyUseStop"].append(event_stop)
-                            object_dict["EnergyUseDuration"].append(event_stop - event_start)
+                            object_dict["EnergyUseStart"].append(event_start_time)
+                            object_dict["EnergyUseStop"].append(event_stop_time)
+                            object_dict["EnergyUseDuration"].append(event_stop_time - event_start_time)
                             object_dict["EnergyUse"].append(object_log["Value"][i])
 
                             x, y = object_log["Geometry"][i].x, object_log["Geometry"][i].y
 
-                            for k, LocationID in enumerate(self.unique_locations):
+                            for k, LocationID in enumerate(self.unique_locations["LocationID"]):
                                 if x == self.unique_locations["Longitude"][k] and y == self.unique_locations["Latitude"][k]:
                                     object_dict["LocationID"] = LocationID
 
