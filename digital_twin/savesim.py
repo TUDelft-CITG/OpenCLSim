@@ -441,7 +441,7 @@ class LogSaver:
                     loop_list = list(object_log["Message"][0:i])
                     for j, event_message in enumerate(loop_list[::-1]):
                         if "start" in event_message:
-                            event_start_time = object_log["Timestamp"][i - j]
+                            event_start_time = object_log["Timestamp"][i - j - 1]
                             event_start_msg = event_message.replace(" start", "")
                             break
                     
@@ -461,7 +461,7 @@ class LogSaver:
                             object_dict["EventID"].append(self.unique_events["EventID"][j])
                             object_dict["SpillStart"].append(event_start_time)
                             object_dict["SpillStop"].append(event_stop_time)
-                            object_dict["SpillDuration"].append(event_stop_time - event_start_time)
+                            object_dict["SpillDuration"].append((event_stop_time - event_start_time).total_seconds() / 3600 / 24)
                             object_dict["Spill"].append(object_log["Value"][i])
 
                             x, y = object_log["Geometry"][i].x, object_log["Geometry"][i].y
@@ -476,17 +476,17 @@ class LogSaver:
             unique_df = object_df
             
         elif not (unique_df["SimulationID"] == self.id).any():
-            unique_df = pd.concat([unique_df, object_dict], ignore_index = True)
+            unique_df = pd.concat([unique_df, object_df], ignore_index = True)
         
         elif self.overwrite == True:
             drop_rows = []
 
-            for i, row in enumerate((unique_df["SimulationID"] == self.id) & (unique_df["ObjectID"] == item.id)):
+            for i, row in enumerate(unique_df["SimulationID"] == self.id):
                 if row == True:
                     drop_rows.append(i)
             
             unique_df = unique_df.drop(drop_rows, axis = 0)
-            unique_df = pd.concat([unique_df, object_dict], ignore_index = True)
+            unique_df = pd.concat([unique_df, object_df], ignore_index = True)
         
         else:
             raise KeyError("Simulation ID or simulation name already exist. " + 
@@ -502,7 +502,7 @@ class LogSaver:
         object_dict = {"SimulationID": [], "ObjectID": [], "EventID": [], "LocationID": [], "EnergyUseStart": [], "EnergyUseStop": [], "EnergyUseDuration": [], "EnergyUse": []}
 
         try:
-            unique_df = pd.read_csv(self.location + "dredging_spill.csv")
+            unique_df = pd.read_csv(self.location + "energy_use.csv")
         except FileNotFoundError:
             unique_df = pd.DataFrame.from_dict(object_dict)
 
@@ -514,7 +514,7 @@ class LogSaver:
                     loop_list = list(object_log["Message"][0:i])
                     for j, event_message in enumerate(loop_list[::-1]):
                         if "start" in event_message:
-                            event_start_time = object_log["Timestamp"][i - j]
+                            event_start_time = object_log["Timestamp"][i - j - 1]
                             event_start_msg = event_message.replace(" start", "")
                             break
                     
@@ -534,7 +534,7 @@ class LogSaver:
                             object_dict["EventID"].append(self.unique_events["EventID"][j])
                             object_dict["EnergyUseStart"].append(event_start_time)
                             object_dict["EnergyUseStop"].append(event_stop_time)
-                            object_dict["EnergyUseDuration"].append(event_stop_time - event_start_time)
+                            object_dict["EnergyUseDuration"].append((event_stop_time - event_start_time).total_seconds() / 3600 / 24)
                             object_dict["EnergyUse"].append(object_log["Value"][i])
 
                             x, y = object_log["Geometry"][i].x, object_log["Geometry"][i].y
@@ -549,17 +549,17 @@ class LogSaver:
             unique_df = object_df
             
         elif not (unique_df["SimulationID"] == self.id).any():
-            unique_df = pd.concat([unique_df, object_dict], ignore_index = True)
+            unique_df = pd.concat([unique_df, object_df], ignore_index = True)
         
         elif self.overwrite == True:
             drop_rows = []
 
-            for i, row in enumerate((unique_df["SimulationID"] == self.id) & (unique_df["ObjectID"] == item.id)):
+            for i, row in enumerate(unique_df["SimulationID"] == self.id):
                 if row == True:
                     drop_rows.append(i)
             
             unique_df = unique_df.drop(drop_rows, axis = 0)
-            unique_df = pd.concat([unique_df, object_dict], ignore_index = True)
+            unique_df = pd.concat([unique_df, object_df], ignore_index = True)
         
         else:
             raise KeyError("Simulation ID or simulation name already exist. " + 
