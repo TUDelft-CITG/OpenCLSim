@@ -345,11 +345,12 @@ class LogSaver:
         events = list(log["Message"].unique())
 
         for event in events:
-            event = event.replace(" start", "")
-            event = event.replace(" stop", "")
+            if "start" in event or "stop" in event:
+                event = event.replace(" start", "")
+                event = event.replace(" stop", "")
 
-            if event not in list(existing_df["EventName"]):
-                existing_df = existing_df.append({"EventID": str(uuid.uuid1()), "EventName": event}, ignore_index=True)
+                if event not in list(existing_df["EventName"]):
+                    existing_df = existing_df.append({"EventID": str(uuid.uuid1()), "EventName": event}, ignore_index=True)
 
         return existing_df
 

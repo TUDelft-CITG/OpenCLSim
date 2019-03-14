@@ -1,11 +1,6 @@
 EventID,EventName
-41687636-4642-11e9-ba3e-e4b97a38cea1,loading
-4168c462-4642-11e9-81be-e4b97a38cea1,sailing filled
-4169398c-4642-11e9-a0cf-e4b97a38cea1,unloading
-41696214-4642-11e9-a4f2-e4b97a38cea1,sailing empty
-4cee7aa2-4642-11e9-a9c0-e4b97a38cea1,Energy use loading
-4ceea1cc-4642-11e9-a997-e4b97a38cea1,Energy use sailing filled
-4ceec8e2-4642-11e9-af4a-e4b97a38cea1,Energy use unloading
-4ceeefde-4642-11e9-b431-e4b97a38cea1,Energy use sailing empty
-546a852e-4642-11e9-8ea8-e4b97a38cea1,waiting for spill
-546ad34a-4642-11e9-9f8e-e4b97a38cea1,fines released
+1654ee36-4644-11e9-800d-e4b97a38cea1,loading
+16553c5c-4644-11e9-aa77-e4b97a38cea1,sailing filled
+16556378-4644-11e9-a71e-e4b97a38cea1,unloading
+1655b1a4-4644-11e9-b870-e4b97a38cea1,sailing empty
+26729686-4644-11e9-b906-e4b97a38cea1,waiting for spill
