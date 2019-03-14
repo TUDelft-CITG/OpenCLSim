@@ -231,8 +231,7 @@ class HasSpill(SimpyObject):
         m_op = mover.sigma_o * m_o
         mover.m_r = m_h - m_o
 
-        if isinstance(self, Log):
-            self.log_entry("fines released", self.env.now, m_d + m_op, self.geometry)
+        processor.log_entry("fines released", self.env.now, m_d + m_op, self.geometry)
 
         return m_d + m_op
 
