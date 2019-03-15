@@ -24,6 +24,21 @@ Example notebooks:
 * **Example 06 - Container Transfer Hub** - Example of a container transfer hub, where very large container vessels deliver containers, while smaller vessels take care of the distribution to the hinterland. Traffic follows a graph path.
 * **Example 07 - Rebuild simulation from file** - Example of saving the simulation environment to a file. The code from example 01 is used, but *savesim.py* is introduced, which allows saving all parameters to a .pkl file, from which an exact copy can be simulated.
 
+## Installation
+
+Installation using *pip install digital_twin* is not yet available. Running following three lines in your command prompt will allow you installing the package as well:
+
+``` bash
+# Download the package
+git clone https://github.com/TUDelft-CITG/Hydraulic-Infrastructure-Realisation
+
+# Go to the correct folder
+cd Hydraulic-Infrastructure-Realisation
+
+# Install package
+pip install -e .
+```
+
 ## Start server
 
 ``` bash

@@ -42,12 +42,12 @@ class Identifiable:
     name: a name
     id: a unique id generated with uuid"""
 
-    def __init__(self, name, id=None, *args, **kwargs):
+    def __init__(self, name, ID=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.name = name
         # generate some id, in this case based on m
-        self.id = id if id else str(uuid.uuid1())
+        self.id = ID if ID else str(uuid.uuid1())
 
 
 class Locatable:
@@ -231,15 +231,14 @@ class HasSpill(SimpyObject):
         m_op = mover.sigma_o * m_o
         mover.m_r = m_h - m_o
 
-        if isinstance(self, Log):
-            self.log_entry("fines released", self.env.now, m_d + m_op, self.geometry)
+        processor.log_entry("fines released", self.env.now, m_d + m_op, self.geometry)
 
         return m_d + m_op
 
     def spillPlacement(self, processor, mover):
         """Calculate the spill due to the placement activity"""
         if isinstance(self, Log):
-            self.log_entry("fines released", self.env.now, mover.m_r * processor.sigma_p, self.geometry)
+            processor.log_entry("fines released", self.env.now, mover.m_r * processor.sigma_p, self.geometry)
 
         return mover.m_r * processor.sigma_p
 
