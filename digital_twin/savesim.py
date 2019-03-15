@@ -257,7 +257,6 @@ class LogSaver:
         self.get_energy()
         self.get_spill()
 
-        
         # Save all as csv files
         self.dredging_spill.to_csv(self.location + "dredging_spill.csv", index = False)
         self.energy_use.to_csv(self.location + "energy_use.csv", index = False)

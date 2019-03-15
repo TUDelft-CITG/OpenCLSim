@@ -152,3 +152,14 @@ def test_savesim(env, geometry_a, geometry_b, compute_v_provider, compute_loadin
     assert destination.log == sites[1].log
     
     assert activity.log == activities[0].log
+
+
+    # Test writing the log files to .csv
+    savesim.LogSaver(sites, equipment, activities, 
+                     simulation_id = '1ad9cb7a-4570-11e9-9c61-b469212bff5b', simulation_name = "test_savesim",
+                     location = "tests/results", overwrite = True)
+    
+    # Test if error is raised
+    # savesim.LogSaver(sites, equipment, activities, 
+    #                  simulation_id = '1ad9cb7a-4570-11e9-9c61-b469212bff5b', simulation_name = "test_savesim",
+    #                  location = "tests/results")
