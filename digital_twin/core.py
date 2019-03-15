@@ -238,7 +238,7 @@ class HasSpill(SimpyObject):
     def spillPlacement(self, processor, mover):
         """Calculate the spill due to the placement activity"""
         if isinstance(self, Log):
-            self.log_entry("fines released", self.env.now, mover.m_r * processor.sigma_p, self.geometry)
+            processor.log_entry("fines released", self.env.now, mover.m_r * processor.sigma_p, self.geometry)
 
         return mover.m_r * processor.sigma_p
 
