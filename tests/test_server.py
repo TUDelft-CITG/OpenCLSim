@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+import pytest
 
 from digital_twin import server
 
@@ -101,6 +102,7 @@ def test_depth_restriction():
     )
 
 
+@pytest.mark.timeout(60)
 def test_infinite_loop_detection():
     """Run a simulation that would lead to an infinite loop."""
     run_and_compare_completion_time(
