@@ -292,13 +292,6 @@ def move_mover(mover, origin, engine_order=1.0, verbose=False):
             print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))
 
 
-class ActivityLog(core.Identifiable, core.Log):
-    """A basic class that can be used to log activities."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
 class Simulation(core.Identifiable, core.Log):
     """The Simulation Class can be used to set up a full simulation using configuration dictionaries (json).
 
@@ -352,7 +345,7 @@ class Simulation(core.Identifiable, core.Log):
         self.activities = {}
         for activity in activities:
             id = activity['id']
-            activity_log = ActivityLog(env=self.env, name=id)
+            activity_log = core.Log(env=self.env)
 
             process = self.env.process(self.get_process_control(activity_log, activity))
 
