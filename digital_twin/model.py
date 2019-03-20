@@ -382,7 +382,7 @@ class Simulation(core.Identifiable, core.Log):
             activities = activity['activities']
             return self.conditional_process_control(activity_log, condition, activities)
         else:
-            raise RuntimeError('Unrecognized activity type: ' + type)
+            raise ValueError('Unrecognized activity type: ' + type)
 
     @staticmethod
     def get_mover_properties_kwargs(activity):
@@ -438,7 +438,7 @@ class Simulation(core.Identifiable, core.Log):
         elif operator == 'is_empty':
             return lambda: operand.container.level == 0
         else:
-            raise RuntimeError('Unrecognized operator type: ' + operator)
+            raise ValueError('Unrecognized operator type: ' + operator)
 
     def __init_object_from_json(self, object_json):
         class_name = object_json["id"]
@@ -449,7 +449,10 @@ class Simulation(core.Identifiable, core.Log):
         klass = get_class_from_type_list(class_name, type)
         kwargs = get_kwargs_from_properties(self.env, name, properties, self.sites)
 
-        new_object = klass(**kwargs)
+        try:
+            new_object = klass(**kwargs)
+        except TypeError as type_err:
+            raise ValueError("Unable to instantiate an object for '" + class_name + "': " + str(type_err))
 
         add_object_properties(new_object, properties)
 
@@ -496,25 +499,10 @@ def get_class_from_type_list(class_name, type_list):
 
 
 def string_to_class(text):
-    # quick hack to get the classes, there is probably a better way...
-    class_dict = {
-        "Locatable": core.Locatable,
-        "HasContainer": core.HasContainer,
-        "EnergyUse": core.EnergyUse,
-        "HasPlume": core.HasPlume,
-        "HasSpillCondition": core.HasSpillCondition,
-        "HasSpill": core.HasSpill,
-        "HasSoil": core.HasSoil,
-        "HasWeather": core.HasWeather,
-        "HasWorkabilityCriteria": core.HasWorkabilityCriteria,
-        "HasDepthRestriction": core.HasDepthRestriction,
-        "Routable": core.Routeable,
-        "Movable": core.Movable,
-        "ContainerDependentMovable": core.ContainerDependentMovable,
-        "HasResource": core.HasResource,
-        "Processor": core.Processor
-    }
-    return class_dict[text]
+    try:
+        return getattr(core, text)
+    except AttributeError:
+        raise ValueError("Invalid core class name given: " + text)
 
 
 def get_kwargs_from_properties(environment, name, properties, sites):
