@@ -45,6 +45,7 @@ setup_requirements = [
 tests_require = [
     "pytest",
     "pytest-cov",
+    "pytest-timeout",
 ]
 
 

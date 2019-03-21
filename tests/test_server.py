@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+import pytest
 
 from digital_twin import server
 
@@ -99,3 +100,13 @@ def test_depth_restriction():
         config_file='tests/configs/depth_restriction.json',
         expected_result_file='tests/results/depth_restriction_result.json'
     )
+
+
+@pytest.mark.timeout(60)
+def test_infinite_loop_detection():
+    """Run a simulation that would lead to an infinite loop."""
+    run_and_compare_completion_time(
+        config_file='tests/configs/infinite_loop.json',
+        expected_result_file='tests/results/infinite_loop_result.json'
+    )
+    assert True  # ensure we get here...
