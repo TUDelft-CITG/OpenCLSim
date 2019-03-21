@@ -292,13 +292,6 @@ def move_mover(mover, origin, engine_order=1.0, verbose=False):
             print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))
 
 
-class ActivityLog(core.Identifiable, core.Log):
-    """A basic class that can be used to log activities."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
 class Simulation(core.Identifiable, core.Log):
     """The Simulation Class can be used to set up a full simulation using configuration dictionaries (json).
 
@@ -352,7 +345,7 @@ class Simulation(core.Identifiable, core.Log):
         self.activities = {}
         for activity in activities:
             id = activity['id']
-            activity_log = ActivityLog(env=self.env, name=id)
+            activity_log = core.Log(env=self.env)
 
             process = self.env.process(self.get_process_control(activity_log, activity))
 
@@ -382,7 +375,7 @@ class Simulation(core.Identifiable, core.Log):
             activities = activity['activities']
             return self.conditional_process_control(activity_log, condition, activities)
         else:
-            raise RuntimeError('Unrecognized activity type: ' + type)
+            raise ValueError('Unrecognized activity type: ' + type)
 
     @staticmethod
     def get_mover_properties_kwargs(activity):
@@ -438,7 +431,7 @@ class Simulation(core.Identifiable, core.Log):
         elif operator == 'is_empty':
             return lambda: operand.container.level == 0
         else:
-            raise RuntimeError('Unrecognized operator type: ' + operator)
+            raise ValueError('Unrecognized operator type: ' + operator)
 
     def __init_object_from_json(self, object_json):
         class_name = object_json["id"]
@@ -449,7 +442,10 @@ class Simulation(core.Identifiable, core.Log):
         klass = get_class_from_type_list(class_name, type)
         kwargs = get_kwargs_from_properties(self.env, name, properties, self.sites)
 
-        new_object = klass(**kwargs)
+        try:
+            new_object = klass(**kwargs)
+        except TypeError as type_err:
+            raise ValueError("Unable to instantiate an object for '" + class_name + "': " + str(type_err))
 
         add_object_properties(new_object, properties)
 
@@ -496,25 +492,10 @@ def get_class_from_type_list(class_name, type_list):
 
 
 def string_to_class(text):
-    # quick hack to get the classes, there is probably a better way...
-    class_dict = {
-        "Locatable": core.Locatable,
-        "HasContainer": core.HasContainer,
-        "EnergyUse": core.EnergyUse,
-        "HasPlume": core.HasPlume,
-        "HasSpillCondition": core.HasSpillCondition,
-        "HasSpill": core.HasSpill,
-        "HasSoil": core.HasSoil,
-        "HasWeather": core.HasWeather,
-        "HasWorkabilityCriteria": core.HasWorkabilityCriteria,
-        "HasDepthRestriction": core.HasDepthRestriction,
-        "Routable": core.Routeable,
-        "Movable": core.Movable,
-        "ContainerDependentMovable": core.ContainerDependentMovable,
-        "HasResource": core.HasResource,
-        "Processor": core.Processor
-    }
-    return class_dict[text]
+    try:
+        return getattr(core, text)
+    except AttributeError:
+        raise ValueError("Invalid core class name given: " + text)
 
 
 def get_kwargs_from_properties(environment, name, properties, sites):

@@ -26,7 +26,16 @@ def simulate():
 
     json = request.get_json(force=True)
 
-    return jsonify(simulate_from_json(json))
+    try:
+        simulation_result = simulate_from_json(json)
+    except ValueError as valerr:
+        abort(400, description=str(valerr))
+        return
+    except Exception as e:
+        abort(500, description=str(e))
+        return
+
+    return jsonify(simulation_result)
 
 
 def simulate_from_json(json):
