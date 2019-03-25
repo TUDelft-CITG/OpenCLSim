@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+import pytest
 
 from digital_twin import server
 
@@ -99,3 +100,33 @@ def test_depth_restriction():
         config_file='tests/configs/depth_restriction.json',
         expected_result_file='tests/results/depth_restriction_result.json'
     )
+
+
+def test_sequential_activity():
+    """Runs a simulation with two ships, both ships have their own origin and destination, and each will
+    complete a single dredging run. These activities can be done in parallel, but because they are put into
+    a sequential activity, we expect them to take place sequentially, i.e., the second ship should not start
+    its dredge run until the first ship has completed its run."""
+    result = run_and_compare_completion_time(
+        config_file='tests/configs/sequential_activity.json',
+        expected_result_file='tests/results/sequential_activity_result.json'
+    )
+    hopper1 = result['equipment'][0]
+    assert hopper1['id'] == 'hopper1'
+
+    hopper2 = result['equipment'][1]
+    assert hopper2['id'] == 'hopper2'
+
+    hopper1_done_time = hopper1['features'][-1]['properties']['time']
+    hopper2_start_time = hopper2['features'][0]['properties']['time']
+    assert hopper1_done_time <= hopper2_start_time
+
+
+@pytest.mark.timeout(60)
+def test_infinite_loop_detection():
+    """Run a simulation that would lead to an infinite loop."""
+    run_and_compare_completion_time(
+        config_file='tests/configs/infinite_loop.json',
+        expected_result_file='tests/results/infinite_loop_result.json'
+    )
+    assert True  # ensure we get here...

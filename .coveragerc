@@ -2,4 +2,4 @@
 source = digital_twin
 
 [report]
-omit = test*, .eggs*
+omit = test*, .eggs*, digital_twin/plot.py

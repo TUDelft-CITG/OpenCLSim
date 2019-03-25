@@ -34,7 +34,8 @@ requires = [
     "simplekml",
     "nose",
     "Flask",
-    "Flask-cors"
+    "Flask-cors",
+    "Dill",
 ]
 
 setup_requirements = [
@@ -44,6 +45,7 @@ setup_requirements = [
 tests_require = [
     "pytest",
     "pytest-cov",
+    "pytest-timeout",
 ]
 
 

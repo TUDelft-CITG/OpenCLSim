@@ -180,15 +180,15 @@ class Activity(core.Identifiable, core.Log):
         shown = False
         while not start_condition.satisfied():
             if not shown:
-                print('T=' + '{:06.2f}'.format(self.env.now) + ' ' + self.name +
-                      ' to ' + destination.name + ' suspended')
+                print('\nTime = ' + '{:%Y-%m-%d %H:%M}'.format(datetime.datetime.fromtimestamp(self.env.now)) + '\n' + self.name +
+                      ' to ' + destination.name + ' suspended.')
                 self.log_entry("suspended", self.env.now, -1, origin.geometry)
                 shown = True
             yield self.env.timeout(3600)  # step 3600 time units ahead
 
         # todo add nice printing to the conditions, then print them here
-        print('T=' + '{:06.2f}'.format(self.env.now) + ' Start condition is satisfied, '
-              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' started')
+        print('\nTime = ' + '{:%Y-%m-%d %H:%M}'.format(datetime.datetime.fromtimestamp(self.env.now)) + '\nStart condition is satisfied, '
+              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' started.')
         self.log_entry("started", self.env.now, -1, origin.geometry)
 
         # keep moving substances until the stop condition is satisfied
@@ -198,13 +198,14 @@ class Activity(core.Identifiable, core.Log):
             else:
                 yield self.env.timeout(3600)
 
-        print('T=' + '{:06.2f}'.format(self.env.now) + ' Stop condition is satisfied, '
-              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' complete')
+        print('\nTime = ' + '{:%Y-%m-%d %H:%M}'.format(datetime.datetime.fromtimestamp(self.env.now)) + '\nStop condition is satisfied, '
+              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' completed.')
         self.log_entry("completed", self.env.now, -1, destination.geometry)
 
 
 def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, engine_order=1.0, filling=1.0, verbose=False):
         """Installation process"""
+
         # estimate amount that should be transported
         amount = min(
             mover.container.capacity * filling - mover.container.level,
@@ -213,7 +214,8 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
             destination.container.capacity - destination.container.level,
             destination.container.capacity - destination.total_requested)
 
-        if isinstance(mover, core.HasDepthRestriction): amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
+        if isinstance(mover, core.HasDepthRestriction) and isinstance(destination, core.HasWeather): \
+            amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
 
         if amount > 0:
             # request access to the transport_resource
@@ -232,12 +234,18 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
                     yield from move_mover(mover, origin, engine_order=engine_order, verbose=verbose)
 
                 # load the mover
+                if not loader.is_at(origin):
+                    yield from move_mover(loader, origin, engine_order=engine_order, verbose=verbose)
+
                 yield from shift_amount(environment, loader, mover, mover.container.level + amount, origin, ship_resource_request=my_mover_turn, verbose=verbose)
 
                 # move the mover to the destination
                 yield from move_mover(mover, destination, engine_order=engine_order, verbose=verbose)
 
                 # unload the mover
+                if not unloader.is_at(destination):
+                    yield from move_mover(unloader, destination, engine_order=engine_order, verbose=verbose)
+
                 yield from shift_amount(environment, unloader, mover, mover.container.level - amount, destination, ship_resource_request=my_mover_turn, verbose=verbose)
 
             activity_log.log_entry("transporting stop", environment.now, amount, mover.geometry)
@@ -344,7 +352,7 @@ class Simulation(core.Identifiable, core.Log):
         self.activities = {}
         for activity in activities:
             id = activity['id']
-            activity_log = ActivityLog(env=self.env, name=id)
+            activity_log = core.Log(env=self.env)
 
             process = self.env.process(self.get_process_control(activity_log, activity))
 
@@ -373,8 +381,11 @@ class Simulation(core.Identifiable, core.Log):
             condition = activity['condition']
             activities = activity['activities']
             return self.conditional_process_control(activity_log, condition, activities)
-        else:
-            raise RuntimeError('Unrecognized activity type: ' + type)
+        if type == 'sequential':
+            activities = activity['activities']
+            return self.sequential_process_control(activity_log, activities)
+
+        raise ValueError('Unrecognized activity type: ' + type)
 
     @staticmethod
     def get_mover_properties_kwargs(activity):
@@ -411,18 +422,33 @@ class Simulation(core.Identifiable, core.Log):
 
         activity_log.log_entry('completed ' + activity_description, self.env.now, -1, mover.geometry)
 
+    def sequential_process_control(self, activity_log, activities):
+        for activity in activities:
+            yield from self.get_process_control(activity_log, activity)
+
     def conditional_process_control(self, activity_log, condition, activities):
-        condition_checker = self.get_condition_checker(condition)
-
-        while condition_checker():
-            for activity in activities:
-                yield from self.get_process_control(activity_log, activity)
-
-    def get_condition_checker(self, condition):
         operator = condition['operator']
         operand_key = condition['operand']
         operand = self.sites[operand_key] if operand_key in self.sites else self.equipment[operand_key]
 
+        condition_checker = self.get_condition_checker(operator, operand)
+
+        no_progress_counter = 0
+        while condition_checker():
+            old_level = operand.container.level
+
+            for activity in activities:
+                yield from self.get_process_control(activity_log, activity)
+
+            new_level = operand.container.level
+            no_progress_counter = self.update_no_progress_counter(no_progress_counter, operator, old_level, new_level)
+            if no_progress_counter >= 10:
+                activity_log.log_entry('No progress detected for the last 10 runs, aborting activity',
+                                       self.env.now, -1, shapely.geometry.Point(0,0))
+                break
+
+    @staticmethod
+    def get_condition_checker(operator, operand):
         if operator == 'is_full':
             return lambda: operand.container.level == operand.container.capacity
         elif operator == 'is_filled':
@@ -430,7 +456,22 @@ class Simulation(core.Identifiable, core.Log):
         elif operator == 'is_empty':
             return lambda: operand.container.level == 0
         else:
-            raise RuntimeError('Unrecognized operator type: ' + operator)
+            raise ValueError('Unrecognized operator type: ' + operator)
+
+    @staticmethod
+    def update_no_progress_counter(counter, operator, old_level, new_level):
+        if operator == 'is_full' or operator == 'is_empty':
+            if old_level < new_level:
+                return 0
+            else:
+                return counter + 1
+        elif operator == 'is_filled':
+            if new_level < old_level:
+                return 0
+            else:
+                return counter + 1
+        else:
+            raise ValueError('Unrecognized operator type: ' + operator)
 
     def __init_object_from_json(self, object_json):
         class_name = object_json["id"]
@@ -441,7 +482,10 @@ class Simulation(core.Identifiable, core.Log):
         klass = get_class_from_type_list(class_name, type)
         kwargs = get_kwargs_from_properties(self.env, name, properties, self.sites)
 
-        new_object = klass(**kwargs)
+        try:
+            new_object = klass(**kwargs)
+        except TypeError as type_err:
+            raise ValueError("Unable to instantiate an object for '" + class_name + "': " + str(type_err))
 
         add_object_properties(new_object, properties)
 
@@ -488,26 +532,10 @@ def get_class_from_type_list(class_name, type_list):
 
 
 def string_to_class(text):
-    # quick hack to get the classes, there is probably a better way...
-    # TODO: replace by importlib/getattr(core, text)
-    class_dict = {
-        "Locatable": core.Locatable,
-        "HasContainer": core.HasContainer,
-        "EnergyUse": core.EnergyUse,
-        "HasPlume": core.HasPlume,
-        "HasSpillCondition": core.HasSpillCondition,
-        "HasSpill": core.HasSpill,
-        "HasSoil": core.HasSoil,
-        "HasWeather": core.HasWeather,
-        "HasWorkabilityCriteria": core.HasWorkabilityCriteria,
-        "HasDepthRestriction": core.HasDepthRestriction,
-        "Routable": core.Routeable,
-        "Movable": core.Movable,
-        "ContainerDependentMovable": core.ContainerDependentMovable,
-        "HasResource": core.HasResource,
-        "Processor": core.Processor
-    }
-    return class_dict[text]
+    try:
+        return getattr(core, text)
+    except AttributeError:
+        raise ValueError("Invalid core class name given: " + text)
 
 
 def get_kwargs_from_properties(environment, name, properties, sites):

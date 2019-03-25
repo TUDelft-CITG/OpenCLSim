@@ -1,0 +1,192 @@
+{
+    "level": 3,
+    "initialTime": 0,
+    "sites": [
+        {
+            "id": "origin1",
+            "name": "Origin 1",
+            "type": [
+                "Locatable", "HasResource", "HasContainer"
+            ],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        53,
+                        4
+                    ]
+                },
+                "capacity": 3000,
+                "level": 3000
+
+            }
+        },
+        {
+            "id": "destination1",
+            "name": "Destination 1",
+            "type": [
+                "Locatable", "HasResource", "HasContainer"
+            ],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        53,
+                        3
+                    ]
+                },
+                "capacity": 3000,
+                "level": 0
+
+            }
+        },
+        {
+            "id": "origin2",
+            "name": "Origin 2",
+            "type": [
+                "Locatable", "HasResource", "HasContainer"
+            ],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        53,
+                        4
+                    ]
+                },
+                "capacity": 3000,
+                "level": 3000
+
+            }
+        },
+        {
+            "id": "destination2",
+            "name": "Destination 2",
+            "type": [
+                "Locatable", "HasResource", "HasContainer"
+            ],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        53,
+                        3
+                    ]
+                },
+                "capacity": 3000,
+                "level": 0
+
+            }
+        }
+    ],
+    "equipment": [
+        {
+            "id": "hopper1",
+            "name": "Hoppy McHopper",
+            "type": [
+                "ContainerDependentMovable", "HasResource", "Processor"
+            ],
+            "properties": {
+                "speed": [
+                    {
+                        "level": 0,
+                        "speed": 5
+                    },
+                    {
+                        "level": 3000,
+                        "speed": 1
+                    }
+                ],
+                "location": "origin1",
+                "capacity": 3000,
+                "loadingRate": [
+                    {
+                        "level": 0,
+                        "rate": 2
+                    },
+                    {
+                        "level": 3000,
+                        "rate": 0.2
+                    }
+                ],
+                "unloadingRate": [
+                    {
+                        "level": 3000,
+                        "rate": 2
+                    },
+                    {
+                        "level": 0,
+                        "rate": 0.2
+                    }
+                ]
+            }
+        },
+        {
+            "id": "hopper2",
+            "name": "Hippety Hoppety",
+            "type": [
+                "ContainerDependentMovable", "HasResource", "Processor"
+            ],
+            "properties": {
+                "speed": [
+                    {
+                        "level": 0,
+                        "speed": 5
+                    },
+                    {
+                        "level": 3000,
+                        "speed": 1
+                    }
+                ],
+                "location": "origin2",
+                "capacity": 3000,
+                "loadingRate": [
+                    {
+                        "level": 0,
+                        "rate": 2
+                    },
+                    {
+                        "level": 3000,
+                        "rate": 0.2
+                    }
+                ],
+                "unloadingRate": [
+                    {
+                        "level": 3000,
+                        "rate": 2
+                    },
+                    {
+                        "level": 0,
+                        "rate": 0.2
+                    }
+                ]
+            }
+        }
+    ],
+    "activities": [
+        {
+            "id": "sequential_dredging",
+            "type": "sequential",
+            "activities": [
+                {
+                    "id": "dredge_run1",
+                    "type": "single_run",
+                    "origin": "origin1",
+                    "destination": "destination1",
+                    "loader": "hopper1",
+                    "mover": "hopper1",
+                    "unloader": "hopper1"
+                },
+                {
+                    "id": "dredge_run2",
+                    "type": "single_run",
+                    "origin": "origin2",
+                    "destination": "destination2",
+                    "loader": "hopper2",
+                    "mover": "hopper2",
+                    "unloader": "hopper2"
+                }
+            ]
+        }
+    ]
+}
