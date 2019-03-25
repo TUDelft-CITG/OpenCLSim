@@ -18,7 +18,7 @@ def cli(args=None):
 
 @cli.command()
 @click.option('--host', default='0.0.0.0')
-@click.option('--port', default=8080, type=int)
+@click.option('--port', default=5000, type=int)
 @click.option('--debug/--no-debug', default=False)
 def serve(host, port, debug, args=None):
     """Run a flask server with the backend code"""

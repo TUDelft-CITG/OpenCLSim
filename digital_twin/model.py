@@ -45,7 +45,7 @@ class TimeCondition:
         self.env = environment
         self.start = start if start is not None else datetime.datetime.fromtimestamp(self.env.now)
         self.stop = stop if stop is not None else datetime.datetime.fromtimestamp(self.env.now)
-    
+
     def satisfied(self):
         current_time = datetime.datetime.fromtimestamp(self.env.now)
         return self.start <= current_time >= self.stop
@@ -216,7 +216,7 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
 
         if isinstance(mover, core.HasDepthRestriction) and isinstance(destination, core.HasWeather): \
             amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
-        
+
         if amount > 0:
             # request access to the transport_resource
             origin.total_requested += amount
@@ -225,7 +225,7 @@ def perform_single_run(environment, activity_log, origin, destination, loader, m
             if verbose == True:
                 print('Using ' + mover.name + ' to process ' + str(amount))
             activity_log.log_entry("transporting start", environment.now, amount, mover.geometry)
-            
+
             with mover.resource.request() as my_mover_turn:
                 yield my_mover_turn
 
