@@ -1,6 +1,8 @@
 from functools import partial
 import digital_twin.core as core
+import digital_twin.savesim as savesim
 import datetime
+import uuid
 import shapely
 import shapely.geometry
 import scipy.interpolate
@@ -350,9 +352,10 @@ class Simulation(core.Identifiable, core.Log):
 
     def __init_activities(self, activities):
         self.activities = {}
+        activity_log_class = type("ActivityLog", (core.Log, core.Identifiable), {})
         for activity in activities:
             id = activity['id']
-            activity_log = core.Log(env=self.env)
+            activity_log = activity_log_class(env=self.env, name=id)
 
             process = self.env.process(self.get_process_control(activity_log, activity))
 
@@ -516,6 +519,21 @@ class Simulation(core.Identifiable, core.Log):
         json["activities"] = activity_logging
 
         return json
+
+    def save_logs(self, location, file_prefix):
+        # todo add code to LogSaver to allow adding a file_prefix to each file
+        site_logs = list(self.sites.values())
+        equipment_logs = list(self.equipment.values())
+        activity_logs = [activity["activity_log"] for activity in self.activities.values()]
+        savesim.LogSaver(
+            site_logs,
+            equipment_logs,
+            activity_logs,
+            location=location,
+            file_prefix=file_prefix,
+            overwrite=True,
+            append_to_existing=False
+        )
 
     @staticmethod
     def get_as_feature_collection(id, features):

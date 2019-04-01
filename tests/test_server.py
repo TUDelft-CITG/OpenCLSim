@@ -1,4 +1,5 @@
 import json
+import os
 
 import numpy as np
 import pytest
@@ -6,11 +7,15 @@ import pytest
 from digital_twin import server
 
 
-def run_and_compare_completion_time(config_file, expected_result_file):
+def run_and_compare_completion_time(config_file, expected_result_file, tmp_path=""):
     with open(config_file) as f:
         config = json.load(f)
 
-    result = server.simulate_from_json(config)
+    if len(str(tmp_path)) > 0:
+        path = str(tmp_path) + '/simulations'
+        os.mkdir(path)
+
+    result = server.simulate_from_json(config, tmp_path=tmp_path)
 
     # checks if result can indeed be turned into json
     result_json = json.dumps(result)
@@ -130,3 +135,28 @@ def test_infinite_loop_detection():
         expected_result_file='tests/results/infinite_loop_result.json'
     )
     assert True  # ensure we get here...
+
+
+def test_savesim(tmp_path):
+    """Runs the same simulation as test_energy_use, but adds saveSimulation: true.
+    This should result in the server saving the csv files of the simulation."""
+    run_and_compare_completion_time(
+        config_file='tests/configs/savesim.json',
+        expected_result_file='tests/results/energy_use_result.json',
+        tmp_path=tmp_path
+    )
+
+    config_file_hash = '47fabd7fff7f1fa8a20af93b8f0b6971'
+    expected_files = [
+        'activities.csv',
+        'dredging_spill.csv',
+        'energy_use.csv',
+        'equipment.csv',
+        'equipment_log.csv',
+        'events.csv',
+        'locations.csv',
+        'simulations.csv'
+    ]
+
+    for file in expected_files:
+        assert os.path.isfile('simulations/' + config_file_hash + '_' + file)

@@ -186,7 +186,7 @@ class LogSaver:
     If location is "", the files will be saved in the current working directory.
     """ 
 
-    def __init__(self, sites, equipment, activities, simulation_id = "", simulation_name = "", location = "", overwrite = False):
+    def __init__(self, sites, equipment, activities, simulation_id="", simulation_name="", location="", file_prefix="", overwrite=False, append_to_existing=True):
         """ Initialization """
 
         # Save all properties
@@ -208,9 +208,11 @@ class LogSaver:
 
         if len(self.location) != 0 and self.location[-1] != "/":
             self.location += "/"
+        self.location += file_prefix
 
         # Finally save all items
         self.overwrite = overwrite
+        self.append_to_existing = append_to_existing
         self.save_all_logs()
     
     
@@ -272,9 +274,12 @@ class LogSaver:
         Obtain unique properties for the given list
         """
 
-        try:
-            unique_df = pd.read_csv(self.location + object_type + ".csv")
-        except FileNotFoundError:
+        if self.append_to_existing:
+            try:
+                unique_df = pd.read_csv(self.location + object_type + ".csv")
+            except FileNotFoundError:
+                unique_df = pd.DataFrame.from_dict(object_dict)
+        else:
             unique_df = pd.DataFrame.from_dict(object_dict)
 
         if object_type == "simulations":
