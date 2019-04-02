@@ -1,8 +1,12 @@
 import json
 import os
+import zipfile
 
 import numpy as np
+import pandas as pd
 import pytest
+
+from io import StringIO
 
 from digital_twin import server
 
@@ -156,3 +160,66 @@ def test_savesim(tmp_path):
 
     for file in expected_files:
         assert os.path.isfile(str(tmp_path) + '/simulations/' + config_file_hash + '_' + file)
+
+
+def test_zipfile(tmp_path):
+    """Runs two simulations which should be stored in separate files (running one of them twice to check that the
+    results are indeed overwritten by the second run) and checks if all results are included in the created zipfile"""
+    run_and_compare_completion_time(
+        config_file='tests/configs/savesim.json',
+        expected_result_file='tests/results/energy_use_result.json',
+        tmp_path=tmp_path
+    )
+    run_and_compare_completion_time(
+        config_file='tests/configs/savesim2.json',
+        expected_result_file='tests/results/conditional_activity_result.json',
+        tmp_path=tmp_path
+    )
+    run_and_compare_completion_time(
+        config_file='tests/configs/savesim.json',
+        expected_result_file='tests/results/energy_use_result.json',
+        tmp_path=tmp_path
+    )
+
+    results_dir = str(tmp_path) + '/simulations/'
+    server.create_zipfile(directory=results_dir, filename="results.zip")
+    file = results_dir + "results.zip"
+    assert os.path.isfile(file)
+    assert zipfile.is_zipfile(file)
+
+    zipf = zipfile.ZipFile(file, 'r')
+    files = zipf.namelist()
+    assert len(files) == 8
+
+    expected_files = [
+        'activities',
+        'dredging_spill',
+        'energy_use',
+        'equipment',
+        'equipment_log',
+        'events',
+        'locations',
+        'simulations'
+    ]
+
+    # the uuids are generated randomly each time this test is run, so we can't check on the ID column
+    # todo possibly add checks on the other content of the other columns
+    for file in files:
+        content = zipf.read(file)
+        si = StringIO(content.decode("utf-8"))
+        df = pd.read_csv(si)
+        if file.endswith('activities.csv') or file.endswith('equipment.csv') or file.endswith('simulations.csv'):
+            assert len(df) == 2
+        if file.endswith('dredging_spill.csv'):
+            assert len(df) == 0
+        if file.endswith('energy_use.csv'):
+            assert len(df) == 32
+        if file.endswith('equipment_log.csv'):
+            assert len(df) == 48
+        if file.endswith('events.csv'):
+            assert len(df) == 8
+        if file.endswith('locations.csv'):
+            assert len(df) == 6
+
+
+
