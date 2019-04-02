@@ -6,6 +6,7 @@ from flask import jsonify
 from flask import request
 from flask import send_file
 from flask import send_from_directory
+from flask import make_response
 from flask_cors import CORS
 
 import simpy
@@ -22,8 +23,8 @@ import glob
 import json
 import hashlib
 
-
-static_folder = pathlib.Path(__file__).parent.parent / 'static'
+root_folder = pathlib.Path(__file__).parent.parent
+static_folder = root_folder / 'static'
 assert static_folder.exists(), "Make sure you run the server from the static directory. {} does not exist".format(static_folder)
 app = Flask(__name__, static_folder=str(static_folder))
 CORS(app)
@@ -32,6 +33,21 @@ CORS(app)
 @app.route("/")
 def main():
     return jsonify(dict(message="Basic Digital Twin Server"))
+
+
+@app.route("/csv")
+def csv():
+    paths = [
+        str(x)
+        for x
+        in static_folder.relative_to(root_folder).glob('**/*.csv')
+    ]
+    print(paths, static_folder)
+    df = pd.DataFrame(data={"paths": paths})
+    csv = df.to_csv(index=False)
+    resp = make_response(csv)
+    resp.headers['Content-Type'] = "text/csv"
+    return resp
 
 def create_zipfile(directory, filename):
     """Gathers all simulation results into a single zipfile which will be stored under directory/filename"""
