@@ -159,4 +159,4 @@ def test_savesim(tmp_path):
     ]
 
     for file in expected_files:
-        assert os.path.isfile('simulations/' + config_file_hash + '_' + file)
+        assert os.path.isfile(str(tmp_path) + '/simulations/' + config_file_hash + '_' + file)
