@@ -1,4 +1,5 @@
 import pathlib
+import urllib.parse
 
 from flask import abort
 from flask import Flask
@@ -37,8 +38,12 @@ def main():
 
 @app.route("/csv")
 def csv():
+    print(dir(request), request, request.url, request.base_url, request.host_url)
     paths = [
-        str(x)
+        urllib.parse.urljoin(
+            request.host_url,
+            str(x)
+        )
         for x
         in static_folder.relative_to(root_folder).glob('**/*.csv')
     ]
