@@ -1,8 +1,11 @@
+import pathlib
+
 from flask import abort
 from flask import Flask
 from flask import jsonify
 from flask import request
 from flask import send_file
+from flask import send_from_directory
 from flask_cors import CORS
 
 import simpy
@@ -19,23 +22,16 @@ import glob
 import json
 import hashlib
 
-app = Flask(__name__)
+
+static_folder = pathlib.Path(__file__).parent.parent / 'static'
+assert static_folder.exists(), "Make sure you run the server from the static directory. {} does not exist".format(static_folder)
+app = Flask(__name__, static_folder=str(static_folder))
 CORS(app)
 
 
 @app.route("/")
 def main():
     return jsonify(dict(message="Basic Digital Twin Server"))
-
-
-# Activating the code below results in an internal server error when sending a request to /results...
-# @app.route("/results")
-# def results():
-#     results_dir = "simulations/"
-#     filename = "results.zip"
-#     create_zipfile(results_dir, filename)
-#     return send_file(results_dir + filename, mimetype="zip", attachment_filename=filename, as_attachment=True)
-
 
 def create_zipfile(directory, filename):
     """Gathers all simulation results into a single zipfile which will be stored under directory/filename"""
@@ -100,7 +96,7 @@ def simulate():
     return jsonify(simulation_result)
 
 
-def simulate_from_json(config, tmp_path=""):
+def simulate_from_json(config, tmp_path="static"):
     """Create a simulation and run it, based on a json input file.
     The optional tmp_path parameter should only be used for unit tests."""
     if "initialTime" in config:
@@ -134,6 +130,7 @@ def save_simulation(config, simulation, tmp_path=""):
     or location name, does not alter the simulation result, but does alter the config file).
     The optional tmp_path parameter should only be used for unit tests."""
 
+    # TODO: replace traversing static_folder pathlib path
     config_text = json.dumps(config, sort_keys=True).encode("utf-8")
     hash = hashlib.md5(config_text).hexdigest()
     file_prefix = hash + '_'
@@ -141,6 +138,7 @@ def save_simulation(config, simulation, tmp_path=""):
     path = str(tmp_path)
     if len(path) != 0 and str(path)[-1] != "/":
         path += "/"
+    # TODO: use pathlib
     path += "simulations/"
     os.makedirs(path, exist_ok=True)  # create the simulations directory if it does not yet exist
     savesim.save_logs(simulation, path, file_prefix)
