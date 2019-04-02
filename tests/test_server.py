@@ -11,10 +11,6 @@ def run_and_compare_completion_time(config_file, expected_result_file, tmp_path=
     with open(config_file) as f:
         config = json.load(f)
 
-    if len(str(tmp_path)) > 0:
-        path = str(tmp_path) + '/simulations'
-        os.mkdir(path)
-
     result = server.simulate_from_json(config, tmp_path=tmp_path)
 
     # checks if result can indeed be turned into json
