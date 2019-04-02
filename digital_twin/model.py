@@ -520,20 +520,6 @@ class Simulation(core.Identifiable, core.Log):
 
         return json
 
-    def save_logs(self, location, file_prefix):
-        # todo add code to LogSaver to allow adding a file_prefix to each file
-        site_logs = list(self.sites.values())
-        equipment_logs = list(self.equipment.values())
-        activity_logs = [activity["activity_log"] for activity in self.activities.values()]
-        savesim.LogSaver(
-            site_logs,
-            equipment_logs,
-            activity_logs,
-            location=location,
-            file_prefix=file_prefix,
-            overwrite=True,
-            append_to_existing=False
-        )
 
     @staticmethod
     def get_as_feature_collection(id, features):
