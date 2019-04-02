@@ -621,17 +621,21 @@ def get_kwargs_from_properties(environment, name, properties, sites):
             kwargs["v"] = speed
             v_empty = speed
             v_full = speed
+    else:
+        # set v_empty and v_full to dummy values to ensure we can instantiate energyUseSailing
+        v_empty = 1.0
+        v_full = 1.0
 
-        # EnergyUse
-        if "energyUseSailing" in properties:
-            energy_use_sailing_dict = properties["energyUseSailing"]
-            max_propulsion = energy_use_sailing_dict["maxPropulsion"]
-            boardnet = energy_use_sailing_dict["boardnet"]
-            kwargs["energy_use_sailing"] = partial(energy_use_sailing,
-                                                   speed_max_full=v_full,
-                                                   speed_max_empty=v_empty,
-                                                   propulsion_power_max=max_propulsion,
-                                                   boardnet_power=boardnet)
+    # EnergyUse
+    if "energyUseSailing" in properties:
+        energy_use_sailing_dict = properties["energyUseSailing"]
+        max_propulsion = energy_use_sailing_dict["maxPropulsion"]
+        boardnet = energy_use_sailing_dict["boardnet"]
+        kwargs["energy_use_sailing"] = partial(energy_use_sailing,
+                                               speed_max_full=v_full,
+                                               speed_max_empty=v_empty,
+                                               propulsion_power_max=max_propulsion,
+                                               boardnet_power=boardnet)
 
     # EnergyUse
     if "energyUseLoading" in properties:
