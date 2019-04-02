@@ -7,6 +7,7 @@ from flask_cors import CORS
 import simpy
 from digital_twin import model
 import datetime
+import os
 import time
 
 import json
@@ -82,4 +83,6 @@ def save_simulation(config, simulation, tmp_path=""):
     path = str(tmp_path)
     if len(path) != 0 and str(path)[-1] != "/":
         path += "/"
-    simulation.save_logs(path + "simulations/", file_prefix)
+    path += "simulations/"
+    os.makedirs(path, exist_ok=True)  # create the simulations directory if it does not yet exist
+    simulation.save_logs(path, file_prefix)
