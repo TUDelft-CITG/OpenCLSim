@@ -98,7 +98,7 @@ class EnergyUse(SimpyObject):
         return lambda x: x * power_use
     """
 
-    def __init__(self, energy_use_sailing, energy_use_loading, energy_use_unloading, *args, **kwargs):
+    def __init__(self, energy_use_sailing = None, energy_use_loading = None, energy_use_unloading = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.energy_use_sailing = energy_use_sailing
