@@ -16,7 +16,6 @@ from digital_twin import savesim
 import datetime
 import os
 import time
-import zipfile
 
 import pandas as pd
 import glob
@@ -53,47 +52,6 @@ def csv():
     resp = make_response(csv)
     resp.headers['Content-Type'] = "text/csv"
     return resp
-
-def create_zipfile(directory, filename):
-    """Gathers all simulation results into a single zipfile which will be stored under directory/filename"""
-    directory = append_file_separator(directory)
-    file_types = [
-        "activities.csv",
-        "dredging_spill.csv",
-        "energy_use.csv",
-        "equipment.csv",
-        "equipment_log.csv",
-        "events.csv",
-        "locations.csv",
-        "simulations.csv"
-    ]
-    for file_type in file_types:
-        df = gather_files(directory, file_type)
-        df.to_csv(directory + file_type)
-
-    zipf = zipfile.ZipFile(directory + filename, 'w', zipfile.ZIP_DEFLATED)
-    for file_type in file_types:
-        zipf.write(directory + file_type)
-    zipf.close()
-
-
-def gather_files(directory, file_type):
-    """Gathers the files of the given file type ('locations.csv', 'equipment.csv' etc.) in the directory
-    into a single dataframe."""
-    directory = append_file_separator(directory)
-    files = glob.glob(directory + "*_" + file_type)
-    df = pd.DataFrame()
-    for file in files:
-        content = pd.read_csv(file)
-        df = pd.concat([df, content])
-    return df
-
-
-def append_file_separator(directory):
-    """Appends a / to the given string if necessary"""
-    if len(directory) > 0 and directory[-1] != "/" and directory[-1] != "\\":
-        directory += "/"
-    return directory
 
 
 @app.route("/simulate", methods=['POST'])

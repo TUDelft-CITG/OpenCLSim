@@ -35,7 +35,7 @@ requires = [
     "nose",
     "Flask",
     "Flask-cors",
-    "Dill",
+    "Dill>=0.2.8",
 ]
 
 setup_requirements = [
@@ -46,6 +46,7 @@ tests_require = [
     "pytest",
     "pytest-cov",
     "pytest-timeout",
+    "pytest-datadir"
 ]
 
 

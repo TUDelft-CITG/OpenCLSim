@@ -11,6 +11,8 @@ import datetime
 import time
 import numpy as np
 import dill as pickle
+import json
+
 
 from click.testing import CliRunner
 
@@ -18,6 +20,7 @@ from digital_twin import core
 from digital_twin import model
 from digital_twin import cli
 from digital_twin import savesim
+from digital_twin import io
 
 logger = logging.getLogger(__name__)
 
@@ -64,82 +67,107 @@ def compute_loading():
 def compute_unloading():
     return lambda current_level, desired_level: (current_level - desired_level) / 1
 
+
+@pytest.fixture
+def loader(env, geometry_a, compute_loading, compute_unloading):
+    # Initialize the loader
+    data_loader = {"env": env,
+                   "name": "loader",
+                   "geometry": geometry_a,
+                   "loading_func": compute_loading,
+                   "unloading_func": compute_unloading}
+    loader = ProcessingResource(**data_loader)
+    return loader
+
+@pytest.fixture
+def unloader(env, geometry_b, compute_loading, compute_unloading):
+    # Initialize the unloader
+    data_unloader = {"env": env,
+                     "name": "unloader",
+                     "geometry": geometry_b,
+                     "loading_func": compute_loading,
+                     "unloading_func": compute_unloading}
+    unloader = ProcessingResource(**data_unloader)
+    return unloader
+
+@pytest.fixture
+def mover(env, geometry_a, compute_v_provider):
+    # Initialize the mover
+    data_mover = {"env": env,
+                  "name": "Mover",
+                  "geometry": geometry_a,
+                  "capacity": 1000,
+                  "compute_v": compute_v_provider}
+    mover = Mover(**data_mover)
+    return mover
+
+@pytest.fixture
+def origin(env, geometry_a):
+    # Initialize the origin
+    data_origin = {"env": env,
+                   "name": "origin",
+                   "geometry": geometry_a,
+                   "capacity": 1000,
+                   "level": 1000}
+    origin = BasicStorageUnit(**data_origin)
+    return origin
+
+@pytest.fixture
+def destination(geometry_b):
+    # Initialize the destination
+    data_destination = {"env": env,
+                        "name": "destination",
+                        "geometry": geometry_b,
+                        "capacity": 1000,
+                        "level": 0}
+    destination = BasicStorageUnit(**data_destination)
+    return destination
+
+@pytest.fixture
+def activity(env, origin, destination, loader, mover, unloader):
+    # Initialize the activity
+    activity = model.Activity(
+        env=env,
+        name="Move amount",
+        origin=origin,
+        destination=destination,
+        loader=loader,
+        mover=mover,
+        unloader=unloader
+    )
+    return activity
+
 """
 
 Actual testing starts below
 
 """
 
-def test_savesim(env, geometry_a, geometry_b, compute_v_provider, compute_loading, compute_unloading):
+def test_savesim(
+        env,
+        origin,
+        destination,
+        loader,
+        unloader,
+        mover,
+        activity,
+        tmpdir
+):
+    simulation = {
+        "env": env,
+        "locations": [origin, destination],
+        "equipment": [loader, mover, unloader],
+        "activities": [activity]
+    }
+    io.save(simulation, tmpdir / "Simulation test_savesim.json")
 
-    # Initialize the origin
-    data_origin = {"env": env, 
-                   "name": "origin",
-                   "geometry": geometry_a, 
-                   "capacity": 1000, 
-                   "level": 1000}
-    origin = BasicStorageUnit(**data_origin)
+    assert (tmpdir / "Simulation test_savesim.json").exists()
 
-    # Initialize the destination
-    data_destination = {"env": env, 
-                        "name": "destination",
-                        "geometry": geometry_b, 
-                        "capacity": 1000, 
-                        "level": 0}
-    destination = BasicStorageUnit(**data_destination)
 
-    # Initialize the loader
-    data_loader = {"env": env, 
-                   "name": "loader",
-                   "geometry": geometry_a, 
-                   "loading_func": compute_loading, 
-                   "unloading_func": compute_unloading}
-    loader = ProcessingResource(**data_loader)
+def test_loadsim(loader, unloader, mover, shared_datadir):
 
-    # Initialize the unloader
-    data_unloader = {"env": env, 
-                     "name": "unloader",
-                     "geometry": geometry_b, 
-                     "loading_func": compute_loading, 
-                     "unloading_func": compute_unloading}
-    unloader = ProcessingResource(**data_unloader)
-    
-    # Initialize the mover
-    data_mover = {"env": env, 
-                  "name": "Mover",
-                  "geometry": geometry_a, 
-                  "capacity": 1000, 
-                  "compute_v": compute_v_provider}
-    mover = Mover(**data_mover)
-    
-    # Initialize the activity
-    activity = model.Activity(env = env,
-                              name = "Move amount",
-                              origin = origin,
-                              destination = destination,
-                              loader = loader,
-                              mover = mover,
-                              unloader = unloader)
-
-    # Save the simulation variables
-    save_origin = savesim.ToSave(BasicStorageUnit, data_origin)
-    save_destination = savesim.ToSave(BasicStorageUnit, data_destination)
-
-    save_loader = savesim.ToSave(ProcessingResource, data_loader)
-    save_unloader = savesim.ToSave(ProcessingResource, data_unloader)
-    save_mover = savesim.ToSave(Mover, data_mover)
-
-    save_activity = savesim.ToSave(model.Activity, activity.__dict__)
-
-    simulation = savesim.SimulationSave(env, [save_activity], [save_loader, save_unloader, save_mover], [save_origin, save_destination])
-    simulation.save_ini_file("Simulation test_savesim")
-
-    # Run the simulation
-    env.run()
-
-    
     # Open the .pkl file and run the simulation
-    simulation = savesim.SimulationOpen("Simulation test_savesim.pkl")
+    simulation = savesim.SimulationOpen(shared_datadir / "Simulation test_savesim.pkl")
     sites, equipment, activities, environment = simulation.extract_files()
     environment.run()
 
@@ -147,19 +175,19 @@ def test_savesim(env, geometry_a, geometry_b, compute_v_provider, compute_loadin
     assert loader.log == equipment[0].log
     assert unloader.log == equipment[1].log
     assert mover.log == equipment[2].log
-    
+
     assert origin.log == sites[0].log
     assert destination.log == sites[1].log
-    
+
     assert activity.log == activities[0].log
 
 
     # Test writing the log files to .csv
-    savesim.LogSaver(sites, equipment, activities, 
+    savesim.LogSaver(sites, equipment, activities,
                      simulation_id = '1ad9cb7a-4570-11e9-9c61-b469212bff5b', simulation_name = "test_savesim",
                      location = "tests/results", overwrite = True)
-    
+
     # Test if error is raised
-    # savesim.LogSaver(sites, equipment, activities, 
+    # savesim.LogSaver(sites, equipment, activities,
     #                  simulation_id = '1ad9cb7a-4570-11e9-9c61-b469212bff5b', simulation_name = "test_savesim",
     #                  location = "tests/results")

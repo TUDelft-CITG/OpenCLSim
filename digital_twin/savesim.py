@@ -1,10 +1,11 @@
+import pathlib
+import datetime
+import time
+import uuid
+
 import pandas as pd
 import numpy as np
 
-import datetime
-import time
-
-import uuid
 import simpy
 
 import dill as pickle
@@ -120,10 +121,10 @@ class SimulationSave:
         If location is "", the init will be saved in the current working directory.
         """
 
-        if len(location) != 0 and location[-1] != "/":
-            location += "/"
+        # assure location is a path
+        location = pathlib.Path(location)
 
-        file_name = location + filename + ".pkl"
+        file_name = location / (filename + ".pkl")
 
         with open(file_name, 'wb') as file:
             pickle.dump(self.init, file)
