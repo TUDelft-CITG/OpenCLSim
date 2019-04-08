@@ -5,7 +5,7 @@ from flask import request
 from flask_cors import CORS
 
 import simpy
-from digital_twin import model
+from digital_twin import model, core, plot
 import datetime
 import time
 
@@ -37,6 +37,25 @@ def simulate():
 
     return jsonify(simulation_result)
 
+@app.route("/planning", methods=['POST'])
+def planning_plot():
+    """return a planning"""
+    if not request.is_json:
+        abort(400, description="content type should be json")
+        return
+
+    json = request.get_json(force=True)
+
+    try:
+        simulation_planning = equipment_plot_from_json(json)
+    except ValueError as valerr:
+        abort(400, description=str(valerr))
+        return
+    except Exception as e:
+        abort(500, description=str(e))
+        return
+
+    return simulation_planning
 
 def simulate_from_json(json):
     """Create a simulation and run it, based on a json input file"""
@@ -59,3 +78,31 @@ def simulate_from_json(json):
     result["completionTime"] = env.now
 
     return result
+
+def equipment_plot_from_json(json):
+    """Create a Gantt chart, based on a json input file"""
+
+    j = json.loads(json)
+
+    vessels = []
+    for item in j['equipment']:
+        if item['features']:
+            vessel = type('Vessel', (core.Identifiable, core.Log), {})
+            vessel = vessel(**{"env": None, "name": item['id']})
+            
+            for feature in item['features']:
+                vessel.log_entry(log = feature['properties']['message'],
+                                t = feature['properties']['time'] + 3600*24,
+                                value = feature['properties']['value'],
+                                geometry_log = feature['geometry']['coordinates'])
+            
+            
+            vessels.append(vessel)
+    
+    activities = ['loading', 'unloading', 'sailing filled', 'sailing empty']
+    colors = {0:'rgb(55,126,184)', 1:'rgb(255,150,0)', 2:'rgb(98, 192, 122)', 3:'rgb(98, 141, 122)'}
+
+    plot.vessel_planning(vessels, activities, colors)
+
+
+    return plot.vessel_planning(vessels, activities, colors, static = True)
