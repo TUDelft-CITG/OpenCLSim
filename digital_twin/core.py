@@ -106,6 +106,20 @@ class EnergyUse(SimpyObject):
         self.energy_use_unloading = energy_use_unloading
 
 
+class HasCosts():
+    """
+    Add cost properties to objects
+    """
+    def __init__(self, dayrate, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+
+        self.dayrate = dayrate
+    
+    @property
+    def cost(self):
+        return (self.log["Timestamp"][-1] - self.log["Timestamp"][0]).total_seconds() / 3600 / 24
+
 
 class HasPlume(SimpyObject):
     """Using values from Becker [2014], https://www.sciencedirect.com/science/article/pii/S0301479714005143.
