@@ -77,12 +77,19 @@ def simulate_from_json(json):
     result = simulation.get_logging()
     result["completionTime"] = env.now
 
+    costs = 0
+    for piece in simulation.equipment:
+        if isinstance(piece, core.HasCosts):
+            costs += piece.cost
+    
+    result["completionCost"] = costs
+
     return result
 
 def equipment_plot_from_json(json):
     """Create a Gantt chart, based on a json input file"""
 
-    j = json.loads(json)
+    j = json.loads(str(json))
 
     vessels = []
     for item in j['equipment']:
@@ -92,9 +99,9 @@ def equipment_plot_from_json(json):
             
             for feature in item['features']:
                 vessel.log_entry(log = feature['properties']['message'],
-                                t = feature['properties']['time'] + 3600*24,
-                                value = feature['properties']['value'],
-                                geometry_log = feature['geometry']['coordinates'])
+                                 t = feature['properties']['time'],
+                                 value = feature['properties']['value'],
+                                 geometry_log = feature['geometry']['coordinates'])
             
             
             vessels.append(vessel)
