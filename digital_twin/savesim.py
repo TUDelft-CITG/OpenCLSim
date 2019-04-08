@@ -8,6 +8,8 @@ import uuid
 import simpy
 
 import dill as pickle
+
+import digital_twin.core as core
 import digital_twin.model as model
 
 class ToSave:
@@ -228,6 +230,7 @@ class LogSaver:
         A file is saved with equipment logs            -- equipment_log.csv
         A file is saved with energy use                -- energy_use.csv
         A file is saved with dredging spill info       -- dredging_spill.csv
+        A file is saved with simulation properties     -- generic_results.csv
         """
 
         # First get all unique properties
@@ -256,8 +259,10 @@ class LogSaver:
         self.get_equipment_log()
         self.get_energy()
         self.get_spill()
+        self.get_results()
 
         # Save all as csv files
+        self.generic_results.to_csv(self.location + "generic_results.csv", index = False)
         self.dredging_spill.to_csv(self.location + "dredging_spill.csv", index = False)
         self.energy_use.to_csv(self.location + "energy_use.csv", index = False)
         self.equipment_log.to_csv(self.location + "equipment_log.csv", index = False)
@@ -566,3 +571,50 @@ class LogSaver:
                            "If you wish to overwrite the existing data, set overwrite to True")
             
         self.energy_use = unique_df
+    
+    def get_results(self):
+        """
+        Obtain a log of all dreding spill
+        """
+
+        object_dict = {"SimulationID": [], "SimulationDuration": [], "SimulationCost": []}
+
+        try:
+            unique_df = pd.read_csv(self.location + "generic_results.csv")
+        except FileNotFoundError:
+            unique_df = pd.DataFrame.from_dict(object_dict)
+
+        costs = 0
+        stops = []
+        starts = []
+
+        for piece in self.equipment:
+            if isinstance(piece, core.HasCosts):
+                costs += piece.cost
+        
+        for activity in self.activities:
+            starts.append(activity.log["Timestamp"][0])
+            stops.append(activity.log["Timestamp"][-1])
+
+        object_dict["SimulationID"].append(self.id)
+        object_dict["SimulationCost"].append(costs)
+        object_dict["SimulationDuration"].append((max(stops) - min(starts)).total_seconds())
+        object_df = pd.DataFrame.from_dict(object_dict)
+
+        if len(unique_df["SimulationID"]) == 0:
+            unique_df = object_df
+            
+        elif not (unique_df["SimulationID"] == self.id).any():
+            unique_df = pd.concat([unique_df, object_df], ignore_index = True)
+        
+        elif self.overwrite == True:
+            drop_rows = []
+
+            for i, row in enumerate(unique_df["SimulationID"] == self.id):
+                if row == True:
+                    drop_rows.append(i)
+            
+            unique_df = unique_df.drop(drop_rows, axis = 0)
+            unique_df = pd.concat([unique_df, object_df], ignore_index = True)
+
+        self.generic_results = unique_df
