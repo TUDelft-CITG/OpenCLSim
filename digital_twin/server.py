@@ -1,3 +1,6 @@
+import json
+import logging
+
 from flask import abort
 from flask import Flask
 from flask import jsonify
@@ -37,6 +40,8 @@ static_folder = root_folder / 'static'
 assert static_folder.exists(), "Make sure you run the server from the static directory. {} does not exist".format(static_folder)
 app = Flask(__name__, static_folder=str(static_folder))
 CORS(app)
+
+logger = logging.getLogger(__name__)
 
 
 @app.route("/")
@@ -93,25 +98,19 @@ def demo_plot():
 def planning_plot():
     """return a planning"""
     if not request.is_json:
-        abort(400, description="content type should be json")
-        return
+        raise ValueError("content type should be json")
 
-    json = request.get_json(force=True)
+    planning = request.get_json(force=True)
 
-    try:
-        simulation_planning = equipment_plot_from_json(json)
-    except ValueError as valerr:
-        abort(400, description=str(valerr))
-        return
-    except Exception as e:
-        abort(500, description=str(e))
-        return
+    logger.error('got planning >>>%s<<<', planning)
+    simulation_planning = equipment_plot(planning)
 
     return simulation_planning
 
 def simulate_from_json(config, tmp_path="static"):
     """Create a simulation and run it, based on a json input file.
     The optional tmp_path parameter should only be used for unit tests."""
+
     if "initialTime" in config:
         simulation_start = datetime.datetime.fromtimestamp(config["initialTime"])
     else:
@@ -143,6 +142,7 @@ def simulate_from_json(config, tmp_path="static"):
 
     return result
 
+
 def save_simulation(config, simulation, tmp_path=""):
     """Save the given simulation. The config is used to produce an md5 hash of its text representation.
     This hash is used as a prefix for the files which are written. This ensures that simulations with the same config
@@ -166,7 +166,7 @@ def save_simulation(config, simulation, tmp_path=""):
 def equipment_plot_from_json(json):
     """Create a Gantt chart, based on a json input file"""
 
-    j = json.loads(str(json))
+    j = equipment
 
     vessels = []
     for item in j['equipment']:
