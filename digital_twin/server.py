@@ -1,13 +1,19 @@
+import datetime
+import time
+
 from flask import abort
 from flask import Flask
 from flask import jsonify
 from flask import request
 from flask_cors import CORS
 
+import matplotlib
+# make sure we use Agg for offscreen rendering
+matplotlib.use('Agg')
+
 import simpy
+
 from digital_twin import model, core, plot
-import datetime
-import time
 
 app = Flask(__name__)
 CORS(app)
@@ -36,6 +42,12 @@ def simulate():
         return
 
     return jsonify(simulation_result)
+
+@app.route("/plot")
+def demo_plot():
+    """demo plot"""
+    fig = plot.demo_plot()
+    return plot.fig2response(fig)
 
 @app.route("/planning", methods=['POST'])
 def planning_plot():
@@ -82,7 +94,7 @@ def simulate_from_json(json):
 
         if isinstance(simulation.equipment[piece], core.HasCosts):
             costs += simulation.equipment[piece].cost
-    
+
     result["completionCost"] = costs
 
     return result
@@ -97,16 +109,16 @@ def equipment_plot_from_json(json):
         if item['features']:
             vessel = type('Vessel', (core.Identifiable, core.Log), {})
             vessel = vessel(**{"env": None, "name": item['id']})
-            
+
             for feature in item['features']:
                 vessel.log_entry(log = feature['properties']['message'],
                                  t = feature['properties']['time'],
                                  value = feature['properties']['value'],
                                  geometry_log = feature['geometry']['coordinates'])
-            
-            
+
+
             vessels.append(vessel)
-    
+
     activities = ['loading', 'unloading', 'sailing filled', 'sailing empty']
     colors = {0:'rgb(55,126,184)', 1:'rgb(255,150,0)', 2:'rgb(98, 192, 122)', 3:'rgb(98, 141, 122)'}
 
