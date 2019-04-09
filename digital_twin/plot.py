@@ -3,6 +3,7 @@ import numpy as np
 import datetime
 
 # plotting libraries
+import plotly
 from plotly.offline import init_notebook_mode, iplot
 import plotly.graph_objs as go
 import matplotlib.pyplot as plt
@@ -14,7 +15,7 @@ from simplekml import Kml, Style
 
 import networkx as nx
 
-def vessel_planning(vessels, activities, colors, web=False):
+def vessel_planning(vessels, activities, colors, web=False, static=False):
         """create a plot of the planning of vessels"""
 
         def get_segments(series, activity, y_val):
@@ -79,7 +80,11 @@ def vessel_planning(vessels, activities, colors, web=False):
         # plot figure
         init_notebook_mode(connected=True)        
         fig = go.Figure(data=traces, layout=layout)
-        return iplot(fig, filename='news-source')
+
+        if not static:
+            return iplot(fig, filename='news-source')
+        else:
+            return plotly.offline.plot(fig, image_filename = 'planning', image = 'svg')
 
 def vessel_kml(env, vessels, 
                fname='vessel_movements.kml',

@@ -13,6 +13,9 @@ from flask_cors import CORS
 import simpy
 from digital_twin import model
 from digital_twin import savesim
+from digital_twin import core
+from digital_twin import plot
+
 import datetime
 import os
 import time
@@ -74,6 +77,25 @@ def simulate():
 
     return jsonify(simulation_result)
 
+@app.route("/planning", methods=['POST'])
+def planning_plot():
+    """return a planning"""
+    if not request.is_json:
+        abort(400, description="content type should be json")
+        return
+
+    json = request.get_json(force=True)
+
+    try:
+        simulation_planning = equipment_plot_from_json(json)
+    except ValueError as valerr:
+        abort(400, description=str(valerr))
+        return
+    except Exception as e:
+        abort(500, description=str(e))
+        return
+
+    return simulation_planning
 
 def simulate_from_json(config, tmp_path="static"):
     """Create a simulation and run it, based on a json input file.
@@ -96,11 +118,18 @@ def simulate_from_json(config, tmp_path="static"):
     result = simulation.get_logging()
     result["completionTime"] = env.now
 
+    costs = 0
+    for piece in simulation.equipment:
+
+        if isinstance(simulation.equipment[piece], core.HasCosts):
+            costs += simulation.equipment[piece].cost
+
+    result["completionCost"] = costs
+
     if "saveSimulation" in config and config["saveSimulation"]:
         save_simulation(config, simulation, tmp_path=tmp_path)
 
     return result
-
 
 def save_simulation(config, simulation, tmp_path=""):
     """Save the given simulation. The config is used to produce an md5 hash of its text representation.
@@ -121,3 +150,31 @@ def save_simulation(config, simulation, tmp_path=""):
     path += "simulations/"
     os.makedirs(path, exist_ok=True)  # create the simulations directory if it does not yet exist
     savesim.save_logs(simulation, path, file_prefix)
+
+def equipment_plot_from_json(json):
+    """Create a Gantt chart, based on a json input file"""
+
+    j = json.loads(str(json))
+
+    vessels = []
+    for item in j['equipment']:
+        if item['features']:
+            vessel = type('Vessel', (core.Identifiable, core.Log), {})
+            vessel = vessel(**{"env": None, "name": item['id']})
+
+            for feature in item['features']:
+                vessel.log_entry(log = feature['properties']['message'],
+                                 t = feature['properties']['time'],
+                                 value = feature['properties']['value'],
+                                 geometry_log = feature['geometry']['coordinates'])
+
+
+            vessels.append(vessel)
+
+    activities = ['loading', 'unloading', 'sailing filled', 'sailing empty']
+    colors = {0:'rgb(55,126,184)', 1:'rgb(255,150,0)', 2:'rgb(98, 192, 122)', 3:'rgb(98, 141, 122)'}
+
+    plot.vessel_planning(vessels, activities, colors)
+
+
+    return plot.vessel_planning(vessels, activities, colors, static = True)

@@ -568,6 +568,12 @@ def get_kwargs_from_properties(environment, name, properties, sites):
     if "level" in properties:
         kwargs["level"] = properties["level"]
 
+    # HasCosts
+    if "dayrate" in properties:
+        kwargs["dayrate"] = properties["dayrate"]
+    elif "weekrate" in properties:
+        kwargs["weekrate"] = properties["weekrate"]
+
     # HasPlume
     if "sigma_d" in properties:
         kwargs["sigma_d"] = properties["sigma_d"]
