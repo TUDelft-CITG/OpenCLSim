@@ -39,14 +39,14 @@ class EnvEnvoder(json.JSONEncoder):
             return {'__type__': 'simpy.Environment'}
         elif isinstance(obj, types.FunctionType):
             # we can't serialize functions
-            logger.warn('could not serialize %s', obj)
+            logger.warning('could not serialize %s', obj)
             return None
         elif isinstance(obj, simpy.Resource):
             return {'capacity': obj.capacity}
         elif isinstance(obj, simpy.Container):
             return {'capacity': obj.capacity, 'level': obj.level}
         elif isinstance(obj, simpy.Process):
-            logger.warn('could not serialize %s', obj)
+            logger.warning('could not serialize %s', obj)
             return None
         elif isinstance(obj, SimpyObject):
             dct = vars(obj)
@@ -58,7 +58,7 @@ class EnvEnvoder(json.JSONEncoder):
             return dct
         elif isinstance(obj, types.FunctionType):
             # we can't serialize functions
-            logger.warn('could not serialize %s', obj)
+            logger.warning('could not serialize %s', obj)
             return None
 
         elif hasattr(obj, '__geo_interface__'):

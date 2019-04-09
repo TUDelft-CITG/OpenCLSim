@@ -12,8 +12,6 @@ import dill as pickle
 
 
 import digital_twin.model
-import digital_twin.core as core
-import digital_twin.model as model
 
 
 def save_logs(simulation, location, file_prefix):
@@ -615,7 +613,7 @@ class LogSaver:
         starts = []
 
         for piece in self.equipment:
-            if isinstance(piece, core.HasCosts):
+            if isinstance(piece, digital_twin.core.HasCosts):
                 costs += piece.cost
 
         for activity in self.activities:
