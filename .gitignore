@@ -115,4 +115,4 @@ ENV/
 !.elasticbeanstalk/*.global.yml
 
 # simulations stored by server
-simulations
+shared/simulations
