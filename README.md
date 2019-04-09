@@ -61,3 +61,11 @@ cd app-Hydraulic-Infrastructure
 # Run app
 npm run serve
 ```
+
+## Deploy to AWS
+
+``` bash
+pip install --upgrade awsebcli
+eb init
+eb deploy
+```

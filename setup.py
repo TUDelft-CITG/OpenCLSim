@@ -35,7 +35,7 @@ requires = [
     "nose",
     "Flask",
     "Flask-cors",
-    "Dill",
+    "Dill>=0.2.8",
 ]
 
 setup_requirements = [
@@ -46,6 +46,7 @@ tests_require = [
     "pytest",
     "pytest-cov",
     "pytest-timeout",
+    "pytest-datadir"
 ]
 
 
@@ -78,6 +79,6 @@ setup(
     test_suite="tests",
     tests_require=tests_require,
     url="https://github.com/TUDelft-CITG/digital_twin",
-    version="0.2.0",
+    version="0.3.0",
     zip_safe=False,
 )

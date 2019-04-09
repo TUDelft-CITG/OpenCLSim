@@ -1,16 +1,36 @@
+import pathlib
+import datetime
+import time
+import uuid
+
 import pandas as pd
 import numpy as np
 
-import datetime
-import time
-
-import uuid
 import simpy
 
 import dill as pickle
 
-import digital_twin.core as core
-import digital_twin.model as model
+
+import digital_twin.model
+
+
+def save_logs(simulation, location, file_prefix):
+    # todo add code to LogSaver to allow adding a file_prefix to each file
+    site_logs = list(simulation.sites.values())
+    equipment_logs = list(simulation.equipment.values())
+    activity_logs = [activity["activity_log"] for activity in simulation.activities.values()]
+    logsaver = LogSaver(
+        site_logs,
+        equipment_logs,
+        activity_logs,
+        location=location,
+        file_prefix=file_prefix,
+        overwrite=True,
+        append_to_existing=False
+    )
+    logsaver.save_all_logs()
+
+
 
 class ToSave:
     """
@@ -19,13 +39,13 @@ class ToSave:
     data_type is the object type: ship, site, crane, etc.
     data: is the dictionary that is used to fill the data_type
     """
-    
+
     def __init__(self, data_type, data, *args, **kwargs):
 
         # This is the case for activities
-        if data_type == model.Activity:
+        if data_type == digital_twin.model.Activity:
             self.data_type = "Activity"
-            
+
             self.data = {"name": data["name"],
                          "id": data["id"],
                          "mover": data["mover"].name,
@@ -36,7 +56,7 @@ class ToSave:
                          "stop_condition": None, #data["stop_condition"],
                          "start_condition": None, #data["start_condition"],
                          "condition": None} #data["condition"]}
-        
+
         # This is the case for equipment and sites
         elif type(data_type) == type:
             self.data_type = []
@@ -44,7 +64,7 @@ class ToSave:
             for subclass in data_type.__mro__:
                 if subclass.__module__ == "digital_twin.core" and subclass.__name__ not in ["Identifiable", "Log", "SimpyObject"] :
                     self.data_type.append(subclass.__name__)
-            
+
             self.data = data
             self.data["env"] = None
 
@@ -72,7 +92,7 @@ class SimulationSave:
         # Save all properties
         assert type(activities) == list
         self.activities = activities
-        
+
         assert type(equipment) == list
         self.equipment = equipment
 
@@ -88,14 +108,14 @@ class SimulationSave:
         """
         Save all properties of the simulation
         """
-        
+
         return {"ID": self.id,
                 "Simulation start": self.simulation_start,
                 "Activities": self.activities,
                 "Equipment": self.equipment,
                 "Sites": self.sites}
-        
-    
+
+
     def save_ini_file(self, filename, location = ""):
         """
         For all items of the simulation, save the properties and generate an initialization file.
@@ -104,21 +124,21 @@ class SimulationSave:
         If location is "", the init will be saved in the current working directory.
         """
 
-        if len(location) != 0 and location[-1] != "/":
-            location += "/"
+        # assure location is a path
+        location = pathlib.Path(location)
 
-        file_name = location + filename + ".pkl"
+        file_name = location / (filename + ".pkl")
 
         with open(file_name, 'wb') as file:
             pickle.dump(self.init, file)
-    
+
 
 class SimulationOpen:
     """
     SimulationOpen allows to define simulations from .pkl files.
-    
+
     If location is "", the init will be saved in the current working directory.
-    """ 
+    """
 
     def __init__(self, file_name):
         """ Initialization """
@@ -135,7 +155,7 @@ class SimulationOpen:
 
         with open(file_name, 'rb') as file:
             return pickle.load(file)
-    
+
     def extract_files(self):
         environment = simpy.Environment(initial_time = self.simulation["Simulation start"])
         environment.epoch = time.mktime(datetime.datetime.fromtimestamp(self.simulation["Simulation start"]).timetuple())
@@ -144,30 +164,30 @@ class SimulationOpen:
         equipment = []
 
         for site in self.simulation["Sites"]:
-            site_object = model.get_class_from_type_list("Site", site.data_type)
+            site_object = digital_twin.model.get_class_from_type_list("Site", site.data_type)
             site.data["env"] = environment
-            
+
             sites.append(site_object(**site.data))
 
         for ship in self.simulation["Equipment"]:
-            ship_object = model.get_class_from_type_list("Ship", ship.data_type)
+            ship_object = digital_twin.model.get_class_from_type_list("Ship", ship.data_type)
             ship.data["env"] = environment
-            
+
             equipment.append(ship_object(**ship.data))
-        
+
         activities = []
 
         for activity in self.simulation["Activities"]:
             data = activity.data
-            
+
             mover = [ i for i in equipment if i.name == data["mover"] ][0]
             loader = [ i for i in equipment if i.name == data["loader"] ][0]
             unloader = [ i for i in equipment if i.name == data["unloader"] ][0]
-            
+
             origin = [ i for i in sites if i.name == data["origin"] ][0]
             destination = [ i for i in sites if i.name == data["destination"] ][0]
-            
-            activities.append(model.Activity(env = environment,         # The simpy environment defined in the first cel
+
+            activities.append(digital_twin.model.Activity(env = environment,         # The simpy environment defined in the first cel
                                              name = data["name"],       # We are moving soil
                                              ID = data["id"],           # The id
                                              origin = origin,           # We originate from the from_site
@@ -182,19 +202,19 @@ class SimulationOpen:
 class LogSaver:
     """
     LogSaver allow saving all logs as .csv files.
-    
+
     Objects should be a list containing the activities, sites and equipment.
     The ID could be the ID that is saved to the .pkl file, entering an ID is optional.
     If location is "", the files will be saved in the current working directory.
-    """ 
+    """
 
-    def __init__(self, sites, equipment, activities, simulation_id = "", simulation_name = "", location = "", overwrite = False):
+    def __init__(self, sites, equipment, activities, simulation_id="", simulation_name="", location="", file_prefix="", overwrite=False, append_to_existing=True):
         """ Initialization """
 
         # Save all properties
         assert type(activities) == list
         self.activities = activities
-        
+
         assert type(equipment) == list
         self.equipment = equipment
 
@@ -210,12 +230,13 @@ class LogSaver:
 
         if len(self.location) != 0 and self.location[-1] != "/":
             self.location += "/"
+        self.location += file_prefix
 
         # Finally save all items
         self.overwrite = overwrite
-        self.save_all_logs()
-    
-    
+        self.append_to_existing = append_to_existing
+
+
     def save_all_logs(self):
         """
         Save all logs to a specified location.
@@ -226,7 +247,7 @@ class LogSaver:
         A file is saved with unique equipment objects  -- equipment.csv
         A file is saved with unique activity objects   -- activities.csv
         A file is saved with unique simulations        -- simulations.csv
-        
+
         A file is saved with equipment logs            -- equipment_log.csv
         A file is saved with energy use                -- energy_use.csv
         A file is saved with dredging spill info       -- dredging_spill.csv
@@ -241,7 +262,7 @@ class LogSaver:
         # Obtain information on activities
         activity_dict = {"ActivityID": [], "ActivityName": []}
         self.get_unique_properties("activities", activity_dict)
-        
+
         # Obtain information on equipment
         equipment_dict = {"EquipmentID": [], "EquipmentName": []}
         self.get_unique_properties("equipment", equipment_dict)
@@ -254,7 +275,7 @@ class LogSaver:
         event_dict = {"EventID": [], "EventName": []}
         self.get_unique_properties("events", event_dict)
 
-        
+
         # Continue with obtaining the logs, energy use and dredging spill
         self.get_equipment_log()
         self.get_energy()
@@ -277,36 +298,39 @@ class LogSaver:
         Obtain unique properties for the given list
         """
 
-        try:
-            unique_df = pd.read_csv(self.location + object_type + ".csv")
-        except FileNotFoundError:
+        if self.append_to_existing:
+            try:
+                unique_df = pd.read_csv(self.location + object_type + ".csv")
+            except FileNotFoundError:
+                unique_df = pd.DataFrame.from_dict(object_dict)
+        else:
             unique_df = pd.DataFrame.from_dict(object_dict)
 
         if object_type == "simulations":
             self.unique_simulations = self.append_dataframe(unique_df, self, "Simulation")
-        
+
         elif object_type == "activities":
             for activity in self.activities:
                 unique_df = self.append_dataframe(unique_df, activity, "Activity")
-            
+
             self.unique_activities = unique_df
-        
+
         elif object_type == "equipment":
             for piece in self.equipment:
                 unique_df = self.append_dataframe(unique_df, piece, "Equipment")
-            
+
             self.unique_equipment = unique_df
 
         elif object_type == "events":
-            for piece in self.equipment:                
+            for piece in self.equipment:
                 unique_df = self.event_dataframe(unique_df, piece)
-            
+
             self.unique_events = unique_df
-        
+
         elif object_type == "location":
             for site in self.sites:
                 unique_df = self.append_dataframe(unique_df, site, "Location")
-            
+
             self.unique_locations = unique_df
 
 
@@ -322,7 +346,7 @@ class LogSaver:
             else:
                 existing_df = existing_df.append({object_type + "ID": object_id.id, object_type + "Name": object_id.name,
                                                   "Longitude": object_id.geometry.x, "Latitude": object_id.geometry.y}, ignore_index=True)
-            
+
         elif self.overwrite == True:
             existing_df = existing_df[existing_df[object_type + "ID"] != object_id.id]
 
@@ -333,18 +357,18 @@ class LogSaver:
                                                   "Longitude": object_id.geometry.x, "Latitude": object_id.geometry.y}, ignore_index=True)
 
         else:
-            raise KeyError("Simulation ID or simulation name already exist. " + 
+            raise KeyError("Simulation ID or simulation name already exist. " +
                             "If you wish to overwrite the existing data, set overwrite to True")
-        
+
         return existing_df
 
-    
+
     def event_dataframe(self, existing_df, piece):
         """
         Check if dataframe is alfready filled with information, if not append.
         If it is filled with similar values, raise an error unless self.overwrite == True.
         """
-        
+
         log = pd.DataFrame.from_dict(piece.log)
         events = list(log["Message"].unique())
 
@@ -358,7 +382,7 @@ class LogSaver:
 
         return existing_df
 
-    
+
     def get_equipment_log(self):
         """
         Create a dataframe from all equipment logs
@@ -388,7 +412,7 @@ class LogSaver:
                         for k, LocationID in enumerate(self.unique_locations["LocationID"]):
                             if x == self.unique_locations["Longitude"][k] and y == self.unique_locations["Latitude"][k]:
                                 object_dict["LocationID"].append(LocationID)
-                    
+
                     elif message == event + " stop":
                         object_dict["EventStop"].append(object_log["Timestamp"][i])
 
@@ -396,7 +420,7 @@ class LogSaver:
         object_df = pd.DataFrame.from_dict(object_dict)
         durations = (object_df["EventStop"] - object_df["EventStart"])
         durations_days = []
-        
+
         for event in durations:
             durations_days.append(event.total_seconds() / 3600 / 24)
 
@@ -405,22 +429,22 @@ class LogSaver:
         # Check if combination of simulation ID and object ID already exists
         if len(unique_df["SimulationID"]) == 0:
             unique_df = object_df
-            
+
         elif not (unique_df["SimulationID"] == self.id).any():
             unique_df = pd.concat([unique_df, object_df], ignore_index = True)
-        
+
         elif self.overwrite == True:
             drop_rows = []
 
             for i, row in enumerate(unique_df["SimulationID"] == self.id):
                 if row == True:
                     drop_rows.append(i)
-            
+
             unique_df = unique_df.drop(drop_rows, axis = 0)
             unique_df = pd.concat([unique_df, object_df], ignore_index = True)
-        
+
         else:
-            raise KeyError("Simulation ID or simulation name already exist. " + 
+            raise KeyError("Simulation ID or simulation name already exist. " +
                            "If you wish to overwrite the existing data, set overwrite to True")
 
         self.equipment_log = unique_df
@@ -430,7 +454,7 @@ class LogSaver:
         """
         Obtain a log of all dreding spill
         """
-        
+
         object_dict = {"SimulationID": [], "ObjectID": [], "EventID": [], "LocationID": [], "SpillStart": [], "SpillStop": [], "SpillDuration": [], "Spill": []}
 
         try:
@@ -449,7 +473,7 @@ class LogSaver:
                             event_start_time = object_log["Timestamp"][i - j - 1]
                             event_start_msg = event_message.replace(" start", "")
                             break
-                    
+
                     loop_list = list(object_log["Message"][i::])
                     for j, event_message in enumerate(loop_list):
                         if "stop" in event_message:
@@ -479,31 +503,31 @@ class LogSaver:
 
         if len(unique_df["SimulationID"]) == 0:
             unique_df = object_df
-            
+
         elif not (unique_df["SimulationID"] == self.id).any():
             unique_df = pd.concat([unique_df, object_df], ignore_index = True)
-        
+
         elif self.overwrite == True:
             drop_rows = []
 
             for i, row in enumerate(unique_df["SimulationID"] == self.id):
                 if row == True:
                     drop_rows.append(i)
-            
+
             unique_df = unique_df.drop(drop_rows, axis = 0)
             unique_df = pd.concat([unique_df, object_df], ignore_index = True)
-        
+
         else:
-            raise KeyError("Simulation ID or simulation name already exist. " + 
+            raise KeyError("Simulation ID or simulation name already exist. " +
                            "If you wish to overwrite the existing data, set overwrite to True")
-            
+
         self.dredging_spill = unique_df
 
     def get_energy(self):
         """
         Obtain a log of all energy use
         """
-        
+
         object_dict = {"SimulationID": [], "ObjectID": [], "EventID": [], "LocationID": [], "EnergyUseStart": [], "EnergyUseStop": [], "EnergyUseDuration": [], "EnergyUse": []}
 
         try:
@@ -522,7 +546,7 @@ class LogSaver:
                             event_start_time = object_log["Timestamp"][i - j - 1]
                             event_start_msg = event_message.replace(" start", "")
                             break
-                    
+
                     loop_list = list(object_log["Message"][i::])
                     for j, event_message in enumerate(loop_list):
                         if "stop" in event_message:
@@ -531,7 +555,7 @@ class LogSaver:
                             break
 
                     assert event_start_msg == event_stop_msg
-                    
+
                     for j, event in enumerate(self.unique_events["EventName"]):
                         if event_start_msg == event:
                             object_dict["SimulationID"].append(self.id)
@@ -552,26 +576,26 @@ class LogSaver:
 
         if len(unique_df["SimulationID"]) == 0:
             unique_df = object_df
-            
+
         elif not (unique_df["SimulationID"] == self.id).any():
             unique_df = pd.concat([unique_df, object_df], ignore_index = True)
-        
+
         elif self.overwrite == True:
             drop_rows = []
 
             for i, row in enumerate(unique_df["SimulationID"] == self.id):
                 if row == True:
                     drop_rows.append(i)
-            
+
             unique_df = unique_df.drop(drop_rows, axis = 0)
             unique_df = pd.concat([unique_df, object_df], ignore_index = True)
-        
+
         else:
-            raise KeyError("Simulation ID or simulation name already exist. " + 
+            raise KeyError("Simulation ID or simulation name already exist. " +
                            "If you wish to overwrite the existing data, set overwrite to True")
-            
+
         self.energy_use = unique_df
-    
+
     def get_results(self):
         """
         Obtain a log of all dreding spill
@@ -589,9 +613,9 @@ class LogSaver:
         starts = []
 
         for piece in self.equipment:
-            if isinstance(piece, core.HasCosts):
+            if isinstance(piece, digital_twin.core.HasCosts):
                 costs += piece.cost
-        
+
         for activity in self.activities:
             starts.append(activity.log["Timestamp"][0])
             stops.append(activity.log["Timestamp"][-1])
@@ -603,17 +627,17 @@ class LogSaver:
 
         if len(unique_df["SimulationID"]) == 0:
             unique_df = object_df
-            
+
         elif not (unique_df["SimulationID"] == self.id).any():
             unique_df = pd.concat([unique_df, object_df], ignore_index = True)
-        
+
         elif self.overwrite == True:
             drop_rows = []
 
             for i, row in enumerate(unique_df["SimulationID"] == self.id):
                 if row == True:
                     drop_rows.append(i)
-            
+
             unique_df = unique_df.drop(drop_rows, axis = 0)
             unique_df = pd.concat([unique_df, object_df], ignore_index = True)
 
