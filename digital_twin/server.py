@@ -1,6 +1,3 @@
-import pathlib
-import urllib.parse
-
 from flask import abort
 from flask import Flask
 from flask import jsonify
@@ -9,6 +6,10 @@ from flask import send_file
 from flask import send_from_directory
 from flask import make_response
 from flask_cors import CORS
+
+import matplotlib
+# make sure we use Agg for offscreen rendering
+matplotlib.use('Agg')
 
 import simpy
 from digital_twin import model
@@ -20,8 +21,13 @@ import datetime
 import os
 import time
 
+from digital_twin import model, core, plot
+
 import pandas as pd
 import glob
+
+import pathlib
+import urllib.parse
 
 import json
 import hashlib
@@ -76,6 +82,12 @@ def simulate():
         return
 
     return jsonify(simulation_result)
+
+@app.route("/plot")
+def demo_plot():
+    """demo plot"""
+    fig = plot.demo_plot()
+    return plot.fig2response(fig)
 
 @app.route("/planning", methods=['POST'])
 def planning_plot():
