@@ -122,7 +122,10 @@ class HasCosts():
     
     @property
     def cost(self):
-        return (self.log["Timestamp"][-1] - self.log["Timestamp"][0]).total_seconds() / 3600 / 24 * self.dayrate + self.mobilisation + self.demobilisation
+
+        cost = (self.log["Timestamp"][-1] - self.log["Timestamp"][0]).total_seconds() / 3600 / 24 * self.dayrate if self.log["Timestamp"] else 0
+
+        return cost + self.mobilisation + self.demobilisation
 
 
 class HasPlume(SimpyObject):

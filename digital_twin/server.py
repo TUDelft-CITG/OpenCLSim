@@ -79,8 +79,9 @@ def simulate_from_json(json):
 
     costs = 0
     for piece in simulation.equipment:
-        if isinstance(piece, core.HasCosts):
-            costs += piece.cost
+
+        if isinstance(simulation.equipment[piece], core.HasCosts):
+            costs += simulation.equipment[piece].cost
     
     result["completionCost"] = costs
 
