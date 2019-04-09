@@ -26,14 +26,8 @@ def simulate():
 
     json = request.get_json(force=True)
 
-    try:
-        simulation_result = simulate_from_json(json)
-    except ValueError as valerr:
-        abort(400, description=str(valerr))
-        return
-    except Exception as e:
-        abort(500, description=str(e))
-        return
+
+    simulation_result = simulate_from_json(json)
 
     return jsonify(simulation_result)
 
@@ -82,7 +76,7 @@ def simulate_from_json(json):
 
         if isinstance(simulation.equipment[piece], core.HasCosts):
             costs += simulation.equipment[piece].cost
-    
+
     result["completionCost"] = costs
 
     return result
@@ -97,16 +91,16 @@ def equipment_plot_from_json(json):
         if item['features']:
             vessel = type('Vessel', (core.Identifiable, core.Log), {})
             vessel = vessel(**{"env": None, "name": item['id']})
-            
+
             for feature in item['features']:
                 vessel.log_entry(log = feature['properties']['message'],
                                  t = feature['properties']['time'],
                                  value = feature['properties']['value'],
                                  geometry_log = feature['geometry']['coordinates'])
-            
-            
+
+
             vessels.append(vessel)
-    
+
     activities = ['loading', 'unloading', 'sailing filled', 'sailing empty']
     colors = {0:'rgb(55,126,184)', 1:'rgb(255,150,0)', 2:'rgb(98, 192, 122)', 3:'rgb(98, 141, 122)'}
 
