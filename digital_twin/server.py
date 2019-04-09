@@ -1,3 +1,6 @@
+import json
+import logging
+
 from flask import abort
 from flask import Flask
 from flask import jsonify
@@ -12,6 +15,8 @@ import time
 app = Flask(__name__)
 CORS(app)
 
+logger = logging.getLogger(__name__)
+
 @app.route("/")
 def main():
     return jsonify(dict(message="Basic Digital Twin Server"))
@@ -24,10 +29,10 @@ def simulate():
         abort(400, description="content type should be json")
         return
 
-    json = request.get_json(force=True)
+    config = request.get_json(force=True)
 
 
-    simulation_result = simulate_from_json(json)
+    simulation_result = simulate_from_json(config)
 
     return jsonify(simulation_result)
 
@@ -35,26 +40,19 @@ def simulate():
 def planning_plot():
     """return a planning"""
     if not request.is_json:
-        abort(400, description="content type should be json")
-        return
+        raise ValueError("content type should be json")
 
-    json = request.get_json(force=True)
+    planning = request.get_json(force=True)
 
-    try:
-        simulation_planning = equipment_plot_from_json(json)
-    except ValueError as valerr:
-        abort(400, description=str(valerr))
-        return
-    except Exception as e:
-        abort(500, description=str(e))
-        return
+    logger.error('got planning >>>%s<<<', planning)
+    simulation_planning = equipment_plot(planning)
 
     return simulation_planning
 
-def simulate_from_json(json):
+def simulate_from_json(config):
     """Create a simulation and run it, based on a json input file"""
-    if "initialTime" in json:
-        simulation_start = datetime.datetime.fromtimestamp(json["initialTime"])
+    if "initialTime" in config:
+        simulation_start = datetime.datetime.fromtimestamp(config["initialTime"])
     else:
         simulation_start = datetime.datetime.now()
     env = simpy.Environment(initial_time=time.mktime(simulation_start.timetuple()))
@@ -62,9 +60,9 @@ def simulate_from_json(json):
     simulation = model.Simulation(
         env=env,
         name="server simulation",
-        sites=json["sites"],
-        equipment=json["equipment"],
-        activities=json["activities"]
+        sites=config["sites"],
+        equipment=config["equipment"],
+        activities=config["activities"]
     )
     env.run()
 
@@ -81,10 +79,10 @@ def simulate_from_json(json):
 
     return result
 
-def equipment_plot_from_json(json):
+def equipment_plot(equipment):
     """Create a Gantt chart, based on a json input file"""
 
-    j = json.loads(str(json))
+    j = equipment
 
     vessels = []
     for item in j['equipment']:
