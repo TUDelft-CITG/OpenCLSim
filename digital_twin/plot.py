@@ -1,6 +1,8 @@
+import io
+import datetime
+
 import pandas as pd
 import numpy as np
-import datetime
 
 # plotting libraries
 import plotly
@@ -13,7 +15,26 @@ import pyproj
 import shapely.geometry
 from simplekml import Kml, Style
 
+import flask
+
 import networkx as nx
+
+def demo_plot():
+    """example plot"""
+    fig, ax = plt.subplots()
+    ax.plot([1, 2, 3])
+    return fig
+
+
+def fig2response(fig):
+    """return a figure as a response"""
+    stream = io.BytesIO()
+    format = 'png'
+    fig.savefig(stream, format=format)
+    mimetype = 'image/png'
+    # rewind the stream
+    stream.seek(0)
+    return flask.send_file(stream, mimetype=mimetype)
 
 
 def vessel_planning(vessels, activities, colors, web=False, static=False):
@@ -94,7 +115,7 @@ def vessel_kml(env, vessels,
                size=1,
                scale=1,
                stepsize=120):
-    """Create a kml visualisation of vessels. Env variable needs to contain 
+    """Create a kml visualisation of vessels. Env variable needs to contain
     epoch to enable conversion of simulation time to real time. Vessels need
     logs that contain geometries in lat, lon as a function of time."""
 
@@ -170,7 +191,7 @@ def site_kml(env, sites,
              size=1,
              scale=3,
              stepsize=120):
-    """Create a kml visualisation of vessels. Env variable needs to contain 
+    """Create a kml visualisation of vessels. Env variable needs to contain
     epoch to enable conversion of simulation time to real time. Vessels need
     logs that contain geometries in lat, lon as a function of time."""
 
@@ -225,7 +246,7 @@ def graph_kml(env,
               size=0.5,
               scale=0.5,
               width=5):
-    """Create a kml visualisation of graph. Env variable needs to contain 
+    """Create a kml visualisation of graph. Env variable needs to contain
     graph."""
 
     # create a kml file containing the visualisation
