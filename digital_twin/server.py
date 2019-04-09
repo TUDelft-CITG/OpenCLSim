@@ -1,10 +1,10 @@
-import datetime
-import time
-
 from flask import abort
 from flask import Flask
 from flask import jsonify
 from flask import request
+from flask import send_file
+from flask import send_from_directory
+from flask import make_response
 from flask_cors import CORS
 
 import matplotlib
@@ -12,15 +12,55 @@ import matplotlib
 matplotlib.use('Agg')
 
 import simpy
+from digital_twin import model
+from digital_twin import savesim
+from digital_twin import core
+from digital_twin import plot
+
+import datetime
+import os
+import time
 
 from digital_twin import model, core, plot
 
-app = Flask(__name__)
+import pandas as pd
+import glob
+
+import pathlib
+import urllib.parse
+
+import json
+import hashlib
+
+root_folder = pathlib.Path(__file__).parent.parent
+static_folder = root_folder / 'static'
+assert static_folder.exists(), "Make sure you run the server from the static directory. {} does not exist".format(static_folder)
+app = Flask(__name__, static_folder=str(static_folder))
 CORS(app)
+
 
 @app.route("/")
 def main():
     return jsonify(dict(message="Basic Digital Twin Server"))
+
+
+@app.route("/csv")
+def csv():
+    print(dir(request), request, request.url, request.base_url, request.host_url)
+    paths = [
+        urllib.parse.urljoin(
+            request.host_url,
+            str(x)
+        )
+        for x
+        in static_folder.relative_to(root_folder).glob('**/*.csv')
+    ]
+    print(paths, static_folder)
+    df = pd.DataFrame(data={"paths": paths})
+    csv = df.to_csv(index=False)
+    resp = make_response(csv)
+    resp.headers['Content-Type'] = "text/csv"
+    return resp
 
 
 @app.route("/simulate", methods=['POST'])
@@ -30,10 +70,10 @@ def simulate():
         abort(400, description="content type should be json")
         return
 
-    json = request.get_json(force=True)
+    config = request.get_json(force=True)
 
     try:
-        simulation_result = simulate_from_json(json)
+        simulation_result = simulate_from_json(config)
     except ValueError as valerr:
         abort(400, description=str(valerr))
         return
@@ -69,10 +109,11 @@ def planning_plot():
 
     return simulation_planning
 
-def simulate_from_json(json):
-    """Create a simulation and run it, based on a json input file"""
-    if "initialTime" in json:
-        simulation_start = datetime.datetime.fromtimestamp(json["initialTime"])
+def simulate_from_json(config, tmp_path="static"):
+    """Create a simulation and run it, based on a json input file.
+    The optional tmp_path parameter should only be used for unit tests."""
+    if "initialTime" in config:
+        simulation_start = datetime.datetime.fromtimestamp(config["initialTime"])
     else:
         simulation_start = datetime.datetime.now()
     env = simpy.Environment(initial_time=time.mktime(simulation_start.timetuple()))
@@ -80,9 +121,9 @@ def simulate_from_json(json):
     simulation = model.Simulation(
         env=env,
         name="server simulation",
-        sites=json["sites"],
-        equipment=json["equipment"],
-        activities=json["activities"]
+        sites=config["sites"],
+        equipment=config["equipment"],
+        activities=config["activities"]
     )
     env.run()
 
@@ -97,7 +138,30 @@ def simulate_from_json(json):
 
     result["completionCost"] = costs
 
+    if "saveSimulation" in config and config["saveSimulation"]:
+        save_simulation(config, simulation, tmp_path=tmp_path)
+
     return result
+
+def save_simulation(config, simulation, tmp_path=""):
+    """Save the given simulation. The config is used to produce an md5 hash of its text representation.
+    This hash is used as a prefix for the files which are written. This ensures that simulations with the same config
+    are written to the same files (although it is not a completely foolproof method, for example changing an equipment
+    or location name, does not alter the simulation result, but does alter the config file).
+    The optional tmp_path parameter should only be used for unit tests."""
+
+    # TODO: replace traversing static_folder pathlib path
+    config_text = json.dumps(config, sort_keys=True).encode("utf-8")
+    hash = hashlib.md5(config_text).hexdigest()
+    file_prefix = hash + '_'
+
+    path = str(tmp_path)
+    if len(path) != 0 and str(path)[-1] != "/":
+        path += "/"
+    # TODO: use pathlib
+    path += "simulations/"
+    os.makedirs(path, exist_ok=True)  # create the simulations directory if it does not yet exist
+    savesim.save_logs(simulation, path, file_prefix)
 
 def equipment_plot_from_json(json):
     """Create a Gantt chart, based on a json input file"""

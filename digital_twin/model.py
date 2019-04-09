@@ -1,6 +1,8 @@
 from functools import partial
 import digital_twin.core as core
+import digital_twin.savesim as savesim
 import datetime
+import uuid
 import shapely
 import shapely.geometry
 import scipy.interpolate
@@ -8,8 +10,10 @@ import scipy.integrate
 import pandas as pd
 import numpy as np
 
+class Condition:
+    pass
 
-class LevelCondition:
+class LevelCondition(Condition):
     """The LevelCondition class can be used to specify the start level and stop level conditions for an Activity.
 
     container: an object which extends HasContainer, the container whose level needs to be >= or <= a certain value
@@ -30,7 +34,7 @@ class LevelCondition:
         return self.min_level <= current_level <= self.max_level
 
 
-class TimeCondition:
+class TimeCondition(Condition):
     """The TimeCondition class can be used to specify the period in which an activity can take place
 
     environment: the environment in which the simulation takes place
@@ -51,7 +55,7 @@ class TimeCondition:
         return self.start <= current_time >= self.stop
 
 
-class AndCondition:
+class AndCondition(Condition):
     """The AndCondition class can be used to combine several different conditions into a single condition for an Activity.
 
     conditions: a list of condition objects that need to all be satisfied for the condition to be satisfied
@@ -71,7 +75,7 @@ class AndCondition:
         return True
 
 
-class OrCondition:
+class OrCondition(Condition):
     """The AndCondition class can be used to combine several different conditions into a single condition for an Activity.
 
     conditions: a list of condition objects, one of which needs to be satisfied for the condition to be satisfied
@@ -91,7 +95,7 @@ class OrCondition:
         return False
 
 
-class TrueCondition:
+class TrueCondition(Condition):
     """The TrueCondition class defines a condition which is always satisfied."""
 
     def __init__(self, *args, **kwargs):
@@ -350,9 +354,10 @@ class Simulation(core.Identifiable, core.Log):
 
     def __init_activities(self, activities):
         self.activities = {}
+        activity_log_class = type("ActivityLog", (core.Log, core.Identifiable), {})
         for activity in activities:
             id = activity['id']
-            activity_log = core.Log(env=self.env)
+            activity_log = activity_log_class(env=self.env, name=id)
 
             process = self.env.process(self.get_process_control(activity_log, activity))
 
@@ -516,6 +521,7 @@ class Simulation(core.Identifiable, core.Log):
         json["activities"] = activity_logging
 
         return json
+
 
     @staticmethod
     def get_as_feature_collection(id, features):
