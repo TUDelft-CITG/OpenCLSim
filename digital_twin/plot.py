@@ -8,7 +8,6 @@ import numpy as np
 import plotly
 from plotly.offline import init_notebook_mode, iplot
 import plotly.graph_objs as go
-import plotly.io as pio
 import matplotlib.pyplot as plt
 from matplotlib.dates import date2num
 from matplotlib.collections import LineCollection
@@ -31,15 +30,12 @@ def demo_plot():
 
 def fig2response(fig):
     """return a figure as a response"""
-    
-    # rewind the stream
     stream = io.BytesIO()
-    stream.seek(0)
-
-    mimetype = 'image/png'
-
     format = 'png'
     fig.savefig(stream, format=format)
+    mimetype = 'image/png'
+    # rewind the stream
+    stream.seek(0)
     return flask.send_file(stream, mimetype=mimetype)
     
 
