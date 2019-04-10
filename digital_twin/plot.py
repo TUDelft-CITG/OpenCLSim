@@ -285,7 +285,7 @@ def graph_kml(env,
     kml.save(fname)
 
 
-def energy_use(vessel, testing=False):
+def energy_use(vessels, testing=False, web=False):
     energy_use_loading = 0            # concumption between loading start and loading stop
     # concumption between sailing filled start and sailing filled stop
     energy_use_sailing_filled = 0
@@ -295,22 +295,51 @@ def energy_use(vessel, testing=False):
     energy_use_sailing_empty = 0
     energy_use_waiting = 0            # concumption between waiting start and waiting stop
 
-    for i in range(len(vessel.log["Message"])):
-        if vessel.log["Message"][i] == "Energy use loading":
-            energy_use_loading += vessel.log["Value"][i]
+    def get_energy_use(vessel):
+        energy_use_loading = 0            # concumption between loading start and loading stop
+        # concumption between sailing filled start and sailing filled stop
+        energy_use_sailing_filled = 0
+        # concumption between unloading  start and unloading  stop
+        energy_use_unloading = 0
+        # concumption between sailing empty start and sailing empty stop
+        energy_use_sailing_empty = 0
+        energy_use_waiting = 0            # concumption between waiting start and waiting stop
 
-        elif vessel.log["Message"][i] == "Energy use sailing filled":
-            energy_use_sailing_filled += vessel.log["Value"][i]
+        for i in range(len(vessel.log["Message"])):
+            if vessel.log["Message"][i] == "Energy use loading":
+                energy_use_loading += vessel.log["Value"][i]
 
-        elif vessel.log["Message"][i] == "Energy use unloading":
-            energy_use_unloading += vessel.log["Value"][i]
+            elif vessel.log["Message"][i] == "Energy use sailing filled":
+                energy_use_sailing_filled += vessel.log["Value"][i]
 
-        elif vessel.log["Message"][i] == "Energy use sailing empty":
-            energy_use_sailing_empty += vessel.log["Value"][i]
+            elif vessel.log["Message"][i] == "Energy use unloading":
+                energy_use_unloading += vessel.log["Value"][i]
 
-        elif vessel.log["Message"][i] == "Energy use waiting":
-            energy_use_waiting += vessel.log["Value"][i]
+            elif vessel.log["Message"][i] == "Energy use sailing empty":
+                energy_use_sailing_empty += vessel.log["Value"][i]
 
+            elif vessel.log["Message"][i] == "Energy use waiting":
+                energy_use_waiting += vessel.log["Value"][i]
+                
+        return energy_use_loading, energy_use_sailing_filled, energy_use_unloading, energy_use_sailing_empty, energy_use_waiting
+
+    try:
+        for vessel in vessels:
+            energy = get_energy_use(vessel)
+            energy_use_loading += energy[0]
+            energy_use_sailing_filled += energy[1]
+            energy_use_unloading += energy[2]
+            energy_use_sailing_empty += energy[3]
+            energy_use_waiting += energy[4]
+
+    except TypeError:
+        energy = get_energy_use(vessels)
+        energy_use_loading += energy[0]
+        energy_use_sailing_filled += energy[1]
+        energy_use_unloading += energy[2]
+        energy_use_sailing_empty += energy[3]
+        energy_use_waiting += energy[4]
+        
     # For the total plot
     fig, ax1 = plt.subplots(figsize=[15, 10])
 
@@ -369,10 +398,18 @@ def energy_use(vessel, testing=False):
     plt.ylabel("Energy useage in kWh", size=12)
     ax1.set_xticks(positions)
     ax1.set_xticklabels(labels, size=12)
-    plt.title("Energy use - {}".format(vessel.name), size=15)
+
+    try:
+        _ =len(vessels)
+        plt.title("Energy use - for all equipment", size=15)
+    except:
+        plt.title("Energy use - {}".format(vessels.name), size=15)
 
     if testing == False:
-        plt.show()
+        if web == False:
+            plt.show()
+        else:
+            return fig
 
 
 def activity_distribution(vessel, testing=False):
