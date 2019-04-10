@@ -9,6 +9,8 @@ import plotly
 from plotly.offline import init_notebook_mode, iplot
 import plotly.graph_objs as go
 import matplotlib.pyplot as plt
+from matplotlib.dates import date2num
+from matplotlib.collections import LineCollection
 
 # spatial libraries
 import pyproj
@@ -35,7 +37,7 @@ def fig2response(fig):
     # rewind the stream
     stream.seek(0)
     return flask.send_file(stream, mimetype=mimetype)
-
+    
 
 def vessel_planning(vessels, activities, colors, web=False, static=False):
     """create a plot of the planning of vessels"""
@@ -99,14 +101,15 @@ def vessel_planning(vessels, activities, colors, web=False, static=False):
                 size=18,
                 color='#7f7f7f')))
 
-    # plot figure
-    init_notebook_mode(connected=True)
-    fig = go.Figure(data=traces, layout=layout)
+    if static == False:
+        # plot figure
+        init_notebook_mode(connected=True)
+        fig = go.Figure(data=traces, layout=layout)
 
-    if not static:
         return iplot(fig, filename='news-source')
     else:
-        return plotly.offline.plot(fig, image_filename='planning', image='svg')
+        fig = go.Figure(data=traces, layout=layout)
+        return fig
 
 
 def vessel_kml(env, vessels,
@@ -285,7 +288,7 @@ def graph_kml(env,
     kml.save(fname)
 
 
-def energy_use(vessel, testing=False):
+def energy_use(vessels, testing=False, web=False):
     energy_use_loading = 0            # concumption between loading start and loading stop
     # concumption between sailing filled start and sailing filled stop
     energy_use_sailing_filled = 0
@@ -295,22 +298,51 @@ def energy_use(vessel, testing=False):
     energy_use_sailing_empty = 0
     energy_use_waiting = 0            # concumption between waiting start and waiting stop
 
-    for i in range(len(vessel.log["Message"])):
-        if vessel.log["Message"][i] == "Energy use loading":
-            energy_use_loading += vessel.log["Value"][i]
+    def get_energy_use(vessel):
+        energy_use_loading = 0            # concumption between loading start and loading stop
+        # concumption between sailing filled start and sailing filled stop
+        energy_use_sailing_filled = 0
+        # concumption between unloading  start and unloading  stop
+        energy_use_unloading = 0
+        # concumption between sailing empty start and sailing empty stop
+        energy_use_sailing_empty = 0
+        energy_use_waiting = 0            # concumption between waiting start and waiting stop
 
-        elif vessel.log["Message"][i] == "Energy use sailing filled":
-            energy_use_sailing_filled += vessel.log["Value"][i]
+        for i in range(len(vessel.log["Message"])):
+            if vessel.log["Message"][i] == "Energy use loading":
+                energy_use_loading += vessel.log["Value"][i]
 
-        elif vessel.log["Message"][i] == "Energy use unloading":
-            energy_use_unloading += vessel.log["Value"][i]
+            elif vessel.log["Message"][i] == "Energy use sailing filled":
+                energy_use_sailing_filled += vessel.log["Value"][i]
 
-        elif vessel.log["Message"][i] == "Energy use sailing empty":
-            energy_use_sailing_empty += vessel.log["Value"][i]
+            elif vessel.log["Message"][i] == "Energy use unloading":
+                energy_use_unloading += vessel.log["Value"][i]
 
-        elif vessel.log["Message"][i] == "Energy use waiting":
-            energy_use_waiting += vessel.log["Value"][i]
+            elif vessel.log["Message"][i] == "Energy use sailing empty":
+                energy_use_sailing_empty += vessel.log["Value"][i]
 
+            elif vessel.log["Message"][i] == "Energy use waiting":
+                energy_use_waiting += vessel.log["Value"][i]
+                
+        return energy_use_loading, energy_use_sailing_filled, energy_use_unloading, energy_use_sailing_empty, energy_use_waiting
+
+    try:
+        for vessel in vessels:
+            energy = get_energy_use(vessel)
+            energy_use_loading += energy[0]
+            energy_use_sailing_filled += energy[1]
+            energy_use_unloading += energy[2]
+            energy_use_sailing_empty += energy[3]
+            energy_use_waiting += energy[4]
+
+    except TypeError:
+        energy = get_energy_use(vessels)
+        energy_use_loading += energy[0]
+        energy_use_sailing_filled += energy[1]
+        energy_use_unloading += energy[2]
+        energy_use_sailing_empty += energy[3]
+        energy_use_waiting += energy[4]
+        
     # For the total plot
     fig, ax1 = plt.subplots(figsize=[15, 10])
 
@@ -369,10 +401,18 @@ def energy_use(vessel, testing=False):
     plt.ylabel("Energy useage in kWh", size=12)
     ax1.set_xticks(positions)
     ax1.set_xticklabels(labels, size=12)
-    plt.title("Energy use - {}".format(vessel.name), size=15)
+
+    try:
+        _ =len(vessels)
+        plt.title("Energy use - for all equipment", size=15)
+    except:
+        plt.title("Energy use - {}".format(vessels.name), size=15)
 
     if testing == False:
-        plt.show()
+        if web == False:
+            plt.show()
+        else:
+            return fig
 
 
 def activity_distribution(vessel, testing=False):
@@ -468,3 +508,130 @@ def activity_distribution(vessel, testing=False):
 
     if testing == False:
         plt.show()
+
+def equipment_plot_json(vessels, web = False):
+    
+    # Set up the basic storage
+    equipment_dict = {}
+    activities = ["sailing empty", "loading", "sailing filled", "unloading"]
+
+    y = 0
+    ys = []
+    names = []
+    
+    date_start = datetime.datetime(2100, 1, 1)
+    date_end = datetime.datetime(1970, 1,1 )
+
+    for vessel in vessels:
+        equipment_dict[vessel.name] = {"sailing empty": [], 
+                                       "loading": [], 
+                                       "sailing filled": [], 
+                                       "unloading": []}
+        
+        df = pd.DataFrame.from_dict(vessel.log)
+        y += 0.5
+        
+        ys.append(y)
+        names.append(vessel.name)
+        
+        for i, msg in enumerate(df["Message"]):
+            date = datetime.datetime.strptime(str(df["Timestamp"][i]), "%Y-%m-%d %H:%M:%S")
+            
+            if date < date_start: date_start = date 
+            if date > date_end: date_end = date 
+            
+            date = date2num(date)
+
+            for act in activities:
+                if act + " start" == msg:
+                    to_app = (date, y)
+                    equipment_dict[vessel.name][act].append([to_app])
+
+                elif act + " stop" == msg:
+                    to_app = (date, y)
+                    equipment_dict[vessel.name][act][-1].append(to_app)
+        
+    fig, ax = plt.subplots(figsize=[16, 8])
+    
+    sailing_empty = []
+    sailing_full = []
+    unloading = []
+    loading = []
+    
+    for vessel in vessels:
+        sailing_empty += equipment_dict[vessel.name]["sailing empty"]
+        sailing_full += equipment_dict[vessel.name]["sailing filled"]
+        unloading += equipment_dict[vessel.name]["unloading"]
+        loading += equipment_dict[vessel.name]["loading"]
+
+    act_1 = LineCollection(sailing_empty, label = "Sailing empty", linewidths=10, color = (98 / 255, 141 / 255, 122 / 255))
+    act_2 = LineCollection(sailing_full, label = "Sailing filled", linewidths=10, color = (98 / 255, 192 / 255, 122 / 255))
+    act_3 = LineCollection(unloading, label = "Unloading", linewidths=10, color = (255 / 255, 150 / 255, 0 / 255))
+    act_4 = LineCollection(loading, label = "Loading", linewidths=10, color = (55 / 255, 126 / 255, 184 / 255))
+
+    ax.add_collection(act_1)
+    ax.add_collection(act_2)
+    ax.add_collection(act_3)
+    ax.add_collection(act_4)
+
+    ax.set_ylim(0, y + 0.25)
+    ax.set_yticks(ys)
+    ax.set_yticklabels(names)
+
+    ax.set_xlim(date2num(date_start) -0.25 , date2num(date_end) + 0.25)
+    ax.set_xticks([date2num(date_start), date2num(date_end)])
+    ax.set_xticklabels([date_start, date_end])
+
+    plt.legend(loc = "lower right")
+    plt.title("Equipment planning")
+
+    if web == False:
+        plt.show()
+    else:
+        return fig
+
+def energy_use_time(vessels, web = False):
+    
+    fig, ax = plt.subplots(figsize=[16, 8])
+    
+    y_max = 0
+    
+    date_start = datetime.datetime(2100, 1, 1)
+    date_end = datetime.datetime(1970, 1,1 )
+    
+    for vessel in vessels:
+        df = pd.DataFrame.from_dict(vessel.log)
+        x = []
+        y = []
+        
+        x.append(date2num(datetime.datetime.strptime(str(df["Timestamp"][0]), "%Y-%m-%d %H:%M:%S")))
+        y.append(0)
+        
+        for i, msg in enumerate(df["Message"]):
+            date = datetime.datetime.strptime(str(df["Timestamp"][i]), "%Y-%m-%d %H:%M:%S")
+            
+            if date < date_start: date_start = date 
+            if date > date_end: date_end = date 
+            
+            date = date2num(date)
+
+            if "Energy use" in msg:
+                x.append(date)
+                y.append(y[-1] + df["Value"][i] * 0.2 * 3.5 / 1000)
+        
+        plt.plot(x, y, label = vessel.name)
+        if max(y) > y_max: y_max = max(y) 
+
+    ax.set_ylim(0, y_max * 1.05)
+
+    ax.set_xlim(date2num(date_start) -0.25 , date2num(date_end) + 0.25)
+    ax.set_xticks([date2num(date_start), date2num(date_end)])
+    ax.set_xticklabels([date_start, date_end])
+
+    plt.legend(loc = "lower right")
+    plt.title("ton CO2 emission per vessel")
+
+    if web == False:
+        plt.show()
+    else:
+        return fig

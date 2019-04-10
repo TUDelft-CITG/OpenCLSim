@@ -270,12 +270,33 @@ def shift_amount(environment, processor, ship, desired_level, site, ship_resourc
         with processor.resource.request() as my_processor_turn:
             yield my_processor_turn
 
-            processor.log_entry('processing start', environment.now, amount, processor.geometry)
-            yield from processor.process(ship, desired_level, site,
-                                         ship_resource_request=ship_resource_request,
-                                         site_resource_request=site_resource_request)
+            # Request access to the ship
+            my_ship_turn = ship_resource_request
+            if my_ship_turn is None:
+                my_ship_turn = ship.resource.request()
+            
+            # Request access to the site
+            my_site_turn = site_resource_request
+            if my_site_turn is None:
+                my_site_turn = site.resource.request()
+            
+            # Yield the requests once granted
+            yield my_ship_turn
+            yield my_site_turn
 
-            processor.log_entry('processing stop', environment.now, amount, processor.geometry)
+            # Check if loading or unloading
+            current_level = ship.container.level
+            log = "loading" if current_level < desired_level else "unloading"
+
+            processor.log_entry(log + ' start', environment.now, amount, processor.geometry)
+            yield from processor.process(ship, desired_level, site,
+                                         ship_resource_request=my_ship_turn,
+                                         site_resource_request=my_site_turn)
+
+            ship.resource.release(my_ship_turn)
+            site.resource.release(my_site_turn)
+
+            processor.log_entry(log + ' stop', environment.now, amount, processor.geometry)
 
     if verbose == True:
         print('Processed {}:'.format(amount))

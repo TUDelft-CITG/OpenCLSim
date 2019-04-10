@@ -24,8 +24,6 @@ import datetime
 import os
 import time
 
-from digital_twin import model, core, plot
-
 import pandas as pd
 import glob
 
@@ -91,21 +89,50 @@ def simulate():
 @app.route("/plot")
 def demo_plot():
     """demo plot"""
+
+    # Gantt + Spill + CO2
+
     fig = plot.demo_plot()
     return plot.fig2response(fig)
 
-@app.route("/planning", methods=['POST'])
-def planning_plot():
-    """return a planning"""
+@app.route("/energy_plot", methods=['POST'])
+def energy_plot():
+    """return a plot with the cumulative energy use"""
     if not request.is_json:
         raise ValueError("content type should be json")
 
-    planning = request.get_json(force=True)
+    config = request.get_json(force=True)
 
-    logger.error('got planning >>>%s<<<', planning)
-    simulation_planning = equipment_plot(planning)
+    try:
+        energy_use = energy_use_plot_from_json(config)
+    except ValueError as valerr:
+        abort(400, description=str(valerr))
+        return
+    except Exception as e:
+        abort(500, description=str(e))
+        return
 
-    return simulation_planning
+    return plot.fig2response(energy_use)
+
+@app.route("/equipment_plot", methods=['POST'])
+def equipment_plot():
+    """return a planning"""
+    if not request.is_json:
+        abort(400, description="content type should be json")
+        return
+
+    config = request.get_json(force=True)
+
+    try:
+        equipment_plot = equipment_plot_from_json(config)
+    except ValueError as valerr:
+        abort(400, description=str(valerr))
+        return
+    except Exception as e:
+        abort(500, description=str(e))
+        return
+
+    return plot.fig2response(equipment_plot)
 
 def simulate_from_json(config, tmp_path="static"):
     """Create a simulation and run it, based on a json input file.
@@ -163,13 +190,31 @@ def save_simulation(config, simulation, tmp_path=""):
     os.makedirs(path, exist_ok=True)  # create the simulations directory if it does not yet exist
     savesim.save_logs(simulation, path, file_prefix)
 
-def equipment_plot_from_json(json):
+def energy_use_plot_from_json(jsonFile):
     """Create a Gantt chart, based on a json input file"""
 
-    j = equipment
+    vessels = []
+    for item in jsonFile['equipment']:
+        if item['features']:
+            vessel = type('Vessel', (core.Identifiable, core.Log), {})
+            vessel = vessel(**{"env": None, "name": item['id']})
+
+            for feature in item['features']:
+                vessel.log_entry(log = feature['properties']['message'],
+                                 t = feature['properties']['time'],
+                                 value = feature['properties']['value'],
+                                 geometry_log = feature['geometry']['coordinates'])
+
+
+            vessels.append(vessel)
+    
+    return plot.energy_use_time(vessels, web = True)
+
+def equipment_plot_from_json(jsonFile):
+    """Create a Gantt chart, based on a json input file"""
 
     vessels = []
-    for item in j['equipment']:
+    for item in jsonFile['equipment']:
         if item['features']:
             vessel = type('Vessel', (core.Identifiable, core.Log), {})
             vessel = vessel(**{"env": None, "name": item['id']})
@@ -183,10 +228,4 @@ def equipment_plot_from_json(json):
 
             vessels.append(vessel)
 
-    activities = ['loading', 'unloading', 'sailing filled', 'sailing empty']
-    colors = {0:'rgb(55,126,184)', 1:'rgb(255,150,0)', 2:'rgb(98, 192, 122)', 3:'rgb(98, 141, 122)'}
-
-    plot.vessel_planning(vessels, activities, colors)
-
-
-    return plot.vessel_planning(vessels, activities, colors, static = True)
+    return plot.equipment_plot_json(vessels, web = True)
