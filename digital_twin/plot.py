@@ -106,7 +106,7 @@ def vessel_planning(vessels, activities, colors, web=False, static=False):
     if not static:
         return iplot(fig, filename='news-source')
     else:
-        return plotly.offline.plot(fig, image_filename='planning', image='svg')
+        return fig
 
 
 def vessel_kml(env, vessels,

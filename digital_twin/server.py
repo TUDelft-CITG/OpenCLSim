@@ -96,7 +96,7 @@ def demo_plot():
     return plot.fig2response(fig)
 
 @app.route("/energy_plot", methods=['POST'])
-def planning_plot():
+def energy_plot():
     """return a plot with the cumulative energy use"""
     if not request.is_json:
         raise ValueError("content type should be json")
@@ -114,25 +114,25 @@ def planning_plot():
 
     return plot.fig2response(energy_use)
 
-# @app.route("/planning", methods=['POST'])
-# def planning_plot():
-#     """return a planning"""
-#     if not request.is_json:
-#         abort(400, description="content type should be json")
-#         return
+@app.route("/equipment_plot", methods=['POST'])
+def equipment_plot():
+    """return a planning"""
+    if not request.is_json:
+        abort(400, description="content type should be json")
+        return
 
-#     json = request.get_json(force=True)
+    config = request.get_json(force=True)
 
-#     try:
-#         simulation_planning = equipment_plot_from_json(json)
-#     except ValueError as valerr:
-#         abort(400, description=str(valerr))
-#         return
-#     except Exception as e:
-#         abort(500, description=str(e))
-#         return
+    try:
+        equipment_plot = equipment_plot_from_json(config)
+    except ValueError as valerr:
+        abort(400, description=str(valerr))
+        return
+    except Exception as e:
+        abort(500, description=str(e))
+        return
 
-#     return simulation_planning
+    return plot.fig2response(equipment_plot)
 
 def simulate_from_json(config, tmp_path="static"):
     """Create a simulation and run it, based on a json input file.
@@ -210,13 +210,11 @@ def energy_use_plot_from_json(jsonFile):
     
     return plot.energy_use(vessels, web = True)
 
-def equipment_plot_from_json(json):
+def equipment_plot_from_json(jsonFile):
     """Create a Gantt chart, based on a json input file"""
 
-    j = equipment
-
     vessels = []
-    for item in j['equipment']:
+    for item in jsonFile['equipment']:
         if item['features']:
             vessel = type('Vessel', (core.Identifiable, core.Log), {})
             vessel = vessel(**{"env": None, "name": item['id']})
@@ -233,7 +231,4 @@ def equipment_plot_from_json(json):
     activities = ['loading', 'unloading', 'sailing filled', 'sailing empty']
     colors = {0:'rgb(55,126,184)', 1:'rgb(255,150,0)', 2:'rgb(98, 192, 122)', 3:'rgb(98, 141, 122)'}
 
-    # plot.vessel_planning(vessels, activities, colors)
-
-
-    # return plot.vessel_planning(vessels, activities, colors, static = True)
+    return plot.vessel_planning(vessels, activities, colors, static = True)
