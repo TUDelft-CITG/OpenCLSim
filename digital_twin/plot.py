@@ -529,7 +529,7 @@ def equipment_plot_json(vessels, web = False):
                                        "unloading": []}
         
         df = pd.DataFrame.from_dict(vessel.log)
-        y += 1
+        y += 0.5
         
         ys.append(y)
         names.append(vessel.name)
@@ -551,25 +551,30 @@ def equipment_plot_json(vessels, web = False):
                     to_app = (date, y)
                     equipment_dict[vessel.name][act][-1].append(to_app)
         
-    fig, ax = plt.subplots(figsize=[15, 10])
+    fig, ax = plt.subplots(figsize=[16, 8])
+    
+    sailing_empty = []
+    sailing_full = []
+    unloading = []
+    loading = []
     
     for vessel in vessels:
-        sailing_empty = equipment_dict[vessel.name]["sailing empty"]
-        sailing_full = equipment_dict[vessel.name]["sailing filled"]
-        unloading = equipment_dict[vessel.name]["unloading"]
-        loading = equipment_dict[vessel.name]["loading"]
+        sailing_empty += equipment_dict[vessel.name]["sailing empty"]
+        sailing_full += equipment_dict[vessel.name]["sailing filled"]
+        unloading += equipment_dict[vessel.name]["unloading"]
+        loading += equipment_dict[vessel.name]["loading"]
 
-        act_1 = LineCollection(sailing_empty, label = "Sailing empty", linewidths=10, color = (98 / 255, 141 / 255, 122 / 255))
-        act_2 = LineCollection(sailing_full, label = "Sailing filled", linewidths=10, color = (98 / 255, 192 / 255, 122 / 255))
-        act_3 = LineCollection(unloading, label = "Unloading", linewidths=10, color = (255 / 255, 150 / 255, 0 / 255))
-        act_4 = LineCollection(loading, label = "Loading", linewidths=10, color = (55 / 255, 126 / 255, 184 / 255))
+    act_1 = LineCollection(sailing_empty, label = "Sailing empty", linewidths=10, color = (98 / 255, 141 / 255, 122 / 255))
+    act_2 = LineCollection(sailing_full, label = "Sailing filled", linewidths=10, color = (98 / 255, 192 / 255, 122 / 255))
+    act_3 = LineCollection(unloading, label = "Unloading", linewidths=10, color = (255 / 255, 150 / 255, 0 / 255))
+    act_4 = LineCollection(loading, label = "Loading", linewidths=10, color = (55 / 255, 126 / 255, 184 / 255))
 
-        ax.add_collection(act_1)
-        ax.add_collection(act_2)
-        ax.add_collection(act_3)
-        ax.add_collection(act_4)
+    ax.add_collection(act_1)
+    ax.add_collection(act_2)
+    ax.add_collection(act_3)
+    ax.add_collection(act_4)
 
-    ax.set_ylim(0, y + 1)
+    ax.set_ylim(0, y + 0.25)
     ax.set_yticks(ys)
     ax.set_yticklabels(names)
 
