@@ -75,14 +75,7 @@ def simulate():
 
     config = request.get_json(force=True)
 
-    try:
-        simulation_result = simulate_from_json(config)
-    except ValueError as valerr:
-        abort(400, description=str(valerr))
-        return
-    except Exception as e:
-        abort(500, description=str(e))
-        return
+    simulation_result = simulate_from_json(config)
 
     return jsonify(simulation_result)
 
@@ -103,14 +96,7 @@ def energy_plot():
 
     config = request.get_json(force=True)
 
-    try:
-        energy_use = energy_use_plot_from_json(config)
-    except ValueError as valerr:
-        abort(400, description=str(valerr))
-        return
-    except Exception as e:
-        abort(500, description=str(e))
-        return
+    energy_use = energy_use_plot_from_json(config)
 
     return plot.fig2response(energy_use)
 
@@ -123,14 +109,7 @@ def equipment_plot():
 
     config = request.get_json(force=True)
 
-    try:
-        equipment_plot = equipment_plot_from_json(config)
-    except ValueError as valerr:
-        abort(400, description=str(valerr))
-        return
-    except Exception as e:
-        abort(500, description=str(e))
-        return
+    equipment_plot = equipment_plot_from_json(config)
 
     return plot.fig2response(equipment_plot)
 
@@ -207,7 +186,7 @@ def energy_use_plot_from_json(jsonFile):
 
 
             vessels.append(vessel)
-    
+
     return plot.energy_use_time(vessels, web = True)
 
 def equipment_plot_from_json(jsonFile):
