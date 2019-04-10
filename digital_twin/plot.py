@@ -8,7 +8,10 @@ import numpy as np
 import plotly
 from plotly.offline import init_notebook_mode, iplot
 import plotly.graph_objs as go
+import plotly.io as pio
 import matplotlib.pyplot as plt
+from matplotlib.dates import date2num
+from matplotlib.collections import LineCollection
 
 # spatial libraries
 import pyproj
@@ -28,14 +31,17 @@ def demo_plot():
 
 def fig2response(fig):
     """return a figure as a response"""
+    
+    # rewind the stream
     stream = io.BytesIO()
+    stream.seek(0)
+
+    mimetype = 'image/png'
+
     format = 'png'
     fig.savefig(stream, format=format)
-    mimetype = 'image/png'
-    # rewind the stream
-    stream.seek(0)
     return flask.send_file(stream, mimetype=mimetype)
-
+    
 
 def vessel_planning(vessels, activities, colors, web=False, static=False):
     """create a plot of the planning of vessels"""
@@ -99,13 +105,14 @@ def vessel_planning(vessels, activities, colors, web=False, static=False):
                 size=18,
                 color='#7f7f7f')))
 
-    # plot figure
-    init_notebook_mode(connected=True)
-    fig = go.Figure(data=traces, layout=layout)
+    if static == False:
+        # plot figure
+        init_notebook_mode(connected=True)
+        fig = go.Figure(data=traces, layout=layout)
 
-    if not static:
         return iplot(fig, filename='news-source')
     else:
+        fig = go.Figure(data=traces, layout=layout)
         return fig
 
 
@@ -505,3 +512,79 @@ def activity_distribution(vessel, testing=False):
 
     if testing == False:
         plt.show()
+
+def equipment_plot_json(vessels, web = False):
+    
+    # Set up the basic storage
+    equipment_dict = {}
+    activities = ["sailing empty", "loading", "sailing filled", "unloading"]
+
+    y = 0
+    ys = []
+    names = []
+    
+    date_start = datetime.datetime(2100, 1, 1)
+    date_end = datetime.datetime(1970, 1,1 )
+
+    for vessel in vessels:
+        equipment_dict[vessel.name] = {"sailing empty": [], 
+                                       "loading": [], 
+                                       "sailing filled": [], 
+                                       "unloading": []}
+        
+        df = pd.DataFrame.from_dict(vessel.log)
+        y += 1
+        
+        ys.append(y)
+        names.append(vessel.name)
+        
+        for i, msg in enumerate(df["Message"]):
+            date = datetime.datetime.strptime(str(df["Timestamp"][i]), "%Y-%m-%d %H:%M:%S")
+            
+            if date < date_start: date_start = date 
+            if date > date_end: date_end = date 
+            
+            date = date2num(date)
+
+            for act in activities:
+                if act + " start" == msg:
+                    to_app = (date, y)
+                    equipment_dict[vessel.name][act].append([to_app])
+
+                elif act + " stop" == msg:
+                    to_app = (date, y)
+                    equipment_dict[vessel.name][act][-1].append(to_app)
+        
+    fig, ax = plt.subplots(figsize=[15, 10])
+    
+    for vessel in vessels:
+        sailing_empty = equipment_dict[vessel.name]["sailing empty"]
+        sailing_full = equipment_dict[vessel.name]["sailing filled"]
+        unloading = equipment_dict[vessel.name]["unloading"]
+        loading = equipment_dict[vessel.name]["loading"]
+
+        act_1 = LineCollection(sailing_empty, label = "Sailing empty", linewidths=10, color = (98 / 255, 141 / 255, 122 / 255))
+        act_2 = LineCollection(sailing_full, label = "Sailing filled", linewidths=10, color = (98 / 255, 192 / 255, 122 / 255))
+        act_3 = LineCollection(unloading, label = "Unloading", linewidths=10, color = (255 / 255, 150 / 255, 0 / 255))
+        act_4 = LineCollection(loading, label = "Loading", linewidths=10, color = (55 / 255, 126 / 255, 184 / 255))
+
+        ax.add_collection(act_1)
+        ax.add_collection(act_2)
+        ax.add_collection(act_3)
+        ax.add_collection(act_4)
+
+    ax.set_ylim(0, y + 1)
+    ax.set_yticks(ys)
+    ax.set_yticklabels(names)
+
+    ax.set_xlim(date2num(date_start) -0.25 , date2num(date_end) + 0.25)
+    ax.set_xticks([date2num(date_start), date2num(date_end)])
+    ax.set_xticklabels([date_start, date_end])
+
+    plt.legend(loc = "lower right")
+    plt.title("Equipment planning")
+
+    if web == False:
+        plt.show()
+    else:
+        return fig

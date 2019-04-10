@@ -228,7 +228,4 @@ def equipment_plot_from_json(jsonFile):
 
             vessels.append(vessel)
 
-    activities = ['loading', 'unloading', 'sailing filled', 'sailing empty']
-    colors = {0:'rgb(55,126,184)', 1:'rgb(255,150,0)', 2:'rgb(98, 192, 122)', 3:'rgb(98, 141, 122)'}
-
-    return plot.vessel_planning(vessels, activities, colors, static = True)
+    return plot.equipment_plot_json(vessels, web = True)
