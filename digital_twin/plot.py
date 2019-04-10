@@ -589,3 +589,49 @@ def equipment_plot_json(vessels, web = False):
         plt.show()
     else:
         return fig
+
+def energy_use_time(vessels, web = False):
+    
+    fig, ax = plt.subplots(figsize=[16, 8])
+    
+    y_max = 0
+    
+    date_start = datetime.datetime(2100, 1, 1)
+    date_end = datetime.datetime(1970, 1,1 )
+    
+    for vessel in vessels:
+        df = pd.DataFrame.from_dict(vessel.log)
+        x = []
+        y = []
+        
+        x.append(date2num(datetime.datetime.strptime(str(df["Timestamp"][0]), "%Y-%m-%d %H:%M:%S")))
+        y.append(0)
+        
+        for i, msg in enumerate(df["Message"]):
+            date = datetime.datetime.strptime(str(df["Timestamp"][i]), "%Y-%m-%d %H:%M:%S")
+            
+            if date < date_start: date_start = date 
+            if date > date_end: date_end = date 
+            
+            date = date2num(date)
+
+            if "Energy use" in msg:
+                x.append(date)
+                y.append(y[-1] + df["Value"][i] * 0.2 * 3.5 / 1000)
+        
+        plt.plot(x, y, label = vessel.name)
+        if max(y) > y_max: y_max = max(y) 
+
+    ax.set_ylim(0, y_max * 1.05)
+
+    ax.set_xlim(date2num(date_start) -0.25 , date2num(date_end) + 0.25)
+    ax.set_xticks([date2num(date_start), date2num(date_end)])
+    ax.set_xticklabels([date_start, date_end])
+
+    plt.legend(loc = "lower right")
+    plt.title("ton CO2 emission per vessel")
+
+    if web == False:
+        plt.show()
+    else:
+        return fig

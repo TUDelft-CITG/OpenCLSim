@@ -208,7 +208,7 @@ def energy_use_plot_from_json(jsonFile):
 
             vessels.append(vessel)
     
-    return plot.energy_use(vessels, web = True)
+    return plot.energy_use_time(vessels, web = True)
 
 def equipment_plot_from_json(jsonFile):
     """Create a Gantt chart, based on a json input file"""
