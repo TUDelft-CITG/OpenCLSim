@@ -293,6 +293,9 @@ def shift_amount(environment, processor, ship, desired_level, site, ship_resourc
                                          ship_resource_request=my_ship_turn,
                                          site_resource_request=my_site_turn)
 
+            ship.resource.release(my_ship_turn)
+            site.resource.release(my_site_turn)
+
             processor.log_entry(log + ' stop', environment.now, amount, processor.geometry)
 
     if verbose == True:
