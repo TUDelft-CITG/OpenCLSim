@@ -1,8 +1,6 @@
 from functools import partial
 import digital_twin.core as core
-import digital_twin.savesim as savesim
 import datetime
-import uuid
 import shapely
 import shapely.geometry
 import scipy.interpolate
@@ -10,8 +8,10 @@ import scipy.integrate
 import pandas as pd
 import numpy as np
 
+
 class Condition:
     pass
+
 
 class LevelCondition(Condition):
     """The LevelCondition class can be used to specify the start level and stop level conditions for an Activity.
@@ -208,54 +208,54 @@ class Activity(core.Identifiable, core.Log):
 
 
 def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, engine_order=1.0, filling=1.0, verbose=False):
-        """Installation process"""
+    """Installation process"""
 
-        # estimate amount that should be transported
-        amount = min(
-            mover.container.capacity * filling - mover.container.level,
-            origin.container.level,
-            origin.container.capacity - origin.total_requested,
-            destination.container.capacity - destination.container.level,
-            destination.container.capacity - destination.total_requested)
+    # estimate amount that should be transported
+    amount = min(
+        mover.container.capacity * filling - mover.container.level,
+        origin.container.level,
+        origin.container.capacity - origin.total_requested,
+        destination.container.capacity - destination.container.level,
+        destination.container.capacity - destination.total_requested)
 
-        if isinstance(mover, core.HasDepthRestriction) and isinstance(destination, core.HasWeather): \
-            amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
+    if isinstance(mover, core.HasDepthRestriction) and isinstance(destination, core.HasWeather): \
+        amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
 
-        if amount > 0:
-            # request access to the transport_resource
-            origin.total_requested += amount
-            destination.total_requested += amount
+    if amount > 0:
+        # request access to the transport_resource
+        origin.total_requested += amount
+        destination.total_requested += amount
 
-            if verbose == True:
-                print('Using ' + mover.name + ' to process ' + str(amount))
-            activity_log.log_entry("transporting start", environment.now, amount, mover.geometry)
+        if verbose == True:
+            print('Using ' + mover.name + ' to process ' + str(amount))
+        activity_log.log_entry("transporting start", environment.now, amount, mover.geometry)
 
-            with mover.resource.request() as my_mover_turn:
-                yield my_mover_turn
+        with mover.resource.request() as my_mover_turn:
+            yield my_mover_turn
 
-                # move to the origin if necessary
-                if not mover.is_at(origin):
-                    yield from move_mover(mover, origin, engine_order=engine_order, verbose=verbose)
+            # move to the origin if necessary
+            if not mover.is_at(origin):
+                yield from move_mover(mover, origin, engine_order=engine_order, verbose=verbose)
 
-                # load the mover
-                if not loader.is_at(origin):
-                    yield from move_mover(loader, origin, engine_order=engine_order, verbose=verbose)
+            # load the mover
+            if not loader.is_at(origin):
+                yield from move_mover(loader, origin, engine_order=engine_order, verbose=verbose)
 
-                yield from shift_amount(environment, loader, mover, mover.container.level + amount, origin, ship_resource_request=my_mover_turn, verbose=verbose)
+            yield from shift_amount(environment, loader, mover, mover.container.level + amount, origin, ship_resource_request=my_mover_turn, verbose=verbose)
 
-                # move the mover to the destination
-                yield from move_mover(mover, destination, engine_order=engine_order, verbose=verbose)
+            # move the mover to the destination
+            yield from move_mover(mover, destination, engine_order=engine_order, verbose=verbose)
 
-                # unload the mover
-                if not unloader.is_at(destination):
-                    yield from move_mover(unloader, destination, engine_order=engine_order, verbose=verbose)
+            # unload the mover
+            if not unloader.is_at(destination):
+                yield from move_mover(unloader, destination, engine_order=engine_order, verbose=verbose)
 
-                yield from shift_amount(environment, unloader, mover, mover.container.level - amount, destination, ship_resource_request=my_mover_turn, verbose=verbose)
+            yield from shift_amount(environment, unloader, mover, mover.container.level - amount, destination, ship_resource_request=my_mover_turn, verbose=verbose)
 
-            activity_log.log_entry("transporting stop", environment.now, amount, mover.geometry)
-        else:
-            print('Nothing to move')
-            yield environment.timeout(3600)
+        activity_log.log_entry("transporting stop", environment.now, amount, mover.geometry)
+    else:
+        print('Nothing to move')
+        yield environment.timeout(3600)
 
 
 def shift_amount(environment, processor, ship, desired_level, site, ship_resource_request=None, site_resource_request=None, verbose=False):
