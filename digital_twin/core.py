@@ -70,6 +70,62 @@ class Locatable:
         return distance < tolerance
 
 
+class EventsContainer(simpy.Container):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._empty_event = None
+        self._full_event = None
+
+    @staticmethod
+    def _valid_event(event):
+        return event is not None and not event.triggered
+
+    @property
+    def empty_event(self):
+        if self._valid_event(self._empty_event):
+            return self._empty_event
+
+        # instantiate a new event to trigger when empty
+        self._empty_event = self._env.event()
+        return self._empty_event
+
+    @property
+    def full_event(self):
+        if self._valid_event(self._full_event):
+            return self._full_event
+
+        # instantiate a new event to trigger when full
+        self._full_event = self._env.event()
+        return self._full_event
+
+    def put(self, amount):
+        if self.level + amount > self.capacity:
+            raise RuntimeError(
+                'Attempting to add too much content to container {}, level={}, capacity={}, amount={}'.format(
+                    self.name if isinstance(self, Identifiable) else '<no name>',
+                    self.level,
+                    self.capacity,
+                    amount
+            ))
+
+        super().put(amount)
+        if self._valid_event(self._full_event) and self.level == self.capacity:
+            self._full_event.succeed()
+
+    def get(self, amount):
+        if self.level < amount:
+            raise RuntimeError('Attempting to get too much content from container {}, level={}, amount={}'.format(
+                self.name if isinstance(self, Identifiable) else '<no name>',
+                self.level,
+                amount
+            ))
+
+        super().get(amount)
+        if self._valid_event(self._empty_event) and self.level == 0:
+            self._empty_event.succeed()
+
+
 class HasContainer(SimpyObject):
     """Container class
 
@@ -80,7 +136,7 @@ class HasContainer(SimpyObject):
     def __init__(self, capacity, level=0, total_requested=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.container = simpy.Container(self.env, capacity, init=level)
+        self.container = EventsContainer(self.env, capacity, init=level)
         self.total_requested = total_requested
 
 
@@ -1335,7 +1391,7 @@ class DictEncoder(json.JSONEncoder):
         for key, val in o.__dict__.items():
             if isinstance(val, simpy.Environment):
                 continue
-            if isinstance(val, simpy.Container):
+            if isinstance(val, EventsContainer) or isinstance(val, simpy.Container):
                 result['capacity'] = val.capacity
                 result['level'] = val.level
             elif isinstance(val, simpy.Resource):
