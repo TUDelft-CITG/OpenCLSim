@@ -179,3 +179,49 @@ def test_improved_stop_idea():
     # running until the timeout triggers, thus env.now is 60 after simulation completion
     assert env.now == 60
     assert activity.stop_time == 50
+
+
+class ResourceRequester:
+    def __init__(self, env, resource, stop_event):
+        self.env = env
+        self.resource = resource
+        self.stop_event = stop_event
+        self.process = self.env.process(self.process_control())
+        stop_event.callbacks.append(self.stop_event_callback)
+        self.request = None
+        self.done = False
+
+    def stop_event_callback(self, event):
+        print('stop event was triggered, interrupting process, time =', self.env.now)
+        self.process.interrupt()
+
+    def process_control(self):
+        try:
+            print('requesting resource, time =', self.env.now)
+            self.request = self.resource.request()
+            yield self.request
+            print('request granted, time =', self.env.now)
+            yield self.env.timeout(60)
+            print('releasing resource after task completion, time =', self.env.now)
+            self.resource.release(self.request)
+            self.done = True
+        except simpy.Interrupt:
+            print('I should stop! time =', self.env.now)
+            if self.request is not None:
+                print('releasing resource after stop event occurred, time =', self.env.now)
+                self.resource.release(self.request)
+
+
+def test_resource_releasing():
+    """Demonstrates how resources should be released when a stop_event is triggered.
+    If the ResourceRequester class had not released the resource in its except statement,
+    the resource.count would be 1 at the end of this test and the resource would remain
+    reserved for the activity even after it has completed."""
+    env = simpy.Environment()
+    resource = simpy.Resource(env=env, capacity=1)
+    stop_event = env.timeout(40)
+    activity = ResourceRequester(env, resource, stop_event)
+    env.run()
+
+    assert not activity.done
+    assert resource.count == 0
