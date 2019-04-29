@@ -82,6 +82,7 @@ class DummyStopActivity:
         self.stop_time = None
 
     def stop_event_callback(self, event):
+        print('stop event was triggered, interrupting our process')
         self.process.interrupt()
 
     def process_control(self):
