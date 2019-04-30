@@ -78,14 +78,6 @@ class ReservationContainer(simpy.Container):
         self._content_available = None
         self._space_available = None
 
-    def get(self, amount):
-        print(self._env.now, '- container: received get for ', amount, ', current level =', self.level)
-        return super().get(amount)
-
-    def put(self, amount):
-        print(self._env.now, '- container: received put for ', amount, ', current level =', self.level)
-        return super().put(amount)
-
     def reserve_put(self, amount):
         if self.expected_level + amount > self.capacity:
             raise RuntimeError('Attempting to reserve unavailable space')
@@ -157,28 +149,20 @@ class EventsContainer(simpy.Container):
         return self._full_event
 
     def put(self, amount):
-        if self.level + amount > self.capacity:
-            raise RuntimeError(
-                'Attempting to add too much content to container {}, level={}, capacity={}, amount={}'.format(
-                    self.name if isinstance(self, Identifiable) else '<no name>',
-                    self.level,
-                    self.capacity,
-                    amount
-            ))
+        put_event = super().put(amount)
+        put_event.callbacks.append(self.put_callback)
+        return put_event
 
-        super().put(amount)
+    def put_callback(self, event):
         if self._valid_event(self._full_event) and self.level == self.capacity:
             self._full_event.succeed()
 
     def get(self, amount):
-        if self.level < amount:
-            raise RuntimeError('Attempting to get too much content from container {}, level={}, amount={}'.format(
-                self.name if isinstance(self, Identifiable) else '<no name>',
-                self.level,
-                amount
-            ))
+        get_event = super().get(amount)
+        get_event.callbacks.append(self.get_callback)
+        return get_event
 
-        super().get(amount)
+    def get_callback(self, event):
         if self._valid_event(self._empty_event) and self.level == 0:
             self._empty_event.succeed()
 
@@ -190,11 +174,11 @@ class HasContainer(SimpyObject):
     level: amount the container holds initially
     container: a simpy object that can hold stuff"""
 
-    def __init__(self, capacity, level=0, total_requested=0, *args, **kwargs):
+    def __init__(self, capacity, level=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.container = EventsContainer(self.env, capacity, init=level)
-        self.total_requested = total_requested
+        container_class = type('CombinedContainer', (EventsContainer, ReservationContainer), {})
+        self.container = container_class(self.env, capacity, init=level)
 
 
 class EnergyUse(SimpyObject):
@@ -1205,8 +1189,8 @@ class Processor(SimpyObject):
         self.shiftSoil(origin, destination, amount)
 
         # Shift volumes in containers
-        origin.container.get(amount)
-        destination.container.put(amount)
+        yield origin.container.get(amount)
+        yield destination.container.put(amount)
 
         # Checkout the time
         yield self.env.timeout(duration)

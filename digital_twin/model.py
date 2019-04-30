@@ -88,8 +88,9 @@ class Activity(core.Identifiable, core.Log):
         self.log_entry("started", self.env.now, -1, origin.geometry)
 
         # perform our task until we are interrupted by the stop event
-        while not self.stop_event.triggered:
-            yield from single_run_process(self, self.env, origin, destination, loader, mover, unloader)
+        while not self.stop_event.processed:
+            yield from single_run_process(self, self.env, origin, destination, loader, mover, unloader,
+                                          stop_reservation_waiting_event=self.stop_event)
 
         current_time = datetime.datetime.fromtimestamp(self.env.now)
         print('\nTime = {:%Y-%m-%d %H:%M}\nStop condition is satisfied, {} transporting from {} to {} completed.'
@@ -98,12 +99,12 @@ class Activity(core.Identifiable, core.Log):
 
 
 def single_run_process(activity_log, env, origin, destination, loader, mover, unloader,
-                       engine_order=1.0, filling=1.0, verbose=False):
-    amount = min(mover.container.capacity * filling - mover.container.level,
-        origin.container.level,
-        origin.container.capacity - origin.total_requested,
-        destination.container.capacity - destination.container.level,
-        destination.container.capacity - destination.total_requested)
+                       engine_order=1.0, filling=1.0, stop_reservation_waiting_event = None, verbose=False):
+    amount = min(
+        mover.container.capacity * filling - mover.container.level,
+        origin.container.expected_level,
+        destination.container.capacity - destination.container.expected_level
+    )
 
     if isinstance(mover, core.HasDepthRestriction) and isinstance(destination, core.HasWeather):
         amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
@@ -111,9 +112,9 @@ def single_run_process(activity_log, env, origin, destination, loader, mover, un
     if amount > 0:
         resource_requests = {}
 
-        # request the transported content
-        origin.total_requested += amount
-        destination.total_requested += amount
+        # reserve the amount in origin an destination
+        origin.container.reserve_get(amount)
+        destination.container.reserve_put(amount)
 
         if verbose:
             print('Using ' + mover.name + ' to process ' + str(amount))
@@ -170,9 +171,30 @@ def single_run_process(activity_log, env, origin, destination, loader, mover, un
 
         activity_log.log_entry("transporting stop", env.now, amount, mover.geometry)
     else:
-        # todo yield from an event triggering when there will be something new to move instead
-        print('Nothing to move')
-        yield env.timeout(3600)
+        if origin.container.expected_level == 0:
+            activity_log.log_entry("waiting origin content start", env.now, origin.container.expected_level,
+                                   origin.geometry)
+            yield _or_optional_event(env, origin.container.reserve_get_available, stop_reservation_waiting_event)
+            activity_log.log_entry("waiting origin content stop", env.now, origin.container.expected_level,
+                                   origin.geometry)
+        elif destination.container.expected_level == destination.capacity:
+            activity_log.log_entry("waiting destination space start", env.now,
+                                   destination.container.expected_level, destination.geometry)
+            yield _or_optional_event(env, destination.container.reserve_put_available, stop_reservation_waiting_event)
+            activity_log.log_entry("waiting destination space stop", env.now,
+                                   destination.container.expected_level, destination.geometry)
+        else:
+            raise RuntimeError("Attempting to move content with a full ship")
+
+
+def _or_optional_event(env, event, optional_event):
+    """If the optional_event is None, the event is returned. Otherwise the event and optional_event are combined
+    through an any_of event, thus returning an event that will trigger if either of these events triggers.
+    Used by single_run_process to combine an event used to wait for a reservation to become available with its
+    optional stop_reservation_waiting_event."""
+    if optional_event is None:
+        return event
+    return env.any_of(events=[event, optional_event])
 
 
 def _request_resource(requested_resources, resource):

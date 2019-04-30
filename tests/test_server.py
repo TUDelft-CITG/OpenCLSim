@@ -130,6 +130,12 @@ def test_sequential_activity():
 @pytest.mark.timeout(60)
 def test_infinite_loop_detection():
     """Run a simulation that would lead to an infinite loop."""
+
+    # todo fix this test
+    # - it has a different completion time since this activity configuration now waits for content to become available
+    #   through the ReservationContainer instead of simply skipping ahead 3600
+    # - change expected value to new completion time or re-implement infinite loop checking all together -> have a
+    #   default timeout function as an overall loop breaker?
     run_and_compare_completion_time(
         config_file='tests/configs/infinite_loop.json',
         expected_result_file='tests/results/infinite_loop_result.json'
