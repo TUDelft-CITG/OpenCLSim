@@ -26,7 +26,7 @@ def run_and_compare_completion_time(config_file, expected_result_file, tmp_path=
     np.testing.assert_almost_equal(result["completionTime"], expected_result["completionTime"])
     return result
 
-@pytest.mark.skip(reason="server is broken")
+
 def test_move_activity():
     """Run a basic simulation containing a single move activity and check the output."""
     run_and_compare_completion_time(
@@ -34,7 +34,7 @@ def test_move_activity():
         expected_result_file='tests/results/move_activity_result.json'
     )
 
-@pytest.mark.skip(reason="server is broken")
+
 def test_multiple_move_activities():
     """Run a basic simulation containing multiple move activities and check the output."""
     run_and_compare_completion_time(
@@ -42,28 +42,28 @@ def test_multiple_move_activities():
         expected_result_file='tests/results/multiple_move_activities_result.json'
     )
 
-@pytest.mark.skip(reason="server is broken")
+
 def test_single_run_activity():
     run_and_compare_completion_time(
         config_file='tests/configs/single_run_activity.json',
         expected_result_file='tests/results/single_run_activity_result.json'
     )
 
-@pytest.mark.skip(reason="server is broken")
+
 def test_multiple_single_run_activities():
     run_and_compare_completion_time(
         config_file='tests/configs/multiple_single_run_activities.json',
         expected_result_file='tests/results/multiple_single_run_activities_result.json'
     )
 
-@pytest.mark.skip(reason="server is broken")
+
 def test_conditional_activity():
     run_and_compare_completion_time(
         config_file='tests/configs/conditional_activity.json',
         expected_result_file='tests/results/conditional_activity_result.json'
     )
 
-@pytest.mark.skip(reason="server is broken")
+
 def test_mover_properties_engine_order():
     """Run a basic simulation containing a single move activity and check the output.
     We give an engine order of 0.8 instead of the default 1.0 used for test_move_activity.
@@ -73,7 +73,7 @@ def test_mover_properties_engine_order():
         expected_result_file='tests/results/mover_properties_engine_order_result.json'
    )
 
-@pytest.mark.skip(reason="server is broken")
+
 def test_mover_properties_load():
     """Run a basic conditional simulation.
     We order to load up to 0.8. Capacity of the ship is 2500 and 10.000 units need to be transported.
@@ -83,7 +83,7 @@ def test_mover_properties_load():
         expected_result_file='tests/results/mover_properties_load_result.json'
     )
 
-@pytest.mark.skip(reason="server is broken")
+
 def test_energy_use():
     """Run a simulation tracking energy use."""
     result = run_and_compare_completion_time(
@@ -98,7 +98,7 @@ def test_energy_use():
 
     np.testing.assert_almost_equal(energy_use, 1791724.970386777)
 
-@pytest.mark.skip(reason="server is broken")
+
 def test_depth_restriction():
     """Run a simulation including depth restrictions."""
     run_and_compare_completion_time(
@@ -106,7 +106,7 @@ def test_depth_restriction():
         expected_result_file='tests/results/depth_restriction_result.json'
     )
 
-@pytest.mark.skip(reason="server is broken")
+
 def test_sequential_activity():
     """Runs a simulation with two ships, both ships have their own origin and destination, and each will
     complete a single dredging run. These activities can be done in parallel, but because they are put into
@@ -126,7 +126,7 @@ def test_sequential_activity():
     hopper2_start_time = hopper2['features'][0]['properties']['time']
     assert hopper1_done_time <= hopper2_start_time
 
-@pytest.mark.skip(reason="server is broken")
+
 @pytest.mark.timeout(60)
 def test_infinite_loop_detection():
     """Run a simulation that would lead to an infinite loop."""
@@ -136,7 +136,7 @@ def test_infinite_loop_detection():
     )
     assert True  # ensure we get here...
 
-@pytest.mark.skip(reason="server is broken")
+
 def test_savesim(tmpdir):
     """Runs the same simulation as test_energy_use, but adds saveSimulation: true.
     This should result in the server saving the csv files of the simulation."""

@@ -89,126 +89,136 @@ class Activity(core.Identifiable, core.Log):
 
         # perform our task until we are interrupted by the stop event
         while not self.stop_event.triggered:
-            yield from self.perform_single_run(origin, destination, loader, mover, unloader)
+            yield from single_run_process(self, self.env, origin, destination, loader, mover, unloader)
 
         current_time = datetime.datetime.fromtimestamp(self.env.now)
         print('\nTime = {:%Y-%m-%d %H:%M}\nStop condition is satisfied, {} transporting from {} to {} completed.'
               .format(current_time, self.name, origin.name, destination.name))
         self.log_entry("completed", self.env.now, -1, destination.geometry)
 
-    def perform_single_run(self, origin, destination, loader, mover, unloader, engine_order=1.0, filling=1.0):
-        amount = min(mover.container.capacity * filling - mover.container.level,
-            origin.container.level,
-            origin.container.capacity - origin.total_requested,
-            destination.container.capacity - destination.container.level,
-            destination.container.capacity - destination.total_requested)
 
-        if isinstance(mover, core.HasDepthRestriction) and isinstance(destination, core.HasWeather):
-            amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
+def single_run_process(activity_log, env, origin, destination, loader, mover, unloader,
+                       engine_order=1.0, filling=1.0, verbose=False):
+    amount = min(mover.container.capacity * filling - mover.container.level,
+        origin.container.level,
+        origin.container.capacity - origin.total_requested,
+        destination.container.capacity - destination.container.level,
+        destination.container.capacity - destination.total_requested)
 
-        if amount > 0:
-            # request access to the transport_resource
-            origin.total_requested += amount
-            destination.total_requested += amount
+    if isinstance(mover, core.HasDepthRestriction) and isinstance(destination, core.HasWeather):
+        amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
 
-            if self.print:
-                print('Using ' + mover.name + ' to process ' + str(amount))
-            self.log_entry("transporting start", self.env.now, amount, mover.geometry)
+    if amount > 0:
+        resource_requests = {}
 
-            # request the mover's resource
-            yield from self._request_resource(mover.resource)
+        # request the transported content
+        origin.total_requested += amount
+        destination.total_requested += amount
 
-            # move the mover to the origin (if necessary)
-            if not mover.is_at(origin):
-                yield from self.move_mover(mover, origin, engine_order=engine_order)
+        if verbose:
+            print('Using ' + mover.name + ' to process ' + str(amount))
+        activity_log.log_entry("transporting start", env.now, amount, mover.geometry)
 
-            # request the loader's resource (if necessary)
-            yield from self._request_resource(loader.resource)
+        # request the mover's resource
+        yield from _request_resource(resource_requests, mover.resource)
 
-            # move the loader to the origin (if necessary)
-            # todo have the loader move simultaneously with the mover by starting a different process for it
-            if not loader.is_at(origin):
-                yield from self.move_mover(loader, origin, engine_order=engine_order)
+        # move the mover to the origin (if necessary)
+        if not mover.is_at(origin):
+            yield from _move_mover(mover, origin, engine_order=engine_order, verbose=verbose)
 
-            # request the origin's resource
-            yield from self._request_resource(origin.resource)
+        # request the loader's resource (if necessary)
+        yield from _request_resource(resource_requests, loader.resource)
 
-            # load the mover
-            yield from self.shift_amount(loader, mover, mover.container.level + amount, origin)
+        # move the loader to the origin (if necessary)
+        # todo have the loader move simultaneously with the mover by starting a different process for it
+        if not loader.is_at(origin):
+            yield from _move_mover(loader, origin, engine_order=engine_order, verbose=verbose)
 
-            # release the loader and origin resources (but always keep the mover requested)
-            self._release_resource(loader.resource, mover.resource)
-            self._release_resource(origin.resource, mover.resource)
+        # request the origin's resource
+        yield from _request_resource(resource_requests, origin.resource)
 
-            # move the mover to the destination
-            yield from self.move_mover(mover, destination, engine_order=engine_order)
+        # load the mover
+        yield from _shift_amount(env, loader, mover, mover.container.level + amount, origin, verbose=verbose)
 
-            # request the unloader's resource (if necessary)
-            yield from self._request_resource(unloader.resource)
+        # release the loader and origin resources (but always keep the mover requested)
+        _release_resource(resource_requests, loader.resource, kept_resource=mover.resource)
+        _release_resource(resource_requests, origin.resource, kept_resource=mover.resource)
 
-            # move the unloader to the destination (if necessary)
-            # todo have the unloader move simultaneously with the mover by starting a different process for it
-            if not unloader.is_at(destination):
-                yield from self.move_mover(unloader, destination, engine_order=engine_order)
+        # move the mover to the destination
+        yield from _move_mover(mover, destination, engine_order=engine_order, verbose=verbose)
 
-            # request the destination's resource
-            yield from self._request_resource(destination.resource)
+        # request the unloader's resource (if necessary)
+        yield from _request_resource(resource_requests, unloader.resource)
 
-            # unload the mover
-            yield from self.shift_amount(unloader, mover, mover.container.level - amount, destination)
+        # move the unloader to the destination (if necessary)
+        # todo have the unloader move simultaneously with the mover by starting a different process for it
+        if not unloader.is_at(destination):
+            yield from _move_mover(unloader, destination, engine_order=engine_order, verbose=verbose)
 
-            # release the unloader, destination and mover requests
-            self._release_resource(unloader.resource)
-            if destination.resource in self.resource_requests:
-                self._release_resource(destination.resource)
-            if mover.resource in self.resource_requests:
-                self._release_resource(mover.resource)
+        # request the destination's resource
+        yield from _request_resource(resource_requests, destination.resource)
 
-            self.log_entry("transporting stop", self.env.now, amount, mover.geometry)
-        else:
-            # todo yield from an event triggering when there will be something new to move instead
-            print('Nothing to move')
-            yield self.env.timeout(3600)
+        # unload the mover
+        yield from _shift_amount(env, unloader, mover, mover.container.level - amount, destination, verbose=verbose)
 
-    def _request_resource(self, resource):
-        """Requests the given resource and yields it.
-        """
-        if resource not in self.resource_requests:
-            self.resource_requests[resource] = resource.request()
-            yield self.resource_requests[resource]
+        # release the unloader, destination and mover requests
+        _release_resource(resource_requests, unloader.resource)
+        if destination.resource in resource_requests:
+            _release_resource(resource_requests, destination.resource)
+        if mover.resource in resource_requests:
+            _release_resource(resource_requests, mover.resource)
 
-    def _release_resource(self, resource, kept_resource=None):
-        if resource != kept_resource:
-            resource.release(self.resource_requests[resource])
-            del self.resource_requests[resource]
+        activity_log.log_entry("transporting stop", env.now, amount, mover.geometry)
+    else:
+        # todo yield from an event triggering when there will be something new to move instead
+        print('Nothing to move')
+        yield env.timeout(3600)
 
-    def shift_amount(self, processor, ship, desired_level, site):
-        amount = np.abs(ship.container.level - desired_level)
 
-        # Check if loading or unloading
-        current_level = ship.container.level
-        log = "loading" if current_level < desired_level else "unloading"
+def _request_resource(requested_resources, resource):
+    """Requests the given resource and yields it.
+    """
+    if resource not in requested_resources:
+        requested_resources[resource] = resource.request()
+        yield requested_resources[resource]
 
-        processor.log_entry(log + ' start', self.env.now, amount, processor.geometry)
-        yield from processor.process(ship, desired_level, site)
-        processor.log_entry(log + ' stop', self.env.now, amount, processor.geometry)
 
-        if self.print:
-            print('Processed {}:'.format(amount))
-            print('  by:          ' + processor.name)
-            print('  ship:        ' + ship.name + ' contains: ' + str(ship.container.level))
-            print('  site:        ' + site.name + ' contains: ' + str(site.container.level))
+def _release_resource(requested_resources, resource, kept_resource=None):
+    """Releases the given resource, provided it does not equal the kept_resource parameter.
+    Deletes the released resource from the requested_resources dictionary."""
+    if resource != kept_resource:
+        resource.release(requested_resources[resource])
+        del requested_resources[resource]
 
-    def move_mover(self, mover, origin, engine_order=1.0):
-        old_location = mover.geometry
 
-        yield from mover.move(origin, engine_order=engine_order)
+def _shift_amount(env, processor, ship, desired_level, site, verbose=False):
+    amount = np.abs(ship.container.level - desired_level)
 
-        if self.print:
-            print('Moved:')
-            print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
-            print('  from:        ' + format(old_location.x, '02.5f') + ' ' + format(old_location.y, '02.5f'))
-            print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))
+    # Check if loading or unloading
+    current_level = ship.container.level
+    log = "loading" if current_level < desired_level else "unloading"
+
+    processor.log_entry(log + ' start', env.now, amount, processor.geometry)
+    yield from processor.process(ship, desired_level, site)
+    processor.log_entry(log + ' stop', env.now, amount, processor.geometry)
+
+    if verbose:
+        print('Processed {}:'.format(amount))
+        print('  by:          ' + processor.name)
+        print('  ship:        ' + ship.name + ' contains: ' + str(ship.container.level))
+        print('  site:        ' + site.name + ' contains: ' + str(site.container.level))
+
+
+def _move_mover(mover, origin, engine_order=1.0, verbose=False):
+    old_location = mover.geometry
+
+    yield from mover.move(origin, engine_order=engine_order)
+
+    if verbose:
+        print('Moved:')
+        print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
+        print('  from:        ' + format(old_location.x, '02.5f') + ' ' + format(old_location.y, '02.5f'))
+        print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))
 
 
 class ActivityLog(core.Identifiable, core.Log):
@@ -274,9 +284,6 @@ class Simulation(core.Identifiable, core.Log):
             id = activity['id']
             activity_log = activity_log_class(env=self.env, name=id)
 
-            # todo use Activity instead of defining own process control
-            # - change Activity to include a list of tasks which can be either single run or move
-            # - what about nested loops, maybe task can be another conditional activity again?
             process = self.env.process(self.get_process_control(activity_log, activity))
 
             self.activities[id] = {
@@ -341,8 +348,7 @@ class Simulation(core.Identifiable, core.Log):
                                .format(mover.name, origin.name, loader.name, destination.name, unloader.name)
         activity_log.log_entry('started ' + activity_description, self.env.now, -1, mover.geometry)
 
-        # todo fix this
-        # yield from perform_single_run(self.env, activity_log, origin, destination, loader, mover, unloader, **kwargs)
+        yield from single_run_process(activity_log, self.env, origin, destination, loader, mover, unloader, **kwargs)
 
         activity_log.log_entry('completed ' + activity_description, self.env.now, -1, mover.geometry)
 
@@ -351,6 +357,12 @@ class Simulation(core.Identifiable, core.Log):
             yield from self.get_process_control(activity_log, activity)
 
     def conditional_process_control(self, activity_log, condition, activities):
+        # todo use same process control as Activity for conditional activities
+        # - make all process control methods base methods of the file
+        # - change process control in Activity to general conditional process control which is passed a list of
+        #   generators (other, already called, process controls) and stop_event
+        # - create a delayed_process_control which is passed a generator (other process) and start_event
+        # - Activity by default uses delayed_process(conditional_process(single_run_process, stop_event), start_event)
         operator = condition['operator']
         operand_key = condition['operand']
         operand = self.sites[operand_key] if operand_key in self.sites else self.equipment[operand_key]
