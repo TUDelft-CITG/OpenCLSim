@@ -1,61 +1,6 @@
 import simpy
 
-
-class RelayContainer(simpy.Container):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.expected_level = self.level
-        self._content_available = None
-        self._space_available = None
-
-    def get(self, amount):
-        print(self._env.now, '- container: received get for ', amount, ', current level =', self.level)
-        return super().get(amount)
-
-    def put(self, amount):
-        print(self._env.now, '- container: received put for ', amount, ', current level =', self.level)
-        return super().put(amount)
-
-    def reserve_space(self, amount):
-        if self.expected_level + amount > self.capacity:
-            raise RuntimeError('Attempting to reserve unavailable space')
-
-        self.expected_level += amount
-
-        if self._content_available is not None and not self._content_available.triggered and amount > 0:
-            self._content_available.succeed()
-
-    def reserve_content(self, amount):
-        if self.expected_level < amount:
-            raise RuntimeError('Attempting to reserve unavailable content')
-
-        self.expected_level -= amount
-
-        if self._space_available is not None and not self._space_available.triggered and amount > 0:
-            self._space_available.succeed()
-
-    @property
-    def space_available(self):
-        if self.expected_level < self.capacity:
-            return self._env.event().succeed()
-
-        if self._space_available is not None and not self._space_available.triggered:
-            return self._space_available
-
-        self._space_available = self._env.event()
-        return self._space_available
-
-    @property
-    def content_available(self):
-        if self.expected_level > 0:
-            return self._env.event().succeed()
-
-        if self._content_available is not None and not self._content_available.triggered:
-            return self._content_available
-
-        self._content_available = self._env.event()
-        return self._content_available
+from digital_twin.core import ReservationContainer
 
 
 class DummyShip:
@@ -84,7 +29,7 @@ class DeliveryShip(DummyShip):
                          self.relay_container.capacity - self.relay_container.expected_level)
             if amount > 0:
                 self.print('reserving', amount, 'space')
-                self.relay_container.reserve_space(amount)
+                self.relay_container.reserve_put(amount)
                 self.print('performing delivery of', amount)
                 yield self.env.timeout(self.delivery_time)
                 self.print('arriving at container for delivery, putting', amount)
@@ -93,7 +38,7 @@ class DeliveryShip(DummyShip):
                 self.total_delivered += amount
             else:
                 self.print('no space available for reservation, start waiting')
-                yield self.env.any_of(events=[(self.relay_container.space_available), self.stop_event])
+                yield self.env.any_of(events=[(self.relay_container.reserve_put_available), self.stop_event])
                 self.print('waiting stop')
         self.print('Stop event triggered!')
 
@@ -112,7 +57,7 @@ class CollectionShip(DummyShip):
                          self.relay_container.expected_level)
             if amount > 0:
                 self.print('reserving', amount, 'content')
-                self.relay_container.reserve_content(amount)
+                self.relay_container.reserve_get(amount)
                 self.print('arriving at container for collection, getting', amount)
                 yield self.relay_container.get(amount)
                 self.print('content collected, delivering to dump')
@@ -121,7 +66,7 @@ class CollectionShip(DummyShip):
                 self.total_dumped += amount
             else:
                 self.print('no content available for reservation, start waiting')
-                yield self.env.any_of(events=[(self.relay_container.content_available), self.stop_event])
+                yield self.env.any_of(events=[(self.relay_container.reserve_get_available), self.stop_event])
                 self.print('waiting stop')
         self.print('Stop event triggered!')
 
@@ -130,7 +75,7 @@ def test_relay_container():
     """Tests the concept of the RelayContainer where ships first reserve space or content, and yield from the
     get / put to wait for the content/space needed to actually become available."""
     env = simpy.Environment()
-    container = RelayContainer(env=env, capacity=1000)
+    container = ReservationContainer(env=env, capacity=1000)
     stop_event = env.timeout(5000)
     delivery_ship = DeliveryShip(
         env=env,
@@ -151,6 +96,10 @@ def test_relay_container():
     env.run()
 
     assert delivery_ship.total_delivered == container.level + collection_ship.total_dumped
+    assert delivery_ship.total_delivered == 2500
+    # the ships only check the timeout (stop_event) after completing a collection / delivery, so the simulation keeps
+    # running a while after it has reached the timeout.
+    assert env.now == 6300
 
 
 def test_relay_container_reversed_init():
@@ -159,7 +108,7 @@ def test_relay_container_reversed_init():
     available in the container, nor any space reserved (and therefore no new content expected). This means it will use
     the content_available event to wait for a new reservation to be possible."""
     env = simpy.Environment()
-    container = RelayContainer(env=env, capacity=1000)
+    container = ReservationContainer(env=env, capacity=1000)
     stop_event = env.timeout(5000)
     collection_ship = CollectionShip(
         env=env,
@@ -180,12 +129,16 @@ def test_relay_container_reversed_init():
     env.run()
 
     assert delivery_ship.total_delivered == container.level + collection_ship.total_dumped
+    assert delivery_ship.total_delivered == 2500
+    # the ships only check the timeout (stop_event) after completing a collection / delivery, so the simulation keeps
+    # running a while after it has reached the timeout.
+    assert env.now == 6300
 
 
 def test_relay_container_several_collectors():
     """Test which uses several collection ships, to test the interaction between these ships."""
     env = simpy.Environment()
-    container = RelayContainer(env=env, capacity=1000)
+    container = ReservationContainer(env=env, capacity=1000)
     stop_event = env.timeout(5000)
     delivery_ship = DeliveryShip(
         env=env,
@@ -211,6 +164,12 @@ def test_relay_container_several_collectors():
 
     total_dumped = sum(collection_ship.total_dumped for collection_ship in collection_ships)
     assert delivery_ship.total_delivered == total_dumped + container.level
+    assert delivery_ship.total_delivered == 1700
+    assert collection_ships[0].total_dumped == 300
+    assert collection_ships[1].total_dumped == 450
+    assert collection_ships[2].total_dumped == 400
+    assert collection_ships[3].total_dumped == 500
+    assert env.now == 6400
 
 # Notice how in test_relay_container_several_collectors, the delivery ship only takes 700 units on its second run, this
 # is because it first reserves content, then "sails to its collection point, loads content, sails to the delivery point

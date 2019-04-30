@@ -70,6 +70,63 @@ class Locatable:
         return distance < tolerance
 
 
+class ReservationContainer(simpy.Container):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.expected_level = self.level
+        self._content_available = None
+        self._space_available = None
+
+    def get(self, amount):
+        print(self._env.now, '- container: received get for ', amount, ', current level =', self.level)
+        return super().get(amount)
+
+    def put(self, amount):
+        print(self._env.now, '- container: received put for ', amount, ', current level =', self.level)
+        return super().put(amount)
+
+    def reserve_put(self, amount):
+        if self.expected_level + amount > self.capacity:
+            raise RuntimeError('Attempting to reserve unavailable space')
+
+        self.expected_level += amount
+
+        if self._content_available is not None and not self._content_available.triggered and amount > 0:
+            self._content_available.succeed()
+
+    def reserve_get(self, amount):
+        if self.expected_level < amount:
+            raise RuntimeError('Attempting to reserve unavailable content')
+
+        self.expected_level -= amount
+
+        if self._space_available is not None and not self._space_available.triggered and amount > 0:
+            self._space_available.succeed()
+
+    @property
+    def reserve_put_available(self):
+        if self.expected_level < self.capacity:
+            return self._env.event().succeed()
+
+        if self._space_available is not None and not self._space_available.triggered:
+            return self._space_available
+
+        self._space_available = self._env.event()
+        return self._space_available
+
+    @property
+    def reserve_get_available(self):
+        if self.expected_level > 0:
+            return self._env.event().succeed()
+
+        if self._content_available is not None and not self._content_available.triggered:
+            return self._content_available
+
+        self._content_available = self._env.event()
+        return self._content_available
+
+
 class EventsContainer(simpy.Container):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
