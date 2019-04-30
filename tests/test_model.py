@@ -95,8 +95,7 @@ def test_model_one_trip(env, geometry_a, geometry_b, Location, TransportProcessi
                    destination = to_location,   # And therefore travel to the to_site
                    loader = vessel,             # The benefit of a TSHD, all steps can be done
                    mover = vessel,              # The benefit of a TSHD, all steps can be done
-                   unloader = vessel,           # The benefit of a TSHD, all steps can be done
-                   start_condition = None)      # We can start right away and do not stop
+                   unloader = vessel)           # The benefit of a TSHD, all steps can be done
 
     # run the activity
     start = env.now
@@ -151,9 +150,8 @@ def test_model_multiple_trips(env, geometry_a, geometry_b, Location, TransportPr
                    destination = to_location,   # And therefore travel to the to_site
                    loader = vessel,             # The benefit of a TSHD, all steps can be done
                    mover = vessel,              # The benefit of a TSHD, all steps can be done
-                   unloader = vessel,           # The benefit of a TSHD, all steps can be done
-                   start_condition = None)      # We can start right away and do not stop
-    
+                   unloader = vessel)           # The benefit of a TSHD, all steps can be done
+
     # run the activity
     start = env.now
     env.run()
@@ -168,6 +166,7 @@ def test_model_multiple_trips(env, geometry_a, geometry_b, Location, TransportPr
     _, _, distance = wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
     np.testing.assert_almost_equal(env.now - start, 20 * 1000 + 20 * distance)
+
 
 # Delayed starting
 def test_start_condition(env, geometry_a, geometry_b, Location, TransportProcessingResource):
@@ -200,8 +199,8 @@ def test_start_condition(env, geometry_a, geometry_b, Location, TransportProcess
     vessel = TransportProcessingResource(**data_vessel)
     
     # TimeCondition - start after 14 days
-    start = env.now + 14 * 7 * 24 * 3600
-    time_condition = model.TimeCondition(env, datetime.datetime.fromtimestamp(start))
+    delay = env.now + 14 * 7 * 24 * 3600
+    time_condition = env.timeout(delay)
 
     # make the activity
     model.Activity(env = env,                           # The simpy environment defined in the first cel
@@ -211,8 +210,8 @@ def test_start_condition(env, geometry_a, geometry_b, Location, TransportProcess
                    loader = vessel,                     # The benefit of a TSHD, all steps can be done
                    mover = vessel,                      # The benefit of a TSHD, all steps can be done
                    unloader = vessel,                   # The benefit of a TSHD, all steps can be done
-                   start_condition = time_condition,    # We can start after 14 days
-                   stop_condition = None)               # Stop when both conditions are satisfied
+                   start_event = time_condition,        # We can start after 14 days
+                   stop_event = None)                   # Stop when both conditions are satisfied
     
     # run the activity
     start = env.now
@@ -224,10 +223,11 @@ def test_start_condition(env, geometry_a, geometry_b, Location, TransportProcess
     dest = shapely.geometry.asShape(to_location.geometry)
     _, _, distance = wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
-    np.testing.assert_almost_equal(env.now - start, 14 * 7 * 24 * 3600 + 20 * 1000 + 20 * distance)
+    np.testing.assert_almost_equal(env.now - start, delay + 20 * 1000 + 20 * distance)
 
 
 # Testing the AndCondition
+@pytest.mark.skip(reason="no new equivalent of this LevelCondition yet")
 def test_and_condition(env, geometry_a, geometry_b, Location, TransportProcessingResource):
     amount = 10_000
     
@@ -282,8 +282,8 @@ def test_and_condition(env, geometry_a, geometry_b, Location, TransportProcessin
                    loader = vessel,                 # The benefit of a TSHD, all steps can be done
                    mover = vessel,                  # The benefit of a TSHD, all steps can be done
                    unloader = vessel,               # The benefit of a TSHD, all steps can be done
-                   start_condition = None,          # We can start right away and do not stop
-                   stop_condition = and_condition)  # Stop when both conditions are satisfied
+                   start_event = None,          # We can start right away and do not stop
+                   stop_event = and_condition)  # Stop when both conditions are satisfied
     
     # run the activity
     start = env.now

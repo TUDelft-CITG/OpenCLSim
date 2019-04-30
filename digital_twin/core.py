@@ -1087,8 +1087,7 @@ class Processor(SimpyObject):
         self.unloading_func = unloading_func
 
     # noinspection PyUnresolvedReferences
-    def process(self, ship, desired_level, site,
-                ship_resource_request=None, site_resource_request=None):
+    def process(self, ship, desired_level, site):
         """Moves content from ship to the site or from the site to the ship to ensure that the ship's container reaches
         the desired level. Yields the time it takes to process."""
 
@@ -1121,20 +1120,6 @@ class Processor(SimpyObject):
         # Make sure that the container of the destination is sufficiently large
         assert destination.container.capacity - destination.container.level >= amount
 
-        # Make sure all requests are granted
-        # Request access to the origin
-        my_ship_turn = ship_resource_request
-        if my_ship_turn is None:
-            my_ship_turn = ship.resource.request()
-        # Request access to the destination
-        my_site_turn = site_resource_request
-        if my_site_turn is None:
-            my_site_turn = site.resource.request()
-        # Yield the requests once granted
-        yield my_ship_turn
-        yield my_site_turn
-
-        # If requests are yielded, start activity
         # Activity can only start if environmental conditions allow it
         time = 0
 
@@ -1177,11 +1162,6 @@ class Processor(SimpyObject):
         destination.log_entry('loading stop', self.env.now, destination.container.level, self.geometry)
 
         logger.debug('  process:        ' + '%4.2f' % (duration / 3600) + ' hrs')
-
-        if ship_resource_request is None:
-            ship.resource.release(my_ship_turn)
-        if site_resource_request is None:
-            site.resource.release(my_site_turn)
 
     def computeEnergy(self, duration, origin, destination):
         """

@@ -167,6 +167,7 @@ def test_dual_processors(env, geometry_a):
     assert limited_container_2.container.level == 300
 
 
+@pytest.mark.skip(reason="resource requests were moved to Activity, test no longer needed?")
 def test_dual_processors_with_limit(env, geometry_a):
     # move content into a limited container, have two process wait for each other to finish
     unlimited_container_1 = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=100)

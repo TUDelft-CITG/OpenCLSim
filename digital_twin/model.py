@@ -9,103 +9,6 @@ import pandas as pd
 import numpy as np
 
 
-class Condition:
-    pass
-
-
-class LevelCondition(Condition):
-    """The LevelCondition class can be used to specify the start level and stop level conditions for an Activity.
-
-    container: an object which extends HasContainer, the container whose level needs to be >= or <= a certain value
-    min_level: the minimum level the container is required to have
-    max_level: the maximum level the container is required to have
-    """
-
-    def __init__(self, container, min_level=None, max_level=None,
-                 *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        """Initialization"""
-        self.container = container
-        self.min_level = min_level if min_level is not None else 0
-        self.max_level = max_level if max_level is not None else container.container.capacity
-
-    def satisfied(self):
-        current_level = self.container.container.level
-        return self.min_level <= current_level <= self.max_level
-
-
-class TimeCondition(Condition):
-    """The TimeCondition class can be used to specify the period in which an activity can take place
-
-    environment: the environment in which the simulation takes place
-    start: the start date of the condition
-    end: the end date of the condition
-    """
-
-    def __init__(self, environment, start = None, stop = None,
-                 *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        """Initialization"""
-        self.env = environment
-        self.start = start if start is not None else datetime.datetime.fromtimestamp(self.env.now)
-        self.stop = stop if stop is not None else datetime.datetime.fromtimestamp(self.env.now)
-
-    def satisfied(self):
-        current_time = datetime.datetime.fromtimestamp(self.env.now)
-        return self.start <= current_time >= self.stop
-
-
-class AndCondition(Condition):
-    """The AndCondition class can be used to combine several different conditions into a single condition for an Activity.
-
-    conditions: a list of condition objects that need to all be satisfied for the condition to be satisfied
-                each object should have a satisfied method that returns whether the condition is satisfied or not
-    """
-
-    def __init__(self, conditions, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        """Initialization"""
-
-        self.conditions = conditions
-
-    def satisfied(self):
-        for condition in self.conditions:
-            if not condition.satisfied():
-                return False
-        return True
-
-
-class OrCondition(Condition):
-    """The AndCondition class can be used to combine several different conditions into a single condition for an Activity.
-
-    conditions: a list of condition objects, one of which needs to be satisfied for the condition to be satisfied
-                each object should have a satisfied method that returns whether the condition is satisfied or not
-    """
-
-    def __init__(self, conditions, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        """Initialization"""
-
-        self.conditions = conditions
-
-    def satisfied(self):
-        for condition in self.conditions:
-            if condition.satisfied():
-                return True
-        return False
-
-
-class TrueCondition(Condition):
-    """The TrueCondition class defines a condition which is always satisfied."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        """Initialization"""
-
-    def satisfied(self):
-        return True
-
-
 class Activity(core.Identifiable, core.Log):
     """The Activity Class forms a specific class for a single activity within a simulation.
     It deals with a single origin container, destination container and a single combination of equipment
@@ -117,16 +20,6 @@ class Activity(core.Identifiable, core.Log):
     arguments: start_condition, stop_condition and condition. These condition arguments should all be given a condition
     object which has a satisfied method returning a boolean value. True if the condition is satisfied, False otherwise.
 
-    start_condition: the activity will start as soon as this condition is satisfied
-                     by default will always be True
-    stop_condition: the activity will stop (terminate) as soon as this condition is no longer satisfied after
-                    the activity has started
-                    by default will always be for the destination container to be full or the source container to be empty
-    condition: after the activity has started (start_condition was satisfied), this condition will be checked as long
-               as the stop_condition is not satisfied, if the condition returns True, the activity will complete exactly
-               one transportation of substances, of the condition is False the activity will wait for the condition to
-               be satisfied again
-               by default will always be True
     origin: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
     destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
     loader: object which will get units from 'origin' Container and put them into 'mover' Container
@@ -141,24 +34,28 @@ class Activity(core.Identifiable, core.Log):
               should inherit from Processor, HasResource, Identifiable and Log
               after the simulation is complete, its log will contain entries for each time it
               started unloading and stopped unloading
+    start_event: the activity will start as soon as this event is triggered
+                 by default will be to start immediately
+    stop_event: the activity will stop (terminate) as soon as this event is triggered
+                by default will be an event triggered when the destination container becomes full or the source
+                container becomes empty
     """
-
-    # todo should loader and unloader also inherit from Locatable and Activity include checks if the loader / unloader is at the correct location?
 
     def __init__(self,
                  origin, destination,
                  loader, mover, unloader,
-                 start_condition=None, stop_condition=None, condition=None,
+                 start_event=None, stop_event=None,
                  show=False,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
-        self.start_condition = start_condition if start_condition is not None else TrueCondition()
-        self.stop_condition = stop_condition if stop_condition is not None else OrCondition(
-            [LevelCondition(origin, max_level=0),
-             LevelCondition(destination, min_level=destination.container.capacity)])
-        self.condition = condition if condition is not None else TrueCondition()
+        self.start_event = start_event
+        self.stop_event = stop_event if stop_event is not None else self.env.any_of(events=[
+            origin.container.empty_event,
+            destination.container.full_event
+        ])
+
         self.origin = origin
         self.destination = destination
         self.loader = loader
@@ -167,150 +64,147 @@ class Activity(core.Identifiable, core.Log):
 
         self.print = show
 
-        self.installation_proc = self.env.process(
-            self.process_control(self.start_condition, self.stop_condition, self.condition,
-                                 self.origin, self.destination, self.loader, self.mover, self.unloader)
+        self.main_process = self.env.process(
+            self.process_control(
+                origin=self.origin,
+                destination=self.destination,
+                loader=self.loader,
+                mover=self.mover,
+                unloader=self.unloader
+            )
         )
 
-    def process_control(self, start_condition, stop_condition, condition,
-                        origin, destination,
-                        loader, mover, unloader):
-        """Installation process control"""
+        self.resource_requests = {}
+
+    def process_control(self, origin, destination, loader, mover, unloader):
+        """Installation process control. This method is added as a process to the simpy environment upon initialization.
+        This means it will be called when env.run() is called. Once the start_event is triggered, it will start moving
+        content from the origin container to the destination container using the given equipment (mover, loader and
+        unloader). When the stop_event triggers, this task is interrupted and the activity stops."""
 
         # wait for the start condition to be satisfied
-        # checking the general condition and move
-
-        # stand by until the start condition is satisfied
-        shown = False
-        while not start_condition.satisfied():
-            if not shown:
-                print('\nTime = ' + '{:%Y-%m-%d %H:%M}'.format(datetime.datetime.fromtimestamp(self.env.now)) + '\n' + self.name +
-                      ' to ' + destination.name + ' suspended.')
-                self.log_entry("suspended", self.env.now, -1, origin.geometry)
-                shown = True
-            yield self.env.timeout(3600)  # step 3600 time units ahead
-
-        # todo add nice printing to the conditions, then print them here
-        print('\nTime = ' + '{:%Y-%m-%d %H:%M}'.format(datetime.datetime.fromtimestamp(self.env.now)) + '\nStart condition is satisfied, '
-              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' started.')
+        if self.start_event is not None:
+            yield self.start_event
         self.log_entry("started", self.env.now, -1, origin.geometry)
 
-        # keep moving substances until the stop condition is satisfied
-        while not stop_condition.satisfied():
-            if condition.satisfied():
-                yield from perform_single_run(self.env, self, origin, destination, loader, mover, unloader, verbose=self.print)
-            else:
-                yield self.env.timeout(3600)
+        # perform our task until we are interrupted by the stop event
+        while not self.stop_event.triggered:
+            yield from self.perform_single_run(origin, destination, loader, mover, unloader)
 
-        print('\nTime = ' + '{:%Y-%m-%d %H:%M}'.format(datetime.datetime.fromtimestamp(self.env.now)) + '\nStop condition is satisfied, '
-              + self.name + ' transporting from ' + origin.name + ' to ' + destination.name + ' completed.')
+        current_time = datetime.datetime.fromtimestamp(self.env.now)
+        print('\nTime = {:%Y-%m-%d %H:%M}\nStop condition is satisfied, {} transporting from {} to {} completed.'
+              .format(current_time, self.name, origin.name, destination.name))
         self.log_entry("completed", self.env.now, -1, destination.geometry)
 
+    def perform_single_run(self, origin, destination, loader, mover, unloader, engine_order=1.0, filling=1.0):
+        amount = min(mover.container.capacity * filling - mover.container.level,
+            origin.container.level,
+            origin.container.capacity - origin.total_requested,
+            destination.container.capacity - destination.container.level,
+            destination.container.capacity - destination.total_requested)
 
-def perform_single_run(environment, activity_log, origin, destination, loader, mover, unloader, engine_order=1.0, filling=1.0, verbose=False):
-    """Installation process"""
+        if isinstance(mover, core.HasDepthRestriction) and isinstance(destination, core.HasWeather):
+            amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
 
-    # estimate amount that should be transported
-    amount = min(
-        mover.container.capacity * filling - mover.container.level,
-        origin.container.level,
-        origin.container.capacity - origin.total_requested,
-        destination.container.capacity - destination.container.level,
-        destination.container.capacity - destination.total_requested)
+        if amount > 0:
+            # request access to the transport_resource
+            origin.total_requested += amount
+            destination.total_requested += amount
 
-    if isinstance(mover, core.HasDepthRestriction) and isinstance(destination, core.HasWeather): \
-        amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
+            if self.print:
+                print('Using ' + mover.name + ' to process ' + str(amount))
+            self.log_entry("transporting start", self.env.now, amount, mover.geometry)
 
-    if amount > 0:
-        # request access to the transport_resource
-        origin.total_requested += amount
-        destination.total_requested += amount
+            # request the mover's resource
+            yield from self._request_resource(mover.resource)
 
-        if verbose == True:
-            print('Using ' + mover.name + ' to process ' + str(amount))
-        activity_log.log_entry("transporting start", environment.now, amount, mover.geometry)
-
-        with mover.resource.request() as my_mover_turn:
-            yield my_mover_turn
-
-            # move to the origin if necessary
+            # move the mover to the origin (if necessary)
             if not mover.is_at(origin):
-                yield from move_mover(mover, origin, engine_order=engine_order, verbose=verbose)
+                yield from self.move_mover(mover, origin, engine_order=engine_order)
+
+            # request the loader's resource (if necessary)
+            yield from self._request_resource(loader.resource)
+
+            # move the loader to the origin (if necessary)
+            # todo have the loader move simultaneously with the mover by starting a different process for it
+            if not loader.is_at(origin):
+                yield from self.move_mover(loader, origin, engine_order=engine_order)
+
+            # request the origin's resource
+            yield from self._request_resource(origin.resource)
 
             # load the mover
-            if not loader.is_at(origin):
-                yield from move_mover(loader, origin, engine_order=engine_order, verbose=verbose)
+            yield from self.shift_amount(loader, mover, mover.container.level + amount, origin)
 
-            yield from shift_amount(environment, loader, mover, mover.container.level + amount, origin, ship_resource_request=my_mover_turn, verbose=verbose)
+            # release the loader and origin resources (but always keep the mover requested)
+            self._release_resource(loader.resource, mover.resource)
+            self._release_resource(origin.resource, mover.resource)
 
             # move the mover to the destination
-            yield from move_mover(mover, destination, engine_order=engine_order, verbose=verbose)
+            yield from self.move_mover(mover, destination, engine_order=engine_order)
+
+            # request the unloader's resource (if necessary)
+            yield from self._request_resource(unloader.resource)
+
+            # move the unloader to the destination (if necessary)
+            # todo have the unloader move simultaneously with the mover by starting a different process for it
+            if not unloader.is_at(destination):
+                yield from self.move_mover(unloader, destination, engine_order=engine_order)
+
+            # request the destination's resource
+            yield from self._request_resource(destination.resource)
 
             # unload the mover
-            if not unloader.is_at(destination):
-                yield from move_mover(unloader, destination, engine_order=engine_order, verbose=verbose)
+            yield from self.shift_amount(unloader, mover, mover.container.level - amount, destination)
 
-            yield from shift_amount(environment, unloader, mover, mover.container.level - amount, destination, ship_resource_request=my_mover_turn, verbose=verbose)
+            # release the unloader, destination and mover requests
+            self._release_resource(unloader.resource)
+            if destination.resource in self.resource_requests:
+                self._release_resource(destination.resource)
+            if mover.resource in self.resource_requests:
+                self._release_resource(mover.resource)
 
-        activity_log.log_entry("transporting stop", environment.now, amount, mover.geometry)
-    else:
-        print('Nothing to move')
-        yield environment.timeout(3600)
+            self.log_entry("transporting stop", self.env.now, amount, mover.geometry)
+        else:
+            # todo yield from an event triggering when there will be something new to move instead
+            print('Nothing to move')
+            yield self.env.timeout(3600)
 
+    def _request_resource(self, resource):
+        """Requests the given resource and yields it.
+        """
+        if resource not in self.resource_requests:
+            self.resource_requests[resource] = resource.request()
+            yield self.resource_requests[resource]
 
-def shift_amount(environment, processor, ship, desired_level, site, ship_resource_request=None, site_resource_request=None, verbose=False):
-    amount = np.abs(ship.container.level - desired_level)
+    def _release_resource(self, resource, kept_resource=None):
+        if resource != kept_resource:
+            resource.release(self.resource_requests[resource])
+            del self.resource_requests[resource]
 
-    if id(ship) == id(processor) and ship_resource_request is not None or \
-            id(site) == id(processor) and site_resource_request is not None:
+    def shift_amount(self, processor, ship, desired_level, site):
+        amount = np.abs(ship.container.level - desired_level)
 
-        yield from processor.process(ship, desired_level, site, ship_resource_request=ship_resource_request,
-                                     site_resource_request=site_resource_request)
-    else:
-        with processor.resource.request() as my_processor_turn:
-            yield my_processor_turn
+        # Check if loading or unloading
+        current_level = ship.container.level
+        log = "loading" if current_level < desired_level else "unloading"
 
-            # Request access to the ship
-            my_ship_turn = ship_resource_request
-            if my_ship_turn is None:
-                my_ship_turn = ship.resource.request()
-            
-            # Request access to the site
-            my_site_turn = site_resource_request
-            if my_site_turn is None:
-                my_site_turn = site.resource.request()
-            
-            # Yield the requests once granted
-            yield my_ship_turn
-            yield my_site_turn
+        processor.log_entry(log + ' start', self.env.now, amount, processor.geometry)
+        yield from processor.process(ship, desired_level, site)
+        processor.log_entry(log + ' stop', self.env.now, amount, processor.geometry)
 
-            # Check if loading or unloading
-            current_level = ship.container.level
-            log = "loading" if current_level < desired_level else "unloading"
+        if self.print:
+            print('Processed {}:'.format(amount))
+            print('  by:          ' + processor.name)
+            print('  ship:        ' + ship.name + ' contains: ' + str(ship.container.level))
+            print('  site:        ' + site.name + ' contains: ' + str(site.container.level))
 
-            processor.log_entry(log + ' start', environment.now, amount, processor.geometry)
-            yield from processor.process(ship, desired_level, site,
-                                         ship_resource_request=my_ship_turn,
-                                         site_resource_request=my_site_turn)
-
-            ship.resource.release(my_ship_turn)
-            site.resource.release(my_site_turn)
-
-            processor.log_entry(log + ' stop', environment.now, amount, processor.geometry)
-
-    if verbose == True:
-        print('Processed {}:'.format(amount))
-        print('  by:          ' + processor.name)
-        print('  ship:        ' + ship.name + ' contains: ' + str(ship.container.level))
-        print('  site:        ' + site.name + ' contains: ' + str(site.container.level))
-
-
-def move_mover(mover, origin, engine_order=1.0, verbose=False):
+    def move_mover(self, mover, origin, engine_order=1.0):
         old_location = mover.geometry
 
         yield from mover.move(origin, engine_order=engine_order)
 
-        if verbose == True:
+        if self.print:
             print('Moved:')
             print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
             print('  from:        ' + format(old_location.x, '02.5f') + ' ' + format(old_location.y, '02.5f'))
@@ -380,6 +274,9 @@ class Simulation(core.Identifiable, core.Log):
             id = activity['id']
             activity_log = activity_log_class(env=self.env, name=id)
 
+            # todo use Activity instead of defining own process control
+            # - change Activity to include a list of tasks which can be either single run or move
+            # - what about nested loops, maybe task can be another conditional activity again?
             process = self.env.process(self.get_process_control(activity_log, activity))
 
             self.activities[id] = {
@@ -444,7 +341,8 @@ class Simulation(core.Identifiable, core.Log):
                                .format(mover.name, origin.name, loader.name, destination.name, unloader.name)
         activity_log.log_entry('started ' + activity_description, self.env.now, -1, mover.geometry)
 
-        yield from perform_single_run(self.env, activity_log, origin, destination, loader, mover, unloader, **kwargs)
+        # todo fix this
+        # yield from perform_single_run(self.env, activity_log, origin, destination, loader, mover, unloader, **kwargs)
 
         activity_log.log_entry('completed ' + activity_description, self.env.now, -1, mover.geometry)
 
