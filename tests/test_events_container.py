@@ -4,18 +4,18 @@ import simpy
 from digital_twin import core
 
 
-def test_at_most_events():
+def test_put_available():
     env = simpy.Environment()
     container = core.EventsContainer(env=env, capacity=10, init=5)
 
     def process():
-        at_most_5 = container.at_most_event(5)
+        at_most_5 = container.put_available(5)
         assert at_most_5.triggered
 
-        at_most_6 = container.at_most_event(6)
+        at_most_6 = container.put_available(4)
         assert at_most_6.triggered
 
-        at_most_3 = container.at_most_event(3)
+        at_most_3 = container.put_available(7)
         assert not at_most_3.triggered
 
         yield container.get(1) # contains 4
@@ -31,18 +31,18 @@ def test_at_most_events():
     env.run()
 
 
-def test_at_least_events():
+def test_get_available():
     env = simpy.Environment()
     container = core.EventsContainer(env=env, capacity=10, init=5)
 
     def process():
-        at_least_5 = container.at_least_event(5)
+        at_least_5 = container.get_available(5)
         assert at_least_5.triggered
 
-        at_least_4 = container.at_least_event(4)
+        at_least_4 = container.get_available(4)
         assert at_least_4.triggered
 
-        at_least_7 = container.at_least_event(7)
+        at_least_7 = container.get_available(7)
         assert not at_least_7.triggered
 
         yield container.put(1)  # contains 6

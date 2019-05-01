@@ -123,34 +123,34 @@ class EventsContainer(simpy.Container):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._at_least_events = {}
-        self._at_most_events = {}
+        self._get_available_events = {}
+        self._put_available_events = {}
 
-    def at_least_event(self, amount):
+    def get_available(self, amount):
         if self.level >= amount:
             return self._env.event().succeed()
-        if amount in self._at_least_events:
-            return self._at_least_events[amount]
+        if amount in self._get_available_events:
+            return self._get_available_events[amount]
         new_event = self._env.event()
-        self._at_least_events[amount] = new_event
+        self._get_available_events[amount] = new_event
         return new_event
 
-    def at_most_event(self, amount):
-        if self.level <= amount:
+    def put_available(self, amount):
+        if self.capacity - self.level >= amount:
             return self._env.event().succeed()
-        if amount in self._at_most_events:
-            return self._at_most_events[amount]
+        if amount in self._put_available_events:
+            return self._put_available_events[amount]
         new_event = self._env.event()
-        self._at_most_events[amount] = new_event
+        self._put_available_events[amount] = new_event
         return new_event
 
     @property
     def empty_event(self):
-        return self.at_most_event(0)
+        return self.put_available(self.capacity)
 
     @property
     def full_event(self):
-        return self.at_least_event(self.capacity)
+        return self.get_available(self.capacity)
 
     def put(self, amount):
         put_event = super().put(amount)
@@ -158,10 +158,10 @@ class EventsContainer(simpy.Container):
         return put_event
 
     def put_callback(self, event):
-        for amount in sorted(self._at_least_events):
+        for amount in sorted(self._get_available_events):
             if self.level >= amount:
-                self._at_least_events[amount].succeed()
-                del self._at_least_events[amount]
+                self._get_available_events[amount].succeed()
+                del self._get_available_events[amount]
             else:
                 return
 
@@ -171,10 +171,10 @@ class EventsContainer(simpy.Container):
         return get_event
 
     def get_callback(self, event):
-        for amount in sorted(self._at_most_events, reverse=True):
-            if self.level <= amount:
-                self._at_most_events[amount].succeed()
-                del self._at_most_events[amount]
+        for amount in sorted(self._put_available_events):
+            if self.capacity - self.level >= amount:
+                self._put_available_events[amount].succeed()
+                del self._put_available_events[amount]
             else:
                 return
 

@@ -240,8 +240,8 @@ def _request_resources_if_transfer_possible(env, resource_requests, origin, proc
     all_available = False
     while not all_available:
         # yield until enough content and space available in origin and destination
-        yield env.all_of(events=[origin.container.at_least_event(amount),
-                                 destination.container.at_most_event(destination.container.capacity - amount)])
+        yield env.all_of(events=[origin.container.get_available(amount),
+                                 destination.container.put_available(amount)])
 
         yield from _request_resource(resource_requests, processor.resource)
         if origin.container.level < amount or destination.container.capacity - destination.container.level < amount:
@@ -411,11 +411,11 @@ class Simulation(core.Identifiable, core.Log):
         operator = condition['operator']
 
         if operator == 'is_full':
-            raise ValueError('Temporarily only supporting is_filled conditions')  # todo fix conditions in gui
+            return operand.container.put_available(1)
         elif operator == 'is_filled':
             return operand.container.empty_event
         elif operator == 'is_empty':
-            raise ValueError('Temporarily only supporting is_filled conditions')  # todo fix conditions in gui
+            return operand.container.get_available(1)
         else:
             raise ValueError('Unrecognized operator type: ' + operator)
 
