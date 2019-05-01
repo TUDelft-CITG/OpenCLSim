@@ -127,6 +127,7 @@ def test_sequential_activity():
     assert hopper1_done_time <= hopper2_start_time
 
 
+@pytest.mark.skip("With new event conditions this simulation no longer results in an infinite loop")
 @pytest.mark.timeout(60)
 def test_infinite_loop_detection():
     """Run a simulation that would lead to an infinite loop."""
