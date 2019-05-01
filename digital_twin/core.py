@@ -1088,7 +1088,7 @@ class Log(SimpyObject):
         for msg, t, value, geometry_log in zip(self.log["Message"], self.log["Timestamp"], self.log["Value"], self.log["Geometry"]):
             json.append(dict(
                 type="Feature",
-                geometry=shapely.geometry.mapping(geometry_log),
+                geometry=shapely.geometry.mapping(geometry_log) if geometry_log is not None else "None",
                 properties=dict(
                     message=msg,
                     time=time.mktime(t.timetuple()),

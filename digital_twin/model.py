@@ -64,38 +64,60 @@ class Activity(core.Identifiable, core.Log):
 
         self.print = show
 
-        self.main_process = self.env.process(
-            self.process_control(
-                origin=self.origin,
-                destination=self.destination,
-                loader=self.loader,
-                mover=self.mover,
-                unloader=self.unloader
-            )
+        single_run_proc = partial(single_run_process,
+            origin=origin,
+            destination=destination,
+            loader=loader,
+            mover=mover,
+            unloader=unloader,
+            stop_reservation_waiting_event=self.stop_event,
+            verbose=self.print
         )
+        main_proc = partial(conditional_process,
+            stop_event=self.stop_event,
+            sub_processes=[single_run_proc]
+        )
+        if start_event is not None:
+            main_proc = partial(delayed_process,
+                start_event=start_event,
+                sub_processes=[main_proc]
+            )
+        self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
 
-        self.resource_requests = {}
 
-    def process_control(self, origin, destination, loader, mover, unloader):
-        """Installation process control. This method is added as a process to the simpy environment upon initialization.
-        This means it will be called when env.run() is called. Once the start_event is triggered, it will start moving
-        content from the origin container to the destination container using the given equipment (mover, loader and
-        unloader). When the stop_event triggers, this task is interrupted and the activity stops."""
+def delayed_process(activity_log, env, start_event, sub_processes):
+    yield start_event
+    activity_log.log_entry("started", env.now, -1, None)
 
-        # wait for the start condition to be satisfied
-        if self.start_event is not None:
-            yield self.start_event
-        self.log_entry("started", self.env.now, -1, origin.geometry)
+    for sub_process in sub_processes:
+        yield from sub_process(activity_log=activity_log, env=env)
 
-        # perform our task until we are interrupted by the stop event
-        while not self.stop_event.processed:
-            yield from single_run_process(self, self.env, origin, destination, loader, mover, unloader,
-                                          stop_reservation_waiting_event=self.stop_event)
 
-        current_time = datetime.datetime.fromtimestamp(self.env.now)
-        print('\nTime = {:%Y-%m-%d %H:%M}\nStop condition is satisfied, {} transporting from {} to {} completed.'
-              .format(current_time, self.name, origin.name, destination.name))
-        self.log_entry("completed", self.env.now, -1, destination.geometry)
+def conditional_process(activity_log, env, stop_event, sub_processes):
+    while not stop_event.processed:
+        for sub_process in sub_processes:
+            yield from sub_process(activity_log=activity_log, env=env)
+
+    activity_log.log_entry("stopped", env.now, -1, None)
+
+
+def sequential_process(activity_log, env, sub_processes):
+    activity_log.log_entry("sequential start", env.now, -1, None)
+    for sub_process in sub_processes:
+        yield from sub_process(activity_log=activity_log, env=env)
+    activity_log.log_entry("sequential stop", env.now, -1, None)
+
+
+def move_process(activity_log, env, mover, destination, engine_order=1.0):
+        activity_log.log_entry('started move activity of {} to {}'.format(mover.name, destination.name),
+                               env.now, -1, mover.geometry)
+
+        with mover.resource.request() as my_mover_turn:
+            yield my_mover_turn
+            yield from mover.move(destination=destination, engine_order=engine_order)
+
+        activity_log.log_entry('completed move activity of {} to {}'.format(mover.name, destination.name),
+                               env.now, -1, mover.geometry)
 
 
 def single_run_process(activity_log, env, origin, destination, loader, mover, unloader,
@@ -306,38 +328,48 @@ class Simulation(core.Identifiable, core.Log):
             id = activity['id']
             activity_log = activity_log_class(env=self.env, name=id)
 
-            process = self.env.process(self.get_process_control(activity_log, activity))
+            process_control = self.get_process_control(activity)
+            process = self.env.process(process_control(activity_log=activity_log, env=self.env))
 
             self.activities[id] = {
                 "activity_log": activity_log,
                 "process": process
             }
 
-    def get_process_control(self, activity_log, activity):
-        type = activity['type']
+    def get_process_control(self, activity, stop_reservation_waiting_event=None):
+        activity_type = activity['type']
 
-        if type == 'move':
+        if activity_type == 'move':
             mover = self.equipment[activity['mover']]
-            kwargs = self.get_mover_properties_kwargs(activity)
+            mover_properties = self.get_mover_properties_kwargs(activity)
             destination = self.sites[activity['destination']]
-            return self.move_process_control(activity_log, mover, destination, **kwargs)
-        if type == 'single_run':
-            mover = self.equipment[activity['mover']]
+            kwargs = {
+                "mover": mover,
+                "destination": destination
+            }
+            if 'engine_order' in mover_properties:
+                kwargs["engine_order"] = mover_properties["engine_order"]
+            return partial(move_process, **kwargs)
+        if activity_type == 'single_run':
             kwargs = self.get_mover_properties_kwargs(activity)
-            origin = self.sites[activity['origin']]
-            destination = self.sites[activity['destination']]
-            loader = self.equipment[activity['loader']]
-            unloader = self.equipment[activity['unloader']]
-            return self.single_run_process_control(activity_log, origin, destination, loader, mover, unloader, **kwargs)
-        if type == 'conditional':
-            condition = activity['condition']
-            activities = activity['activities']
-            return self.conditional_process_control(activity_log, condition, activities)
-        if type == 'sequential':
-            activities = activity['activities']
-            return self.sequential_process_control(activity_log, activities)
+            kwargs["mover"] = self.equipment[activity['mover']]
+            kwargs["origin"] = self.sites[activity['origin']]
+            kwargs["destination"] = self.sites[activity['destination']]
+            kwargs["loader"] = self.equipment[activity['loader']]
+            kwargs["unloader"] = self.equipment[activity['unloader']]
+            if stop_reservation_waiting_event is not None:
+                kwargs["stop_reservation_waiting_event"] = stop_reservation_waiting_event
+            return partial(single_run_process, **kwargs)
+        if activity_type == 'conditional':
+            stop_event = self.get_condition_event(activity['condition'])
+            sub_processes = [self.get_process_control(act, stop_reservation_waiting_event=stop_event)
+                             for act in activity['activities']]
+            return partial(conditional_process, stop_event=stop_event, sub_processes=sub_processes)
+        if activity_type == 'sequential':
+            sub_processes = [self.get_process_control(act) for act in activity['activities']]
+            return partial(sequential_process, sub_processes=sub_processes)
 
-        raise ValueError('Unrecognized activity type: ' + type)
+        raise ValueError('Unrecognized activity type: ' + activity_type)
 
     @staticmethod
     def get_mover_properties_kwargs(activity):
@@ -353,81 +385,17 @@ class Simulation(core.Identifiable, core.Log):
 
         return kwargs
 
-    def move_process_control(self, activity_log, mover, destination, **kwargs):
-        activity_log.log_entry('started move activity of {} to {}'.format(mover.name, destination.name),
-                               self.env.now, -1, mover.geometry)
-
-        with mover.resource.request() as my_mover_turn:
-            yield my_mover_turn
-            yield from mover.move(destination, **kwargs)
-
-        activity_log.log_entry('completed move activity of {} to {}'.format(mover.name, destination.name),
-                               self.env.now, -1, mover.geometry)
-
-    def single_run_process_control(self, activity_log, origin, destination, loader, mover, unloader, **kwargs):
-        activity_description = 'single_run activity loading {} at {} with {} ' \
-                               'and transporting to {} unloading with {}'\
-                               .format(mover.name, origin.name, loader.name, destination.name, unloader.name)
-        activity_log.log_entry('started ' + activity_description, self.env.now, -1, mover.geometry)
-
-        yield from single_run_process(activity_log, self.env, origin, destination, loader, mover, unloader, **kwargs)
-
-        activity_log.log_entry('completed ' + activity_description, self.env.now, -1, mover.geometry)
-
-    def sequential_process_control(self, activity_log, activities):
-        for activity in activities:
-            yield from self.get_process_control(activity_log, activity)
-
-    def conditional_process_control(self, activity_log, condition, activities):
-        # todo use same process control as Activity for conditional activities
-        # - make all process control methods base methods of the file
-        # - change process control in Activity to general conditional process control which is passed a list of
-        #   generators (other, already called, process controls) and stop_event
-        # - create a delayed_process_control which is passed a generator (other process) and start_event
-        # - Activity by default uses delayed_process(conditional_process(single_run_process, stop_event), start_event)
-        operator = condition['operator']
+    def get_condition_event(self, condition):
         operand_key = condition['operand']
         operand = self.sites[operand_key] if operand_key in self.sites else self.equipment[operand_key]
+        operator = condition['operator']
 
-        condition_checker = self.get_condition_checker(operator, operand)
-
-        no_progress_counter = 0
-        while condition_checker():
-            old_level = operand.container.level
-
-            for activity in activities:
-                yield from self.get_process_control(activity_log, activity)
-
-            new_level = operand.container.level
-            no_progress_counter = self.update_no_progress_counter(no_progress_counter, operator, old_level, new_level)
-            if no_progress_counter >= 10:
-                activity_log.log_entry('No progress detected for the last 10 runs, aborting activity',
-                                       self.env.now, -1, shapely.geometry.Point(0,0))
-                break
-
-    @staticmethod
-    def get_condition_checker(operator, operand):
         if operator == 'is_full':
-            return lambda: operand.container.level == operand.container.capacity
+            raise ValueError('Temporarily only supporting is_filled conditions')  # todo fix conditions in gui
         elif operator == 'is_filled':
-            return lambda: operand.container.level > 0
+            return operand.container.empty_event
         elif operator == 'is_empty':
-            return lambda: operand.container.level == 0
-        else:
-            raise ValueError('Unrecognized operator type: ' + operator)
-
-    @staticmethod
-    def update_no_progress_counter(counter, operator, old_level, new_level):
-        if operator == 'is_full' or operator == 'is_empty':
-            if old_level < new_level:
-                return 0
-            else:
-                return counter + 1
-        elif operator == 'is_filled':
-            if new_level < old_level:
-                return 0
-            else:
-                return counter + 1
+            raise ValueError('Temporarily only supporting is_filled conditions')  # todo fix conditions in gui
         else:
             raise ValueError('Unrecognized operator type: ' + operator)
 
@@ -474,7 +442,6 @@ class Simulation(core.Identifiable, core.Log):
         json["activities"] = activity_logging
 
         return json
-
 
     @staticmethod
     def get_as_feature_collection(id, features):
