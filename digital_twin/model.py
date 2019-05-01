@@ -194,16 +194,16 @@ def single_run_process(activity_log, env, origin, destination, loader, mover, un
         activity_log.log_entry("transporting stop", env.now, amount, mover.geometry)
     else:
         if origin.container.expected_level == 0:
-            activity_log.log_entry("waiting origin content start", env.now, origin.container.expected_level,
+            activity_log.log_entry("waiting origin reservation start", env.now, origin.container.expected_level,
                                    origin.geometry)
             yield _or_optional_event(env, origin.container.reserve_get_available, stop_reservation_waiting_event)
-            activity_log.log_entry("waiting origin content stop", env.now, origin.container.expected_level,
+            activity_log.log_entry("waiting origin reservation stop", env.now, origin.container.expected_level,
                                    origin.geometry)
-        elif destination.container.expected_level == destination.capacity:
-            activity_log.log_entry("waiting destination space start", env.now,
+        elif destination.container.expected_level == destination.container.capacity:
+            activity_log.log_entry("waiting destination reservation start", env.now,
                                    destination.container.expected_level, destination.geometry)
             yield _or_optional_event(env, destination.container.reserve_put_available, stop_reservation_waiting_event)
-            activity_log.log_entry("waiting destination space stop", env.now,
+            activity_log.log_entry("waiting destination reservation stop", env.now,
                                    destination.container.expected_level, destination.geometry)
         else:
             raise RuntimeError("Attempting to move content with a full ship")
@@ -239,12 +239,7 @@ def _shift_amount(env, processor, ship, desired_level, site, verbose=False):
     amount = np.abs(ship.container.level - desired_level)
 
     # Check if loading or unloading
-    current_level = ship.container.level
-    log = "loading" if current_level < desired_level else "unloading"
-
-    processor.log_entry(log + ' start', env.now, amount, processor.geometry)
     yield from processor.process(ship, desired_level, site)
-    processor.log_entry(log + ' stop', env.now, amount, processor.geometry)
 
     if verbose:
         print('Processed {}:'.format(amount))

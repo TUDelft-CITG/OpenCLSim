@@ -1189,11 +1189,28 @@ class Processor(SimpyObject):
         self.shiftSoil(origin, destination, amount)
 
         # Shift volumes in containers
+
+        start_time = self.env.now
         yield origin.container.get(amount)
-        yield destination.container.put(amount)
+        end_time = self.env.now
+        if start_time != end_time:
+            self.log_entry(log="waiting origin content start", t=start_time, value=amount, geometry_log=self.geometry)
+            self.log_entry(log="waiting origin content stop", t=end_time, value=amount, geometry_log=self.geometry)
 
         # Checkout the time
+        current_level = ship.container.level
+        log = "loading" if current_level < desired_level else "unloading"
+        self.log_entry(log + ' start', self.env.now, amount, self.geometry)
         yield self.env.timeout(duration)
+        self.log_entry(log + ' stop', self.env.now, amount, self.geometry)
+
+        start_time = self.env.now
+        yield destination.container.put(amount)
+        end_time = self.env.now
+        if start_time != end_time:
+            self.log_entry(log="waiting destination content start", t=start_time, value=amount,
+                           geometry_log=self.geometry)
+            self.log_entry(log="waiting destination content stop", t=end_time, value=amount, geometry_log=self.geometry)
 
         # Compute the energy use
         self.computeEnergy(duration, origin, destination)
