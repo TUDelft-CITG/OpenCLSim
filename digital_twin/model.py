@@ -1,6 +1,7 @@
 from functools import partial
 import digital_twin.core as core
 import datetime
+import simpy
 import shapely
 import shapely.geometry
 import scipy.interpolate
@@ -50,7 +51,7 @@ class Activity(core.Identifiable, core.Log):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
-        self.start_event = start_event
+        self.start_event = start_event if start_event is None or isinstance(start_event, simpy.Event) else self.env.all_of(events=start_event)
         self.stop_event = stop_event if stop_event is not None else self.env.any_of(events=[
             origin.container.empty_event,
             destination.container.full_event
@@ -79,7 +80,7 @@ class Activity(core.Identifiable, core.Log):
         )
         if start_event is not None:
             main_proc = partial(delayed_process,
-                start_event=start_event,
+                start_event=self.start_event,
                 sub_processes=[main_proc]
             )
         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
