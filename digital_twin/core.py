@@ -123,30 +123,34 @@ class EventsContainer(simpy.Container):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._empty_event = None
-        self._full_event = None
+        self._at_least_events = {}
+        self._at_most_events = {}
 
-    @staticmethod
-    def _valid_event(event):
-        return event is not None and not event.triggered
+    def at_least_event(self, amount):
+        if self.level >= amount:
+            return self._env.event().succeed()
+        if amount in self._at_least_events:
+            return self._at_least_events[amount]
+        new_event = self._env.event()
+        self._at_least_events[amount] = new_event
+        return new_event
+
+    def at_most_event(self, amount):
+        if self.level <= amount:
+            return self._env.event().succeed()
+        if amount in self._at_most_events:
+            return self._at_most_events[amount]
+        new_event = self._env.event()
+        self._at_most_events[amount] = new_event
+        return new_event
 
     @property
     def empty_event(self):
-        if self._valid_event(self._empty_event):
-            return self._empty_event
-
-        # instantiate a new event to trigger when empty
-        self._empty_event = self._env.event()
-        return self._empty_event
+        return self.at_most_event(0)
 
     @property
     def full_event(self):
-        if self._valid_event(self._full_event):
-            return self._full_event
-
-        # instantiate a new event to trigger when full
-        self._full_event = self._env.event()
-        return self._full_event
+        return self.at_least_event(self.capacity)
 
     def put(self, amount):
         put_event = super().put(amount)
@@ -154,8 +158,12 @@ class EventsContainer(simpy.Container):
         return put_event
 
     def put_callback(self, event):
-        if self._valid_event(self._full_event) and self.level == self.capacity:
-            self._full_event.succeed()
+        for amount in sorted(self._at_least_events):
+            if self.level >= amount:
+                self._at_least_events[amount].succeed()
+                del self._at_least_events[amount]
+            else:
+                return
 
     def get(self, amount):
         get_event = super().get(amount)
@@ -163,8 +171,12 @@ class EventsContainer(simpy.Container):
         return get_event
 
     def get_callback(self, event):
-        if self._valid_event(self._empty_event) and self.level == 0:
-            self._empty_event.succeed()
+        for amount in sorted(self._at_most_events, reverse=True):
+            if self.level <= amount:
+                self._at_most_events[amount].succeed()
+                del self._at_most_events[amount]
+            else:
+                return
 
 
 class HasContainer(SimpyObject):
