@@ -410,11 +410,11 @@ class Simulation(core.Identifiable, core.Log):
         operator = condition['operator']
 
         if operator == 'is_full':
-            raise ValueError('Temporarily only supporting is_filled conditions')  # todo fix conditions in gui
+            return operand.container.put_available(1)
         elif operator == 'is_filled':
             return operand.container.empty_event
         elif operator == 'is_empty':
-            raise ValueError('Temporarily only supporting is_filled conditions')  # todo fix conditions in gui
+            return operand.container.get_available(1)
         else:
             raise ValueError('Unrecognized operator type: ' + operator)
 
