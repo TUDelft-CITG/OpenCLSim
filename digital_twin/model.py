@@ -161,7 +161,8 @@ def single_run_process(activity_log, env, origin, destination, loader, mover, un
         _release_resource(resource_requests, origin.resource, kept_resource=mover.resource)
 
         # move the mover to the destination
-        yield from _move_mover(mover, destination, engine_order=engine_order, verbose=verbose)
+        if not mover.is_at(destination):
+            yield from _move_mover(mover, destination, engine_order=engine_order, verbose=verbose)
 
         yield from _request_resources_if_transfer_possible(env, resource_requests, mover, unloader, destination, amount,
                                                            mover.resource, engine_order=engine_order, verbose=verbose)
