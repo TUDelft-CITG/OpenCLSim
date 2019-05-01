@@ -1155,12 +1155,6 @@ class Processor(SimpyObject):
             destination = site
             rate = self.unloading_func
 
-        # we will move amount from origin to destination
-        # Make sure that the volume of the origin is equal, or smaller, than the requested amount
-        assert origin.container.level >= amount
-        # Make sure that the container of the destination is sufficiently large
-        assert destination.container.capacity - destination.container.level >= amount
-
         # Activity can only start if environmental conditions allow it
         time = 0
 
