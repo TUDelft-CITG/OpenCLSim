@@ -297,7 +297,6 @@ def test_container_transfer_hub(env, geometry_a, Location, TransportProcessingRe
 
 
 # Testing the AndCondition
-@pytest.mark.skip(reason="no new equivalent of this LevelCondition yet")
 def test_and_condition(env, geometry_a, geometry_b, Location, TransportProcessingResource):
     amount = 10_000
     
@@ -328,7 +327,7 @@ def test_and_condition(env, geometry_a, geometry_b, Location, TransportProcessin
     vessel = TransportProcessingResource(**data_vessel)
     
     # LevelCondition - finished after 1 trip
-    level_condition = model.LevelCondition(from_location, 0, 9000)
+    level_condition = from_location.container.at_most_event(9000)
 
     # TimeCondition - finished after 5 trips
     wgs84 = pyproj.Geod(ellps='WGS84')
@@ -336,13 +335,10 @@ def test_and_condition(env, geometry_a, geometry_b, Location, TransportProcessin
     dest = shapely.geometry.asShape(to_location.geometry)
     _, _, distance = wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
-    start = env.now
-    end = 10 * 1000 + 10 * distance
-
-    time_condition = model.TimeCondition(env, datetime.datetime.fromtimestamp(start), datetime.datetime.fromtimestamp(start + end))
+    time_condition = env.timeout(10 * 1000 + 10 * distance)
 
     # AndCondition - combination of Level and Time
-    and_condition = model.AndCondition([level_condition, time_condition])
+    and_condition = env.all_of(events=[level_condition, time_condition])
 
     # make the activity
     model.Activity(env = env,                       # The simpy environment defined in the first cel
@@ -356,14 +352,11 @@ def test_and_condition(env, geometry_a, geometry_b, Location, TransportProcessin
                    stop_event = and_condition)  # Stop when both conditions are satisfied
     
     # run the activity
-    start = env.now
     env.run()
 
-    # Test level of the from_location
-    assert level_condition.min_level <= from_location.container.level <= level_condition.max_level
-
-    # Test time of the simulation
-    assert time.mktime(time_condition.start.timetuple()) <= env.now <= time.mktime(time_condition.stop.timetuple())
+    # Test that both events occurred
+    assert level_condition.processed
+    assert time_condition.processed
 
 def test_sequential_activities(env, geometry_a, geometry_b, Location, TransportProcessingResource):
     """ Test if activities only start after another one is finished. """
