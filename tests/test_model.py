@@ -364,3 +364,73 @@ def test_and_condition(env, geometry_a, geometry_b, Location, TransportProcessin
 
     # Test time of the simulation
     assert time.mktime(time_condition.start.timetuple()) <= env.now <= time.mktime(time_condition.stop.timetuple())
+
+def test_sequential_activities(env, geometry_a, geometry_b, Location, TransportProcessingResource):
+    """ Test if activities only start after another one is finished. """
+
+    amount = 10_000
+    
+    # Initialize from site with correct parameters
+    data_from_location = {"env": env,                       # The simpy environment
+                          "name": "Location A",             # The name of the "from location"
+                          "geometry": geometry_a,           # The coordinates of the "from location"
+                          "capacity": amount,               # The capacity of the "from location"
+                          "level": amount}                  # The actual volume of the "from location"
+    data_to_location = {  "env": env,                       # The simpy environment
+                          "name": "Location B",             # The name of the "to location"
+                          "geometry": geometry_b,           # The coordinates of the "to location"
+                          "capacity": amount / 2,           # The capacity of the "to location"
+                          "level": 0}                       # The actual volume of the "to location"
+
+    from_location = Location(**data_from_location)
+    to_location_1 = Location(**data_to_location)
+    to_location_2 = Location(**data_to_location)
+
+    # make the vessel
+    data_vessel = {"env": env,                                      # The simpy environment 
+                   "name": "Vessel",
+                   "geometry": geometry_a,                          # It is located at the "from location"
+                   "unloading_func": model.get_unloading_func(1),   # Unloading production is 1 amount / s
+                   "loading_func": model.get_loading_func(1),       # Loading production is 1 amount / s
+                   "capacity": 1_000,                               # Capacity of the vessel
+                   "compute_v": (lambda x: 1)}                      # Speed is always 1 m / s
+
+    vessel_1 = TransportProcessingResource(**data_vessel)
+    vessel_2 = TransportProcessingResource(**data_vessel)
+
+    # make the activity
+    activity_1 = model.Activity(env = env,                              # The simpy environment defined in the first cel
+                                name = "Moving amount",                 # We are moving soil
+                                origin = from_location,                 # We originate from the from_site
+                                destination = to_location_1,            # And therefore travel to the to_site
+                                loader = vessel_1,                      # The benefit of a TSHD, all steps can be done
+                                mover = vessel_1,                       # The benefit of a TSHD, all steps can be done
+                                unloader = vessel_1,                    # The benefit of a TSHD, all steps can be done
+                                start_event = None,                     # We can start right away
+                                stop_event = None)                      # Stop when both conditions are satisfied
+    activity_2 = model.Activity(env = env,                              # The simpy environment defined in the first cel
+                                name = "Moving amount",                 # We are moving soil
+                                origin = from_location,                 # We originate from the from_site
+                                destination = to_location_2,            # And therefore travel to the to_site
+                                loader = vessel_2,                      # The benefit of a TSHD, all steps can be done
+                                mover = vessel_2,                       # The benefit of a TSHD, all steps can be done
+                                unloader = vessel_2,                    # The benefit of a TSHD, all steps can be done
+                                start_event = activity_1.main_process,  # We can start right away
+                                stop_event = None)                      # Stop when both conditions are satisfied
+    
+    # run the activity
+    start = env.now
+    env.run()
+
+    # Test level of the from_location
+    wgs84 = pyproj.Geod(ellps='WGS84')
+    orig = shapely.geometry.asShape(from_location.geometry)
+    dest = shapely.geometry.asShape(to_location_1.geometry)
+    _, _, distance = wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+
+    assert activity_1.log["Timestamp"][-1] == activity_2.log["Timestamp"][0]
+
+    np.testing.assert_almost_equal(env.now - start, 20 * 1000 + 20 * distance)
+    np.testing.assert_almost_equal((activity_1.log["Timestamp"][-1] - activity_1.log["Timestamp"][0]).total_seconds(), (20 * 1000 + 20 * distance) / 2)
+    np.testing.assert_almost_equal((activity_2.log["Timestamp"][0] - activity_1.log["Timestamp"][0]).total_seconds(), (20 * 1000 + 20 * distance) / 2)
+    np.testing.assert_almost_equal((activity_2.log["Timestamp"][-1] - activity_2.log["Timestamp"][0]).total_seconds(), (20 * 1000 + 20 * distance) / 2)
