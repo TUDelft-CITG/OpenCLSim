@@ -57,6 +57,13 @@ def test_multiple_single_run_activities():
     )
 
 
+def test_unnecessary_single_run_activity():
+    run_and_compare_completion_time(
+        config_file='tests/configs/unnecessary_single_run_activity.json',
+        expected_result_file='tests/results/unnecessary_single_run_activity_result.json'
+    )
+
+
 def test_conditional_activity():
     run_and_compare_completion_time(
         config_file='tests/configs/conditional_activity.json',
@@ -127,16 +134,10 @@ def test_sequential_activity():
     assert hopper1_done_time <= hopper2_start_time
 
 
-@pytest.mark.skip("With new event conditions this simulation no longer results in an infinite loop")
 @pytest.mark.timeout(60)
 def test_infinite_loop_detection():
     """Run a simulation that would lead to an infinite loop."""
 
-    # todo fix this test
-    # - it has a different completion time since this activity configuration now waits for content to become available
-    #   through the ReservationContainer instead of simply skipping ahead 3600
-    # - change expected value to new completion time or re-implement infinite loop checking all together -> have a
-    #   default timeout function as an overall loop breaker?
     run_and_compare_completion_time(
         config_file='tests/configs/infinite_loop.json',
         expected_result_file='tests/results/infinite_loop_result.json'
