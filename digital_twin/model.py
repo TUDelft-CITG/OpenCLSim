@@ -239,8 +239,8 @@ def _request_resources_if_transfer_possible(env, resource_requests, origin, proc
     all_available = False
     while not all_available:
         # yield until enough content and space available in origin and destination
-        yield env.all_of(events=[origin.container.at_least_event(amount),
-                                 destination.container.at_most_event(destination.container.capacity - amount)])
+        yield env.all_of(events=[origin.container.get_available(amount),
+                                 destination.container.put_available(amount)])
 
         yield from _request_resource(resource_requests, processor.resource)
         if origin.container.level < amount or destination.container.capacity - destination.container.level < amount:

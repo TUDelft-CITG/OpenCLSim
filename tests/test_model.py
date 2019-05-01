@@ -327,7 +327,7 @@ def test_and_condition(env, geometry_a, geometry_b, Location, TransportProcessin
     vessel = TransportProcessingResource(**data_vessel)
     
     # LevelCondition - finished after 1 trip
-    level_condition = from_location.container.at_most_event(9000)
+    level_condition = from_location.container.put_available(9000)
 
     # TimeCondition - finished after 5 trips
     wgs84 = pyproj.Geod(ellps='WGS84')
