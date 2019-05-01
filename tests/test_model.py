@@ -226,6 +226,76 @@ def test_start_condition(env, geometry_a, geometry_b, Location, TransportProcess
     np.testing.assert_almost_equal(env.now - start, delay + 20 * 1000 + 20 * distance)
 
 
+def test_container_transfer_hub(env, geometry_a, Location, TransportProcessingResource):
+    from_location = Location(
+        env=env,
+        name="From",
+        geometry=geometry_a,
+        capacity=1000,
+        level=1000
+    )
+    transfer_location = Location(
+        env=env,
+        name="Transfer",
+        geometry=geometry_a,
+        capacity=500,
+        level=0
+    )
+    to_location = Location(
+        env=env,
+        name="To",
+        geometry=geometry_a,
+        capacity=1000,
+        level=0
+    )
+
+    delivery_vessel = TransportProcessingResource(
+        env=env,
+        name="Delivery",
+        geometry=geometry_a,
+        loading_func=model.get_loading_func(1),
+        unloading_func=model.get_unloading_func(1),
+        capacity=100,
+        compute_v=(lambda x: 1)
+    )
+
+    collection_vessel = TransportProcessingResource(
+        env=env,
+        name="Collection",
+        geometry=geometry_a,
+        loading_func=model.get_loading_func(2),
+        unloading_func=model.get_unloading_func(2),
+        capacity=100,
+        compute_v=(lambda x: 1)
+    )
+
+    model.Activity(
+        env=env,
+        name="Delivery Activity",
+        origin=from_location,
+        destination=transfer_location,
+        loader=delivery_vessel,
+        mover=delivery_vessel,
+        unloader=delivery_vessel,
+        stop_event=env.timeout(3000)
+    )
+    model.Activity(
+        env=env,
+        name="Collection Activity",
+        origin=transfer_location,
+        destination=to_location,
+        loader=collection_vessel,
+        mover=collection_vessel,
+        unloader=collection_vessel,
+        stop_event=env.timeout(3000)
+    )
+
+    env.run()
+    assert from_location.container.level == 0
+    assert transfer_location.container.level == 0
+    assert to_location.container.level == 1000
+
+
 # Testing the AndCondition
 @pytest.mark.skip(reason="no new equivalent of this LevelCondition yet")
 def test_and_condition(env, geometry_a, geometry_b, Location, TransportProcessingResource):

@@ -150,16 +150,8 @@ def single_run_process(activity_log, env, origin, destination, loader, mover, un
         if not mover.is_at(origin):
             yield from _move_mover(mover, origin, engine_order=engine_order, verbose=verbose)
 
-        # request the loader's resource (if necessary)
-        yield from _request_resource(resource_requests, loader.resource)
-
-        # move the loader to the origin (if necessary)
-        # todo have the loader move simultaneously with the mover by starting a different process for it
-        if not loader.is_at(origin):
-            yield from _move_mover(loader, origin, engine_order=engine_order, verbose=verbose)
-
-        # request the origin's resource
-        yield from _request_resource(resource_requests, origin.resource)
+        yield from _request_resources_if_transfer_possible(env, resource_requests, origin, loader, mover, amount,
+                                                           mover.resource, engine_order=engine_order, verbose=verbose)
 
         # load the mover
         yield from _shift_amount(env, loader, mover, mover.container.level + amount, origin, verbose=verbose)
@@ -171,16 +163,8 @@ def single_run_process(activity_log, env, origin, destination, loader, mover, un
         # move the mover to the destination
         yield from _move_mover(mover, destination, engine_order=engine_order, verbose=verbose)
 
-        # request the unloader's resource (if necessary)
-        yield from _request_resource(resource_requests, unloader.resource)
-
-        # move the unloader to the destination (if necessary)
-        # todo have the unloader move simultaneously with the mover by starting a different process for it
-        if not unloader.is_at(destination):
-            yield from _move_mover(unloader, destination, engine_order=engine_order, verbose=verbose)
-
-        # request the destination's resource
-        yield from _request_resource(resource_requests, destination.resource)
+        yield from _request_resources_if_transfer_possible(env, resource_requests, mover, unloader, destination, amount,
+                                                           mover.resource, engine_order=engine_order, verbose=verbose)
 
         # unload the mover
         yield from _shift_amount(env, unloader, mover, mover.container.level - amount, destination, verbose=verbose)
@@ -247,6 +231,45 @@ def _shift_amount(env, processor, ship, desired_level, site, verbose=False):
         print('  by:          ' + processor.name)
         print('  ship:        ' + ship.name + ' contains: ' + str(ship.container.level))
         print('  site:        ' + site.name + ' contains: ' + str(site.container.level))
+
+
+def _request_resources_if_transfer_possible(env, resource_requests, origin, processor,
+                                            destination, amount, kept_resource,
+                                            engine_order=1.0, verbose=False):
+    all_available = False
+    while not all_available:
+        # yield until enough content and space available in origin and destination
+        yield env.all_of(events=[origin.container.at_least_event(amount),
+                                 destination.container.at_most_event(destination.container.capacity - amount)])
+
+        yield from _request_resource(resource_requests, processor.resource)
+        if origin.container.level < amount or destination.container.capacity - destination.container.level < amount:
+            # someone removed / added content while we were requesting the processor, so abort and wait for available
+            # space/content again
+            _release_resource(resource_requests, processor.resource, kept_resource=kept_resource)
+            continue
+
+        if not processor.is_at(origin):
+            # todo have the processor move simultaneously with the mover by starting a different process for it?
+            yield from _move_mover(processor, origin, engine_order=engine_order, verbose=verbose)
+            if origin.container.level < amount or destination.container.capacity - destination.container.level < amount:
+                # someone messed us up again, so return to waiting for space/content
+                _release_resource(resource_requests, processor.resource, kept_resource=kept_resource)
+                continue
+
+        yield from _request_resource(resource_requests, origin.resource)
+        if origin.container.level < amount or destination.container.capacity - destination.container.level < amount:
+            _release_resource(resource_requests, processor.resource, kept_resource=kept_resource)
+            _release_resource(resource_requests, origin.resource, kept_resource=kept_resource)
+            continue
+
+        yield from _request_resource(resource_requests, destination.resource)
+        if origin.container.level < amount or destination.container.capacity - destination.container.level < amount:
+            _release_resource(resource_requests, processor.resource, kept_resource=kept_resource)
+            _release_resource(resource_requests, origin.resource, kept_resource=kept_resource)
+            _release_resource(resource_requests, destination.resource, kept_resource=kept_resource)
+            continue
+        all_available = True
 
 
 def _move_mover(mover, origin, engine_order=1.0, verbose=False):
