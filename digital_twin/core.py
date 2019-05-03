@@ -70,6 +70,115 @@ class Locatable:
         return distance < tolerance
 
 
+class ReservationContainer(simpy.Container):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.expected_level = self.level
+        self._content_available = None
+        self._space_available = None
+
+    def reserve_put(self, amount):
+        if self.expected_level + amount > self.capacity:
+            raise RuntimeError('Attempting to reserve unavailable space')
+
+        self.expected_level += amount
+
+        if self._content_available is not None and not self._content_available.triggered and amount > 0:
+            self._content_available.succeed()
+
+    def reserve_get(self, amount):
+        if self.expected_level < amount:
+            raise RuntimeError('Attempting to reserve unavailable content')
+
+        self.expected_level -= amount
+
+        if self._space_available is not None and not self._space_available.triggered and amount > 0:
+            self._space_available.succeed()
+
+    @property
+    def reserve_put_available(self):
+        if self.expected_level < self.capacity:
+            return self._env.event().succeed()
+
+        if self._space_available is not None and not self._space_available.triggered:
+            return self._space_available
+
+        self._space_available = self._env.event()
+        return self._space_available
+
+    @property
+    def reserve_get_available(self):
+        if self.expected_level > 0:
+            return self._env.event().succeed()
+
+        if self._content_available is not None and not self._content_available.triggered:
+            return self._content_available
+
+        self._content_available = self._env.event()
+        return self._content_available
+
+
+class EventsContainer(simpy.Container):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._get_available_events = {}
+        self._put_available_events = {}
+
+    def get_available(self, amount):
+        if self.level >= amount:
+            return self._env.event().succeed()
+        if amount in self._get_available_events:
+            return self._get_available_events[amount]
+        new_event = self._env.event()
+        self._get_available_events[amount] = new_event
+        return new_event
+
+    def put_available(self, amount):
+        if self.capacity - self.level >= amount:
+            return self._env.event().succeed()
+        if amount in self._put_available_events:
+            return self._put_available_events[amount]
+        new_event = self._env.event()
+        self._put_available_events[amount] = new_event
+        return new_event
+
+    @property
+    def empty_event(self):
+        return self.put_available(self.capacity)
+
+    @property
+    def full_event(self):
+        return self.get_available(self.capacity)
+
+    def put(self, amount):
+        put_event = super().put(amount)
+        put_event.callbacks.append(self.put_callback)
+        return put_event
+
+    def put_callback(self, event):
+        for amount in sorted(self._get_available_events):
+            if self.level >= amount:
+                self._get_available_events[amount].succeed()
+                del self._get_available_events[amount]
+            else:
+                return
+
+    def get(self, amount):
+        get_event = super().get(amount)
+        get_event.callbacks.append(self.get_callback)
+        return get_event
+
+    def get_callback(self, event):
+        for amount in sorted(self._put_available_events):
+            if self.capacity - self.level >= amount:
+                self._put_available_events[amount].succeed()
+                del self._put_available_events[amount]
+            else:
+                return
+
+
 class HasContainer(SimpyObject):
     """Container class
 
@@ -77,11 +186,11 @@ class HasContainer(SimpyObject):
     level: amount the container holds initially
     container: a simpy object that can hold stuff"""
 
-    def __init__(self, capacity, level=0, total_requested=0, *args, **kwargs):
+    def __init__(self, capacity, level=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.container = simpy.Container(self.env, capacity, init=level)
-        self.total_requested = total_requested
+        container_class = type('CombinedContainer', (EventsContainer, ReservationContainer), {})
+        self.container = container_class(self.env, capacity, init=level)
 
 
 class EnergyUse(SimpyObject):
@@ -991,7 +1100,7 @@ class Log(SimpyObject):
         for msg, t, value, geometry_log in zip(self.log["Message"], self.log["Timestamp"], self.log["Value"], self.log["Geometry"]):
             json.append(dict(
                 type="Feature",
-                geometry=shapely.geometry.mapping(geometry_log),
+                geometry=shapely.geometry.mapping(geometry_log) if geometry_log is not None else "None",
                 properties=dict(
                     message=msg,
                     time=time.mktime(t.timetuple()),
@@ -1031,8 +1140,7 @@ class Processor(SimpyObject):
         self.unloading_func = unloading_func
 
     # noinspection PyUnresolvedReferences
-    def process(self, ship, desired_level, site,
-                ship_resource_request=None, site_resource_request=None):
+    def process(self, ship, desired_level, site):
         """Moves content from ship to the site or from the site to the ship to ensure that the ship's container reaches
         the desired level. Yields the time it takes to process."""
 
@@ -1059,26 +1167,6 @@ class Processor(SimpyObject):
             destination = site
             rate = self.unloading_func
 
-        # we will move amount from origin to destination
-        # Make sure that the volume of the origin is equal, or smaller, than the requested amount
-        assert origin.container.level >= amount
-        # Make sure that the container of the destination is sufficiently large
-        assert destination.container.capacity - destination.container.level >= amount
-
-        # Make sure all requests are granted
-        # Request access to the origin
-        my_ship_turn = ship_resource_request
-        if my_ship_turn is None:
-            my_ship_turn = ship.resource.request()
-        # Request access to the destination
-        my_site_turn = site_resource_request
-        if my_site_turn is None:
-            my_site_turn = site.resource.request()
-        # Yield the requests once granted
-        yield my_ship_turn
-        yield my_site_turn
-
-        # If requests are yielded, start activity
         # Activity can only start if environmental conditions allow it
         time = 0
 
@@ -1107,11 +1195,28 @@ class Processor(SimpyObject):
         self.shiftSoil(origin, destination, amount)
 
         # Shift volumes in containers
-        origin.container.get(amount)
-        destination.container.put(amount)
+
+        start_time = self.env.now
+        yield origin.container.get(amount)
+        end_time = self.env.now
+        if start_time != end_time:
+            self.log_entry(log="waiting origin content start", t=start_time, value=amount, geometry_log=self.geometry)
+            self.log_entry(log="waiting origin content stop", t=end_time, value=amount, geometry_log=self.geometry)
 
         # Checkout the time
+        current_level = ship.container.level
+        log = "loading" if current_level < desired_level else "unloading"
+        self.log_entry(log + ' start', self.env.now, amount, self.geometry)
         yield self.env.timeout(duration)
+        self.log_entry(log + ' stop', self.env.now, amount, self.geometry)
+
+        start_time = self.env.now
+        yield destination.container.put(amount)
+        end_time = self.env.now
+        if start_time != end_time:
+            self.log_entry(log="waiting destination content start", t=start_time, value=amount,
+                           geometry_log=self.geometry)
+            self.log_entry(log="waiting destination content stop", t=end_time, value=amount, geometry_log=self.geometry)
 
         # Compute the energy use
         self.computeEnergy(duration, origin, destination)
@@ -1121,11 +1226,6 @@ class Processor(SimpyObject):
         destination.log_entry('loading stop', self.env.now, destination.container.level, self.geometry)
 
         logger.debug('  process:        ' + '%4.2f' % (duration / 3600) + ' hrs')
-
-        if ship_resource_request is None:
-            ship.resource.release(my_ship_turn)
-        if site_resource_request is None:
-            site.resource.release(my_site_turn)
 
     def computeEnergy(self, duration, origin, destination):
         """
@@ -1335,7 +1435,7 @@ class DictEncoder(json.JSONEncoder):
         for key, val in o.__dict__.items():
             if isinstance(val, simpy.Environment):
                 continue
-            if isinstance(val, simpy.Container):
+            if isinstance(val, EventsContainer) or isinstance(val, simpy.Container):
                 result['capacity'] = val.capacity
                 result['level'] = val.level
             elif isinstance(val, simpy.Resource):

@@ -21,6 +21,7 @@ from digital_twin import core
 from digital_twin import plot
 
 import datetime
+import functools
 import os
 import time
 
@@ -128,11 +129,27 @@ def equipment_plot():
     except ValueError as valerr:
         abort(400, description=str(valerr))
         return
+    except RuntimeError as runerr:
+        abort(400, description=str(runerr))
+        return
     except Exception as e:
         abort(500, description=str(e))
         return
 
     return plot.fig2response(equipment_plot)
+
+
+def update_end_time(event, env):
+    event.end_time = env.now
+
+
+def interrupt_processes(event, activities, env):
+    for activity in activities:
+        process = activity["process"]
+        if not process.processed:
+            process.interrupt()
+            activity["activity_log"].log_entry("interrupted by 100 year timeout", env.now, -1, None)
+
 
 def simulate_from_json(config, tmp_path="static"):
     """Create a simulation and run it, based on a json input file.
@@ -151,10 +168,25 @@ def simulate_from_json(config, tmp_path="static"):
         equipment=config["equipment"],
         activities=config["activities"]
     )
-    env.run()
+    processes = [activity["process"] for activity in simulation.activities.values()]
+
+    for process in processes:
+        process.end_time = None
+        process.callbacks.append(functools.partial(update_end_time, env=env))
+
+    timeout_100years = env.timeout(100*365*24*3600)
+    timeout_100years.callbacks.append(
+        functools.partial(interrupt_processes, activities=simulation.activities.values(), env=env)
+    )
+
+    try:
+        env.run()
+        completion_time = max(process.end_time for process in processes)
+    except simpy.Interrupt:
+        completion_time = env.now
 
     result = simulation.get_logging()
-    result["completionTime"] = env.now
+    result["completionTime"] = completion_time
 
     costs = 0
     for piece in simulation.equipment:

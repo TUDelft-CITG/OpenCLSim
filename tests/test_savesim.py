@@ -113,7 +113,7 @@ def origin(env, geometry_a):
     return origin
 
 @pytest.fixture
-def destination(geometry_b):
+def destination(env, geometry_b):
     # Initialize the destination
     data_destination = {"env": env,
                         "name": "destination",

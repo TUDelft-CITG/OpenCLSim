@@ -22,7 +22,7 @@ def env(dct):
         return resource
     if dct.get('__type__') == 'simpy.Container':
         container = simpy.Container(**dct)
-        return resource
+        return container
     if 'geometry' in dct:
         return shapely.geometry.asShape(dct)
     if dct.get('__type__') == 'pyproj.Geod':
@@ -52,10 +52,9 @@ class EnvEnvoder(json.JSONEncoder):
             dct = vars(obj)
             dct['__type__'] = obj.__class__.__name__
             return dct
-        elif isinstance(obj, digital_twin.model.Condition):
-            dct = vars(obj)
-            dct['__type__'] = obj.__class__.__name__
-            return dct
+        elif isinstance(obj, simpy.Event):
+            logger.warning('could not serialize %s', obj)
+            return None
         elif isinstance(obj, types.FunctionType):
             # we can't serialize functions
             logger.warning('could not serialize %s', obj)
