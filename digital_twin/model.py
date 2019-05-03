@@ -87,6 +87,17 @@ class Activity(core.Identifiable, core.Log):
 
 
 def delayed_process(activity_log, env, start_event, sub_processes):
+    """"Returns a generator which can be added as a process to a simpy.Environment. In the process the given
+    sub_processes will be executed after the given start_event occurs.
+
+    activity_log: the core.Log object in which log_entries about the activities progress will be added.
+    env: the simpy.Environment in which the process will be run
+    start_event: a simpy.Event object, when this event occurs the delayed process will start executing its sub_processes
+    sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
+                   return a generator which could be added as a process to a simpy.Environment
+                   the sub_processes will be executed sequentially, in the order in which they are given after the
+                   start_event occurs
+    """
     yield start_event
     activity_log.log_entry("delayed activity started", env.now, -1, None)
 
@@ -95,6 +106,20 @@ def delayed_process(activity_log, env, start_event, sub_processes):
 
 
 def conditional_process(activity_log, env, stop_event, sub_processes):
+    """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
+    sub_processes will be executed until the given stop_event occurs. If the stop_event occurs during the execution
+    of the sub_processes, the conditional process will first complete all sub_processes (which are executed sequentially
+    in the order in which they are given), before finishing its own process.
+
+    activity_log: the core.Log object in which log_entries about the activities progress will be added.
+    env: the simpy.Environment in which the process will be run
+    stop_event: a simpy.Event object, when this event occurs, the conditional process will finish executing its current
+                run of its sub_processes and then finish
+    sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
+                   return a generator which could be added as a process to a simpy.Environment
+                   the sub_processes will be executed sequentially, in the order in which they are given as long
+                   as the stop_event has not occurred.
+    """
     while not stop_event.processed:
         for sub_process in sub_processes:
             yield from sub_process(activity_log=activity_log, env=env)
@@ -103,6 +128,15 @@ def conditional_process(activity_log, env, stop_event, sub_processes):
 
 
 def sequential_process(activity_log, env, sub_processes):
+    """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
+    sub_processes will be executed sequentially in the order in which they are given.
+
+    activity_log: the core.Log object in which log_entries about the activities progress will be added.
+    env: the simpy.Environment in which the process will be run
+    sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
+                   return a generator which could be added as a process to a simpy.Environment
+                   the sub_processes will be executed sequentially, in the order in which they are given
+    """
     activity_log.log_entry("sequential start", env.now, -1, None)
     for sub_process in sub_processes:
         yield from sub_process(activity_log=activity_log, env=env)
@@ -110,19 +144,63 @@ def sequential_process(activity_log, env, sub_processes):
 
 
 def move_process(activity_log, env, mover, destination, engine_order=1.0):
-        activity_log.log_entry('started move activity of {} to {}'.format(mover.name, destination.name),
-                               env.now, -1, mover.geometry)
+    """Returns a generator which can be added as a process to a simpy.Environment. In the process, a move will be made
+    by the mover, moving it to the destination.
 
-        with mover.resource.request() as my_mover_turn:
-            yield my_mover_turn
-            yield from mover.move(destination=destination, engine_order=engine_order)
+    activity_log: the core.Log object in which log_entries about the activities progress will be added.
+    env: the simpy.Environment in which the process will be run
+    mover: moves from its current position to the destination
+           should inherit from core.Movable
+    destination: the location the mover will move to
+                 should inherit from core.Locatable
+    engine_order: optional parameter specifying at what percentage of the maximum speed the mover should sail.
+                  for example, engine_order=0.5 corresponds to sailing at 50% of max speed
+    """
+    activity_log.log_entry('started move activity of {} to {}'.format(mover.name, destination.name),
+                           env.now, -1, mover.geometry)
 
-        activity_log.log_entry('completed move activity of {} to {}'.format(mover.name, destination.name),
-                               env.now, -1, mover.geometry)
+    with mover.resource.request() as my_mover_turn:
+        yield my_mover_turn
+        yield from mover.move(destination=destination, engine_order=engine_order)
+
+    activity_log.log_entry('completed move activity of {} to {}'.format(mover.name, destination.name),
+                           env.now, -1, mover.geometry)
 
 
 def single_run_process(activity_log, env, origin, destination, loader, mover, unloader,
                        engine_order=1.0, filling=1.0, stop_reservation_waiting_event = None, verbose=False):
+    """Returns a generator which can be added as a process to a simpy.Environment. In the process, a single run will
+    be made by the given mover, transporting content from the origin to the destination.
+
+    activity_log: the core.Log object in which log_entries about the activities progress will be added.
+    env: the simpy.Environment in which the process will be run
+    origin: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
+    destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
+    loader: object which will get units from 'origin' Container and put them into 'mover' Container
+            should inherit from Processor, HasResource, Identifiable and Log
+            after the simulation is complete, its log will contain entries for each time it
+            started loading and stopped loading
+    mover: moves to 'origin' if it is not already there, is loaded, then moves to 'destination' and is unloaded
+           should inherit from Movable, HasContainer, HasResource, Identifiable and Log
+           after the simulation is complete, its log will contain entries for each time it started moving,
+           stopped moving, started loading / unloading and stopped loading / unloading
+    unloader: gets amount from 'mover' Container and puts it into 'destination' Container
+              should inherit from Processor, HasResource, Identifiable and Log
+              after the simulation is complete, its log will contain entries for each time it
+              started unloading and stopped unloading
+    engine_order: optional parameter specifying at what percentage of the maximum speed the mover should sail.
+                  for example, engine_order=0.5 corresponds to sailing at 50% of max speed
+    filling: optional parameter specifying at what percentage of the maximum capacity the mover should be loaded.
+             for example, filling=0.5 corresponds to loading the mover up to 50% of its capacity
+    stop_reservation_waiting_event: a simpy.Event, if there is no content available in the origin, or no space available
+                                    in the destination, instead of performing a single run, the process will wait for
+                                    new content or space to become available. If a stop_reservation_waiting_event is
+                                    passed, this event will be combined through a simpy.AnyOf event with the event
+                                    occurring when new content or space becomes available. This can be used to prevent
+                                    waiting for new content or space indefinitely when we know it will not become
+                                    available.
+    verbose: optional boolean indicating whether additional debug prints should be given.
+    """
     amount = min(
         mover.container.capacity * filling - mover.container.level,
         origin.container.expected_level,
@@ -222,6 +300,7 @@ def _release_resource(requested_resources, resource, kept_resource=None):
 
 
 def _shift_amount(env, processor, ship, desired_level, site, verbose=False):
+    """Calls the processor.process method, giving debug print statements when verbose is True."""
     amount = np.abs(ship.container.level - desired_level)
 
     # Check if loading or unloading
@@ -237,6 +316,18 @@ def _shift_amount(env, processor, ship, desired_level, site, verbose=False):
 def _request_resources_if_transfer_possible(env, resource_requests, origin, processor,
                                             destination, amount, kept_resource,
                                             engine_order=1.0, verbose=False):
+    """
+    Sets up everything needed for single_run_process to shift an amount from the origin to the destination using
+    the processor.process method.
+    After yielding from this method:
+     - the origin and destination contain a valid amount of content/space for the
+       transferring of an amount to be possible
+     - resource requests will have been added for the origin, destination and processor if they were not present already
+     - the processor will be located at the origin if it was not already
+    If during the yield to wait for space, content or a resource, some other process has caused the available space or
+    content to be removed, all resource requests granted up to that point will be released and the method will restart
+    the process of requesting space, content and resources. The passed "kept_resource" will never be released.
+    """
     all_available = False
     while not all_available:
         # yield until enough content and space available in origin and destination
@@ -274,6 +365,7 @@ def _request_resources_if_transfer_possible(env, resource_requests, origin, proc
 
 
 def _move_mover(mover, origin, engine_order=1.0, verbose=False):
+    """Calls the mover.move method, giving debug print statements when verbose is True."""
     old_location = mover.geometry
 
     yield from mover.move(origin, engine_order=engine_order)
@@ -304,17 +396,35 @@ class Simulation(core.Identifiable, core.Log):
     dictionary can also optionally specify the "level".
 
     Each of the values of the activities list, is a dictionary specifying an "id", "type", and other fields depending
-    on the type. The supported types are "move", "single_run", and "conditional".
+    on the type. The supported types are "move", "single_run", "sequential", "conditional", and "delayed".
     For a "move" type activity, the dictionary should also contain a "mover", "destination" and can optionally contain
     a "moverProperties" dictionary containing an "engineOrder".
     For a "single_run" type activity, the dictionary should also contain an "origin", "destination", "loader", "mover",
     "unloader" and can optionally contain a "moverProperties" dictionary containing an "engineOrder" and/or "load".
+    For a "sequential" type activity, the dictionary should also contain "activities". This is a list off activities
+    (dictionaries as before) which will be performed until sequentially in the order in which they appear in the list.
     For a "conditional" type activity, the dictionary should also contain a "condition" and "activities", where the
-    "activities" is another list of activities which will be performed while the condition is true.
-    The "condition" of a "conditional" type activity is a dictionary containing an "operator" and an "operand". The
-    operator can be "is_full", "is_filled" or "is_empty". The "operand" must be the id of the object (site or equipment)
-    of which the container level will be checked on if it is full (equal to capacity), filled (greater than 0) or empty
-    (equal to 0) respectively.
+    "activities" is another list of activities which will be performed until the event corresponding with the condition
+    occurs.
+    For a "delayed" type activity, the dictionary should also contain a "condition" and "activities", where the
+    "activities" is another list of activities which will be performed after the event corresponding with the condition
+    occurs.
+
+    The "condition" of a "conditional" or "delayed" type activity is a dictionary containing an "operator" and one other
+    field depending on the type. The operator can be "is_full", "is_empty", "is_done", "any_of" and "all_of".
+    For the "is_full" operator, the dictionary should contain an "operand" which must be the id of the object (site or
+    equipment) of which the container should be full for the event to occur.
+    For the "is_empty" operator, the dictionary should contain an "operand" which must be the id of the object (site or
+    equipment) of which the container should be empty for the event to occur.
+    For the "is_done" operator, the dictionary should contain an "operand" which must the the id of an activity which
+    should be finished for the event to occur. To instantiate such an event, the operand activity must already be
+    instantiated. The Simulation class takes care of instantiating its activities in an order which ensures this is the
+    case. However, if there is no such order because activities contain "is_done" conditions which circularly reference
+    each other, a ValueError will be raised.
+    For the "any_of" operator, the dictionary should contain "conditions", a list of (sub)conditions of which any must
+    occur for the event to occur.
+    For the "all_of" operator, the dictionary should contain "conditions", a list of (sub)conditions which all must
+    occur for the event to occur.
     """
 
     def __init__(self, sites, equipment, activities, *args, **kwargs):
