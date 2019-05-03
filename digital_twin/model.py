@@ -88,7 +88,7 @@ class Activity(core.Identifiable, core.Log):
 
 def delayed_process(activity_log, env, start_event, sub_processes):
     yield start_event
-    activity_log.log_entry("started", env.now, -1, None)
+    activity_log.log_entry("delayed activity started", env.now, -1, None)
 
     for sub_process in sub_processes:
         yield from sub_process(activity_log=activity_log, env=env)
@@ -388,6 +388,10 @@ class Simulation(core.Identifiable, core.Log):
         if activity_type == 'sequential':
             sub_processes = [self.get_process_control(act) for act in activity['activities']]
             return partial(sequential_process, sub_processes=sub_processes)
+        if activity_type == 'delayed':
+            sub_processes = [self.get_process_control(act) for act in activity['activities']]
+            start_event = self.get_condition_event(activity['condition'])
+            return partial(delayed_process, start_event=start_event, sub_processes=sub_processes)
 
         raise ValueError('Unrecognized activity type: ' + activity_type)
 
@@ -405,17 +409,35 @@ class Simulation(core.Identifiable, core.Log):
 
         return kwargs
 
-    def get_condition_event(self, condition):
+    def get_level_event_operand(self, condition):
         operand_key = condition['operand']
         operand = self.sites[operand_key] if operand_key in self.sites else self.equipment[operand_key]
+        return operand
+
+    def get_sub_condition_events(self, condition):
+        conditions = condition['conditions']
+        events = [self.get_condition_event(condition) for condition in conditions]
+        return events
+
+    def get_condition_event(self, condition):
         operator = condition['operator']
 
         if operator == 'is_full':
-            return operand.container.put_available(1)
-        elif operator == 'is_filled':
-            return operand.container.empty_event
+            operand = self.get_level_event_operand(condition)
+            return operand.container.full_event
         elif operator == 'is_empty':
-            return operand.container.get_available(1)
+            operand = self.get_level_event_operand(condition)
+            return operand.container.empty_event
+        elif operator == 'is_done':
+            # todo figure out what to do if it has not been initialized yet
+            operand_key = condition['operand']
+            return self.activities[operand_key]['process']
+        elif operator == 'any_of':
+            sub_events = self.get_sub_condition_events(condition)
+            return self.env.any_of(events=sub_events)
+        elif operator == 'all_of':
+            sub_events = self.get_sub_condition_events(condition)
+            return self.env.all_of(events=sub_events)
         else:
             raise ValueError('Unrecognized operator type: ' + operator)
 
