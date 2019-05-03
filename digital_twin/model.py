@@ -285,13 +285,6 @@ def _move_mover(mover, origin, engine_order=1.0, verbose=False):
         print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))
 
 
-class ActivityLog(core.Identifiable, core.Log):
-    """A basic class that can be used to log activities."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
 class Simulation(core.Identifiable, core.Log):
     """The Simulation Class can be used to set up a full simulation using configuration dictionaries (json).
 
@@ -344,17 +337,39 @@ class Simulation(core.Identifiable, core.Log):
     def __init_activities(self, activities):
         self.activities = {}
         activity_log_class = type("ActivityLog", (core.Log, core.Identifiable), {})
+        uninstantiated_activities = activities
+        while len(uninstantiated_activities) > 0:
+            still_uninstantiated = self.__try_to_init_activities(activities, activity_log_class)
+            if len(still_uninstantiated) == len(uninstantiated_activities):
+                raise ValueError('Unable to instantiate activities {}; their is_done conditions form a circle.'.format(
+                    ', '.join(activity['id'] for activity in uninstantiated_activities)
+                ))
+            uninstantiated_activities = still_uninstantiated
+
+    def __try_to_init_activities(self, activities, activity_log_class):
+        failed_activities = []
         for activity in activities:
-            id = activity['id']
-            activity_log = activity_log_class(env=self.env, name=id)
+            successful = self.__try_to_init_activity(activity, activity_log_class)
+            if not successful:
+                failed_activities.append(activity)
+        return failed_activities
 
+    def __try_to_init_activity(self, activity, activity_log_class):
+        try:
             process_control = self.get_process_control(activity)
-            process = self.env.process(process_control(activity_log=activity_log, env=self.env))
+        except KeyError:
+            return False
 
-            self.activities[id] = {
-                "activity_log": activity_log,
-                "process": process
-            }
+        id = activity['id']
+        activity_log = activity_log_class(env=self.env, name=id)
+
+        process = self.env.process(process_control(activity_log=activity_log, env=self.env))
+
+        self.activities[id] = {
+            "activity_log": activity_log,
+            "process": process
+        }
+        return True
 
     def get_process_control(self, activity, stop_reservation_waiting_event=None):
         activity_type = activity['type']
@@ -411,7 +426,12 @@ class Simulation(core.Identifiable, core.Log):
 
     def get_level_event_operand(self, condition):
         operand_key = condition['operand']
-        operand = self.sites[operand_key] if operand_key in self.sites else self.equipment[operand_key]
+        try:
+            operand = self.sites[operand_key] if operand_key in self.sites else self.equipment[operand_key]
+        except KeyError:
+            # rethrow a KeyError as a ValueError to avoid assuming there is a circular dependency
+            raise ValueError('No object with id "{}" present in configuration'.format(operand_key))
+
         return operand
 
     def get_sub_condition_events(self, condition):
@@ -429,9 +449,8 @@ class Simulation(core.Identifiable, core.Log):
             operand = self.get_level_event_operand(condition)
             return operand.container.empty_event
         elif operator == 'is_done':
-            # todo figure out what to do if it has not been initialized yet
             operand_key = condition['operand']
-            return self.activities[operand_key]['process']
+            return self.activities[operand_key]['process']  # potential KeyError is caught in try_to_init_activity
         elif operator == 'any_of':
             sub_events = self.get_sub_condition_events(condition)
             return self.env.any_of(events=sub_events)

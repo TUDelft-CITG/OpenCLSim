@@ -179,3 +179,28 @@ def test_layered_dike_example():
         config_file='tests/configs/layered_dike_example.json',
         expected_result_file='tests/results/layered_dike_example_result.json'
     )
+
+
+def test_reversed_dependencies():
+    """Run the same simulation as done in the test_layered_dike_example test but in this config the activities are
+    listed in the reversed order. This causes Simulation to attempt to instantiate them in the reversed order, which
+    will fail for the activities containing an is_done condition since the process these activities refer to has not
+    been instantiated yet."""
+    run_and_compare_completion_time(
+        config_file='tests/configs/layered_dike_example_reversed.json',
+        expected_result_file='tests/results/layered_dike_example_result.json'
+    )
+
+
+def test_circular_dependency():
+    """Run a simulation which contains a circular dependency. The configuration defines two activities, which both
+    contain an is_done condition for the other activity. This makes it impossible to instantiate processes for these
+    activities, because to create an event for these conditions, the other activity's process must already be
+    instantiated. The server should detect this situation and throw an error."""
+    with pytest.raises(ValueError) as err:
+        run_and_compare_completion_time(
+            config_file='tests/configs/circular_dependency.json',
+            expected_result_file=''  # does not matter, error raised before this is used to check result
+        )
+
+    assert 'Unable to instantiate activities act_1, act_2; their is_done conditions form a circle.' in str(err)
