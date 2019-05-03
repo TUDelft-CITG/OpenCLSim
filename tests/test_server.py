@@ -156,7 +156,7 @@ def test_savesim(tmpdir):
         tmp_path=tmp_path
     )
 
-    config_file_hash = '47fabd7fff7f1fa8a20af93b8f0b6971'
+    config_file_hash = 'c1cb76da1ceee6dd4614f94d7ee28cd1'
     expected_files = [
         'activities.csv',
         'dredging_spill.csv',
