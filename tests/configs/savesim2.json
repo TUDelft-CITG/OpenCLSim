@@ -106,7 +106,7 @@
             "id": "conditional_dredging",
             "type": "conditional",
             "condition": {
-                "operator": "is_filled",
+                "operator": "is_empty",
                 "operand": "afsluitdijk"
             },
             "activities": [

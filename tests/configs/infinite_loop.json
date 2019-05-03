@@ -55,7 +55,7 @@
             "id": "conditional_moving",
             "type": "conditional",
             "condition": {
-                "operator": "is_empty",
+                "operator": "is_full",
                 "operand": "afsluitdijk"
             },
             "activities": [
