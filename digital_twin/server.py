@@ -79,8 +79,13 @@ def simulate():
     try:
         simulation_result = simulate_from_json(config)
     except ValueError as valerr:
-        abort(400, description=str(valerr))
-        return
+        return jsonify({
+            "error": str(valerr)
+        })
+    except RuntimeError as runerr:
+        return jsonify({
+            "error": str(runerr)
+        })
     except Exception as e:
         abort(500, description=str(e))
         return
