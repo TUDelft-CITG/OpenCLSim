@@ -1,12 +1,11 @@
 {
-    "level": 3,
     "initialTime": 0,
     "sites": [
         {
             "id": "afsluitdijk",
             "name": "Afsluitdijk",
             "type": [
-                "Locatable", "HasResource", "HasContainer"
+                "Locatable"
             ],
             "properties": {
                 "geometry": {
@@ -15,9 +14,23 @@
                         53,
                         4
                     ]
-                },
-                "capacity": 10000,
-                "level": 0
+                }
+            }
+        },
+        {
+            "id": "maasvlakte",
+            "name": "Maasvlakte",
+            "type": [
+                "Locatable"
+            ],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        53,
+                        3
+                    ]
+                }
             }
         },
         {
@@ -39,37 +52,47 @@
     ],
     "equipment": [
         {
-            "id": "ship",
+            "id": "hopper",
             "name": "Boaty McBoatstone",
             "type": [
                 "Movable", "HasResource"
             ],
             "properties": {
-                "speed": 0.0001,
+                "speed": 1,
                 "location": "home"
             }
         }
     ],
     "activities": [
         {
-            "id": "conditional_moving",
-            "type": "conditional",
+            "id": "act_1",
+            "type": "delayed",
             "condition": {
-                "operator": "is_full",
-                "operand": "afsluitdijk"
+                "operator": "is_done",
+                "operand": "act_2"
             },
             "activities": [
                 {
-                    "id": "move_1",
+                    "id": "move",
                     "type": "move",
-                    "mover": "ship",
-                    "destination": "afsluitdijk"
-                },
+                    "destination": "maasvlakte",
+                    "mover": "hopper"
+                }
+            ]
+        },
+        {
+            "id": "act_2",
+            "type": "conditional",
+            "condition": {
+                "operator": "is_done",
+                "operand": "act_1"
+            },
+            "activities": [
                 {
-                    "id": "move_2",
+                    "id": "move",
                     "type": "move",
-                    "mover": "ship",
-                    "destination": "home"
+                    "destination": "maasvlakte",
+                    "mover": "hopper"
                 }
             ]
         }
