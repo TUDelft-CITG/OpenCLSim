@@ -23,6 +23,8 @@ import copy
 import numpy as np
 import pandas as pd
 
+import RODFF
+
 logger = logging.getLogger(__name__)
 
 
@@ -950,7 +952,6 @@ class Movable(SimpyObject, Locatable):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.v = v
-
     def move(self, destination, engine_order=1.0):
         if isinstance(self, Log):
             if isinstance(self, HasContainer):
@@ -959,13 +960,18 @@ class Movable(SimpyObject, Locatable):
             else:
                 self.log_entry('sailing start', self.env.now, -1, self.geometry)
 
-        """determine distance between origin and destination, and
-        yield the time it takes to travel it"""
-        # Determine distance based on geometry objects
-        distance = self.get_distance(self.geometry, destination)
-
-        # Determine speed based on filling degree
-        speed = self.current_speed * engine_order
+        """determine distance between origin and destination. 
+        Yield the time it takes to travel based on flow properties and load factor of the flow."""
+        if hasattr(self.env, 'Roadmap'):
+            # Determine distance based on geometry objects
+            distance = self.get_distance(self.geometry, destination)[0]
+            # Determine speed based on filling degree
+            speed = self.get_distance(self.geometry, destination)[1]    
+        else:
+            # Determine distance based on geometry objects
+            distance = self.get_distance(self.geometry, destination)
+            # Determine speed based on filling degree
+            speed = self.current_speed * engine_order
 
         # Check out the time based on duration of sailing event
         yield self.env.timeout(distance / speed)
@@ -989,9 +995,49 @@ class Movable(SimpyObject, Locatable):
                 self.log_entry('sailing stop', self.env.now, -1, self.geometry)
 
 
+    @property
+    def current_speed(self):
+        return self.v
+
     def get_distance(self, origin, destination):
 
-        if hasattr(self.env, 'FG') and isinstance(self, Routeable):
+        if hasattr(self.env, 'FG') and isinstance(self, Routeable) and hasattr(self.env, 'Roadmap'):
+            dista = 0
+            # Origin is geom - convert to node on graph
+            geom = nx.get_node_attributes(self.env.FG, 'geometry')
+            for node in geom:
+                if origin.x == geom[node].x and origin.y == geom[node].y:
+                    origin = node
+                    break
+
+            route = nx.dijkstra_path(self.env.FG, origin, destination.name)
+            sailtime = 0
+            for node in enumerate(route):
+                from_node = route[node[0]]
+                to_node = route[node[0] + 1]
+                orig = shapely.geometry.asShape(geom[from_node])
+                dest = shapely.geometry.asShape(geom[to_node])
+
+                distb = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
+                vship = self.current_speed
+                t0 = datetime.datetime.fromtimestamp(self.env.now).strftime("%d/%m/%Y %H:%M:%S")
+                start = (orig.x, orig.y)
+                stop = (dest.x, dest.y)
+                path, time, dist = RODFF.RODFF_time(start, stop, t0, vship, self.env.Roadmap)
+                sailtimeb = time[-1] - time[0]
+                distb = dist[-1] - dist[0]
+
+                self.log_entry("Sailing", self.env.now + sailtime, distb/sailtimeb, dest)
+
+                dista += distb
+                sailtime += sailtimeb
+
+                if node[0] + 2 == len(route):
+                    break
+            
+            distance = (dista, (dista/sailtime))
+
+        elif hasattr(self.env, 'FG') and isinstance(self, Routeable):
             distance = 0
 
             # Origin is geom - convert to node on graph
@@ -1012,11 +1058,40 @@ class Movable(SimpyObject, Locatable):
 
                 distance += self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
 
-                self.log_entry("Sailing", self.env.now + distance / self.current_speed, 0, dest)
+
+                self.log_entry("Sailing", self.env.now + distance / self.current_speed, self.current_speed, dest)
 
                 if node[0] + 2 == len(route):
                     break
 
+        elif hasattr(self.env, 'Roadmap'):
+            orig = shapely.geometry.asShape(self.geometry)
+            dest = shapely.geometry.asShape(destination.geometry)
+
+            vship = self.current_speed
+            t0 = datetime.datetime.fromtimestamp(self.env.now).strftime("%d/%m/%Y %H:%M:%S")
+            start = (orig.x, orig.y)
+            stop = (dest.x, dest.y)
+
+            path, time, dist = RODFF.RODFF_time(start, stop, t0, vship, self.env.Roadmap)
+
+            dista = dist[-1]
+            speed = dist[-1] / (time[-1]-time[0])
+
+            distance = (dista, speed)
+
+            self.log_entry("Sailing", self.env.now, (dist[1] - dist[0])/(time[1] - time[0]), orig)
+
+            for i in range(path.shape[0]):
+                orig = shapely.geometry.Point(path[i])
+                dest = shapely.geometry.Point(path[i])
+
+                self.log_entry("Sailing", time[i+1], (dist[i+1] - dist[i])/(time[i+1] - time[i]), dest)
+
+                if i + 3 == path.shape[0]:
+                    self.log_entry("Sailing", time[-1], (dist[-1] - dist[-2])/(time[-1] - time[-2]), shapely.geometry.Point(stop))
+                    break
+        
         else:
             orig = shapely.geometry.asShape(self.geometry)
             dest = shapely.geometry.asShape(destination.geometry)
@@ -1036,10 +1111,6 @@ class Movable(SimpyObject, Locatable):
 
             energy = self.energy_use_sailing(distance, speed, filling)
             self.log_entry(message, self.env.now, energy, self.geometry)
-
-    @property
-    def current_speed(self):
-        return self.v
 
 
 class ContainerDependentMovable(Movable, HasContainer):
