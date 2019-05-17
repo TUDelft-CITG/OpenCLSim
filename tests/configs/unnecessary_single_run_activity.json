@@ -16,9 +16,9 @@
                         4
                     ]
                 },
-                "capacity": 10000,
-                "level": 10000
-                
+                "capacity": 5000,
+                "level": 5000
+
             }
         },
         {
@@ -37,7 +37,7 @@
                 },
                 "capacity": 50000,
                 "level": 0
-                
+
             }
         },
         {
@@ -102,23 +102,31 @@
     ],
     "activities": [
         {
-            "id": "conditional_dredging",
-            "type": "conditional",
-            "condition": {
-                "operator": "is_empty",
-                "operand": "afsluitdijk"
-            },
-            "activities": [
-                {
-                    "id": "dredge_run",
-                    "type": "single_run",
-                    "origin": "afsluitdijk",
-                    "destination": "maasvlakte",
-                    "loader": "hopper",
-                    "mover": "hopper",
-                    "unloader": "hopper"
-                }
-            ]
+            "id": "dredge_run_1",
+            "type": "single_run",
+            "origin": "afsluitdijk",
+            "destination": "maasvlakte",
+            "loader": "hopper",
+            "mover": "hopper",
+            "unloader": "hopper"
+        },
+        {
+            "id": "dredge_run_2",
+            "type": "single_run",
+            "origin": "afsluitdijk",
+            "destination": "maasvlakte",
+            "loader": "hopper",
+            "mover": "hopper",
+            "unloader": "hopper"
+        },
+        {
+            "id": "dredge_run_3",
+            "type": "single_run",
+            "origin": "afsluitdijk",
+            "destination": "maasvlakte",
+            "loader": "hopper",
+            "mover": "hopper",
+            "unloader": "hopper"
         }
     ]
 }

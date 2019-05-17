@@ -155,7 +155,9 @@ def test_site_list(available_sites):
 
 def test_activity_fill_destination(env, available_equipment, available_sites):
     origin = available_sites['Stockpile']
-    origin.container.put(origin.container.capacity)  # fill the origin container
+    # fill the origin container
+    origin.container.reserve_put(origin.container.capacity)
+    origin.container.put(origin.container.capacity)
     destination = available_sites['Den Oever']
     assert destination.container.capacity < origin.container.capacity
 
@@ -177,7 +179,9 @@ def test_activity_fill_destination(env, available_equipment, available_sites):
 
 def test_activity_empty_origin(env, available_equipment, available_sites):
     origin = available_sites['Den Oever']
-    origin.container.put(origin.container.capacity)  # fill the origin container
+    # fill the origin container
+    origin.container.reserve_put(origin.container.capacity)
+    origin.container.put(origin.container.capacity)
     destination = available_sites['Stockpile']
     assert origin.container.capacity < destination.container.capacity
 
@@ -199,7 +203,9 @@ def test_activity_empty_origin(env, available_equipment, available_sites):
 
 def test_activity_hopper(env, available_equipment, available_sites):
     origin = available_sites['Kornwerderzand']
-    origin.container.put(origin.container.capacity)  # fill the origin container
+    # fill the origin container
+    origin.container.reserve_put(origin.container.capacity)
+    origin.container.put(origin.container.capacity)
     destination = available_sites['Den Oever']
     assert destination.container.capacity < origin.container.capacity
 

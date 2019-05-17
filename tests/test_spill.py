@@ -158,8 +158,12 @@ def test_spill_dredging(env, Location, Processor, Soil):
     # Log fuel use of the processor in step 1
     env.process(processor.process(from_site, 0, to_site))
     env.run()
-    assert processor.log["Message"][-1] == "fines released"
-    np.testing.assert_almost_equal(processor.log["Value"][-1], 2700)
+    assert "fines released" in processor.log["Message"]
+    fines = [processor.log["Value"][i] for i in range(len(processor.log["Value"]))
+             if processor.log["Message"][i] == "fines released"]
+    assert len(fines) == 2
+    np.testing.assert_almost_equal(fines[0], 0)
+    np.testing.assert_almost_equal(fines[1], 2700)
 
 
 # Test spill with dredging and placement
@@ -206,15 +210,20 @@ def test_spill_placement(env, Location, Mover, Processor, Soil):
     env.process(processor.process(mover, 1000, from_site))
     env.run()
 
-    assert processor.log["Message"][-1] == "fines released"
-    np.testing.assert_almost_equal(processor.log["Value"][-1], 2700)
+    assert "fines released" in processor.log["Message"]
+    fines = [processor.log["Value"][i] for i in range(len(processor.log["Value"]))
+             if processor.log["Message"][i] == "fines released"]
+    assert len(fines) == 1
+    np.testing.assert_almost_equal(fines[0], 2700)
 
     # Log fuel use of the processor in step 1
     env.process(processor.process(mover, 0, to_site))
     env.run()
-    
-    assert processor.log["Message"][-1] == "fines released"
-    np.testing.assert_almost_equal(processor.log["Value"][-1], 8865)
+
+    fines = [processor.log["Value"][i] for i in range(len(processor.log["Value"]))
+             if processor.log["Message"][i] == "fines released"]
+    assert len(fines) == 2
+    np.testing.assert_almost_equal(fines[1], 8865)
 
 
 # Test spill with requirement

@@ -53,9 +53,8 @@ class ToSave:
                          "unloader": data["unloader"].name,
                          "origin": data["origin"].name,
                          "destination": data["destination"].name,
-                         "stop_condition": None, #data["stop_condition"],
-                         "start_condition": None, #data["start_condition"],
-                         "condition": None} #data["condition"]}
+                         "stop_event": None,  # data["stop_event"],
+                         "start_event": None}  # data["start_event"]
 
         # This is the case for equipment and sites
         elif type(data_type) == type:

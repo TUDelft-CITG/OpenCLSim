@@ -118,15 +118,6 @@
             "loader": "hopper",
             "mover": "hopper",
             "unloader": "hopper"
-        },
-        {
-            "id": "dredge_run_3",
-            "type": "single_run",
-            "origin": "afsluitdijk",
-            "destination": "maasvlakte",
-            "loader": "hopper",
-            "mover": "hopper",
-            "unloader": "hopper"
         }
     ]
 }
