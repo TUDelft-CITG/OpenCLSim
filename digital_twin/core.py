@@ -23,7 +23,7 @@ import copy
 import numpy as np
 import pandas as pd
 
-import RODFF
+import halem
 
 logger = logging.getLogger(__name__)
 
@@ -963,10 +963,12 @@ class Movable(SimpyObject, Locatable):
         """determine distance between origin and destination. 
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
         if hasattr(self.env, 'Roadmap'):
+            dist = self.get_distance(self.geometry, destination)
+
             # Determine distance based on geometry objects
-            distance = self.get_distance(self.geometry, destination)[0]
+            distance = dist[0]
             # Determine speed based on filling degree
-            speed = self.get_distance(self.geometry, destination)[1]    
+            speed = dist[1]  
         else:
             # Determine distance based on geometry objects
             distance = self.get_distance(self.geometry, destination)
@@ -1023,11 +1025,19 @@ class Movable(SimpyObject, Locatable):
                 t0 = datetime.datetime.fromtimestamp(self.env.now).strftime("%d/%m/%Y %H:%M:%S")
                 start = (orig.x, orig.y)
                 stop = (dest.x, dest.y)
-                path, time, dist = RODFF.RODFF_time(start, stop, t0, vship, self.env.Roadmap)
+                path, time, dist = halem.HALEM_time(start, stop, t0, vship, self.env.Roadmap)
+
+                for i in range(path.shape[0]):
+                    dest_temp = shapely.geometry.Point(path[i])
+                    self.log_entry("Sailing", time[i+1], 0, dest_temp)
+                    if i + 2 == path.shape[0]:
+                        self.log_entry("Sailing", time[i+1], 0, dest_temp)
+                        break
+
                 sailtimeb = time[-1] - time[0]
                 distb = dist[-1] - dist[0]
 
-                self.log_entry("Sailing", self.env.now + sailtime, distb/sailtimeb, dest)
+                self.log_entry("Sailing", self.env.now + sailtime, 0, dest)
 
                 dista += distb
                 sailtime += sailtimeb
@@ -1059,7 +1069,7 @@ class Movable(SimpyObject, Locatable):
                 distance += self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
 
 
-                self.log_entry("Sailing", self.env.now + distance / self.current_speed, self.current_speed, dest)
+                self.log_entry("Sailing", self.env.now + distance / self.current_speed, 0, dest)
 
                 if node[0] + 2 == len(route):
                     break
@@ -1073,23 +1083,23 @@ class Movable(SimpyObject, Locatable):
             start = (orig.x, orig.y)
             stop = (dest.x, dest.y)
 
-            path, time, dist = RODFF.RODFF_time(start, stop, t0, vship, self.env.Roadmap)
+            path, time, dist = halem.HALEM_time(start, stop, t0, vship, self.env.Roadmap)
 
             dista = dist[-1]
             speed = dist[-1] / (time[-1]-time[0])
 
             distance = (dista, speed)
 
-            self.log_entry("Sailing", self.env.now, (dist[1] - dist[0])/(time[1] - time[0]), orig)
+            self.log_entry("Sailing", self.env.now, 0, orig)
 
             for i in range(path.shape[0]):
                 orig = shapely.geometry.Point(path[i])
                 dest = shapely.geometry.Point(path[i])
 
-                self.log_entry("Sailing", time[i+1], (dist[i+1] - dist[i])/(time[i+1] - time[i]), dest)
+                self.log_entry("Sailing", time[i+1], 0, dest)
 
                 if i + 3 == path.shape[0]:
-                    self.log_entry("Sailing", time[-1], (dist[-1] - dist[-2])/(time[-1] - time[-2]), shapely.geometry.Point(stop))
+                    self.log_entry("Sailing", time[-1], 0, shapely.geometry.Point(stop))
                     break
         
         else:
