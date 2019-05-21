@@ -134,7 +134,7 @@ def test_halem_single_path():
     np.testing.assert_array_equal(path_calc[:-2], path)
     
 def test_halem_not_twice_the_same():
-    T0 = '16/04/2019 01:00:00'
+    T0 = '18/04/2019 01:00:00'
     d = datetime.datetime.strptime(T0, "%d/%m/%Y %H:%M:%S")
     t0 = d.timestamp()
 
