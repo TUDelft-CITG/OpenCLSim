@@ -134,9 +134,12 @@ def test_halem_single_path():
     np.testing.assert_array_equal(path_calc[:-2], path)
     
 def test_halem_not_twice_the_same():
-    T0 = '18/04/2019 01:00:00'
-    d = datetime.datetime.strptime(T0, "%d/%m/%Y %H:%M:%S")
-    t0 = d.timestamp()
+    name_textfile_load = 'tests/Roadmap/General_waddensea_dt=3h'
+
+    with open(name_textfile_load, 'rb') as input:
+        Roadmap = pickle.load(input)\
+        
+    t0 = Roadmap.t[1]
 
     simulation_start = datetime.datetime.fromtimestamp(t0)
 
@@ -144,20 +147,20 @@ def test_halem_not_twice_the_same():
     my_env.epoch = time.mktime(simulation_start.timetuple())
 
     Site = type('Site', (core.Identifiable, # Give it a name
-                         core.Log,          # Allow logging of all discrete events
-                         core.Locatable,    # Add coordinates to extract distance information and visualize
-                         core.HasContainer, # Add information on the material available at the site
-                         core.HasResource), # Add information on serving equipment
+                        core.Log,          # Allow logging of all discrete events
+                        core.Locatable,    # Add coordinates to extract distance information and visualize
+                        core.HasContainer, # Add information on the material available at the site
+                        core.HasResource), # Add information on serving equipment
                 {})   
 
     location_from_site = shapely.geometry.Point(4.788699, 52.970919)  # lon, lat
 
     data_from_site = {"env": my_env,                                # The simpy environment defined in the first cel
-                      "name": "Winlocatie",                         # The name of the site
-                      "ID": "6dbbbdf4-4589-11e9-a501-b469212bff5b", # For logging purposes
-                      "geometry": location_from_site,               # The coordinates of the project site
-                      "capacity": 20_000,                          # The capacity of the site
-                      "level": 20_000}   
+                    "name": "Winlocatie",                         # The name of the site
+                    "ID": "6dbbbdf4-4589-11e9-a501-b469212bff5b", # For logging purposes
+                    "geometry": location_from_site,               # The coordinates of the project site
+                    "capacity": 15_000,                          # The capacity of the site
+                    "level": 15_000}   
 
     location_to_site = shapely.geometry.Point(4.541166, 53.093619)     # lon, lat
 
@@ -165,21 +168,21 @@ def test_halem_not_twice_the_same():
                     "name": "Dumplocatie",                        # The name of the site
                     "ID": "6dbbbdf5-4589-11e9-82b2-b469212bff5b", # For logging purposes
                     "geometry": location_to_site,                 # The coordinates of the project site
-                    "capacity": 20_000,                          # The capacity of the site
+                    "capacity": 15_000,                          # The capacity of the site
                     "level": 0}     
 
     from_site = Site(**data_from_site)
     to_site   = Site(**data_to_site)
 
     TransportProcessingResource = type('TransportProcessingResource', 
-                                       (core.Identifiable,              # Give it a name
+                                    (core.Identifiable,              # Give it a name
                                         core.Log,                       # Allow logging of all discrete events
                                         core.ContainerDependentMovable, # A moving container, so capacity and location
                                         core.Processor,                 # Allow for loading and unloading
                                         core.HasResource,               # Add information on serving equipment
                                         core.HasCosts,
                                         ),                 # Initialize spill terms
-                                       {})
+                                    {})
 
     def compute_v_provider(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
@@ -191,32 +194,27 @@ def test_halem_not_twice_the_same():
         return lambda current_level, desired_level: (current_level - desired_level) / rate
 
     data_hopper = {"env": my_env,                                       # The simpy environment 
-                   "name": "Hopper 01",                                 # Name
-                   "ID": "6dbbbdf6-4589-11e9-95a2-b469212bff5b",        # For logging purposes
-                   "geometry": location_from_site,                      # It starts at the "from site"
-                   "loading_func": compute_loading(1.5),                # Loading rate
-                   "unloading_func": compute_unloading(1.5),            # Unloading rate
-                   "capacity": 5_000,                                   # Capacity of the hopper - "Beunvolume"
-                   "compute_v": compute_v_provider(7, 5),             # Variable speed 
-                   "weekrate": 700_000}
+                "name": "Hopper 01",                                 # Name
+                "ID": "6dbbbdf6-4589-11e9-95a2-b469212bff5b",        # For logging purposes
+                "geometry": location_from_site,                      # It starts at the "from site"
+                "loading_func": compute_loading(1.5),                # Loading rate
+                "unloading_func": compute_unloading(1.5),            # Unloading rate
+                "capacity": 5_000,                                   # Capacity of the hopper - "Beunvolume"
+                "compute_v": compute_v_provider(7, 5),             # Variable speed 
+                "weekrate": 700_000}
 
     hopper = TransportProcessingResource(**data_hopper)
 
     activity = model.Activity(env = my_env,           # The simpy environment defined in the first cel
-                              name = "Soil movement", # We are moving soil
-                              ID = "6dbbbdf7-4589-11e9-bf3b-b469212bff5b", # For logging purposes
-                              origin = from_site,     # We originate from the from_site
-                              destination = to_site,  # And therefore travel to the to_site
-                              loader = hopper,        # The benefit of a TSHD, all steps can be done
-                              mover = hopper,         # The benefit of a TSHD, all steps can be done
-                              unloader = hopper,      # The benefit of a TSHD, all steps can be done
-                              start_event = None,     # We can start right away
-                              stop_event = None)      # We stop once there is nothing more to move
-
-    name_textfile_load = 'tests/Roadmap/General_waddensea_dt=3h'
-
-    with open(name_textfile_load, 'rb') as input:
-        Roadmap = pickle.load(input)\
+                            name = "Soil movement", # We are moving soil
+                            ID = "6dbbbdf7-4589-11e9-bf3b-b469212bff5b", # For logging purposes
+                            origin = from_site,     # We originate from the from_site
+                            destination = to_site,  # And therefore travel to the to_site
+                            loader = hopper,        # The benefit of a TSHD, all steps can be done
+                            mover = hopper,         # The benefit of a TSHD, all steps can be done
+                            unloader = hopper,      # The benefit of a TSHD, all steps can be done
+                            start_event = None,     # We can start right away
+                            stop_event = None)      # We stop once there is nothing more to move
 
     my_env.Roadmap = Roadmap
     my_env.run()
@@ -239,10 +237,8 @@ def test_halem_not_twice_the_same():
         full.append(path[sailing_full_idx[i][0]+2:sailing_empt_idx[i][0] - 7])
         empt.append(path[sailing_empt_idx[i][0]+2:sailing_full_idx[i+1][0] - 7])
 
-    for QQ in [[0,1],[0,2],[1,2]]:
-        np.testing.assert_raises(AssertionError, np.testing.assert_array_equal, full[QQ[0]], full[QQ[1]])
-        np.testing.assert_raises(AssertionError, np.testing.assert_array_equal, empt[QQ[0]], empt[QQ[1]])
-        
+    np.testing.assert_raises(AssertionError, np.testing.assert_array_equal, full[0], full[1])
+    np.testing.assert_raises(AssertionError, np.testing.assert_array_equal, empt[0], empt[1])
 
 def test_halem_hopper_on_route():       
     t0 = '16/04/2019 01:00:00'
