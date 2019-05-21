@@ -23,7 +23,7 @@ import networkx as nx
 import numpy as np
 
 def test_halem_single_path():
-    T0 = '17/04/2019 01:00:00'
+    T0 = '16/04/2019 01:00:00'
     d = datetime.datetime.strptime(T0, "%d/%m/%Y %H:%M:%S")
     t0 = d.timestamp()
 
@@ -134,7 +134,7 @@ def test_halem_single_path():
     np.testing.assert_array_equal(path_calc[:-2], path)
     
 def test_halem_not_twice_the_same():
-    T0 = '17/04/2019 01:00:00'
+    T0 = '16/04/2019 01:00:00'
     d = datetime.datetime.strptime(T0, "%d/%m/%Y %H:%M:%S")
     t0 = d.timestamp()
 
@@ -245,7 +245,7 @@ def test_halem_not_twice_the_same():
         
 
 def test_halem_hopper_on_route():       
-    t0 = '17/04/2019 01:00:00'
+    t0 = '16/04/2019 01:00:00'
     d = datetime.datetime.strptime(t0, "%d/%m/%Y %H:%M:%S")
     t0 = d.timestamp()
 
