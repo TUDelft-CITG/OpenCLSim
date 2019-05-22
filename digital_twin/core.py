@@ -931,31 +931,34 @@ class HasDepthRestriction:
 
 class Routeable:
     """
-    Movement travels trough a Graph. When Optimize_Route == True the halem package optimizes the route for different cost functions
-    if the Optimization_type == 'time' then the fastest path is calculated by halem
-    if the Optimization_type == 'cost' then the cheapest path is calculated by halem
-    if the Optimization_type == 'space' then the shortest path is calculated by halem
+    Movement travels trough a Graph. When optimize_route == True the halem package optimizes the route for different cost functions
+    if the optimization_type == 'time' then the fastest path is calculated by halem
+    if the optimization_type == 'cost' then the cheapest path is calculated by halem
+    if the optimization_type == 'space' then the shortest path is calculated by halem
     Optimize_Route == False the route is determind by v = s/t 
     """
-    def __init__(self, route, Optimize_Route = False, Optimization_type = 'time', *args, **kwargs):
+    def __init__(self, route, optimize_route = False, optimization_type = "time", *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.route = route
-        self.Optimize_Route = Optimize_Route
+        self.optimize_route = optimize_route
+        self.optimization_type = optimization_type
 
-        if self.Optimize_Route == True:
+        if self.optimize_route == True:
             
             import halem
-            self.Optimization_type = Optimization_type
             
-            if Optimization_type == 'space':
-                self.Optimization_func = halem.HALEM_space
-            elif Optimization_type == 'cost':
-                self.Optimization_func = halem.HALEM_cost
-            elif Optimization_type == 'co2':
-                self.Optimization_func = halem.HALEM_co2
+            if self.optimization_type == "time":
+                self.optimization_func = halem.HALEM_time
+            elif self.optimization_type == "space":
+                self.optimization_func = halem.HALEM_space
+            elif self.optimization_type == "cost":
+                self.optimization_func = halem.HALEM_cost
+            elif self.optimization_type == "co2":
+                self.optimization_func = halem.HALEM_co2
             else:
-                self.Optimization_func = halem.HALEM_time
+                print("No known optimization method selected")
+                
 
 class Movable(SimpyObject, Locatable):
     """Movable class
@@ -1015,7 +1018,14 @@ class Movable(SimpyObject, Locatable):
         return self.v
 
     def get_distance(self, origin, destination):
-        if isinstance(self, Routeable):
+        if not isinstance(self, Routeable):
+            orig = shapely.geometry.asShape(self.geometry)
+            dest = shapely.geometry.asShape(destination.geometry)
+            _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+
+            return distance
+
+        elif isinstance(self, Routeable):
             # If travelling on route is required, assert environment has a graph
             assert hasattr(self.env, "FG")
             # Origin is geom - convert to node on graph
@@ -1035,14 +1045,14 @@ class Movable(SimpyObject, Locatable):
                 dest = shapely.geometry.asShape(geom[to_node])
 
                 # Check if optimize on flowfield is possible
-                if self.Optimize_Route == True:
+                if self.optimize_route == True:
                     assert hasattr(self.env, "Roadmap")
                     vship = self.current_speed
                     t0 = datetime.datetime.fromtimestamp(self.env.now).strftime("%d/%m/%Y %H:%M:%S")
                     start = (orig.x, orig.y)
                     stop = (dest.x, dest.y)
                 
-                    path, time, dist = self.Optimization_func(start, stop, t0, vship, self.env.Roadmap)
+                    path, time, dist = self.optimization_func(start, stop, t0, vship, self.env.Roadmap)
 
                     for i in range(path.shape[0]):
                         dest_temp = shapely.geometry.Point(path[i])
@@ -1066,14 +1076,7 @@ class Movable(SimpyObject, Locatable):
                 if node[0] + 2 == len(route):
                     break
             
-            distance = (dista, (dista/sailtime))
-        
-        else:
-            orig = shapely.geometry.asShape(self.geometry)
-            dest = shapely.geometry.asShape(destination.geometry)
-            _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
-
-        return distance
+            return dista, (dista/sailtime)
 
     def energy_use(self, distance, speed):
         if isinstance(self, EnergyUse):

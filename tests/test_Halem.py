@@ -127,8 +127,8 @@ def test_halem_single_path():
                    "capacity": 5_000,                                   # Capacity of the hopper - "Beunvolume"
                    "compute_v": compute_v_provider(7, 5),             # Variable speed
                    "route": route,
-                   "Optimize_Route": True,                              # Optimize the Route
-                   "Optimization_type": 'time'                          # Optimize for the fastest path
+                   "optimize_route": True,                              # Optimize the Route
+                   "optimization_type": 'time'                          # Optimize for the fastest path
                   }     
 
     hopper = TransportProcessingResource(**data_hopper)
@@ -283,8 +283,8 @@ def test_halem_not_twice_the_same():
                    "capacity": 5_000,                                   # Capacity of the hopper - "Beunvolume"
                    "compute_v": compute_v_provider(7, 5),             # Variable speed
                    "route": route,
-                   "Optimize_Route": True,                              # Optimize the Route
-                   "Optimization_type": 'time'                          # Optimize for the fastest path
+                   "optimize_route": True,                              # Optimize the Route
+                   "optimization_type": 'time'                          # Optimize for the fastest path
 
                   }     
 
@@ -431,8 +431,8 @@ def test_halem_hopper_on_route():
                    "capacity": 5_000,                                   # Capacity of the hopper - "Beunvolume"
                    "compute_v": compute_v_provider(7, 5),             # Variable speed
                    "route": route,
-                   "Optimize_Route": True,                              # Optimize the Route
-                   "Optimization_type": 'time'                          # Optimize for the fastest path
+                   "optimize_route": True,                              # Optimize the Route
+                   "optimization_type": 'time'                          # Optimize for the fastest path
               
                   }     
 
