@@ -952,6 +952,8 @@ class Routeable:
                 self.Optimization_func = halem.HALEM_space
             elif Optimization_type == 'cost':
                 self.Optimization_func = halem.HALEM_cost
+            elif Optimization_type == 'co2':
+                self.Optimization_func = halem.HALEM_co2
             else:
                 self.Optimization_func = halem.HALEM_time
 
