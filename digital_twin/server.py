@@ -161,7 +161,11 @@ def simulate_from_json(config, tmp_path="static"):
     The optional tmp_path parameter should only be used for unit tests."""
 
     if "initialTime" in config:
-        simulation_start = datetime.datetime.fromtimestamp(config["initialTime"])
+        try:
+            simulation_start = datetime.datetime.fromtimestamp(config["initialTime"])
+        except OSError:
+            # on windows in certain python versions 0 is not a good start date
+            simulation_start = datetime.datetime(2000, 1, 1)
     else:
         simulation_start = datetime.datetime.now()
     env = simpy.Environment(initial_time=time.mktime(simulation_start.timetuple()))
@@ -244,7 +248,7 @@ def energy_use_plot_from_json(jsonFile):
 
 
             vessels.append(vessel)
-    
+
     return plot.energy_use_time(vessels, web = True)
 
 def equipment_plot_from_json(jsonFile):
