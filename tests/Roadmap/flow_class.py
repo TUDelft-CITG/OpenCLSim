@@ -175,6 +175,105 @@ class flow_NOOS():
 
         return bat, nodes
 
+class flow_tidal_analysis():
+    def __init__(self):
+
+        nodes = np.loadtxt('D:/Tidal_ananlysis_data/analysis/nodes.csv')
+        print('Loading 20 %')
+        t = np.loadtxt('D:/Tidal_ananlysis_data/analysis/t.csv')
+        clear_output(wait= True)
+        print('Loading 40 %')
+        WD = np.loadtxt('D:/Tidal_ananlysis_data/analysis/d.csv')
+        clear_output(wait= True)
+        print('Loading 60 %')
+        u = np.loadtxt('D:/Tidal_ananlysis_data/analysis/u.csv')
+        clear_output(wait= True)
+        print('Loading 80 %')
+        v = np.loadtxt('D:/Tidal_ananlysis_data/analysis/v.csv')
+        clear_output(wait= True)
+        print('loading 100 %')
+
+        
+        idx = np.loadtxt('D:/Tidal_ananlysis_data/analysis/nodes_inex(Rm_DCSM_zuno_WDmin=1.5,nl=(1, 1)).csv', dtype=int)
+        t = t[::6]
+        WD = WD[::6,idx]
+        v = v[::6,idx]
+        u = u[::6,idx]
+        nodes = nodes[idx]
+
+        time = []
+        for timestep in t:
+            tt = datetime.datetime.fromtimestamp(timestep)
+            time.append(tt)
+        time = np.array(time)
+
+        WD_t = np.zeros(WD.shape)
+        u_t = np.zeros(u.shape)
+        v_t = np.zeros(v.shape)
+
+        q = int(0)
+        qq = 1
+        for node in range(len(nodes)):
+            q = q + int(1)
+            if q == 10:
+                clear_output(wait= True)
+                print(np.round(qq/ len(nodes)*1000,3), '%')
+                q = int(0)
+                qq +=1
+            d_n,u_n,v_n = self.Tidal_analysis(node, WD, u, v, time)
+            WD_t[:,node] = d_n
+            u_t[:,node] = u_n
+            v_t[:,node] = v_n
+                   
+        bat, nodes_bat = self.bath()
+        bath = griddata(nodes_bat, bat, nodes)
+        
+        print(WD.shape)
+        WD_new = np.zeros(WD.shape)
+        for i in range(WD.shape[0]):
+            WD_new[i] = WD_t[i]-bath
+
+        WD_new[WD_new < 0] = 0
+
+        self.t = t - t[0]
+        self.WD = WD_new
+        self.u = u_t
+        self.v = v_t
+        self.nodes = nodes
+        self.tria = Delaunay(nodes)
+    
+    def Tidal_analysis(self, node, WD, u, v, time):
+        WD_raw = WD[:,node]
+        u_raw = u[:,node]
+        v_raw = v[:,node]
+        
+        my_tide_d = Tide.decompose(WD_raw, time)
+        my_tide_u = Tide.decompose(u_raw, time)
+        my_tide_v = Tide.decompose(v_raw, time)
+        
+        my_time = time
+        my_prediction_d = my_tide_d.at(my_time)
+        my_prediction_u = my_tide_u.at(my_time)
+        my_prediction_v = my_tide_v.at(my_time)
+        
+        return my_prediction_d, my_prediction_u, my_prediction_v
+    
+    def bath(self):
+        bat, nodes_bat= halem.Flow_class.flow_NOOS.bat(self)
+        return bat, nodes_bat
+
+class flow_tides():
+    def __init__(self, name):
+        with open(name, 'rb') as input:
+            flow = pickle.load(input)
+
+        self.t = flow.t[0:51]
+        self.WD = flow.WD[0:51,:]
+        self.u = flow.u[0:51,:]
+        self.v = flow.v[0:51,:]
+        self.nodes = flow.nodes
+        self.tria = flow.tria
+
 def nodes_on_land_None(nodes,u,v,WD):
     return nodes,u,v,WD
 

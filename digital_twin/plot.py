@@ -635,3 +635,55 @@ def energy_use_time(vessels, web = False):
         plt.show()
     else:
         return fig
+
+
+def plot_route(vessels):
+    import matplotlib.pyplot as plt
+    plt.style.use('ggplot')
+    from cartopy import config
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
+    from matplotlib.collections import LineCollection
+    from matplotlib.colors import ListedColormap, BoundaryNorm
+
+    fig = plt.figure(figsize = (10,10))
+    ax = plt.subplot(projection=ccrs.Mercator())
+    ax.coastlines(resolution='10m', color='black', linewidth=3)
+    ax.gridlines(color = 'grey', zorder = 3)
+    ax.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '10m', edgecolor='face', facecolor='palegoldenrod'))
+
+    for hopper in vessels:
+        Hopper_route = hopper.log['Geometry']
+        x_loc = []
+        y_loc = []
+        for G in Hopper_route:
+            x_loc.append(G.x)
+            y_loc.append(G.y)
+        x_loc = np.array(x_loc)
+        y_loc = np.array(y_loc)
+        
+        TT = hopper.log['Timestamp']
+        Time = []
+
+        for T in TT:
+            TTT = T.timestamp()
+            Time.append(TTT)
+
+        Time= np.array(Time)
+        Time = (Time - Time[0])/3600/24
+
+        points = np.array([x_loc, y_loc]).T.reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+        
+        norm = plt.Normalize(Time.min(), Time.max())
+        lc = LineCollection(segments, cmap='magma', norm=norm, transform=ccrs.PlateCarree())
+
+        lc.set_array(Time)
+        line = ax.add_collection(lc)
+        fig.colorbar(line, ax=ax, label = 'Time in days')
+        
+        ax.set_extent([x_loc.min()*0.99, x_loc.max()*1.01, y_loc.min()*0.999, y_loc.max()*1.001])
+    
+    return fig
+
+
