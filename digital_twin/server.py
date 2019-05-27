@@ -11,8 +11,9 @@ from flask import make_response
 from flask_cors import CORS
 
 import matplotlib
+
 # make sure we use Agg for offscreen rendering
-matplotlib.use('Agg')
+matplotlib.use("Agg")
 
 import simpy
 from digital_twin import model
@@ -35,8 +36,12 @@ import json
 import hashlib
 
 root_folder = pathlib.Path(__file__).parent.parent
-static_folder = root_folder / 'static'
-assert static_folder.exists(), "Make sure you run the server from the static directory. {} does not exist".format(static_folder)
+static_folder = root_folder / "static"
+assert (
+    static_folder.exists()
+), "Make sure you run the server from the static directory. {} does not exist".format(
+    static_folder
+)
 app = Flask(__name__, static_folder=str(static_folder))
 CORS(app)
 
@@ -52,22 +57,18 @@ def main():
 def csv():
     print(dir(request), request, request.url, request.base_url, request.host_url)
     paths = [
-        urllib.parse.urljoin(
-            request.host_url,
-            str(x)
-        )
-        for x
-        in static_folder.relative_to(root_folder).glob('**/*.csv')
+        urllib.parse.urljoin(request.host_url, str(x))
+        for x in static_folder.relative_to(root_folder).glob("**/*.csv")
     ]
     print(paths, static_folder)
     df = pd.DataFrame(data={"paths": paths})
     csv = df.to_csv(index=False)
     resp = make_response(csv)
-    resp.headers['Content-Type'] = "text/csv"
+    resp.headers["Content-Type"] = "text/csv"
     return resp
 
 
-@app.route("/simulate", methods=['POST'])
+@app.route("/simulate", methods=["POST"])
 def simulate():
     """run a simulation"""
     if not request.is_json:
@@ -79,18 +80,15 @@ def simulate():
     try:
         simulation_result = simulate_from_json(config)
     except ValueError as valerr:
-        return jsonify({
-            "error": str(valerr)
-        })
+        return jsonify({"error": str(valerr)})
     except RuntimeError as runerr:
-        return jsonify({
-            "error": str(runerr)
-        })
+        return jsonify({"error": str(runerr)})
     except Exception as e:
         abort(500, description=str(e))
         return
 
     return jsonify(simulation_result)
+
 
 @app.route("/plot")
 def demo_plot():
@@ -101,7 +99,8 @@ def demo_plot():
     fig = plot.demo_plot()
     return plot.fig2response(fig)
 
-@app.route("/energy_plot", methods=['POST'])
+
+@app.route("/energy_plot", methods=["POST"])
 def energy_plot():
     """return a plot with the cumulative energy use"""
     if not request.is_json:
@@ -120,7 +119,8 @@ def energy_plot():
 
     return plot.fig2response(energy_use)
 
-@app.route("/equipment_plot", methods=['POST'])
+
+@app.route("/equipment_plot", methods=["POST"])
 def equipment_plot():
     """return a planning"""
     if not request.is_json:
@@ -153,7 +153,9 @@ def interrupt_processes(event, activities, env):
         process = activity["process"]
         if not process.processed:
             process.interrupt()
-            activity["activity_log"].log_entry("interrupted by 100 year timeout", env.now, -1, None)
+            activity["activity_log"].log_entry(
+                "interrupted by 100 year timeout", env.now, -1, None
+            )
 
 
 def simulate_from_json(config, tmp_path="static"):
@@ -175,7 +177,7 @@ def simulate_from_json(config, tmp_path="static"):
         name="server simulation",
         sites=config["sites"],
         equipment=config["equipment"],
-        activities=config["activities"]
+        activities=config["activities"],
     )
     processes = [activity["process"] for activity in simulation.activities.values()]
 
@@ -183,9 +185,11 @@ def simulate_from_json(config, tmp_path="static"):
         process.end_time = None
         process.callbacks.append(functools.partial(update_end_time, env=env))
 
-    timeout_100years = env.timeout(100*365*24*3600)
+    timeout_100years = env.timeout(100 * 365 * 24 * 3600)
     timeout_100years.callbacks.append(
-        functools.partial(interrupt_processes, activities=simulation.activities.values(), env=env)
+        functools.partial(
+            interrupt_processes, activities=simulation.activities.values(), env=env
+        )
     )
 
     try:
@@ -221,52 +225,58 @@ def save_simulation(config, simulation, tmp_path=""):
     # TODO: replace traversing static_folder pathlib path
     config_text = json.dumps(config, sort_keys=True).encode("utf-8")
     hash = hashlib.md5(config_text).hexdigest()
-    file_prefix = hash + '_'
+    file_prefix = hash + "_"
 
     path = str(tmp_path)
     if len(path) != 0 and str(path)[-1] != "/":
         path += "/"
     # TODO: use pathlib
     path += "simulations/"
-    os.makedirs(path, exist_ok=True)  # create the simulations directory if it does not yet exist
+    os.makedirs(
+        path, exist_ok=True
+    )  # create the simulations directory if it does not yet exist
     savesim.save_logs(simulation, path, file_prefix)
+
 
 def energy_use_plot_from_json(jsonFile):
     """Create a Gantt chart, based on a json input file"""
 
     vessels = []
-    for item in jsonFile['equipment']:
-        if item['features']:
-            vessel = type('Vessel', (core.Identifiable, core.Log), {})
-            vessel = vessel(**{"env": None, "name": item['id']})
+    for item in jsonFile["equipment"]:
+        if item["features"]:
+            vessel = type("Vessel", (core.Identifiable, core.Log), {})
+            vessel = vessel(**{"env": None, "name": item["id"]})
 
-            for feature in item['features']:
-                vessel.log_entry(log = feature['properties']['message'],
-                                 t = feature['properties']['time'],
-                                 value = feature['properties']['value'],
-                                 geometry_log = feature['geometry']['coordinates'])
-
+            for feature in item["features"]:
+                vessel.log_entry(
+                    log=feature["properties"]["message"],
+                    t=feature["properties"]["time"],
+                    value=feature["properties"]["value"],
+                    geometry_log=feature["geometry"]["coordinates"],
+                )
 
             vessels.append(vessel)
 
-    return plot.energy_use_time(vessels, web = True)
+    return plot.energy_use_time(vessels, web=True)
+
 
 def equipment_plot_from_json(jsonFile):
     """Create a Gantt chart, based on a json input file"""
 
     vessels = []
-    for item in jsonFile['equipment']:
-        if item['features']:
-            vessel = type('Vessel', (core.Identifiable, core.Log), {})
-            vessel = vessel(**{"env": None, "name": item['id']})
+    for item in jsonFile["equipment"]:
+        if item["features"]:
+            vessel = type("Vessel", (core.Identifiable, core.Log), {})
+            vessel = vessel(**{"env": None, "name": item["id"]})
 
-            for feature in item['features']:
-                vessel.log_entry(log = feature['properties']['message'],
-                                 t = feature['properties']['time'],
-                                 value = feature['properties']['value'],
-                                 geometry_log = feature['geometry']['coordinates'])
-
+            for feature in item["features"]:
+                vessel.log_entry(
+                    log=feature["properties"]["message"],
+                    t=feature["properties"]["time"],
+                    value=feature["properties"]["value"],
+                    geometry_log=feature["geometry"]["coordinates"],
+                )
 
             vessels.append(vessel)
 
-    return plot.equipment_plot_json(vessels, web = True)
+    return plot.equipment_plot_json(vessels, web=True)

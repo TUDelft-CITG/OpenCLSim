@@ -31,6 +31,7 @@ class SimpyObject:
 
     env: a simpy Environment
     """
+
     def __init__(self, env, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.env = env
@@ -59,13 +60,14 @@ class Locatable:
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.geometry = geometry
-        self.wgs84 = pyproj.Geod(ellps='WGS84')
+        self.wgs84 = pyproj.Geod(ellps="WGS84")
 
     def is_at(self, locatable, tolerance=100):
         current_location = shapely.geometry.asShape(self.geometry)
         other_location = shapely.geometry.asShape(locatable.geometry)
-        _, _, distance = self.wgs84.inv(current_location.x, current_location.y,
-                                        other_location.x, other_location.y)
+        _, _, distance = self.wgs84.inv(
+            current_location.x, current_location.y, other_location.x, other_location.y
+        )
 
         return distance < tolerance
 
@@ -80,20 +82,28 @@ class ReservationContainer(simpy.Container):
 
     def reserve_put(self, amount):
         if self.expected_level + amount > self.capacity:
-            raise RuntimeError('Attempting to reserve unavailable space')
+            raise RuntimeError("Attempting to reserve unavailable space")
 
         self.expected_level += amount
 
-        if self._content_available is not None and not self._content_available.triggered and amount > 0:
+        if (
+            self._content_available is not None
+            and not self._content_available.triggered
+            and amount > 0
+        ):
             self._content_available.succeed()
 
     def reserve_get(self, amount):
         if self.expected_level < amount:
-            raise RuntimeError('Attempting to reserve unavailable content')
+            raise RuntimeError("Attempting to reserve unavailable content")
 
         self.expected_level -= amount
 
-        if self._space_available is not None and not self._space_available.triggered and amount > 0:
+        if (
+            self._space_available is not None
+            and not self._space_available.triggered
+            and amount > 0
+        ):
             self._space_available.succeed()
 
     @property
@@ -112,7 +122,10 @@ class ReservationContainer(simpy.Container):
         if self.expected_level > 0:
             return self._env.event().succeed()
 
-        if self._content_available is not None and not self._content_available.triggered:
+        if (
+            self._content_available is not None
+            and not self._content_available.triggered
+        ):
             return self._content_available
 
         self._content_available = self._env.event()
@@ -189,7 +202,9 @@ class HasContainer(SimpyObject):
     def __init__(self, capacity, level=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        container_class = type('CombinedContainer', (EventsContainer, ReservationContainer), {})
+        container_class = type(
+            "CombinedContainer", (EventsContainer, ReservationContainer), {}
+        )
         self.container = container_class(self.env, capacity, init=level)
 
 
@@ -207,7 +222,14 @@ class EnergyUse(SimpyObject):
         return lambda x: x * power_use
     """
 
-    def __init__(self, energy_use_sailing = None, energy_use_loading = None, energy_use_unloading = None, *args, **kwargs):
+    def __init__(
+        self,
+        energy_use_sailing=None,
+        energy_use_loading=None,
+        energy_use_unloading=None,
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.energy_use_sailing = energy_use_sailing
@@ -215,11 +237,20 @@ class EnergyUse(SimpyObject):
         self.energy_use_unloading = energy_use_unloading
 
 
-class HasCosts():
+class HasCosts:
     """
     Add cost properties to objects
     """
-    def __init__(self, dayrate = None, weekrate = None, mobilisation = None, demobilisation = None, *args, **kwargs):
+
+    def __init__(
+        self,
+        dayrate=None,
+        weekrate=None,
+        mobilisation=None,
+        demobilisation=None,
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
@@ -228,11 +259,18 @@ class HasCosts():
 
         self.mobilisation = mobilisation if mobilisation else 0
         self.demobilisation = demobilisation if demobilisation else 0
-    
+
     @property
     def cost(self):
 
-        cost = (self.log["Timestamp"][-1] - self.log["Timestamp"][0]).total_seconds() / 3600 / 24 * self.dayrate if self.log["Timestamp"] else 0
+        cost = (
+            (self.log["Timestamp"][-1] - self.log["Timestamp"][0]).total_seconds()
+            / 3600
+            / 24
+            * self.dayrate
+            if self.log["Timestamp"]
+            else 0
+        )
 
         return cost + self.mobilisation + self.demobilisation
 
@@ -248,7 +286,16 @@ class HasPlume(SimpyObject):
     f_trap  = fraction of fines that are trapped within the hopper
     """
 
-    def __init__(self, sigma_d=0.015, sigma_o=0.1, sigma_p=0.05, f_sett=0.5, f_trap=0.01, *args, **kwargs):
+    def __init__(
+        self,
+        sigma_d=0.015,
+        sigma_o=0.1,
+        sigma_p=0.05,
+        f_sett=0.5,
+        f_trap=0.01,
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
@@ -278,18 +325,18 @@ class HasSpillCondition(SimpyObject):
 
         if type(conditions) == list:
             for condition in conditions:
-                limits.append(simpy.Container(self.env, capacity = condition.spill_limit))
+                limits.append(simpy.Container(self.env, capacity=condition.spill_limit))
                 starts.append(time.mktime(condition.start.timetuple()))
                 ends.append(time.mktime(condition.end.timetuple()))
 
         else:
-            limits.append(simpy.Container(self.env, capacity = conditions.spill_limit))
+            limits.append(simpy.Container(self.env, capacity=conditions.spill_limit))
             starts.append(time.mktime(conditions.start.timetuple()))
             ends.append(time.mktime(conditions.end.timetuple()))
 
-        self.SpillConditions = pd.DataFrame.from_dict({"Spill limit": limits,
-                                                       "Criterion start": starts,
-                                                       "Criterion end": ends})
+        self.SpillConditions = pd.DataFrame.from_dict(
+            {"Spill limit": limits, "Criterion start": starts, "Criterion end": ends}
+        )
 
     def check_conditions(self, spill):
         tolerance = math.inf
@@ -297,15 +344,27 @@ class HasSpillCondition(SimpyObject):
 
         for i in self.SpillConditions.index:
 
-            if self.SpillConditions["Criterion start"][i] <= self.env.now and self.env.now <= self.SpillConditions["Criterion end"][i]:
-                tolerance = self.SpillConditions["Spill limit"][i].capacity - self.SpillConditions["Spill limit"][i].level
+            if (
+                self.SpillConditions["Criterion start"][i] <= self.env.now
+                and self.env.now <= self.SpillConditions["Criterion end"][i]
+            ):
+                tolerance = (
+                    self.SpillConditions["Spill limit"][i].capacity
+                    - self.SpillConditions["Spill limit"][i].level
+                )
 
                 if tolerance < spill:
                     waiting = self.SpillConditions["Criterion end"][i]
 
                 while i + 1 != len(self.SpillConditions.index) and tolerance < spill:
-                    if self.SpillConditions["Criterion end"][i] == self.SpillConditions["Criterion start"][i + 1]:
-                        tolerance = self.SpillConditions["Spill limit"][i + 1].capacity - self.SpillConditions["Spill limit"][i + 1].level
+                    if (
+                        self.SpillConditions["Criterion end"][i]
+                        == self.SpillConditions["Criterion start"][i + 1]
+                    ):
+                        tolerance = (
+                            self.SpillConditions["Spill limit"][i + 1].capacity
+                            - self.SpillConditions["Spill limit"][i + 1].level
+                        )
                         waiting = self.SpillConditions["Criterion end"][i + 1]
 
                     i += 1
@@ -313,7 +372,7 @@ class HasSpillCondition(SimpyObject):
         return waiting
 
 
-class SpillCondition():
+class SpillCondition:
     """Condition to stop dredging if certain spill limits are exceeded
 
     limit = limit of kilograms spilled material
@@ -336,7 +395,16 @@ class HasSpill(SimpyObject):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
-    def spillDredging(self, processor, mover, density, fines, volume, dredging_duration, overflow_duration = 0):
+    def spillDredging(
+        self,
+        processor,
+        mover,
+        density,
+        fines,
+        volume,
+        dredging_duration,
+        overflow_duration=0,
+    ):
         """Calculate the spill due to the dredging activity
 
         density = the density of the dredged material
@@ -357,7 +425,12 @@ class HasSpill(SimpyObject):
         m_d = processor.sigma_d * m_t
         m_h = m_t - m_d
 
-        m_o = (overflow_duration / dredging_duration) * (1 - mover.f_sett) * (1 - mover.f_trap) * m_h
+        m_o = (
+            (overflow_duration / dredging_duration)
+            * (1 - mover.f_sett)
+            * (1 - mover.f_trap)
+            * m_h
+        )
         m_op = mover.sigma_o * m_o
         mover.m_r = m_h - m_o
 
@@ -368,7 +441,12 @@ class HasSpill(SimpyObject):
     def spillPlacement(self, processor, mover):
         """Calculate the spill due to the placement activity"""
         if isinstance(self, Log):
-            processor.log_entry("fines released", self.env.now, mover.m_r * processor.sigma_p, self.geometry)
+            processor.log_entry(
+                "fines released",
+                self.env.now,
+                mover.m_r * processor.sigma_p,
+                self.geometry,
+            )
 
         return mover.m_r * processor.sigma_p
 
@@ -408,14 +486,20 @@ class HasSoil:
         """Add a layer based on a SoilLayer object."""
         for key in self.soil:
             if key == "Layer {:04d}".format(soillayer.layer):
-                print("Soil layer named **Layer {:04d}** already exists".format(soillayer.layer))
+                print(
+                    "Soil layer named **Layer {:04d}** already exists".format(
+                        soillayer.layer
+                    )
+                )
 
         # Add soillayer to self
-        self.soil["Layer {:04d}".format(soillayer.layer)] = {"Layer": soillayer.layer,
-                                                              "Volume": soillayer.volume,
-                                                              "Material": soillayer.material,
-                                                              "Density": soillayer.density,
-                                                              "Fines": soillayer.fines}
+        self.soil["Layer {:04d}".format(soillayer.layer)] = {
+            "Layer": soillayer.layer,
+            "Volume": soillayer.volume,
+            "Material": soillayer.material,
+            "Density": soillayer.density,
+            "Fines": soillayer.fines,
+        }
 
         # Make sure that self.soil is always a sorted dict based on layernumber
         soil = copy.deepcopy(self.soil)
@@ -450,13 +534,18 @@ class HasSoil:
             if 0 < volumes[i]:
                 densities.append(self.soil[layer]["Density"])
                 fines.append(self.soil[layer]["Fines"])
-                name += (self.soil[layer]["Material"] + ", ")
+                name += self.soil[layer]["Material"] + ", "
             else:
                 densities.append(0)
                 fines.append(0)
 
-        return SoilLayer(0, sum(volumes), name.rstrip(", "), np.average(np.asarray(densities), weights = np.asarray(volumes)),
-                                                             np.average(np.asarray(fines), weights = np.asarray(volumes)))
+        return SoilLayer(
+            0,
+            sum(volumes),
+            name.rstrip(", "),
+            np.average(np.asarray(densities), weights=np.asarray(volumes)),
+            np.average(np.asarray(fines), weights=np.asarray(volumes)),
+        )
 
     def get_soil(self, volume):
         """Remove soil from self."""
@@ -467,11 +556,13 @@ class HasSoil:
 
             self.soil = {}
 
-            return SoilLayer(0,
-                             removed_soil[1]["Volume"],
-                             removed_soil[1]["Material"],
-                             removed_soil[1]["Density"],
-                             removed_soil[1]["Fines"])
+            return SoilLayer(
+                0,
+                removed_soil[1]["Volume"],
+                removed_soil[1]["Material"],
+                removed_soil[1]["Density"],
+                removed_soil[1]["Fines"],
+            )
 
         # In all other cases the soil dict should remain, with updated values
         else:
@@ -484,7 +575,7 @@ class HasSoil:
                     layers.append(layer)
                     volumes.append(volume - removed_volume)
 
-                    self.soil[layer]["Volume"] -= (volume - removed_volume)
+                    self.soil[layer]["Volume"] -= volume - removed_volume
 
                     break
 
@@ -512,9 +603,11 @@ class HasSoil:
                 top_layer = list(sorted(self.soil.keys()))[0]
 
                 # If toplayer material is similar to added material --> add volume
-                if (self.soil[top_layer]["Material"] == soillayer.material and \
-                    self.soil[top_layer]["Density"] == soillayer.density and \
-                    self.soil[top_layer]["Fines"] == soillayer.fines):
+                if (
+                    self.soil[top_layer]["Material"] == soillayer.material
+                    and self.soil[top_layer]["Density"] == soillayer.density
+                    and self.soil[top_layer]["Fines"] == soillayer.fines
+                ):
 
                     self.soil[top_layer]["Volume"] += soillayer.volume
 
@@ -526,11 +619,15 @@ class HasSoil:
 
                     for key in sorted(layers):
                         layers[key]["Layer"] += 1
-                        self.add_layer(SoilLayer(layers[key]["Layer"],
-                                                 layers[key]["Volume"],
-                                                 layers[key]["Material"],
-                                                 layers[key]["Density"],
-                                                 layers[key]["Fines"]))
+                        self.add_layer(
+                            SoilLayer(
+                                layers[key]["Layer"],
+                                layers[key]["Volume"],
+                                layers[key]["Material"],
+                                layers[key]["Density"],
+                                layers[key]["Fines"],
+                            )
+                        )
 
         # If no soil yet available, add layer
         else:
@@ -571,28 +668,36 @@ class HasWeather:
     bed: level of the seabed / riverbed with respect to CD (meters)
     """
 
-    def __init__(self, dataframe, timestep=10, bed=None,
-                 waveheight_column = "Hm0 [m]",
-                 waveperiod_column = "Tp [s]",
-                 waterlevel_column = "Tide [m]",
-                 *args, **kwargs):
+    def __init__(
+        self,
+        dataframe,
+        timestep=10,
+        bed=None,
+        waveheight_column="Hm0 [m]",
+        waveperiod_column="Tp [s]",
+        waterlevel_column="Tide [m]",
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.timestep = datetime.timedelta(minutes = timestep)
+        self.timestep = datetime.timedelta(minutes=timestep)
 
         data = {}
         for key in dataframe:
-            series = (pd.Series(dataframe[key], index = dataframe.index)
-                      .fillna(0)
-                      .resample(self.timestep)
-                      .interpolate("linear"))
+            series = (
+                pd.Series(dataframe[key], index=dataframe.index)
+                .fillna(0)
+                .resample(self.timestep)
+                .interpolate("linear")
+            )
 
             data[key] = series.values
 
         data["Index"] = series.index
         self.metocean_data = pd.DataFrame.from_dict(data)
         self.metocean_data.index = self.metocean_data["Index"]
-        self.metocean_data.drop(["Index"], axis = 1, inplace = True)
+        self.metocean_data.drop(["Index"], axis=1, inplace=True)
 
         # Column names
         self.waveheight = waveheight_column
@@ -601,7 +706,9 @@ class HasWeather:
         self.waterdepth = "Water depth"
 
         if bed:
-            self.metocean_data[self.waterdepth] = self.metocean_data[waterlevel_column] - bed
+            self.metocean_data[self.waterdepth] = (
+                self.metocean_data[waterlevel_column] - bed
+            )
 
 
 class HasWorkabilityCriteria:
@@ -615,7 +722,6 @@ class HasWorkabilityCriteria:
         """Initialization"""
         self.criteria = criteria
         self.work_restrictions = {}
-
 
     def calc_work_restrictions(self, location):
         self.work_restrictions[location.name] = {}
@@ -640,9 +746,16 @@ class HasWorkabilityCriteria:
                     end = index[i]
 
                     if (end - begin) >= criterion.window_length:
-                        ranges.append((begin.to_datetime64(), (end - criterion.window_length).to_datetime64()))
+                        ranges.append(
+                            (
+                                begin.to_datetime64(),
+                                (end - criterion.window_length).to_datetime64(),
+                            )
+                        )
 
-            self.work_restrictions[location.name][criterion.condition] = np.array(ranges)
+            self.work_restrictions[location.name][criterion.condition] = np.array(
+                ranges
+            )
 
     def check_weather_restriction(self, location, amount):
         waiting = []
@@ -668,9 +781,13 @@ class HasWorkabilityCriteria:
                 self.env.exit()
 
         if waiting:
-            self.log_entry('waiting for weather start', self.env.now, waiting, self.geometry)
+            self.log_entry(
+                "waiting for weather start", self.env.now, waiting, self.geometry
+            )
             yield self.env.timeout(np.max(waiting))
-            self.log_entry('waiting for weather stop', self.env.now, waiting, self.geometry)
+            self.log_entry(
+                "waiting for weather stop", self.env.now, waiting, self.geometry
+            )
 
 
 class WorkabilityCriterion:
@@ -681,7 +798,14 @@ class WorkabilityCriterion:
     maximum: maximum value
     window_length: minimal length of the window (minutes)"""
 
-    def __init__(self, condition, maximum = math.inf, window_length = datetime.timedelta(minutes = 60), *args, **kwargs):
+    def __init__(
+        self,
+        condition,
+        maximum=math.inf,
+        window_length=datetime.timedelta(minutes=60),
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.condition = condition
@@ -702,8 +826,17 @@ class HasDepthRestriction:
     max_filling: max filling degree [%]
     """
 
-    def __init__(self, compute_draught, waves, ukc,
-                 filling = None, min_filling = None, max_filling = None, *args, **kwargs):
+    def __init__(
+        self,
+        compute_draught,
+        waves,
+        ukc,
+        filling=None,
+        min_filling=None,
+        max_filling=None,
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
@@ -730,7 +863,12 @@ class HasDepthRestriction:
         self.depth_data[location.name] = {}
 
         if not self.filling:
-            filling_degrees = np.linspace(self.min_filling, self.max_filling, (self.max_filling - self.min_filling) + 1, dtype = int)
+            filling_degrees = np.linspace(
+                self.min_filling,
+                self.max_filling,
+                (self.max_filling - self.min_filling) + 1,
+                dtype=int,
+            )
         else:
             filling_degrees = [self.filling]
 
@@ -739,11 +877,17 @@ class HasDepthRestriction:
 
             # Determine characteristics based on filling
             draught = self.compute_draught(filling_degree)
-            duration = datetime.timedelta(seconds = processor.unloading_func(self.container.level, filling_degree * self.container.capacity))
+            duration = datetime.timedelta(
+                seconds=processor.unloading_func(
+                    self.container.level, filling_degree * self.container.capacity
+                )
+            )
 
             # Make dataframe based on characteristics
             df = location.metocean_data.copy()
-            df["Required depth"] = df[location.waveheight].apply(lambda s : self.calc_required_depth(draught, s))
+            df["Required depth"] = df[location.waveheight].apply(
+                lambda s: self.calc_required_depth(draught, s)
+            )
             series = pd.Series(df["Required depth"] <= df[location.waterdepth])
 
             # Loop through series to find windows
@@ -765,20 +909,25 @@ class HasDepthRestriction:
                     end = index[i]
 
                     if (end - begin) >= duration:
-                        ranges.append((begin.to_datetime64(), (end - duration).to_datetime64()))
+                        ranges.append(
+                            (begin.to_datetime64(), (end - duration).to_datetime64())
+                        )
 
-            self.depth_data[location.name][filling_degree] = \
-                                            {"Volume": filling_degree * self.container.capacity,
-                                            "Draught": draught,
-                                            "Ranges": np.array(ranges)}
+            self.depth_data[location.name][filling_degree] = {
+                "Volume": filling_degree * self.container.capacity,
+                "Draught": draught,
+                "Ranges": np.array(ranges),
+            }
 
     def viable_time_windows(self, fill_degree, duration, location):
-        duration = datetime.timedelta(seconds = duration)
+        duration = datetime.timedelta(seconds=duration)
         draught = self.compute_draught(fill_degree)
 
         # Make dataframe based on characteristics
         df = location.metocean_data.copy()
-        df["Required depth"] = df[location.waveheight].apply(lambda s : self.calc_required_depth(draught, s))
+        df["Required depth"] = df[location.waveheight].apply(
+            lambda s: self.calc_required_depth(draught, s)
+        )
         series = pd.Series(df["Required depth"] <= df[location.waterdepth])
         # Loop through series to find windows
         index = series.index
@@ -798,12 +947,15 @@ class HasDepthRestriction:
                 end = index[i]
 
                 if (end - begin) >= duration:
-                    ranges.append((begin.to_datetime64(), (end - duration).to_datetime64()))
+                    ranges.append(
+                        (begin.to_datetime64(), (end - duration).to_datetime64())
+                    )
 
-        self.depth_data[location.name][fill_degree] = \
-                                            {"Volume": fill_degree * self.container.capacity,
-                                             "Draught": draught,
-                                             "Ranges": np.array(ranges)}
+        self.depth_data[location.name][fill_degree] = {
+            "Volume": fill_degree * self.container.capacity,
+            "Draught": draught,
+            "Ranges": np.array(ranges),
+        }
 
     def check_depth_restriction(self, location, fill_degree, duration):
         if location.name not in self.depth_data.keys():
@@ -811,19 +963,30 @@ class HasDepthRestriction:
             self.depth_data[location.name] = {}
             self.viable_time_windows(fill_degree, duration, location)
 
-            ranges = self.depth_data[location.name][int(fill_degree * 100) / 100]["Ranges"]
+            ranges = self.depth_data[location.name][int(fill_degree * 100) / 100][
+                "Ranges"
+            ]
 
         elif fill_degree not in self.depth_data[location.name].keys():
             fill_degree = int(fill_degree * 100) / 100
             self.viable_time_windows(fill_degree, duration, location)
 
-            ranges = self.depth_data[location.name][int(fill_degree * 100) / 100]["Ranges"]
+            ranges = self.depth_data[location.name][int(fill_degree * 100) / 100][
+                "Ranges"
+            ]
 
         else:
-            ranges = self.depth_data[location.name][int(fill_degree * 100) / 100]["Ranges"]
+            ranges = self.depth_data[location.name][int(fill_degree * 100) / 100][
+                "Ranges"
+            ]
 
         if len(ranges) == 0:
-            self.log_entry("No actual allowable draught available - starting anyway", self.env.now, -1, self.geometry)
+            self.log_entry(
+                "No actual allowable draught available - starting anyway",
+                self.env.now,
+                -1,
+                self.geometry,
+            )
             waiting = 0
 
         else:
@@ -840,10 +1003,13 @@ class HasDepthRestriction:
                 waiting = 0
 
         if waiting != 0:
-            self.log_entry('waiting for tide start', self.env.now, waiting, self.geometry)
+            self.log_entry(
+                "waiting for tide start", self.env.now, waiting, self.geometry
+            )
             yield self.env.timeout(waiting)
-            self.log_entry('waiting for tide stop', self.env.now, waiting, self.geometry)
-
+            self.log_entry(
+                "waiting for tide stop", self.env.now, waiting, self.geometry
+            )
 
     def calc_required_depth(self, draught, wave_height):
         required_depth = np.nan
@@ -853,7 +1019,6 @@ class HasDepthRestriction:
                 required_depth = self.ukc[i] + draught
 
         return required_depth
-
 
     def check_optimal_filling(self, loader, unloader, origin, destination):
         # Calculate depth restrictions
@@ -880,7 +1045,9 @@ class HasDepthRestriction:
 
                 if len(ranges) != 0:
                     # Determine length of cycle
-                    loading = loader.loading_func(self.container.level, filling * self.container.capacity)
+                    loading = loader.loading_func(
+                        self.container.level, filling * self.container.capacity
+                    )
 
                     orig = shapely.geometry.asShape(origin.geometry)
                     dest = shapely.geometry.asShape(destination.geometry)
@@ -937,7 +1104,10 @@ class Routeable:
     if the optimization_type == 'space' then the shortest path is calculated by halem
     Optimize_Route == False the route is determind by v = s/t 
     """
-    def __init__(self, route, optimize_route = False, optimization_type = "time", *args, **kwargs):
+
+    def __init__(
+        self, route, optimize_route=False, optimization_type="time", *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.route = route
@@ -945,9 +1115,9 @@ class Routeable:
         self.optimization_type = optimization_type
 
         if self.optimize_route == True:
-            
+
             import halem
-            
+
             if self.optimization_type == "time":
                 self.optimization_func = halem.HALEM_time
             elif self.optimization_type == "space":
@@ -958,7 +1128,7 @@ class Routeable:
                 self.optimization_func = halem.HALEM_co2
             else:
                 print("No known optimization method selected")
-                
+
 
 class Movable(SimpyObject, Locatable):
     """Movable class
@@ -971,14 +1141,19 @@ class Movable(SimpyObject, Locatable):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.v = v
-    
+
     def move(self, destination, engine_order=1.0):
         if isinstance(self, Log):
             if isinstance(self, HasContainer):
-                status = 'filled' if self.container.level > 0 else 'empty'
-                self.log_entry('sailing ' + status + ' start', self.env.now, self.container.level, self.geometry)
+                status = "filled" if self.container.level > 0 else "empty"
+                self.log_entry(
+                    "sailing " + status + " start",
+                    self.env.now,
+                    self.container.level,
+                    self.geometry,
+                )
             else:
-                self.log_entry('sailing start', self.env.now, -1, self.geometry)
+                self.log_entry("sailing start", self.env.now, -1, self.geometry)
 
         """determine distance between origin and destination. 
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
@@ -1002,16 +1177,21 @@ class Movable(SimpyObject, Locatable):
         self.energy_use(distance, speed)
 
         # Debug logs
-        logger.debug('  distance: ' + '%4.2f' % distance + ' m')
-        logger.debug('  sailing:  ' + '%4.2f' % speed + ' m/s')
-        logger.debug('  duration: ' + '%4.2f' % ((distance / speed) / 3600) + ' hrs')
+        logger.debug("  distance: " + "%4.2f" % distance + " m")
+        logger.debug("  sailing:  " + "%4.2f" % speed + " m/s")
+        logger.debug("  duration: " + "%4.2f" % ((distance / speed) / 3600) + " hrs")
 
         if isinstance(self, Log):
             if isinstance(self, HasContainer):
-                status = 'filled' if self.container.level > 0 else 'empty'
-                self.log_entry('sailing ' + status + ' stop', self.env.now, self.container.level, self.geometry)
+                status = "filled" if self.container.level > 0 else "empty"
+                self.log_entry(
+                    "sailing " + status + " stop",
+                    self.env.now,
+                    self.container.level,
+                    self.geometry,
+                )
             else:
-                self.log_entry('sailing stop', self.env.now, -1, self.geometry)
+                self.log_entry("sailing stop", self.env.now, -1, self.geometry)
 
     @property
     def current_speed(self):
@@ -1029,13 +1209,13 @@ class Movable(SimpyObject, Locatable):
             # If travelling on route is required, assert environment has a graph
             assert hasattr(self.env, "FG")
             # Origin is geom - convert to node on graph
-            geom = nx.get_node_attributes(self.env.FG, 'geometry')
+            geom = nx.get_node_attributes(self.env.FG, "geometry")
             dista = 0
             for node in geom:
                 if origin.x == geom[node].x and origin.y == geom[node].y:
                     origin = node
                     break
-            
+
             route = nx.dijkstra_path(self.env.FG, origin, destination.name)
             sailtime = 0
             for node in enumerate(route):
@@ -1048,22 +1228,26 @@ class Movable(SimpyObject, Locatable):
                 if self.optimize_route == True:
                     assert hasattr(self.env, "Roadmap")
                     vship = self.current_speed
-                    t0 = datetime.datetime.fromtimestamp(self.env.now).strftime("%d/%m/%Y %H:%M:%S")
+                    t0 = datetime.datetime.fromtimestamp(self.env.now).strftime(
+                        "%d/%m/%Y %H:%M:%S"
+                    )
                     start = (orig.x, orig.y)
                     stop = (dest.x, dest.y)
-                
-                    path, time, dist = self.optimization_func(start, stop, t0, vship, self.env.Roadmap)
+
+                    path, time, dist = self.optimization_func(
+                        start, stop, t0, vship, self.env.Roadmap
+                    )
 
                     for i in range(path.shape[0]):
                         dest_temp = shapely.geometry.Point(path[i])
-                        self.log_entry("Sailing", time[i+1], 0, dest_temp)
+                        self.log_entry("Sailing", time[i + 1], 0, dest_temp)
                         if i + 2 == path.shape[0]:
-                            self.log_entry("Sailing", time[i+1], 0, dest_temp)
+                            self.log_entry("Sailing", time[i + 1], 0, dest_temp)
                             break
 
                     sailtimeb = time[-1] - time[0]
                     distb = dist[-1] - dist[0]
-                
+
                 else:
                     distb = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
                     sailtimeb = distb / self.current_speed
@@ -1075,8 +1259,8 @@ class Movable(SimpyObject, Locatable):
 
                 if node[0] + 2 == len(route):
                     break
-            
-            return dista, (dista/sailtime)
+
+            return dista, (dista / sailtime)
 
     def energy_use(self, distance, speed):
         if isinstance(self, EnergyUse):
@@ -1098,13 +1282,11 @@ class ContainerDependentMovable(Movable, HasContainer):
     Used for objects that move with a speed dependent on the container level
     compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
 
-    def __init__(self,
-                 compute_v,
-                 *args, **kwargs):
+    def __init__(self, compute_v, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.compute_v = compute_v
-        self.wgs84 = pyproj.Geod(ellps='WGS84')
+        self.wgs84 = pyproj.Geod(ellps="WGS84")
 
     @property
     def current_speed(self):
@@ -1133,10 +1315,7 @@ class Log(SimpyObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.log = {"Message": [],
-                    "Timestamp": [],
-                    "Value": [],
-                    "Geometry": []}
+        self.log = {"Message": [], "Timestamp": [], "Value": [], "Geometry": []}
 
     def log_entry(self, log, t, value, geometry_log):
         """Log"""
@@ -1147,16 +1326,23 @@ class Log(SimpyObject):
 
     def get_log_as_json(self):
         json = []
-        for msg, t, value, geometry_log in zip(self.log["Message"], self.log["Timestamp"], self.log["Value"], self.log["Geometry"]):
-            json.append(dict(
-                type="Feature",
-                geometry=shapely.geometry.mapping(geometry_log) if geometry_log is not None else "None",
-                properties=dict(
-                    message=msg,
-                    time=time.mktime(t.timetuple()),
-                    value=value
+        for msg, t, value, geometry_log in zip(
+            self.log["Message"],
+            self.log["Timestamp"],
+            self.log["Value"],
+            self.log["Geometry"],
+        ):
+            json.append(
+                dict(
+                    type="Feature",
+                    geometry=shapely.geometry.mapping(geometry_log)
+                    if geometry_log is not None
+                    else "None",
+                    properties=dict(
+                        message=msg, time=time.mktime(t.timetuple()), value=value
+                    ),
                 )
-            ))
+            )
         return json
 
 
@@ -1183,7 +1369,7 @@ class Processor(SimpyObject):
 
     """
 
-    def __init__(self, loading_func = None, unloading_func = None, *args, **kwargs):
+    def __init__(self, loading_func=None, unloading_func=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.loading_func = loading_func
@@ -1230,13 +1416,19 @@ class Processor(SimpyObject):
             yield from self.checkWeather(origin, destination, amount)
 
             # Check tide
-            yield from self.checkTide(ship=ship, site=site, desired_level=desired_level, duration=duration)
+            yield from self.checkTide(
+                ship=ship, site=site, desired_level=desired_level, duration=duration
+            )
 
             # Check spill
             yield from self.checkSpill(origin, destination, amount)
 
-        origin.log_entry('unloading start', self.env.now, origin.container.level, self.geometry)
-        destination.log_entry('loading start', self.env.now, destination.container.level, self.geometry)
+        origin.log_entry(
+            "unloading start", self.env.now, origin.container.level, self.geometry
+        )
+        destination.log_entry(
+            "loading start", self.env.now, destination.container.level, self.geometry
+        )
 
         # Add spill the location where processing is taking place
         self.addSpill(origin, destination, amount, duration)
@@ -1250,32 +1442,55 @@ class Processor(SimpyObject):
         yield origin.container.get(amount)
         end_time = self.env.now
         if start_time != end_time:
-            self.log_entry(log="waiting origin content start", t=start_time, value=amount, geometry_log=self.geometry)
-            self.log_entry(log="waiting origin content stop", t=end_time, value=amount, geometry_log=self.geometry)
+            self.log_entry(
+                log="waiting origin content start",
+                t=start_time,
+                value=amount,
+                geometry_log=self.geometry,
+            )
+            self.log_entry(
+                log="waiting origin content stop",
+                t=end_time,
+                value=amount,
+                geometry_log=self.geometry,
+            )
 
         # Checkout the time
         current_level = ship.container.level
         log = "loading" if current_level < desired_level else "unloading"
-        self.log_entry(log + ' start', self.env.now, amount, self.geometry)
+        self.log_entry(log + " start", self.env.now, amount, self.geometry)
         yield self.env.timeout(duration)
-        self.log_entry(log + ' stop', self.env.now, amount, self.geometry)
+        self.log_entry(log + " stop", self.env.now, amount, self.geometry)
 
         start_time = self.env.now
         yield destination.container.put(amount)
         end_time = self.env.now
         if start_time != end_time:
-            self.log_entry(log="waiting destination content start", t=start_time, value=amount,
-                           geometry_log=self.geometry)
-            self.log_entry(log="waiting destination content stop", t=end_time, value=amount, geometry_log=self.geometry)
+            self.log_entry(
+                log="waiting destination content start",
+                t=start_time,
+                value=amount,
+                geometry_log=self.geometry,
+            )
+            self.log_entry(
+                log="waiting destination content stop",
+                t=end_time,
+                value=amount,
+                geometry_log=self.geometry,
+            )
 
         # Compute the energy use
         self.computeEnergy(duration, origin, destination)
 
         # Log the end of the activity
-        origin.log_entry('unloading stop', self.env.now, origin.container.level, self.geometry)
-        destination.log_entry('loading stop', self.env.now, destination.container.level, self.geometry)
+        origin.log_entry(
+            "unloading stop", self.env.now, origin.container.level, self.geometry
+        )
+        destination.log_entry(
+            "loading stop", self.env.now, destination.container.level, self.geometry
+        )
 
-        logger.debug('  process:        ' + '%4.2f' % (duration / 3600) + ' hrs')
+        logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
 
     def computeEnergy(self, duration, origin, destination):
         """
@@ -1298,7 +1513,9 @@ class Processor(SimpyObject):
             if isinstance(destination, EnergyUse):
                 energy = destination.energy_use_loading(duration)
                 message = "Energy use loading"
-                destination.log_entry(message, self.env.now, energy, destination.geometry)
+                destination.log_entry(
+                    message, self.env.now, energy, destination.geometry
+                )
 
         # If self == destination --> loading
         elif self == destination:
@@ -1324,8 +1541,9 @@ class Processor(SimpyObject):
             if isinstance(destination, EnergyUse):
                 energy = destination.energy_use_loading(duration)
                 message = "Energy use loading"
-                destination.log_entry(message, self.env.now, energy, destination.geometry)
-
+                destination.log_entry(
+                    message, self.env.now, energy, destination.geometry
+                )
 
     def checkSpill(self, origin, destination, amount):
         """
@@ -1343,54 +1561,85 @@ class Processor(SimpyObject):
 
         # If self == origin --> destination is a placement location
         if self == origin:
-            if isinstance(destination, HasSpillCondition) and isinstance(self, HasSoil) and isinstance(self, HasPlume):
+            if (
+                isinstance(destination, HasSpillCondition)
+                and isinstance(self, HasSoil)
+                and isinstance(self, HasPlume)
+            ):
                 density, fines = self.get_properties(amount)
                 spill = self.sigma_d * density * fines * amount
 
                 waiting = destination.check_conditions(spill)
 
                 if 0 < waiting:
-                    self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
+                    self.log_entry(
+                        "waiting for spill start", self.env.now, 0, self.geometry
+                    )
                     yield self.env.timeout(waiting - self.env.now)
-                    self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
+                    self.log_entry(
+                        "waiting for spill stop", self.env.now, 0, self.geometry
+                    )
 
         # If self == destination --> origin is a retrieval location
         elif self == destination:
-            if isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+            if (
+                isinstance(origin, HasSpillCondition)
+                and isinstance(origin, HasSoil)
+                and isinstance(self, HasPlume)
+            ):
                 density, fines = origin.get_properties(amount)
                 spill = self.sigma_d * density * fines * amount
 
                 waiting = origin.check_conditions(spill)
 
                 if 0 < waiting:
-                    self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
+                    self.log_entry(
+                        "waiting for spill start", self.env.now, 0, self.geometry
+                    )
                     yield self.env.timeout(waiting - self.env.now)
-                    self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
+                    self.log_entry(
+                        "waiting for spill stop", self.env.now, 0, self.geometry
+                    )
 
         # If self != origin and self != destination --> processing
         else:
-            if isinstance(destination, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+            if (
+                isinstance(destination, HasSpillCondition)
+                and isinstance(origin, HasSoil)
+                and isinstance(self, HasPlume)
+            ):
                 density, fines = origin.get_properties(amount)
                 spill = self.sigma_d * density * fines * amount
 
                 waiting = destination.check_conditions(spill)
 
                 if 0 < waiting:
-                    self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
+                    self.log_entry(
+                        "waiting for spill start", self.env.now, 0, self.geometry
+                    )
                     yield self.env.timeout(waiting - self.env.now)
-                    self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
+                    self.log_entry(
+                        "waiting for spill stop", self.env.now, 0, self.geometry
+                    )
 
-            elif isinstance(origin, HasSpillCondition) and isinstance(origin, HasSoil) and isinstance(self, HasPlume):
+            elif (
+                isinstance(origin, HasSpillCondition)
+                and isinstance(origin, HasSoil)
+                and isinstance(self, HasPlume)
+            ):
                 density, fines = origin.get_properties(amount)
                 spill = self.sigma_d * density * fines * amount
 
                 waiting = origin.check_conditions(spill)
 
                 if 0 < waiting:
-                    self.log_entry('waiting for spill start', self.env.now, 0, self.geometry)
+                    self.log_entry(
+                        "waiting for spill start", self.env.now, 0, self.geometry
+                    )
                     yield self.env.timeout(waiting - self.env.now)
-                    self.log_entry('waiting for spill stop', self.env.now, 0, self.geometry)
-
+                    self.log_entry(
+                        "waiting for spill stop", self.env.now, 0, self.geometry
+                    )
 
     def checkTide(self, ship, site, desired_level, duration):
         if isinstance(ship, HasDepthRestriction) and isinstance(site, HasWeather):
@@ -1398,11 +1647,18 @@ class Processor(SimpyObject):
             fill_degree = max_level / ship.container.capacity
             yield from ship.check_depth_restriction(site, fill_degree, duration)
 
-
     def checkWeather(self, origin, destination, amount):
-        if isinstance(origin, HasWorkabilityCriteria) and isinstance(origin, Movable) and isinstance(destination, HasWeather):
+        if (
+            isinstance(origin, HasWorkabilityCriteria)
+            and isinstance(origin, Movable)
+            and isinstance(destination, HasWeather)
+        ):
             yield from origin.check_weather_restriction(destination, amount)
-        elif isinstance(destination, HasWorkabilityCriteria) and isinstance(destination, Movable) and isinstance(origin, HasWeather):
+        elif (
+            isinstance(destination, HasWorkabilityCriteria)
+            and isinstance(destination, Movable)
+            and isinstance(origin, HasWeather)
+        ):
             yield from destination.check_weather_restriction(origin, amount)
 
     def addSpill(self, origin, destination, amount, duration):
@@ -1429,12 +1685,14 @@ class Processor(SimpyObject):
 
                     if 0 < spill and isinstance(destination, HasSpillCondition):
                         for condition in destination.SpillConditions["Spill limit"]:
-                                condition.put(spill)
+                            condition.put(spill)
 
             # If self == destination --> origin is a retrieval location
             elif self == destination:
                 if isinstance(self, HasPlume) and isinstance(origin, HasSpill):
-                    spill = origin.spillDredging(self, self, density, fines, amount, duration)
+                    spill = origin.spillDredging(
+                        self, self, density, fines, amount, duration
+                    )
 
                     if 0 < spill and isinstance(origin, HasSpillCondition):
                         for condition in origin.SpillConditions["Spill limit"]:
@@ -1450,12 +1708,13 @@ class Processor(SimpyObject):
                             condition.put(spill)
 
                 if isinstance(self, HasPlume) and isinstance(origin, HasSpill):
-                    spill = origin.spillDredging(self, self, density, fines, amount, duration)
+                    spill = origin.spillDredging(
+                        self, self, density, fines, amount, duration
+                    )
 
                     if 0 < spill and isinstance(origin, HasSpillCondition):
                         for condition in origin.SpillConditions["Spill limit"]:
                             condition.put(spill)
-
 
     def shiftSoil(self, origin, destination, amount):
         """
@@ -1480,16 +1739,17 @@ class Processor(SimpyObject):
 
 class DictEncoder(json.JSONEncoder):
     """serialize a simpy digital_twin object to json"""
+
     def default(self, o):
         result = {}
         for key, val in o.__dict__.items():
             if isinstance(val, simpy.Environment):
                 continue
             if isinstance(val, EventsContainer) or isinstance(val, simpy.Container):
-                result['capacity'] = val.capacity
-                result['level'] = val.level
+                result["capacity"] = val.capacity
+                result["level"] = val.level
             elif isinstance(val, simpy.Resource):
-                result['nr_resources'] = val.capacity
+                result["nr_resources"] = val.capacity
             else:
                 result[key] = val
 
