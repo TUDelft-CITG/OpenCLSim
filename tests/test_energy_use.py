@@ -25,14 +25,16 @@ from digital_twin import cli
 
 logger = logging.getLogger(__name__)
 
+
 class BasicStorageUnit(core.HasContainer, core.HasResource, core.Locatable, core.Log):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+
 @pytest.fixture
 def env():
     simulation_start = datetime.datetime(2019, 1, 1)
-    my_env = simpy.Environment(initial_time = time.mktime(simulation_start.timetuple()))
+    my_env = simpy.Environment(initial_time=time.mktime(simulation_start.timetuple()))
     my_env.epoch = time.mktime(simulation_start.timetuple())
     return my_env
 
@@ -73,16 +75,27 @@ def energy_use_unloading():
 
 
 # Test energy use sailing
-def test_movable(env, geometry_a, locatable_a, locatable_b,
-                 energy_use_sailing, energy_use_loading, energy_use_unloading):
-    
+def test_movable(
+    env,
+    geometry_a,
+    locatable_a,
+    locatable_b,
+    energy_use_sailing,
+    energy_use_loading,
+    energy_use_unloading,
+):
+
     mover = type("Mover", (core.Movable, core.EnergyUse, core.Log), {})
-    
-    data_mover = {"v": 10, "geometry":geometry_a, "env": env,
-                  "energy_use_sailing": energy_use_sailing,
-                  "energy_use_loading": energy_use_loading,
-                  "energy_use_unloading": energy_use_unloading}
-    
+
+    data_mover = {
+        "v": 10,
+        "geometry": geometry_a,
+        "env": env,
+        "energy_use_sailing": energy_use_sailing,
+        "energy_use_loading": energy_use_loading,
+        "energy_use_unloading": energy_use_unloading,
+    }
+
     mover = mover(**data_mover)
 
     # Moving from a to b - energy use should be equal to duration * 2
@@ -90,7 +103,7 @@ def test_movable(env, geometry_a, locatable_a, locatable_b,
     env.process(mover.move(locatable_b))
     env.run()
     np.testing.assert_almost_equal(mover.log["Value"][-2], (env.now - start) * 2)
-    
+
     # Moving from b to a - energy use should be equal to duration * 2
     start = env.now
     env.process(mover.move(locatable_a))
@@ -99,21 +112,31 @@ def test_movable(env, geometry_a, locatable_a, locatable_b,
 
 
 # Test energy use processing
-def test_processor(env, geometry_a, energy_use_sailing, energy_use_loading, energy_use_unloading):
-    
-    source = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=1)
-    dest = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=0, nr_resources=1)
+def test_processor(
+    env, geometry_a, energy_use_sailing, energy_use_loading, energy_use_unloading
+):
 
-    processor = type("processor", (core.Processor, core.EnergyUse, core.Locatable, core.Log), {})
+    source = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=1000, level=1000, nr_resources=1
+    )
+    dest = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=1000, level=0, nr_resources=1
+    )
 
-    data_processor = {"env": env,
-                      "unloading_func": model.get_unloading_func(2),
-                      "loading_func": model.get_loading_func(2),
-                      "geometry": geometry_a,
-                      "energy_use_sailing": energy_use_sailing,
-                      "energy_use_loading": energy_use_loading,
-                      "energy_use_unloading": energy_use_unloading}
-    
+    processor = type(
+        "processor", (core.Processor, core.EnergyUse, core.Locatable, core.Log), {}
+    )
+
+    data_processor = {
+        "env": env,
+        "unloading_func": model.get_unloading_func(2),
+        "loading_func": model.get_loading_func(2),
+        "geometry": geometry_a,
+        "energy_use_sailing": energy_use_sailing,
+        "energy_use_loading": energy_use_loading,
+        "energy_use_unloading": energy_use_unloading,
+    }
+
     processor = processor(**data_processor)
 
     # Log fuel use of the processor in step 1
@@ -132,33 +155,51 @@ def test_processor(env, geometry_a, energy_use_sailing, energy_use_loading, ener
 
 
 # Test energy use of a TransportProcessingResource
-def test_TransportProcessingResource(env, geometry_a, geometry_b, locatable_a, locatable_b,
-                                     energy_use_sailing, energy_use_loading, energy_use_unloading):
+def test_TransportProcessingResource(
+    env,
+    geometry_a,
+    geometry_b,
+    locatable_a,
+    locatable_b,
+    energy_use_sailing,
+    energy_use_loading,
+    energy_use_unloading,
+):
 
-    source = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=1)
-    dest = BasicStorageUnit(env=env, geometry = geometry_b, capacity=1000, level=0, nr_resources=1)
+    source = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=1000, level=1000, nr_resources=1
+    )
+    dest = BasicStorageUnit(
+        env=env, geometry=geometry_b, capacity=1000, level=0, nr_resources=1
+    )
 
     # The generic class for an object that can move and transport (a TSHD for example)
-    TransportProcessingResource = type('TransportProcessingResource', 
-                                        (core.Identifiable,              # Give it a name
-                                         core.Log,                       # Allow logging of all discrete events
-                                         core.ContainerDependentMovable, # A moving container, so capacity and location
-                                         core.Processor,                 # Allow for loading and unloading
-                                         core.HasResource,               # Allow queueing
-                                         core.EnergyUse),                # Allow logging energy use
-                                    {})
+    TransportProcessingResource = type(
+        "TransportProcessingResource",
+        (
+            core.Identifiable,  # Give it a name
+            core.Log,  # Allow logging of all discrete events
+            core.ContainerDependentMovable,  # A moving container, so capacity and location
+            core.Processor,  # Allow for loading and unloading
+            core.HasResource,  # Allow queueing
+            core.EnergyUse,
+        ),  # Allow logging energy use
+        {},
+    )
 
     # TSHD variables
-    data_hopper = {"env": env,                                     # The simpy environment
-                   "name": "Hopper",                               # Name
-                   "geometry": geometry_b,                         # It starts at the "to site"
-                   "unloading_func": model.get_unloading_func (1), # Unloading rate
-                   "loading_func": model.get_loading_func(2),      # Loading rate
-                   "capacity": 500,                              # Capacity of the hopper
-                   "compute_v": lambda x: 1,                       # Variable speed
-                   "energy_use_loading": energy_use_loading,       # Variable fuel use
-                   "energy_use_sailing": energy_use_sailing,       # Variable fuel use
-                   "energy_use_unloading": energy_use_unloading}   # Variable fuel use
+    data_hopper = {
+        "env": env,  # The simpy environment
+        "name": "Hopper",  # Name
+        "geometry": geometry_b,  # It starts at the "to site"
+        "unloading_func": model.get_unloading_func(1),  # Unloading rate
+        "loading_func": model.get_loading_func(2),  # Loading rate
+        "capacity": 500,  # Capacity of the hopper
+        "compute_v": lambda x: 1,  # Variable speed
+        "energy_use_loading": energy_use_loading,  # Variable fuel use
+        "energy_use_sailing": energy_use_sailing,  # Variable fuel use
+        "energy_use_unloading": energy_use_unloading,
+    }  # Variable fuel use
 
     # The simulation object
     hopper = TransportProcessingResource(**data_hopper)
@@ -169,17 +210,18 @@ def test_TransportProcessingResource(env, geometry_a, geometry_b, locatable_a, l
     env.run()
 
     # moving empty to energy use is 2 per second
-    np.testing.assert_almost_equal(hopper.log["Value"][-2], (env.now - start) * 2, decimal=5)
+    np.testing.assert_almost_equal(
+        hopper.log["Value"][-2], (env.now - start) * 2, decimal=5
+    )
 
     # Simulation continues with loading
     start = env.now
     env.process(hopper.process(hopper, 500, source))
     env.run()
-    
+
     # Duration should be amount / 2
     # Energy use duration * 4
     np.testing.assert_almost_equal(hopper.log["Value"][-2], (env.now - start) * 4)
-
 
     # Simulation continues with moving from A to B
     start = env.now
@@ -187,92 +229,114 @@ def test_TransportProcessingResource(env, geometry_a, geometry_b, locatable_a, l
     env.run()
 
     # moving full so energy use is 3 per second
-    np.testing.assert_almost_equal(hopper.log["Value"][-2], (env.now - start) * 3, decimal=5)
-
+    np.testing.assert_almost_equal(
+        hopper.log["Value"][-2], (env.now - start) * 3, decimal=5
+    )
 
     # Simulation ends with unloading
     hopper.rate = hopper.unloading_func
     start = env.now
     env.process(hopper.process(hopper, 0, dest))
     env.run()
-    
+
     np.testing.assert_almost_equal(hopper.log["Value"][-2], (env.now - start) * 3)
 
 
 # Test energy use of a Processor and ContainerDependentMovable
-def test_Processor_ContainerDependentMovable(env, geometry_a, geometry_b, locatable_a, locatable_b,
-                                             energy_use_sailing, energy_use_loading, energy_use_unloading):
+def test_Processor_ContainerDependentMovable(
+    env,
+    geometry_a,
+    geometry_b,
+    locatable_a,
+    locatable_b,
+    energy_use_sailing,
+    energy_use_loading,
+    energy_use_unloading,
+):
 
-    source = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=1)
-    dest = BasicStorageUnit(env=env, geometry = geometry_b, capacity=1000, level=0, nr_resources=1)
+    source = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=1000, level=1000, nr_resources=1
+    )
+    dest = BasicStorageUnit(
+        env=env, geometry=geometry_b, capacity=1000, level=0, nr_resources=1
+    )
 
     # The generic class for an object that can process (a quay crane for example)
-    ProcessingResource = type('ProcessingResource', 
-                              (core.Identifiable,          # Give it a name
-                               core.Locatable,             # Allow logging of location
-                               core.Log,                   # Allow logging of all discrete events
-                               core.Processor,             # Allow for loading and unloading
-                               core.HasResource,           # Add information on serving equipment
-                               core.EnergyUse),            # Add information on fuel
-                              {})
+    ProcessingResource = type(
+        "ProcessingResource",
+        (
+            core.Identifiable,  # Give it a name
+            core.Locatable,  # Allow logging of location
+            core.Log,  # Allow logging of all discrete events
+            core.Processor,  # Allow for loading and unloading
+            core.HasResource,  # Add information on serving equipment
+            core.EnergyUse,
+        ),  # Add information on fuel
+        {},
+    )
 
-    processor_1 = {"env": env,                                    # The simpy environment
-                   "name": "Processor 1",                         # Name
-                   "geometry": geometry_a,                        # It is located at location A
-                   "unloading_func": model.get_unloading_func(1), # Unloading rate
-                   "loading_func": model.get_loading_func(2),     # Loading rate
-                   "energy_use_loading": energy_use_loading,      # Variable fuel use
-                   "energy_use_sailing": energy_use_sailing,      # Variable fuel use
-                   "energy_use_unloading": energy_use_loading}    # Variable fuel use
-    processor_2 = {"env": env,                                    # The simpy environment
-                   "name": "Processor 2",                         # Name
-                   "geometry": geometry_b,                        # It is located at location B
-                   "unloading_func": model.get_unloading_func(1), # Unloading rate
-                   "loading_func": model.get_loading_func(2),     # Loading rate
-                   "energy_use_loading": energy_use_unloading,    # Variable fuel use
-                   "energy_use_sailing": energy_use_sailing,      # Variable fuel use
-                   "energy_use_unloading": energy_use_unloading}  # Variable fuel use
+    processor_1 = {
+        "env": env,  # The simpy environment
+        "name": "Processor 1",  # Name
+        "geometry": geometry_a,  # It is located at location A
+        "unloading_func": model.get_unloading_func(1),  # Unloading rate
+        "loading_func": model.get_loading_func(2),  # Loading rate
+        "energy_use_loading": energy_use_loading,  # Variable fuel use
+        "energy_use_sailing": energy_use_sailing,  # Variable fuel use
+        "energy_use_unloading": energy_use_loading,
+    }  # Variable fuel use
+    processor_2 = {
+        "env": env,  # The simpy environment
+        "name": "Processor 2",  # Name
+        "geometry": geometry_b,  # It is located at location B
+        "unloading_func": model.get_unloading_func(1),  # Unloading rate
+        "loading_func": model.get_loading_func(2),  # Loading rate
+        "energy_use_loading": energy_use_unloading,  # Variable fuel use
+        "energy_use_sailing": energy_use_sailing,  # Variable fuel use
+        "energy_use_unloading": energy_use_unloading,
+    }  # Variable fuel use
 
     # The generic class for an object that can move an amount (a containervessel)
-    mover = type("Mover", 
-                 (core.ContainerDependentMovable, 
-                  core.EnergyUse, 
-                  core.HasResource,
-                  core.Log), 
-                {})
-    
-    data_mover = {"compute_v": lambda x: 1,
-                  "geometry":geometry_a, 
-                  "env": env,
-                  "capacity": 1000,
-                  "energy_use_sailing": energy_use_sailing,
-                  "energy_use_loading": energy_use_loading,
-                  "energy_use_unloading": energy_use_unloading}
+    mover = type(
+        "Mover",
+        (core.ContainerDependentMovable, core.EnergyUse, core.HasResource, core.Log),
+        {},
+    )
+
+    data_mover = {
+        "compute_v": lambda x: 1,
+        "geometry": geometry_a,
+        "env": env,
+        "capacity": 1000,
+        "energy_use_sailing": energy_use_sailing,
+        "energy_use_loading": energy_use_loading,
+        "energy_use_unloading": energy_use_unloading,
+    }
 
     # The simulation objects
     processor_1 = ProcessingResource(**processor_1)
     processor_2 = ProcessingResource(**processor_2)
     containervessel = mover(**data_mover)
-    
+
     # Simulation starts with loading
     start = env.now
     env.process(processor_1.process(containervessel, 500, source))
     env.run()
-    
-    np.testing.assert_almost_equal(processor_1.log["Value"][-1], (env.now - start) * 4)
 
+    np.testing.assert_almost_equal(processor_1.log["Value"][-1], (env.now - start) * 4)
 
     # Simulation continues with moving from A to B
     start = env.now
     env.process(containervessel.move(locatable_b))
     env.run()
-    
-    np.testing.assert_almost_equal(containervessel.log["Value"][-2], (env.now - start) * 2.5, decimal=5)
 
+    np.testing.assert_almost_equal(
+        containervessel.log["Value"][-2], (env.now - start) * 2.5, decimal=5
+    )
 
     # Simulation ends with unloading
     start = env.now
     env.process(processor_2.process(containervessel, 0, dest))
     env.run()
-    
+
     np.testing.assert_almost_equal(processor_2.log["Value"][-1], (env.now - start) * 3)

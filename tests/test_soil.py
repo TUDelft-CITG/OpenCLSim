@@ -18,10 +18,11 @@ from digital_twin import cli
 
 logger = logging.getLogger(__name__)
 
+
 @pytest.fixture
 def env():
     simulation_start = datetime.datetime(2019, 1, 1)
-    my_env = simpy.Environment(initial_time = time.mktime(simulation_start.timetuple()))
+    my_env = simpy.Environment(initial_time=time.mktime(simulation_start.timetuple()))
     my_env.epoch = time.mktime(simulation_start.timetuple())
     return my_env
 
@@ -44,6 +45,7 @@ def locatable_a(geometry_a):
 @pytest.fixture
 def locatable_b(geometry_b):
     return core.Locatable(geometry_b)
+
 
 # Test soil object with dredging
 # Test soil object with moving

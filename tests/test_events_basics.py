@@ -7,22 +7,22 @@ class School:
         self.class_ends = env.event()
         self.pupil_procs = [env.process(self.pupil()) for i in range(3)]
         self.bell_proc = env.process(self.bell())
-        print('init done')
+        print("init done")
 
     def bell(self):
         for i in range(2):
-            print('timeout')
+            print("timeout")
             yield self.env.timeout(45)
-            print('ringing bell')
+            print("ringing bell")
             self.class_ends.succeed()
             self.class_ends = self.env.event()
             print()
 
     def pupil(self):
         for i in range(2):
-            print(r' \o/')
+            print(r" \o/")
             yield self.class_ends
-            print('I heard a bell')
+            print("I heard a bell")
 
 
 def test_tutorial_example():
@@ -39,12 +39,12 @@ class DummyStartActivity:
         self.done = False
 
     def process_control(self):
-        print('process has started, time =', self.env.now)
-        print('we should wait for our start event to trigger')
+        print("process has started, time =", self.env.now)
+        print("we should wait for our start event to trigger")
         yield self.start_event
-        print('yay, it triggered so we can get started! time =', self.env.now)
+        print("yay, it triggered so we can get started! time =", self.env.now)
         yield self.env.timeout(60)
-        print('work is done, time =', self.env.now)
+        print("work is done, time =", self.env.now)
         self.done = True
 
 
@@ -57,7 +57,9 @@ def test_start_event_idea():
     env.run()  # complete the remainder of the implementation
 
     assert activity.done
-    assert env.now == 80  # 20 seconds of waiting for start condition, 60 seconds of work
+    assert (
+        env.now == 80
+    )  # 20 seconds of waiting for start condition, 60 seconds of work
 
 
 def test_start_event_with_timeout():
@@ -82,22 +84,22 @@ class DummyStopActivity:
         self.stop_time = None
 
     def stop_event_callback(self, event):
-        print('stop event was triggered, interrupting our process')
+        print("stop event was triggered, interrupting our process")
         self.process.interrupt()
 
     def process_control(self):
-        print('process has started, time =', self.env.now)
+        print("process has started, time =", self.env.now)
         try:
             # do the work
             for i in range(self.task_count):
-                print('starting execution of task', i + 1)
+                print("starting execution of task", i + 1)
                 yield self.env.timeout(20)
-                print('completed task', i + 1)
+                print("completed task", i + 1)
                 self.completed_count += 1
-                print('tasks completed =', self.completed_count, 'time =', self.env.now)
+                print("tasks completed =", self.completed_count, "time =", self.env.now)
         except simpy.Interrupt:
             # stop event occurred, so our work was interrupted
-            print('I should stop! time =', self.env.now)
+            print("I should stop! time =", self.env.now)
             self.stop_time = self.env.now
 
     @property
@@ -135,18 +137,18 @@ class ImprovedDummyStopActivity:
         self.process.interrupt()
 
     def process_control(self):
-        print('process has started, time =', self.env.now)
+        print("process has started, time =", self.env.now)
         try:
             # do the work
             for i in range(self.task_count):
-                print('starting execution of task', i + 1)
+                print("starting execution of task", i + 1)
                 yield from self.perform_task()
-                print('completed task', i + 1)
+                print("completed task", i + 1)
                 self.completed_count += 1
-                print('tasks completed =', self.completed_count, 'time =', self.env.now)
+                print("tasks completed =", self.completed_count, "time =", self.env.now)
         except simpy.Interrupt:
             # stop event occurred, so our work was interrupted
-            print('I should stop! time =', self.env.now)
+            print("I should stop! time =", self.env.now)
             self.stop_time = self.env.now
 
             # we were interrupted while performing a task, so this task was only partially completed
@@ -154,7 +156,11 @@ class ImprovedDummyStopActivity:
                 current_time = self.env.now
                 task_completion_rate = (current_time - self.task_start_time) / 20
                 self.completed_count += task_completion_rate
-                print('completed interrupted task for', task_completion_rate * 100, 'percent')
+                print(
+                    "completed interrupted task for",
+                    task_completion_rate * 100,
+                    "percent",
+                )
 
     def perform_task(self):
         self.task_start_time = self.env.now
@@ -192,23 +198,25 @@ class ResourceRequester:
         self.done = False
 
     def stop_event_callback(self, event):
-        print('stop event was triggered, interrupting process, time =', self.env.now)
+        print("stop event was triggered, interrupting process, time =", self.env.now)
         self.process.interrupt()
 
     def process_control(self):
         try:
-            print('requesting resource, time =', self.env.now)
+            print("requesting resource, time =", self.env.now)
             self.request = self.resource.request()
             yield self.request
-            print('request granted, time =', self.env.now)
+            print("request granted, time =", self.env.now)
             yield self.env.timeout(60)
-            print('releasing resource after task completion, time =', self.env.now)
+            print("releasing resource after task completion, time =", self.env.now)
             self.resource.release(self.request)
             self.done = True
         except simpy.Interrupt:
-            print('I should stop! time =', self.env.now)
+            print("I should stop! time =", self.env.now)
             if self.request is not None:
-                print('releasing resource after stop event occurred, time =', self.env.now)
+                print(
+                    "releasing resource after stop event occurred, time =", self.env.now
+                )
                 self.resource.release(self.request)
 
 

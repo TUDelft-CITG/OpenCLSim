@@ -23,51 +23,53 @@ def run_and_compare_completion_time(config_file, expected_result_file, tmp_path=
     with open(expected_result_file) as f:
         expected_result = json.load(f)
 
-    np.testing.assert_almost_equal(result["completionTime"], expected_result["completionTime"])
+    np.testing.assert_almost_equal(
+        result["completionTime"], expected_result["completionTime"]
+    )
     return result
 
 
 def test_move_activity():
     """Run a basic simulation containing a single move activity and check the output."""
     run_and_compare_completion_time(
-        config_file='tests/configs/move_activity.json',
-        expected_result_file='tests/results/move_activity_result.json'
+        config_file="tests/configs/move_activity.json",
+        expected_result_file="tests/results/move_activity_result.json",
     )
 
 
 def test_multiple_move_activities():
     """Run a basic simulation containing multiple move activities and check the output."""
     run_and_compare_completion_time(
-        config_file='tests/configs/multiple_move_activities.json',
-        expected_result_file='tests/results/multiple_move_activities_result.json'
+        config_file="tests/configs/multiple_move_activities.json",
+        expected_result_file="tests/results/multiple_move_activities_result.json",
     )
 
 
 def test_single_run_activity():
     run_and_compare_completion_time(
-        config_file='tests/configs/single_run_activity.json',
-        expected_result_file='tests/results/single_run_activity_result.json'
+        config_file="tests/configs/single_run_activity.json",
+        expected_result_file="tests/results/single_run_activity_result.json",
     )
 
 
 def test_multiple_single_run_activities():
     run_and_compare_completion_time(
-        config_file='tests/configs/multiple_single_run_activities.json',
-        expected_result_file='tests/results/multiple_single_run_activities_result.json'
+        config_file="tests/configs/multiple_single_run_activities.json",
+        expected_result_file="tests/results/multiple_single_run_activities_result.json",
     )
 
 
 def test_unnecessary_single_run_activity():
     run_and_compare_completion_time(
-        config_file='tests/configs/unnecessary_single_run_activity.json',
-        expected_result_file='tests/results/unnecessary_single_run_activity_result.json'
+        config_file="tests/configs/unnecessary_single_run_activity.json",
+        expected_result_file="tests/results/unnecessary_single_run_activity_result.json",
     )
 
 
 def test_conditional_activity():
     run_and_compare_completion_time(
-        config_file='tests/configs/conditional_activity.json',
-        expected_result_file='tests/results/conditional_activity_result.json'
+        config_file="tests/configs/conditional_activity.json",
+        expected_result_file="tests/results/conditional_activity_result.json",
     )
 
 
@@ -76,9 +78,9 @@ def test_mover_properties_engine_order():
     We give an engine order of 0.8 instead of the default 1.0 used for test_move_activity.
     The completionTime of this test's results should be 25% slower than that of test_move_activity."""
     run_and_compare_completion_time(
-        config_file='tests/configs/mover_properties_engine_order.json',
-        expected_result_file='tests/results/mover_properties_engine_order_result.json'
-   )
+        config_file="tests/configs/mover_properties_engine_order.json",
+        expected_result_file="tests/results/mover_properties_engine_order_result.json",
+    )
 
 
 def test_mover_properties_load():
@@ -86,16 +88,16 @@ def test_mover_properties_load():
     We order to load up to 0.8. Capacity of the ship is 2500 and 10.000 units need to be transported.
     Without the load order this would take 4 trips, it should now take 5."""
     run_and_compare_completion_time(
-        config_file='tests/configs/mover_properties_load.json',
-        expected_result_file='tests/results/mover_properties_load_result.json'
+        config_file="tests/configs/mover_properties_load.json",
+        expected_result_file="tests/results/mover_properties_load_result.json",
     )
 
 
 def test_energy_use():
     """Run a simulation tracking energy use."""
     result = run_and_compare_completion_time(
-        config_file='tests/configs/energy_use.json',
-        expected_result_file='tests/results/energy_use_result.json'
+        config_file="tests/configs/energy_use.json",
+        expected_result_file="tests/results/energy_use_result.json",
     )
     hopper_logs = result["equipment"][0]["features"]
     energy_use = 0
@@ -109,8 +111,8 @@ def test_energy_use():
 def test_depth_restriction():
     """Run a simulation including depth restrictions."""
     run_and_compare_completion_time(
-        config_file='tests/configs/depth_restriction.json',
-        expected_result_file='tests/results/depth_restriction_result.json'
+        config_file="tests/configs/depth_restriction.json",
+        expected_result_file="tests/results/depth_restriction_result.json",
     )
 
 
@@ -120,17 +122,17 @@ def test_sequential_activity():
     a sequential activity, we expect them to take place sequentially, i.e., the second ship should not start
     its dredge run until the first ship has completed its run."""
     result = run_and_compare_completion_time(
-        config_file='tests/configs/sequential_activity.json',
-        expected_result_file='tests/results/sequential_activity_result.json'
+        config_file="tests/configs/sequential_activity.json",
+        expected_result_file="tests/results/sequential_activity_result.json",
     )
-    hopper1 = result['equipment'][0]
-    assert hopper1['id'] == 'hopper1'
+    hopper1 = result["equipment"][0]
+    assert hopper1["id"] == "hopper1"
 
-    hopper2 = result['equipment'][1]
-    assert hopper2['id'] == 'hopper2'
+    hopper2 = result["equipment"][1]
+    assert hopper2["id"] == "hopper2"
 
-    hopper1_done_time = hopper1['features'][-1]['properties']['time']
-    hopper2_start_time = hopper2['features'][0]['properties']['time']
+    hopper1_done_time = hopper1["features"][-1]["properties"]["time"]
+    hopper2_start_time = hopper2["features"][0]["properties"]["time"]
     assert hopper1_done_time <= hopper2_start_time
 
 
@@ -139,8 +141,8 @@ def test_infinite_loop_detection():
     """Run a simulation that would lead to an infinite loop."""
 
     run_and_compare_completion_time(
-        config_file='tests/configs/infinite_loop.json',
-        expected_result_file='tests/results/infinite_loop_result.json'
+        config_file="tests/configs/infinite_loop.json",
+        expected_result_file="tests/results/infinite_loop_result.json",
     )
     assert True  # ensure we get here...
 
@@ -151,33 +153,35 @@ def test_savesim(tmpdir):
 
     tmp_path = tmpdir
     run_and_compare_completion_time(
-        config_file='tests/configs/savesim.json',
-        expected_result_file='tests/results/energy_use_result.json',
-        tmp_path=tmp_path
+        config_file="tests/configs/savesim.json",
+        expected_result_file="tests/results/energy_use_result.json",
+        tmp_path=tmp_path,
     )
 
-    config_file_hash = 'c1cb76da1ceee6dd4614f94d7ee28cd1'
+    config_file_hash = "c1cb76da1ceee6dd4614f94d7ee28cd1"
     expected_files = [
-        'activities.csv',
-        'dredging_spill.csv',
-        'energy_use.csv',
-        'equipment.csv',
-        'equipment_log.csv',
-        'events.csv',
-        'locations.csv',
-        'simulations.csv'
+        "activities.csv",
+        "dredging_spill.csv",
+        "energy_use.csv",
+        "equipment.csv",
+        "equipment_log.csv",
+        "events.csv",
+        "locations.csv",
+        "simulations.csv",
     ]
 
     for file in expected_files:
-        assert os.path.isfile(str(tmp_path) + '/simulations/' + config_file_hash + '_' + file)
+        assert os.path.isfile(
+            str(tmp_path) + "/simulations/" + config_file_hash + "_" + file
+        )
 
 
 def test_layered_dike_example():
     """Run a simulation generated by the gui interface based on the layered dike example notebook."""
 
     run_and_compare_completion_time(
-        config_file='tests/configs/layered_dike_example.json',
-        expected_result_file='tests/results/layered_dike_example_result.json'
+        config_file="tests/configs/layered_dike_example.json",
+        expected_result_file="tests/results/layered_dike_example_result.json",
     )
 
 
@@ -187,8 +191,8 @@ def test_reversed_dependencies():
     will fail for the activities containing an is_done condition since the process these activities refer to has not
     been instantiated yet."""
     run_and_compare_completion_time(
-        config_file='tests/configs/layered_dike_example_reversed.json',
-        expected_result_file='tests/results/layered_dike_example_result.json'
+        config_file="tests/configs/layered_dike_example_reversed.json",
+        expected_result_file="tests/results/layered_dike_example_result.json",
     )
 
 
@@ -199,8 +203,11 @@ def test_circular_dependency():
     instantiated. The server should detect this situation and throw an error."""
     with pytest.raises(ValueError) as err:
         run_and_compare_completion_time(
-            config_file='tests/configs/circular_dependency.json',
-            expected_result_file=''  # does not matter, error raised before this is used to check result
+            config_file="tests/configs/circular_dependency.json",
+            expected_result_file="",  # does not matter, error raised before this is used to check result
         )
 
-    assert 'Unable to instantiate activities act_1, act_2; their is_done conditions form a circle.' in str(err)
+    assert (
+        "Unable to instantiate activities act_1, act_2; their is_done conditions form a circle."
+        in str(err)
+    )
