@@ -24,6 +24,7 @@ requires = [
     "numpy",
     "simpy",
     "networkx",
+    "halem",
     "shapely",
     "scipy",
     "click",
