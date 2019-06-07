@@ -1216,9 +1216,6 @@ class Movable(SimpyObject, Locatable):
                     origin = node
                     break
 
-<<<<<<< HEAD
-            route = nx.dijkstra_path(self.env.FG, origin, destination.name)
-=======
             if destination.name in list(self.env.FG.nodes):
                 route = nx.dijkstra_path(self.env.FG, origin, destination.name)
             else:
@@ -1229,7 +1226,6 @@ class Movable(SimpyObject, Locatable):
 
                 route = nx.dijkstra_path(self.env.FG, origin, destination)
             
->>>>>>> master
             sailtime = 0
             for node in enumerate(route):
                 from_node = route[node[0]]
