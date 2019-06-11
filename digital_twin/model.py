@@ -42,17 +42,28 @@ class Activity(core.Identifiable, core.Log):
                 container becomes empty
     """
 
-    def __init__(self,
-                 origin, destination,
-                 loader, mover, unloader,
-                 start_event=None, stop_event=None,
-                 show=False,
-                 *args, **kwargs):
+    def __init__(
+        self,
+        origin,
+        destination,
+        loader,
+        mover,
+        unloader,
+        start_event=None,
+        stop_event=None,
+        show=False,
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
-        self.start_event = start_event if start_event is None or isinstance(start_event, simpy.Event) else self.env.all_of(events=start_event)
-        self.stop_event = stop_event 
+        self.start_event = (
+            start_event
+            if start_event is None or isinstance(start_event, simpy.Event)
+            else self.env.all_of(events=start_event)
+        )
+        self.stop_event = stop_event
 
         self.origin = origin
         self.destination = destination
@@ -62,23 +73,24 @@ class Activity(core.Identifiable, core.Log):
 
         self.print = show
 
-        single_run_proc = partial(single_run_process,
+        single_run_proc = partial(
+            single_run_process,
             origin=origin,
             destination=destination,
             loader=loader,
             mover=mover,
             unloader=unloader,
             stop_reservation_waiting_event=self.stop_event_checker,
-            verbose=self.print
+            verbose=self.print,
         )
-        main_proc = partial(conditional_process,
+        main_proc = partial(
+            conditional_process,
             stop_event=self.stop_event_checker,
-            sub_processes=[single_run_proc]
+            sub_processes=[single_run_proc],
         )
         if start_event is not None:
-            main_proc = partial(delayed_process,
-                start_event=self.start_event,
-                sub_processes=[main_proc]
+            main_proc = partial(
+                delayed_process, start_event=self.start_event, sub_processes=[main_proc]
             )
         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
 
@@ -90,11 +102,13 @@ class Activity(core.Identifiable, core.Log):
         """
 
         if self.stop_event is None:
-            return self.env.any_of(events=[
-                self.origin.container.empty_event,
-                self.destination.container.full_event
-                ])
-        
+            return self.env.any_of(
+                events=[
+                    self.origin.container.empty_event,
+                    self.destination.container.full_event,
+                ]
+            )
+
         else:
             return self.stop_event
 
@@ -174,19 +188,38 @@ def move_process(activity_log, env, mover, destination, engine_order=1.0):
     engine_order: optional parameter specifying at what percentage of the maximum speed the mover should sail.
                   for example, engine_order=0.5 corresponds to sailing at 50% of max speed
     """
-    activity_log.log_entry('started move activity of {} to {}'.format(mover.name, destination.name),
-                           env.now, -1, mover.geometry)
+    activity_log.log_entry(
+        "started move activity of {} to {}".format(mover.name, destination.name),
+        env.now,
+        -1,
+        mover.geometry,
+    )
 
     with mover.resource.request() as my_mover_turn:
         yield my_mover_turn
         yield from mover.move(destination=destination, engine_order=engine_order)
 
-    activity_log.log_entry('completed move activity of {} to {}'.format(mover.name, destination.name),
-                           env.now, -1, mover.geometry)
+    activity_log.log_entry(
+        "completed move activity of {} to {}".format(mover.name, destination.name),
+        env.now,
+        -1,
+        mover.geometry,
+    )
 
 
-def single_run_process(activity_log, env, origin, destination, loader, mover, unloader,
-                       engine_order=1.0, filling=1.0, stop_reservation_waiting_event = None, verbose=False):
+def single_run_process(
+    activity_log,
+    env,
+    origin,
+    destination,
+    loader,
+    mover,
+    unloader,
+    engine_order=1.0,
+    filling=1.0,
+    stop_reservation_waiting_event=None,
+    verbose=False,
+):
     """Returns a generator which can be added as a process to a simpy.Environment. In the process, a single run will
     be made by the given mover, transporting content from the origin to the destination.
 
@@ -222,11 +255,15 @@ def single_run_process(activity_log, env, origin, destination, loader, mover, un
     amount = min(
         mover.container.capacity * filling - mover.container.level,
         origin.container.expected_level,
-        destination.container.capacity - destination.container.expected_level
+        destination.container.capacity - destination.container.expected_level,
     )
 
-    if isinstance(mover, core.HasDepthRestriction) and isinstance(destination, core.HasWeather):
-        amount = min(amount, mover.check_optimal_filling(loader, unloader, origin, destination))
+    if isinstance(mover, core.HasDepthRestriction) and isinstance(
+        destination, core.HasWeather
+    ):
+        amount = min(
+            amount, mover.check_optimal_filling(loader, unloader, origin, destination)
+        )
 
     if amount > 0:
         resource_requests = {}
@@ -236,7 +273,7 @@ def single_run_process(activity_log, env, origin, destination, loader, mover, un
         destination.container.reserve_put(amount)
 
         if verbose:
-            print('Using ' + mover.name + ' to process ' + str(amount))
+            print("Using " + mover.name + " to process " + str(amount))
         activity_log.log_entry("transporting start", env.now, amount, mover.geometry)
 
         # request the mover's resource
@@ -244,27 +281,62 @@ def single_run_process(activity_log, env, origin, destination, loader, mover, un
 
         # move the mover to the origin (if necessary)
         if not mover.is_at(origin):
-            yield from _move_mover(mover, origin, engine_order=engine_order, verbose=verbose)
+            yield from _move_mover(
+                mover, origin, engine_order=engine_order, verbose=verbose
+            )
 
-        yield from _request_resources_if_transfer_possible(env, resource_requests, origin, loader, mover, amount,
-                                                           mover.resource, engine_order=engine_order, verbose=verbose)
+        yield from _request_resources_if_transfer_possible(
+            env,
+            resource_requests,
+            origin,
+            loader,
+            mover,
+            amount,
+            mover.resource,
+            engine_order=engine_order,
+            verbose=verbose,
+        )
 
         # load the mover
-        yield from _shift_amount(env, loader, mover, mover.container.level + amount, origin, verbose=verbose)
+        yield from _shift_amount(
+            env, loader, mover, mover.container.level + amount, origin, verbose=verbose
+        )
 
         # release the loader and origin resources (but always keep the mover requested)
-        _release_resource(resource_requests, loader.resource, kept_resource=mover.resource)
-        _release_resource(resource_requests, origin.resource, kept_resource=mover.resource)
+        _release_resource(
+            resource_requests, loader.resource, kept_resource=mover.resource
+        )
+        _release_resource(
+            resource_requests, origin.resource, kept_resource=mover.resource
+        )
 
         # move the mover to the destination
         if not mover.is_at(destination):
-            yield from _move_mover(mover, destination, engine_order=engine_order, verbose=verbose)
+            yield from _move_mover(
+                mover, destination, engine_order=engine_order, verbose=verbose
+            )
 
-        yield from _request_resources_if_transfer_possible(env, resource_requests, mover, unloader, destination, amount,
-                                                           mover.resource, engine_order=engine_order, verbose=verbose)
+        yield from _request_resources_if_transfer_possible(
+            env,
+            resource_requests,
+            mover,
+            unloader,
+            destination,
+            amount,
+            mover.resource,
+            engine_order=engine_order,
+            verbose=verbose,
+        )
 
         # unload the mover
-        yield from _shift_amount(env, unloader, mover, mover.container.level - amount, destination, verbose=verbose)
+        yield from _shift_amount(
+            env,
+            unloader,
+            mover,
+            mover.container.level - amount,
+            destination,
+            verbose=verbose,
+        )
 
         # release the unloader, destination and mover requests
         _release_resource(resource_requests, unloader.resource)
@@ -276,17 +348,41 @@ def single_run_process(activity_log, env, origin, destination, loader, mover, un
         activity_log.log_entry("transporting stop", env.now, amount, mover.geometry)
     else:
         if origin.container.expected_level == 0:
-            activity_log.log_entry("waiting origin reservation start", env.now, origin.container.expected_level,
-                                   origin.geometry)
-            yield _or_optional_event(env, origin.container.reserve_get_available, stop_reservation_waiting_event)
-            activity_log.log_entry("waiting origin reservation stop", env.now, origin.container.expected_level,
-                                   origin.geometry)
+            activity_log.log_entry(
+                "waiting origin reservation start",
+                env.now,
+                origin.container.expected_level,
+                origin.geometry,
+            )
+            yield _or_optional_event(
+                env,
+                origin.container.reserve_get_available,
+                stop_reservation_waiting_event,
+            )
+            activity_log.log_entry(
+                "waiting origin reservation stop",
+                env.now,
+                origin.container.expected_level,
+                origin.geometry,
+            )
         elif destination.container.expected_level == destination.container.capacity:
-            activity_log.log_entry("waiting destination reservation start", env.now,
-                                   destination.container.expected_level, destination.geometry)
-            yield _or_optional_event(env, destination.container.reserve_put_available, stop_reservation_waiting_event)
-            activity_log.log_entry("waiting destination reservation stop", env.now,
-                                   destination.container.expected_level, destination.geometry)
+            activity_log.log_entry(
+                "waiting destination reservation start",
+                env.now,
+                destination.container.expected_level,
+                destination.geometry,
+            )
+            yield _or_optional_event(
+                env,
+                destination.container.reserve_put_available,
+                stop_reservation_waiting_event,
+            )
+            activity_log.log_entry(
+                "waiting destination reservation stop",
+                env.now,
+                destination.container.expected_level,
+                destination.geometry,
+            )
         else:
             raise RuntimeError("Attempting to move content with a full ship")
 
@@ -325,15 +421,23 @@ def _shift_amount(env, processor, ship, desired_level, site, verbose=False):
     yield from processor.process(ship, desired_level, site)
 
     if verbose:
-        print('Processed {}:'.format(amount))
-        print('  by:          ' + processor.name)
-        print('  ship:        ' + ship.name + ' contains: ' + str(ship.container.level))
-        print('  site:        ' + site.name + ' contains: ' + str(site.container.level))
+        print("Processed {}:".format(amount))
+        print("  by:          " + processor.name)
+        print("  ship:        " + ship.name + " contains: " + str(ship.container.level))
+        print("  site:        " + site.name + " contains: " + str(site.container.level))
 
 
-def _request_resources_if_transfer_possible(env, resource_requests, origin, processor,
-                                            destination, amount, kept_resource,
-                                            engine_order=1.0, verbose=False):
+def _request_resources_if_transfer_possible(
+    env,
+    resource_requests,
+    origin,
+    processor,
+    destination,
+    amount,
+    kept_resource,
+    engine_order=1.0,
+    verbose=False,
+):
     """
     Sets up everything needed for single_run_process to shift an amount from the origin to the destination using
     the processor.process method.
@@ -349,35 +453,67 @@ def _request_resources_if_transfer_possible(env, resource_requests, origin, proc
     all_available = False
     while not all_available:
         # yield until enough content and space available in origin and destination
-        yield env.all_of(events=[origin.container.get_available(amount),
-                                 destination.container.put_available(amount)])
+        yield env.all_of(
+            events=[
+                origin.container.get_available(amount),
+                destination.container.put_available(amount),
+            ]
+        )
 
         yield from _request_resource(resource_requests, processor.resource)
-        if origin.container.level < amount or destination.container.capacity - destination.container.level < amount:
+        if (
+            origin.container.level < amount
+            or destination.container.capacity - destination.container.level < amount
+        ):
             # someone removed / added content while we were requesting the processor, so abort and wait for available
             # space/content again
-            _release_resource(resource_requests, processor.resource, kept_resource=kept_resource)
+            _release_resource(
+                resource_requests, processor.resource, kept_resource=kept_resource
+            )
             continue
 
         if not processor.is_at(origin):
             # todo have the processor move simultaneously with the mover by starting a different process for it?
-            yield from _move_mover(processor, origin, engine_order=engine_order, verbose=verbose)
-            if origin.container.level < amount or destination.container.capacity - destination.container.level < amount:
+            yield from _move_mover(
+                processor, origin, engine_order=engine_order, verbose=verbose
+            )
+            if (
+                origin.container.level < amount
+                or destination.container.capacity - destination.container.level < amount
+            ):
                 # someone messed us up again, so return to waiting for space/content
-                _release_resource(resource_requests, processor.resource, kept_resource=kept_resource)
+                _release_resource(
+                    resource_requests, processor.resource, kept_resource=kept_resource
+                )
                 continue
 
         yield from _request_resource(resource_requests, origin.resource)
-        if origin.container.level < amount or destination.container.capacity - destination.container.level < amount:
-            _release_resource(resource_requests, processor.resource, kept_resource=kept_resource)
-            _release_resource(resource_requests, origin.resource, kept_resource=kept_resource)
+        if (
+            origin.container.level < amount
+            or destination.container.capacity - destination.container.level < amount
+        ):
+            _release_resource(
+                resource_requests, processor.resource, kept_resource=kept_resource
+            )
+            _release_resource(
+                resource_requests, origin.resource, kept_resource=kept_resource
+            )
             continue
 
         yield from _request_resource(resource_requests, destination.resource)
-        if origin.container.level < amount or destination.container.capacity - destination.container.level < amount:
-            _release_resource(resource_requests, processor.resource, kept_resource=kept_resource)
-            _release_resource(resource_requests, origin.resource, kept_resource=kept_resource)
-            _release_resource(resource_requests, destination.resource, kept_resource=kept_resource)
+        if (
+            origin.container.level < amount
+            or destination.container.capacity - destination.container.level < amount
+        ):
+            _release_resource(
+                resource_requests, processor.resource, kept_resource=kept_resource
+            )
+            _release_resource(
+                resource_requests, origin.resource, kept_resource=kept_resource
+            )
+            _release_resource(
+                resource_requests, destination.resource, kept_resource=kept_resource
+            )
             continue
         all_available = True
 
@@ -389,10 +525,22 @@ def _move_mover(mover, origin, engine_order=1.0, verbose=False):
     yield from mover.move(origin, engine_order=engine_order)
 
     if verbose:
-        print('Moved:')
-        print('  object:      ' + mover.name + ' contains: ' + str(mover.container.level))
-        print('  from:        ' + format(old_location.x, '02.5f') + ' ' + format(old_location.y, '02.5f'))
-        print('  to:          ' + format(mover.geometry.x, '02.5f') + ' ' + format(mover.geometry.y, '02.5f'))
+        print("Moved:")
+        print(
+            "  object:      " + mover.name + " contains: " + str(mover.container.level)
+        )
+        print(
+            "  from:        "
+            + format(old_location.x, "02.5f")
+            + " "
+            + format(old_location.y, "02.5f")
+        )
+        print(
+            "  to:          "
+            + format(mover.geometry.x, "02.5f")
+            + " "
+            + format(mover.geometry.y, "02.5f")
+        )
 
 
 class Simulation(core.Identifiable, core.Log):
@@ -455,23 +603,31 @@ class Simulation(core.Identifiable, core.Log):
     def __init_sites(self, sites):
         self.sites = {}
         for site in sites:
-            self.sites[site['id']] = self.__init_object_from_json(site)
+            self.sites[site["id"]] = self.__init_object_from_json(site)
 
     def __init_equipment(self, equipment):
         self.equipment = {}
         for equipment_piece in equipment:
-            self.equipment[equipment_piece['id']] = self.__init_object_from_json(equipment_piece)
+            self.equipment[equipment_piece["id"]] = self.__init_object_from_json(
+                equipment_piece
+            )
 
     def __init_activities(self, activities):
         self.activities = {}
         activity_log_class = type("ActivityLog", (core.Log, core.Identifiable), {})
         uninstantiated_activities = activities
         while len(uninstantiated_activities) > 0:
-            still_uninstantiated = self.__try_to_init_activities(activities, activity_log_class)
+            still_uninstantiated = self.__try_to_init_activities(
+                activities, activity_log_class
+            )
             if len(still_uninstantiated) == len(uninstantiated_activities):
-                raise ValueError('Unable to instantiate activities {}; their is_done conditions form a circle.'.format(
-                    ', '.join(activity['id'] for activity in uninstantiated_activities)
-                ))
+                raise ValueError(
+                    "Unable to instantiate activities {}; their is_done conditions form a circle.".format(
+                        ", ".join(
+                            activity["id"] for activity in uninstantiated_activities
+                        )
+                    )
+                )
             uninstantiated_activities = still_uninstantiated
 
     def __try_to_init_activities(self, activities, activity_log_class):
@@ -488,55 +644,63 @@ class Simulation(core.Identifiable, core.Log):
         except KeyError:
             return False
 
-        id = activity['id']
+        id = activity["id"]
         activity_log = activity_log_class(env=self.env, name=id)
 
-        process = self.env.process(process_control(activity_log=activity_log, env=self.env))
+        process = self.env.process(
+            process_control(activity_log=activity_log, env=self.env)
+        )
 
-        self.activities[id] = {
-            "activity_log": activity_log,
-            "process": process
-        }
+        self.activities[id] = {"activity_log": activity_log, "process": process}
         return True
 
     def get_process_control(self, activity, stop_reservation_waiting_event=None):
-        activity_type = activity['type']
+        activity_type = activity["type"]
 
-        if activity_type == 'move':
-            mover = self.equipment[activity['mover']]
+        if activity_type == "move":
+            mover = self.equipment[activity["mover"]]
             mover_properties = self.get_mover_properties_kwargs(activity)
-            destination = self.sites[activity['destination']]
-            kwargs = {
-                "mover": mover,
-                "destination": destination
-            }
-            if 'engine_order' in mover_properties:
+            destination = self.sites[activity["destination"]]
+            kwargs = {"mover": mover, "destination": destination}
+            if "engine_order" in mover_properties:
                 kwargs["engine_order"] = mover_properties["engine_order"]
             return partial(move_process, **kwargs)
-        if activity_type == 'single_run':
+        if activity_type == "single_run":
             kwargs = self.get_mover_properties_kwargs(activity)
-            kwargs["mover"] = self.equipment[activity['mover']]
-            kwargs["origin"] = self.sites[activity['origin']]
-            kwargs["destination"] = self.sites[activity['destination']]
-            kwargs["loader"] = self.equipment[activity['loader']]
-            kwargs["unloader"] = self.equipment[activity['unloader']]
+            kwargs["mover"] = self.equipment[activity["mover"]]
+            kwargs["origin"] = self.sites[activity["origin"]]
+            kwargs["destination"] = self.sites[activity["destination"]]
+            kwargs["loader"] = self.equipment[activity["loader"]]
+            kwargs["unloader"] = self.equipment[activity["unloader"]]
             if stop_reservation_waiting_event is not None:
-                kwargs["stop_reservation_waiting_event"] = stop_reservation_waiting_event
+                kwargs[
+                    "stop_reservation_waiting_event"
+                ] = stop_reservation_waiting_event
             return partial(single_run_process, **kwargs)
-        if activity_type == 'conditional':
-            stop_event = self.get_condition_event(activity['condition'])
-            sub_processes = [self.get_process_control(act, stop_reservation_waiting_event=stop_event)
-                             for act in activity['activities']]
-            return partial(conditional_process, stop_event=stop_event, sub_processes=sub_processes)
-        if activity_type == 'sequential':
-            sub_processes = [self.get_process_control(act) for act in activity['activities']]
+        if activity_type == "conditional":
+            stop_event = self.get_condition_event(activity["condition"])
+            sub_processes = [
+                self.get_process_control(act, stop_reservation_waiting_event=stop_event)
+                for act in activity["activities"]
+            ]
+            return partial(
+                conditional_process, stop_event=stop_event, sub_processes=sub_processes
+            )
+        if activity_type == "sequential":
+            sub_processes = [
+                self.get_process_control(act) for act in activity["activities"]
+            ]
             return partial(sequential_process, sub_processes=sub_processes)
-        if activity_type == 'delayed':
-            sub_processes = [self.get_process_control(act) for act in activity['activities']]
-            start_event = self.get_condition_event(activity['condition'])
-            return partial(delayed_process, start_event=start_event, sub_processes=sub_processes)
+        if activity_type == "delayed":
+            sub_processes = [
+                self.get_process_control(act) for act in activity["activities"]
+            ]
+            start_event = self.get_condition_event(activity["condition"])
+            return partial(
+                delayed_process, start_event=start_event, sub_processes=sub_processes
+            )
 
-        raise ValueError('Unrecognized activity type: ' + activity_type)
+        raise ValueError("Unrecognized activity type: " + activity_type)
 
     @staticmethod
     def get_mover_properties_kwargs(activity):
@@ -553,40 +717,48 @@ class Simulation(core.Identifiable, core.Log):
         return kwargs
 
     def get_level_event_operand(self, condition):
-        operand_key = condition['operand']
+        operand_key = condition["operand"]
         try:
-            operand = self.sites[operand_key] if operand_key in self.sites else self.equipment[operand_key]
+            operand = (
+                self.sites[operand_key]
+                if operand_key in self.sites
+                else self.equipment[operand_key]
+            )
         except KeyError:
             # rethrow a KeyError as a ValueError to avoid assuming there is a circular dependency
-            raise ValueError('No object with id "{}" present in configuration'.format(operand_key))
+            raise ValueError(
+                'No object with id "{}" present in configuration'.format(operand_key)
+            )
 
         return operand
 
     def get_sub_condition_events(self, condition):
-        conditions = condition['conditions']
+        conditions = condition["conditions"]
         events = [self.get_condition_event(condition) for condition in conditions]
         return events
 
     def get_condition_event(self, condition):
-        operator = condition['operator']
+        operator = condition["operator"]
 
-        if operator == 'is_full':
+        if operator == "is_full":
             operand = self.get_level_event_operand(condition)
             return operand.container.full_event
-        elif operator == 'is_empty':
+        elif operator == "is_empty":
             operand = self.get_level_event_operand(condition)
             return operand.container.empty_event
-        elif operator == 'is_done':
-            operand_key = condition['operand']
-            return self.activities[operand_key]['process']  # potential KeyError is caught in try_to_init_activity
-        elif operator == 'any_of':
+        elif operator == "is_done":
+            operand_key = condition["operand"]
+            return self.activities[operand_key][
+                "process"
+            ]  # potential KeyError is caught in try_to_init_activity
+        elif operator == "any_of":
             sub_events = self.get_sub_condition_events(condition)
             return self.env.any_of(events=sub_events)
-        elif operator == 'all_of':
+        elif operator == "all_of":
             sub_events = self.get_sub_condition_events(condition)
             return self.env.all_of(events=sub_events)
         else:
-            raise ValueError('Unrecognized operator type: ' + operator)
+            raise ValueError("Unrecognized operator type: " + operator)
 
     def __init_object_from_json(self, object_json):
         class_name = object_json["id"]
@@ -600,7 +772,12 @@ class Simulation(core.Identifiable, core.Log):
         try:
             new_object = klass(**kwargs)
         except TypeError as type_err:
-            raise ValueError("Unable to instantiate an object for '" + class_name + "': " + str(type_err))
+            raise ValueError(
+                "Unable to instantiate an object for '"
+                + class_name
+                + "': "
+                + str(type_err)
+            )
 
         add_object_properties(new_object, properties)
 
@@ -626,7 +803,9 @@ class Simulation(core.Identifiable, core.Log):
         activity_logging = []
         for key, activity in self.activities.items():
             activity_logging.append(
-                self.get_as_feature_collection(key, activity["activity_log"].get_log_as_json())
+                self.get_as_feature_collection(
+                    key, activity["activity_log"].get_log_as_json()
+                )
             )
         json["activities"] = activity_logging
 
@@ -634,15 +813,13 @@ class Simulation(core.Identifiable, core.Log):
 
     @staticmethod
     def get_as_feature_collection(id, features):
-        return dict(
-            type="FeatureCollection",
-            id=id,
-            features=features
-        )
+        return dict(type="FeatureCollection", id=id, features=features)
 
 
 def get_class_from_type_list(class_name, type_list):
-    mixin_classes = [core.Identifiable, core.Log] + [string_to_class(text) for text in type_list]
+    mixin_classes = [core.Identifiable, core.Log] + [
+        string_to_class(text) for text in type_list
+    ]
     return type(class_name, tuple(mixin_classes), {})
 
 
@@ -654,10 +831,7 @@ def string_to_class(text):
 
 
 def get_kwargs_from_properties(environment, name, properties, sites):
-    kwargs = {
-        "env": environment,
-        "name": name
-    }
+    kwargs = {"env": environment, "name": name}
 
     # some checks on the configuration could be added here,
     # for example, if both level and capacity are given, is level <= capacity, level >= 0, capacity >= 0 etc.
@@ -698,8 +872,12 @@ def get_kwargs_from_properties(environment, name, properties, sites):
     # HasSpillCondition
     if "conditions" in properties:
         condition_list = properties["conditions"]
-        condition_objects = [core.SpillCondition(**get_spill_condition_kwargs(environment, condition_dict))
-                             for condition_dict in condition_list]
+        condition_objects = [
+            core.SpillCondition(
+                **get_spill_condition_kwargs(environment, condition_dict)
+            )
+            for condition_dict in condition_list
+        ]
         kwargs["conditions"] = condition_objects
 
     # HasWeather
@@ -720,7 +898,9 @@ def get_kwargs_from_properties(environment, name, properties, sites):
     if "draught" in properties:
         df = pd.DataFrame(properties["draught"])
         df["filling_degree"] = df["level"] / kwargs["capacity"]
-        kwargs["compute_draught"] = scipy.interpolate.interp1d(df["filling_degree"], df["draught"])
+        kwargs["compute_draught"] = scipy.interpolate.interp1d(
+            df["filling_degree"], df["draught"]
+        )
     if "waves" in properties:
         kwargs["waves"] = properties["waves"]
     if "ukc" in properties:
@@ -734,7 +914,9 @@ def get_kwargs_from_properties(environment, name, properties, sites):
         if isinstance(speed, list):
             df = pd.DataFrame(speed)
             df["filling_degree"] = df["level"] / kwargs["capacity"]
-            compute_function = scipy.interpolate.interp1d(df["filling_degree"], df["speed"])
+            compute_function = scipy.interpolate.interp1d(
+                df["filling_degree"], df["speed"]
+            )
             kwargs["compute_v"] = compute_function
             v_empty = compute_function(0)
             v_full = compute_function(1)
@@ -752,17 +934,23 @@ def get_kwargs_from_properties(environment, name, properties, sites):
         energy_use_sailing_dict = properties["energyUseSailing"]
         max_propulsion = energy_use_sailing_dict["maxPropulsion"]
         boardnet = energy_use_sailing_dict["boardnet"]
-        kwargs["energy_use_sailing"] = partial(energy_use_sailing,
-                                               speed_max_full=v_full,
-                                               speed_max_empty=v_empty,
-                                               propulsion_power_max=max_propulsion,
-                                               boardnet_power=boardnet)
+        kwargs["energy_use_sailing"] = partial(
+            energy_use_sailing,
+            speed_max_full=v_full,
+            speed_max_empty=v_empty,
+            propulsion_power_max=max_propulsion,
+            boardnet_power=boardnet,
+        )
 
     # EnergyUse
     if "energyUseLoading" in properties:
-        kwargs["energy_use_loading"] = partial(energy_use_processing, constant_hourly_use=properties["energyUseLoading"])
+        kwargs["energy_use_loading"] = partial(
+            energy_use_processing, constant_hourly_use=properties["energyUseLoading"]
+        )
     if "energyUseUnloading" in properties:
-        kwargs["energy_use_unloading"] = partial(energy_use_processing, constant_hourly_use=properties["energyUseUnloading"])
+        kwargs["energy_use_unloading"] = partial(
+            energy_use_processing, constant_hourly_use=properties["energyUseUnloading"]
+        )
 
     # HasResource
     if "nr_resources" in properties:
@@ -781,7 +969,9 @@ def add_object_properties(new_object, properties):
     # HasSoil
     if "layers" in properties:
         layer_list = properties["layers"]
-        layer_objects = [core.SoilLayer(i, **layer_dict) for i, layer_dict in enumerate(layer_list)]
+        layer_objects = [
+            core.SoilLayer(i, **layer_dict) for i, layer_dict in enumerate(layer_list)
+        ]
         new_object.add_layers(layer_objects)
 
 
@@ -811,11 +1001,15 @@ def get_loading_func(property):
         # given property is a list of data points
         rate_function = get_compute_function(property, "level", "rate")
         inversed_rate_function = lambda x: 1 / rate_function(x)
-        return lambda current_level, desired_level: \
-            scipy.integrate.quad(inversed_rate_function, current_level, desired_level)[0]
+        return lambda current_level, desired_level: scipy.integrate.quad(
+            inversed_rate_function, current_level, desired_level
+        )[0]
     else:
         # given property is a flat rate
-        return lambda current_level, desired_level: (desired_level - current_level) / property
+        return (
+            lambda current_level, desired_level: (desired_level - current_level)
+            / property
+        )
 
 
 def get_unloading_func(property):
@@ -828,22 +1022,40 @@ def get_unloading_func(property):
         # given property is a list of data points
         rate_function = get_compute_function(property, "level", "rate")
         inversed_rate_function = lambda x: 1 / rate_function(x)
-        return lambda current_level, desired_level: \
-            scipy.integrate.quad(inversed_rate_function, desired_level, current_level)[0]
+        return lambda current_level, desired_level: scipy.integrate.quad(
+            inversed_rate_function, desired_level, current_level
+        )[0]
     else:
         # given property is a flat rate
-        return lambda current_level, desired_level: (current_level - desired_level) / property
+        return (
+            lambda current_level, desired_level: (current_level - desired_level)
+            / property
+        )
 
 
-def energy_use_sailing(distance, current_speed, filling_degree, speed_max_full, speed_max_empty,
-                       propulsion_power_max, boardnet_power):
+def energy_use_sailing(
+    distance,
+    current_speed,
+    filling_degree,
+    speed_max_full,
+    speed_max_empty,
+    propulsion_power_max,
+    boardnet_power,
+):
     duration_seconds = distance / current_speed
     duration_hours = duration_seconds / 3600
     speed_factor_full = current_speed / speed_max_full
     speed_factor_empty = current_speed / speed_max_empty
-    energy_use_sailing_full = duration_hours * (speed_factor_full ** 3 * propulsion_power_max + boardnet_power * 0.6)
-    energy_use_sailing_empty = duration_hours * (speed_factor_empty ** 3 * propulsion_power_max + boardnet_power * 0.6)
-    return filling_degree * (energy_use_sailing_full - energy_use_sailing_empty) + energy_use_sailing_empty
+    energy_use_sailing_full = duration_hours * (
+        speed_factor_full ** 3 * propulsion_power_max + boardnet_power * 0.6
+    )
+    energy_use_sailing_empty = duration_hours * (
+        speed_factor_empty ** 3 * propulsion_power_max + boardnet_power * 0.6
+    )
+    return (
+        filling_degree * (energy_use_sailing_full - energy_use_sailing_empty)
+        + energy_use_sailing_empty
+    )
 
 
 def energy_use_processing(duration_seconds, constant_hourly_use):

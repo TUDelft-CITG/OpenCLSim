@@ -21,6 +21,7 @@ import flask
 
 import networkx as nx
 
+
 def demo_plot():
     """example plot"""
     fig, ax = plt.subplots()
@@ -31,13 +32,13 @@ def demo_plot():
 def fig2response(fig):
     """return a figure as a response"""
     stream = io.BytesIO()
-    format = 'png'
+    format = "png"
     fig.savefig(stream, format=format)
-    mimetype = 'image/png'
+    mimetype = "image/png"
     # rewind the stream
     stream.seek(0)
     return flask.send_file(stream, mimetype=mimetype)
-    
+
 
 def vessel_planning(vessels, activities, colors, web=False, static=False):
     """create a plot of the planning of vessels"""
@@ -47,9 +48,9 @@ def vessel_planning(vessels, activities, colors, web=False, static=False):
         x = []
         y = []
         for i, v in series.iteritems():
-            if v == activity + ' start':
+            if v == activity + " start":
                 start = i
-            if v == activity + ' stop':
+            if v == activity + " stop":
                 x.extend((start, start, i, i, i))
                 y.extend((y_val, y_val, y_val, y_val, None))
         return x, y
@@ -58,7 +59,9 @@ def vessel_planning(vessels, activities, colors, web=False, static=False):
     dataframes = []
     for vessel in vessels:
         df = pd.DataFrame(
-            {'log_value': vessel.log["Value"], 'log_string': vessel.log["Message"]}, vessel.log["Timestamp"])
+            {"log_value": vessel.log["Value"], "log_string": vessel.log["Message"]},
+            vessel.log["Timestamp"],
+        )
         dataframes.append(df)
     df = dataframes[0]
 
@@ -69,55 +72,57 @@ def vessel_planning(vessels, activities, colors, web=False, static=False):
         y_combined = []
         for k, df in enumerate(dataframes):
             y_val = vessels[k].name
-            x, y = get_segments(
-                df['log_string'], activity=activity, y_val=y_val)
+            x, y = get_segments(df["log_string"], activity=activity, y_val=y_val)
             x_combined.extend(x)
             y_combined.extend(y)
-        traces.append(go.Scatter(
-            name=activity,
-            x=x_combined,
-            y=y_combined,
-            mode='lines',
-            hoverinfo='y+name',
-            line=dict(color=colors[i], width=10),
-            connectgaps=False))
+        traces.append(
+            go.Scatter(
+                name=activity,
+                x=x_combined,
+                y=y_combined,
+                mode="lines",
+                hoverinfo="y+name",
+                line=dict(color=colors[i], width=10),
+                connectgaps=False,
+            )
+        )
 
     # prepare layout of figure
     layout = go.Layout(
-        title='Vessel planning',
-        hovermode='closest',
-        legend=dict(x=0, y=-.2, orientation="h"),
+        title="Vessel planning",
+        hovermode="closest",
+        legend=dict(x=0, y=-0.2, orientation="h"),
         xaxis=dict(
-            title='Time',
-            titlefont=dict(
-                family='Courier New, monospace',
-                size=18,
-                color='#7f7f7f'),
-            range=[vessel.log["Timestamp"][0], vessel.log["Timestamp"][-1]]),
+            title="Time",
+            titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
+            range=[vessel.log["Timestamp"][0], vessel.log["Timestamp"][-1]],
+        ),
         yaxis=dict(
-            title='Vessels',
-            titlefont=dict(
-                family='Courier New, monospace',
-                size=18,
-                color='#7f7f7f')))
+            title="Vessels",
+            titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
+        ),
+    )
 
     if static == False:
         # plot figure
         init_notebook_mode(connected=True)
         fig = go.Figure(data=traces, layout=layout)
 
-        return iplot(fig, filename='news-source')
+        return iplot(fig, filename="news-source")
     else:
         fig = go.Figure(data=traces, layout=layout)
         return fig
 
 
-def vessel_kml(env, vessels,
-               fname='vessel_movements.kml',
-               icon='http://maps.google.com/mapfiles/kml/shapes/sailing.png',
-               size=1,
-               scale=1,
-               stepsize=120):
+def vessel_kml(
+    env,
+    vessels,
+    fname="vessel_movements.kml",
+    icon="http://maps.google.com/mapfiles/kml/shapes/sailing.png",
+    size=1,
+    scale=1,
+    stepsize=120,
+):
     """Create a kml visualisation of vessels. Env variable needs to contain
     epoch to enable conversion of simulation time to real time. Vessels need
     logs that contain geometries in lat, lon as a function of time."""
@@ -127,9 +132,9 @@ def vessel_kml(env, vessels,
     fol = kml.newfolder(name="Vessels")
 
     shared_style = Style()
-    shared_style.labelstyle.color = 'ffffffff'  # White
+    shared_style.labelstyle.color = "ffffffff"  # White
     shared_style.labelstyle.scale = size
-    shared_style.iconstyle.color = 'ffff0000'  # Blue
+    shared_style.iconstyle.color = "ffff0000"  # Blue
     shared_style.iconstyle.scale = scale
     shared_style.iconstyle.icon.href = icon
 
@@ -157,30 +162,49 @@ def vessel_kml(env, vessels,
 
         vessel.log["timestamps_t"] = timestamps_t
         vessel.log["timestamps_x"] = np.interp(
-            timestamps_t, times, vessel.log["Geometry - x"])
+            timestamps_t, times, vessel.log["Geometry - x"]
+        )
         vessel.log["timestamps_y"] = np.interp(
-            timestamps_t, times, vessel.log["Geometry - y"])
+            timestamps_t, times, vessel.log["Geometry - y"]
+        )
 
         for log_index, value in enumerate(vessel.log["timestamps_t"][:-1]):
 
             begin = datetime.datetime.fromtimestamp(
-                vessel.log["timestamps_t"][log_index])
+                vessel.log["timestamps_t"][log_index]
+            )
             end = datetime.datetime.fromtimestamp(
-                vessel.log["timestamps_t"][log_index + 1])
+                vessel.log["timestamps_t"][log_index + 1]
+            )
 
-            pnt = fol.newpoint(name=vessel.name, coords=[(
-                vessel.log["timestamps_x"][log_index], vessel.log["timestamps_y"][log_index])])
+            pnt = fol.newpoint(
+                name=vessel.name,
+                coords=[
+                    (
+                        vessel.log["timestamps_x"][log_index],
+                        vessel.log["timestamps_y"][log_index],
+                    )
+                ],
+            )
             pnt.timespan.begin = begin.isoformat()
             pnt.timespan.end = end.isoformat()
             pnt.style = shared_style
 
         # include last point as well
         begin = datetime.datetime.fromtimestamp(
-            vessel.log["timestamps_t"][log_index + 1])
+            vessel.log["timestamps_t"][log_index + 1]
+        )
         # end = datetime.datetime.fromtimestamp(vessel.log["timestamps_t"][log_index + 1])
 
-        pnt = fol.newpoint(name=vessel.name, coords=[(
-            vessel.log["timestamps_x"][log_index + 1], vessel.log["timestamps_y"][log_index + 1])])
+        pnt = fol.newpoint(
+            name=vessel.name,
+            coords=[
+                (
+                    vessel.log["timestamps_x"][log_index + 1],
+                    vessel.log["timestamps_y"][log_index + 1],
+                )
+            ],
+        )
         pnt.timespan.begin = begin.isoformat()
         # pnt.timespan.end = end.isoformat()
         pnt.style = shared_style
@@ -188,12 +212,15 @@ def vessel_kml(env, vessels,
     kml.save(fname)
 
 
-def site_kml(env, sites,
-             fname='site_development.kml',
-             icon='http://maps.google.com/mapfiles/kml/shapes/square.png',
-             size=1,
-             scale=3,
-             stepsize=120):
+def site_kml(
+    env,
+    sites,
+    fname="site_development.kml",
+    icon="http://maps.google.com/mapfiles/kml/shapes/square.png",
+    size=1,
+    scale=3,
+    stepsize=120,
+):
     """Create a kml visualisation of vessels. Env variable needs to contain
     epoch to enable conversion of simulation time to real time. Vessels need
     logs that contain geometries in lat, lon as a function of time."""
@@ -206,36 +233,52 @@ def site_kml(env, sites,
     for site in sites:
         for log_index, value in enumerate(site.log["Timestamp"][:-1]):
             style = Style()
-            style.labelstyle.color = 'ffffffff'  # White
+            style.labelstyle.color = "ffffffff"  # White
             style.labelstyle.scale = 1
-            style.iconstyle.color = 'ff00ffff'  # Yellow
-            style.iconstyle.scale = scale * \
-                (site.log["Value"][log_index]/site.container.capacity)
+            style.iconstyle.color = "ff00ffff"  # Yellow
+            style.iconstyle.scale = scale * (
+                site.log["Value"][log_index] / site.container.capacity
+            )
             style.iconstyle.icon.href = icon
 
             begin = site.log["Timestamp"][log_index]
             end = site.log["Timestamp"][log_index + 1]
 
-            pnt = fol.newpoint(name=site.name, coords=[(site.log["Geometry"][log_index].x,
-                                                        site.log["Geometry"][log_index].y)])
+            pnt = fol.newpoint(
+                name=site.name,
+                coords=[
+                    (
+                        site.log["Geometry"][log_index].x,
+                        site.log["Geometry"][log_index].y,
+                    )
+                ],
+            )
             pnt.timespan.begin = begin.isoformat()
             pnt.timespan.end = end.isoformat()
             pnt.style = style
 
         # include last point as well
         style = Style()
-        style.labelstyle.color = 'ffffffff'  # White
+        style.labelstyle.color = "ffffffff"  # White
         style.labelstyle.scale = 1
-        style.iconstyle.color = 'ff00ffff'  # Yellow
-        style.iconstyle.scale = scale * \
-            (site.log["Value"][log_index+1]/site.container.capacity)
+        style.iconstyle.color = "ff00ffff"  # Yellow
+        style.iconstyle.scale = scale * (
+            site.log["Value"][log_index + 1] / site.container.capacity
+        )
         style.iconstyle.icon.href = icon
 
         begin = site.log["Timestamp"][log_index + 1]
         # end = site.log["Timestamp"][log_index + 1]
 
-        pnt = fol.newpoint(name=site.name, coords=[(site.log["Geometry"][log_index + 1].x,
-                                                    site.log["Geometry"][log_index + 1].y)])
+        pnt = fol.newpoint(
+            name=site.name,
+            coords=[
+                (
+                    site.log["Geometry"][log_index + 1].x,
+                    site.log["Geometry"][log_index + 1].y,
+                )
+            ],
+        )
         pnt.timespan.begin = begin.isoformat()
         # pnt.timespan.end = end.isoformat()
         pnt.style = style
@@ -243,12 +286,14 @@ def site_kml(env, sites,
     kml.save(fname)
 
 
-def graph_kml(env,
-              fname='graph.kml',
-              icon='http://maps.google.com/mapfiles/kml/shapes/donut.png',
-              size=0.5,
-              scale=0.5,
-              width=5):
+def graph_kml(
+    env,
+    fname="graph.kml",
+    icon="http://maps.google.com/mapfiles/kml/shapes/donut.png",
+    size=0.5,
+    scale=0.5,
+    width=5,
+):
     """Create a kml visualisation of graph. Env variable needs to contain
     graph."""
 
@@ -257,56 +302,70 @@ def graph_kml(env,
     fol = kml.newfolder(name="Vessels")
 
     shared_style = Style()
-    shared_style.labelstyle.color = 'ffffffff'  # White
+    shared_style.labelstyle.color = "ffffffff"  # White
     shared_style.labelstyle.scale = size
-    shared_style.iconstyle.color = 'ffffffff'  # White
+    shared_style.iconstyle.color = "ffffffff"  # White
     shared_style.iconstyle.scale = scale
     shared_style.iconstyle.icon.href = icon
-    shared_style.linestyle.color = 'ff0055ff'  # Red
+    shared_style.linestyle.color = "ff0055ff"  # Red
     shared_style.linestyle.width = width
 
     nodes = list(env.FG.nodes)
 
     # each timestep will be represented as a single point
-    for log_index, value in enumerate(list(env.FG.nodes)[0:-1-1]):
+    for log_index, value in enumerate(list(env.FG.nodes)[0 : -1 - 1]):
 
-        pnt = fol.newpoint(name='',
-                           coords=[(nx.get_node_attributes(env.FG, "Geometry")[nodes[log_index]].x,
-                                    nx.get_node_attributes(env.FG, "Geometry")[nodes[log_index]].y)])
+        pnt = fol.newpoint(
+            name="",
+            coords=[
+                (
+                    nx.get_node_attributes(env.FG, "Geometry")[nodes[log_index]].x,
+                    nx.get_node_attributes(env.FG, "Geometry")[nodes[log_index]].y,
+                )
+            ],
+        )
         pnt.style = shared_style
 
     edges = list(env.FG.edges)
-    for log_index, value in enumerate(list(env.FG.edges)[0:-1-1]):
+    for log_index, value in enumerate(list(env.FG.edges)[0 : -1 - 1]):
 
-        lne = fol.newlinestring(name='',
-                                coords=[(nx.get_node_attributes(env.FG, "Geometry")[edges[log_index][0]].x,
-                                         nx.get_node_attributes(env.FG, "Geometry")[edges[log_index][0]].y),
-                                        (nx.get_node_attributes(env.FG, "Geometry")[edges[log_index][1]].x,
-                                         nx.get_node_attributes(env.FG, "Geometry")[edges[log_index][1]].y)])
+        lne = fol.newlinestring(
+            name="",
+            coords=[
+                (
+                    nx.get_node_attributes(env.FG, "Geometry")[edges[log_index][0]].x,
+                    nx.get_node_attributes(env.FG, "Geometry")[edges[log_index][0]].y,
+                ),
+                (
+                    nx.get_node_attributes(env.FG, "Geometry")[edges[log_index][1]].x,
+                    nx.get_node_attributes(env.FG, "Geometry")[edges[log_index][1]].y,
+                ),
+            ],
+        )
         lne.style = shared_style
 
     kml.save(fname)
 
 
 def energy_use(vessels, testing=False, web=False):
-    energy_use_loading = 0            # concumption between loading start and loading stop
+    energy_use_loading = 0  # concumption between loading start and loading stop
     # concumption between sailing filled start and sailing filled stop
     energy_use_sailing_filled = 0
     # concumption between unloading  start and unloading  stop
     energy_use_unloading = 0
     # concumption between sailing empty start and sailing empty stop
     energy_use_sailing_empty = 0
-    energy_use_waiting = 0            # concumption between waiting start and waiting stop
+    energy_use_waiting = 0  # concumption between waiting start and waiting stop
 
     def get_energy_use(vessel):
-        energy_use_loading = 0            # concumption between loading start and loading stop
+        energy_use_loading = 0  # concumption between loading start and loading stop
         # concumption between sailing filled start and sailing filled stop
         energy_use_sailing_filled = 0
         # concumption between unloading  start and unloading  stop
         energy_use_unloading = 0
         # concumption between sailing empty start and sailing empty stop
         energy_use_sailing_empty = 0
-        energy_use_waiting = 0            # concumption between waiting start and waiting stop
+        energy_use_waiting = 0  # concumption between waiting start and waiting stop
 
         for i in range(len(vessel.log["Message"])):
             if vessel.log["Message"][i] == "Energy use loading":
@@ -323,8 +382,14 @@ def energy_use(vessels, testing=False, web=False):
 
             elif vessel.log["Message"][i] == "Energy use waiting":
                 energy_use_waiting += vessel.log["Value"][i]
-                
-        return energy_use_loading, energy_use_sailing_filled, energy_use_unloading, energy_use_sailing_empty, energy_use_waiting
+
+        return (
+            energy_use_loading,
+            energy_use_sailing_filled,
+            energy_use_unloading,
+            energy_use_sailing_empty,
+            energy_use_waiting,
+        )
 
     try:
         for vessel in vessels:
@@ -342,60 +407,67 @@ def energy_use(vessels, testing=False, web=False):
         energy_use_unloading += energy[2]
         energy_use_sailing_empty += energy[3]
         energy_use_waiting += energy[4]
-        
+
     # For the total plot
     fig, ax1 = plt.subplots(figsize=[15, 10])
 
     # For the barchart
-    height = [energy_use_loading,
-              energy_use_unloading,
-              energy_use_sailing_filled,
-              energy_use_sailing_empty,
-              energy_use_waiting]
-    labels = ["Loading",
-              "Unloading",
-              "Sailing filled",
-              "Sailing empty",
-              "Waiting"]
-    colors = [(55/255, 126/255, 184/255),
-              (255/255, 150/255, 0/255),
-              (98/255, 192/255, 122/255),
-              (98/255, 141/255, 122/255),
-              (255/255, 0/255, 0/255)]
+    height = [
+        energy_use_loading,
+        energy_use_unloading,
+        energy_use_sailing_filled,
+        energy_use_sailing_empty,
+        energy_use_waiting,
+    ]
+    labels = ["Loading", "Unloading", "Sailing filled", "Sailing empty", "Waiting"]
+    colors = [
+        (55 / 255, 126 / 255, 184 / 255),
+        (255 / 255, 150 / 255, 0 / 255),
+        (98 / 255, 192 / 255, 122 / 255),
+        (98 / 255, 141 / 255, 122 / 255),
+        (255 / 255, 0 / 255, 0 / 255),
+    ]
 
     positions = np.arange(len(labels))
     ax1.bar(positions, height, color=colors)
 
     # For the cumulative percentages
-    total_use = sum([energy_use_loading,
-                     energy_use_unloading,
-                     energy_use_sailing_filled,
-                     energy_use_sailing_empty,
-                     energy_use_waiting])
+    total_use = sum(
+        [
+            energy_use_loading,
+            energy_use_unloading,
+            energy_use_sailing_filled,
+            energy_use_sailing_empty,
+            energy_use_waiting,
+        ]
+    )
 
     energy_use_unloading += energy_use_loading
     energy_use_sailing_filled += energy_use_unloading
     energy_use_sailing_empty += energy_use_sailing_filled
     energy_use_waiting += energy_use_sailing_empty
-    y = [energy_use_loading,
-         energy_use_unloading,
-         energy_use_sailing_filled,
-         energy_use_sailing_empty,
-         energy_use_waiting]
-    n = [energy_use_loading / total_use,
-         energy_use_unloading / total_use,
-         energy_use_sailing_filled / total_use,
-         energy_use_sailing_empty / total_use,
-         energy_use_waiting / total_use, ]
+    y = [
+        energy_use_loading,
+        energy_use_unloading,
+        energy_use_sailing_filled,
+        energy_use_sailing_empty,
+        energy_use_waiting,
+    ]
+    n = [
+        energy_use_loading / total_use,
+        energy_use_unloading / total_use,
+        energy_use_sailing_filled / total_use,
+        energy_use_sailing_empty / total_use,
+        energy_use_waiting / total_use,
+    ]
 
-    ax1.plot(positions, y, 'ko', markersize=10)
-    ax1.plot(positions, y, 'k')
+    ax1.plot(positions, y, "ko", markersize=10)
+    ax1.plot(positions, y, "k")
 
     for i, txt in enumerate(n):
         x_txt = positions[i] + 0.1
         y_txt = y[i] * 0.95
-        ax1.annotate("{:02.1f}%".format(txt * 100),
-                     (x_txt, y_txt), size=12)
+        ax1.annotate("{:02.1f}%".format(txt * 100), (x_txt, y_txt), size=12)
 
     # Further markup
     plt.ylabel("Energy useage in kWh", size=12)
@@ -403,7 +475,7 @@ def energy_use(vessels, testing=False, web=False):
     ax1.set_xticklabels(labels, size=12)
 
     try:
-        _ =len(vessels)
+        _ = len(vessels)
         plt.title("Energy use - for all equipment", size=15)
     except:
         plt.title("Energy use - {}".format(vessels.name), size=15)
@@ -416,8 +488,7 @@ def energy_use(vessels, testing=False, web=False):
 
 
 def activity_distribution(vessel, testing=False):
-    activities = ["loading", "unloading",
-                  "sailing full", "sailing empty", "waiting"]
+    activities = ["loading", "unloading", "sailing full", "sailing empty", "waiting"]
     activities_times = [0, 0, 0, 0, 0]
 
     for i, activity in enumerate(activities):
@@ -426,79 +497,67 @@ def activity_distribution(vessel, testing=False):
 
         for j, message in enumerate(vessel.log["Message"]):
             if activity != "waiting":
-                if message == activity + ' start':
+                if message == activity + " start":
                     starts.append(vessel.log["Timestamp"][j])
-                if message == activity + ' stop':
+                if message == activity + " stop":
                     stops.append(vessel.log["Timestamp"][j])
             else:
-                if message[:7] == activity and message[-5:] == 'start':
+                if message[:7] == activity and message[-5:] == "start":
                     starts.append(vessel.log["Timestamp"][j])
-                if message[:7] == activity and message[-4:] == 'stop':
+                if message[:7] == activity and message[-4:] == "stop":
                     stops.append(vessel.log["Timestamp"][j])
 
         for j, _ in enumerate(starts):
-            activities_times[i] += ((stops[j] - starts[j]
-                                     ).total_seconds() / (3600 * 24))
+            activities_times[i] += (stops[j] - starts[j]).total_seconds() / (3600 * 24)
 
-    loading, unloading, sailing_full, sailing_empty, waiting = activities_times[0], \
-        activities_times[1], \
-        activities_times[2], \
-        activities_times[3], \
-        activities_times[4]
+    loading, unloading, sailing_full, sailing_empty, waiting = (
+        activities_times[0],
+        activities_times[1],
+        activities_times[2],
+        activities_times[3],
+        activities_times[4],
+    )
 
     # For the total plot
     fig, ax1 = plt.subplots(figsize=[15, 10])
 
     # For the barchart
-    height = [loading,
-              unloading,
-              sailing_full,
-              sailing_empty,
-              waiting]
-    labels = ["Loading",
-              "Unloading",
-              "Sailing full",
-              "Sailing empty",
-              "Waiting"]
-    colors = [(55/255, 126/255, 184/255),
-              (255/255, 150/255, 0/255),
-              (98/255, 192/255, 122/255),
-              (98/255, 141/255, 122/255),
-              (255/255, 0/255, 0/255)]
+    height = [loading, unloading, sailing_full, sailing_empty, waiting]
+    labels = ["Loading", "Unloading", "Sailing full", "Sailing empty", "Waiting"]
+    colors = [
+        (55 / 255, 126 / 255, 184 / 255),
+        (255 / 255, 150 / 255, 0 / 255),
+        (98 / 255, 192 / 255, 122 / 255),
+        (98 / 255, 141 / 255, 122 / 255),
+        (255 / 255, 0 / 255, 0 / 255),
+    ]
 
     positions = np.arange(len(labels))
     ax1.bar(positions, height, color=colors)
 
     # For the cumulative percentages
-    total = sum([loading,
-                 unloading,
-                 sailing_full,
-                 sailing_empty,
-                 waiting])
+    total = sum([loading, unloading, sailing_full, sailing_empty, waiting])
 
     unloading += loading
     sailing_full += unloading
     sailing_empty += sailing_full
     waiting += sailing_empty
-    y = [loading,
-         unloading,
-         sailing_full,
-         sailing_empty,
-         waiting]
-    n = [loading / total,
-         unloading / total,
-         sailing_full / total,
-         sailing_empty / total,
-         waiting / total]
+    y = [loading, unloading, sailing_full, sailing_empty, waiting]
+    n = [
+        loading / total,
+        unloading / total,
+        sailing_full / total,
+        sailing_empty / total,
+        waiting / total,
+    ]
 
-    ax1.plot(positions, y, 'ko', markersize=10)
-    ax1.plot(positions, y, 'k')
+    ax1.plot(positions, y, "ko", markersize=10)
+    ax1.plot(positions, y, "k")
 
     for i, txt in enumerate(n):
         x_txt = positions[i] + 0.1
         y_txt = y[i] * 0.95
-        ax1.annotate("{:02.1f}%".format(txt * 100),
-                     (x_txt, y_txt), size=12)
+        ax1.annotate("{:02.1f}%".format(txt * 100), (x_txt, y_txt), size=12)
 
     # Further markup
     plt.ylabel("Total time spend on activities [Days]", size=12)
@@ -509,8 +568,9 @@ def activity_distribution(vessel, testing=False):
     if testing == False:
         plt.show()
 
-def equipment_plot_json(vessels, web = False):
-    
+
+def equipment_plot_json(vessels, web=False):
+
     # Set up the basic storage
     equipment_dict = {}
     activities = ["sailing empty", "loading", "sailing filled", "unloading"]
@@ -518,28 +578,34 @@ def equipment_plot_json(vessels, web = False):
     y = 0
     ys = []
     names = []
-    
+
     date_start = datetime.datetime(2100, 1, 1)
-    date_end = datetime.datetime(1970, 1,1 )
+    date_end = datetime.datetime(1970, 1, 1)
 
     for vessel in vessels:
-        equipment_dict[vessel.name] = {"sailing empty": [], 
-                                       "loading": [], 
-                                       "sailing filled": [], 
-                                       "unloading": []}
-        
+        equipment_dict[vessel.name] = {
+            "sailing empty": [],
+            "loading": [],
+            "sailing filled": [],
+            "unloading": [],
+        }
+
         df = pd.DataFrame.from_dict(vessel.log)
         y += 0.5
-        
+
         ys.append(y)
         names.append(vessel.name)
-        
+
         for i, msg in enumerate(df["Message"]):
-            date = datetime.datetime.strptime(str(df["Timestamp"][i]), "%Y-%m-%d %H:%M:%S")
-            
-            if date < date_start: date_start = date 
-            if date > date_end: date_end = date 
-            
+            date = datetime.datetime.strptime(
+                str(df["Timestamp"][i]), "%Y-%m-%d %H:%M:%S"
+            )
+
+            if date < date_start:
+                date_start = date
+            if date > date_end:
+                date_end = date
+
             date = date2num(date)
 
             for act in activities:
@@ -550,24 +616,41 @@ def equipment_plot_json(vessels, web = False):
                 elif act + " stop" == msg:
                     to_app = (date, y)
                     equipment_dict[vessel.name][act][-1].append(to_app)
-        
+
     fig, ax = plt.subplots(figsize=[16, 8])
-    
+
     sailing_empty = []
     sailing_full = []
     unloading = []
     loading = []
-    
+
     for vessel in vessels:
         sailing_empty += equipment_dict[vessel.name]["sailing empty"]
         sailing_full += equipment_dict[vessel.name]["sailing filled"]
         unloading += equipment_dict[vessel.name]["unloading"]
         loading += equipment_dict[vessel.name]["loading"]
 
-    act_1 = LineCollection(sailing_empty, label = "Sailing empty", linewidths=10, color = (98 / 255, 141 / 255, 122 / 255))
-    act_2 = LineCollection(sailing_full, label = "Sailing filled", linewidths=10, color = (98 / 255, 192 / 255, 122 / 255))
-    act_3 = LineCollection(unloading, label = "Unloading", linewidths=10, color = (255 / 255, 150 / 255, 0 / 255))
-    act_4 = LineCollection(loading, label = "Loading", linewidths=10, color = (55 / 255, 126 / 255, 184 / 255))
+    act_1 = LineCollection(
+        sailing_empty,
+        label="Sailing empty",
+        linewidths=10,
+        color=(98 / 255, 141 / 255, 122 / 255),
+    )
+    act_2 = LineCollection(
+        sailing_full,
+        label="Sailing filled",
+        linewidths=10,
+        color=(98 / 255, 192 / 255, 122 / 255),
+    )
+    act_3 = LineCollection(
+        unloading,
+        label="Unloading",
+        linewidths=10,
+        color=(255 / 255, 150 / 255, 0 / 255),
+    )
+    act_4 = LineCollection(
+        loading, label="Loading", linewidths=10, color=(55 / 255, 126 / 255, 184 / 255)
+    )
 
     ax.add_collection(act_1)
     ax.add_collection(act_2)
@@ -578,11 +661,11 @@ def equipment_plot_json(vessels, web = False):
     ax.set_yticks(ys)
     ax.set_yticklabels(names)
 
-    ax.set_xlim(date2num(date_start) -0.25 , date2num(date_end) + 0.25)
+    ax.set_xlim(date2num(date_start) - 0.25, date2num(date_end) + 0.25)
     ax.set_xticks([date2num(date_start), date2num(date_end)])
     ax.set_xticklabels([date_start, date_end])
 
-    plt.legend(loc = "lower right")
+    plt.legend(loc="lower right")
     plt.title("Equipment planning")
 
     if web == False:
@@ -590,45 +673,55 @@ def equipment_plot_json(vessels, web = False):
     else:
         return fig
 
-def energy_use_time(vessels, web = False):
-    
+
+def energy_use_time(vessels, web=False):
+
     fig, ax = plt.subplots(figsize=[16, 8])
-    
+
     y_max = 0
-    
+
     date_start = datetime.datetime(2100, 1, 1)
-    date_end = datetime.datetime(1970, 1,1 )
-    
+    date_end = datetime.datetime(1970, 1, 1)
+
     for vessel in vessels:
         df = pd.DataFrame.from_dict(vessel.log)
         x = []
         y = []
-        
-        x.append(date2num(datetime.datetime.strptime(str(df["Timestamp"][0]), "%Y-%m-%d %H:%M:%S")))
+
+        x.append(
+            date2num(
+                datetime.datetime.strptime(str(df["Timestamp"][0]), "%Y-%m-%d %H:%M:%S")
+            )
+        )
         y.append(0)
-        
+
         for i, msg in enumerate(df["Message"]):
-            date = datetime.datetime.strptime(str(df["Timestamp"][i]), "%Y-%m-%d %H:%M:%S")
-            
-            if date < date_start: date_start = date 
-            if date > date_end: date_end = date 
-            
+            date = datetime.datetime.strptime(
+                str(df["Timestamp"][i]), "%Y-%m-%d %H:%M:%S"
+            )
+
+            if date < date_start:
+                date_start = date
+            if date > date_end:
+                date_end = date
+
             date = date2num(date)
 
             if "Energy use" in msg:
                 x.append(date)
                 y.append(y[-1] + df["Value"][i] * 0.2 * 3.5 / 1000)
-        
-        plt.plot(x, y, label = vessel.name)
-        if max(y) > y_max: y_max = max(y) 
+
+        plt.plot(x, y, label=vessel.name)
+        if max(y) > y_max:
+            y_max = max(y)
 
     ax.set_ylim(0, y_max * 1.05)
 
-    ax.set_xlim(date2num(date_start) -0.25 , date2num(date_end) + 0.25)
+    ax.set_xlim(date2num(date_start) - 0.25, date2num(date_end) + 0.25)
     ax.set_xticks([date2num(date_start), date2num(date_end)])
     ax.set_xticklabels([date_start, date_end])
 
-    plt.legend(loc = "lower right")
+    plt.legend(loc="lower right")
     plt.title("ton CO2 emission per vessel")
 
     if web == False:
@@ -639,21 +732,26 @@ def energy_use_time(vessels, web = False):
 
 def plot_route(vessels):
     import matplotlib.pyplot as plt
-    plt.style.use('ggplot')
+
+    plt.style.use("ggplot")
     from cartopy import config
     import cartopy.crs as ccrs
     import cartopy.feature as cfeature
     from matplotlib.collections import LineCollection
     from matplotlib.colors import ListedColormap, BoundaryNorm
 
-    fig = plt.figure(figsize = (10,10))
+    fig = plt.figure(figsize=(10, 10))
     ax = plt.subplot(projection=ccrs.Mercator())
-    ax.coastlines(resolution='10m', color='black', linewidth=3)
-    ax.gridlines(color = 'grey', zorder = 3)
-    ax.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '10m', edgecolor='face', facecolor='palegoldenrod'))
+    ax.coastlines(resolution="10m", color="black", linewidth=3)
+    ax.gridlines(color="grey", zorder=3)
+    ax.add_feature(
+        cfeature.NaturalEarthFeature(
+            "physical", "land", "10m", edgecolor="face", facecolor="palegoldenrod"
+        )
+    )
 
     for hopper in vessels:
-        Hopper_route = hopper.log['Geometry']
+        Hopper_route = hopper.log["Geometry"]
         x_loc = []
         y_loc = []
         for G in Hopper_route:
@@ -661,29 +759,36 @@ def plot_route(vessels):
             y_loc.append(G.y)
         x_loc = np.array(x_loc)
         y_loc = np.array(y_loc)
-        
-        TT = hopper.log['Timestamp']
+
+        TT = hopper.log["Timestamp"]
         Time = []
 
         for T in TT:
             TTT = T.timestamp()
             Time.append(TTT)
 
-        Time= np.array(Time)
-        Time = (Time - Time[0])/3600/24
+        Time = np.array(Time)
+        Time = (Time - Time[0]) / 3600 / 24
 
         points = np.array([x_loc, y_loc]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
-        
+
         norm = plt.Normalize(Time.min(), Time.max())
-        lc = LineCollection(segments, cmap='magma', norm=norm, transform=ccrs.PlateCarree())
+        lc = LineCollection(
+            segments, cmap="magma", norm=norm, transform=ccrs.PlateCarree()
+        )
 
         lc.set_array(Time)
         line = ax.add_collection(lc)
-        fig.colorbar(line, ax=ax, label = 'Time in days')
-        
-        ax.set_extent([x_loc.min()*0.99, x_loc.max()*1.01, y_loc.min()*0.999, y_loc.max()*1.001])
-    
+        fig.colorbar(line, ax=ax, label="Time in days")
+
+        ax.set_extent(
+            [
+                x_loc.min() * 0.99,
+                x_loc.max() * 1.01,
+                y_loc.min() * 0.999,
+                y_loc.max() * 1.001,
+            ]
+        )
+
     return fig
-
-
