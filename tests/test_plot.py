@@ -26,15 +26,15 @@
 
 # @image_comparison(baseline_images=['energy_use'], extensions=['png'])
 # def test_energy_use_plot():
-    
+
 #     class vessel():
 #         def __init__(self, log, name):
 #             self.log = log
 #             self.name = name
-    
+
 #     with open('tests/baseline_images/energy_use.json') as f:
 #         data = json.load(f)
-    
+
 #     vessel = vessel(data, "Test vessel")
 
 #     plot.energy_use(vessel, testing = True)

@@ -80,12 +80,12 @@ class Activity(core.Identifiable, core.Log):
             loader=loader,
             mover=mover,
             unloader=unloader,
-            stop_reservation_waiting_event=self.stop_event_checker,
+            stop_reservation_waiting_event=stop_event_checker(self),
             verbose=self.print,
         )
         main_proc = partial(
             conditional_process,
-            stop_event=self.stop_event_checker,
+            stop_event=stop_event_checker(self),
             sub_processes=[single_run_proc],
         )
         if start_event is not None:
@@ -94,23 +94,23 @@ class Activity(core.Identifiable, core.Log):
             )
         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
 
-    @property
-    def stop_event_checker(self):
-        """
-        Stop events can be triggered before the activitiy is started.
-        The stop event should be checked anytime because it might reset.
-        """
 
-        if self.stop_event is None:
-            return self.env.any_of(
-                events=[
-                    self.origin.container.empty_event,
-                    self.destination.container.full_event,
-                ]
-            )
+def stop_event_checker(activity):
+    """
+    Stop events can be triggered before the activitiy is started.
+    The stop event should be checked anytime because it might reset.
+    """
 
-        else:
-            return self.stop_event
+    if activity.stop_event is None:
+        return activity.env.any_of(
+            events=[
+                activity.origin.container.empty_event,
+                activity.destination.container.full_event,
+            ]
+        )
+
+    else:
+        return activity.stop_event
 
 
 def delayed_process(activity_log, env, start_event, sub_processes):
@@ -149,8 +149,10 @@ def conditional_process(activity_log, env, stop_event, sub_processes):
     """
 
     if activity_log.log["Message"]:
-        if activity_log.log["Message"][-1] == "delayed activity started":
-            stop_event = activity_log.stop_event_checker
+        if activity_log.log["Message"][-1] == "delayed activity started" and hasattr(
+            activity_log, "stop_event"
+        ):
+            stop_event = stop_event_checker(activity_log)
 
     while not stop_event.processed:
         for sub_process in sub_processes:

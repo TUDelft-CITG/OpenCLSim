@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 @pytest.fixture
 def env():
     simulation_start = datetime.datetime(2019, 1, 1)
-    my_env = simpy.Environment(initial_time = time.mktime(simulation_start.timetuple()))
+    my_env = simpy.Environment(initial_time=time.mktime(simulation_start.timetuple()))
     my_env.epoch = time.mktime(simulation_start.timetuple())
     return my_env
 
@@ -53,9 +53,9 @@ def test_command_line_interface():
     runner = CliRunner()
     result = runner.invoke(cli.cli)
     assert result.exit_code == 0
-    help_result = runner.invoke(cli.cli, ['--help'])
+    help_result = runner.invoke(cli.cli, ["--help"])
     assert help_result.exit_code == 0
-    assert '--help  Show this message and exit.' in help_result.output
+    assert "--help  Show this message and exit." in help_result.output
     assert result.output == help_result.output
 
 
@@ -73,7 +73,9 @@ def test_container_dependent_movable(env, geometry_a, locatable_a, locatable_b):
     v_full = 10
     v_empty = 20
     compute_v = lambda x: x * (v_full - v_empty) + v_empty
-    movable = core.ContainerDependentMovable(env=env, geometry=geometry_a, compute_v=compute_v, capacity=10)
+    movable = core.ContainerDependentMovable(
+        env=env, geometry=geometry_a, compute_v=compute_v, capacity=10
+    )
 
     move_and_test(env, locatable_b, movable, 20, 2.18)
 
@@ -117,10 +119,19 @@ class Processor(core.Processor, core.Log, core.Locatable):
 
 def test_basic_processor(env, geometry_a):
     # move content from one container to another, then move some of it back again
-    source = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=1)
-    dest = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=0, nr_resources=1)
+    source = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=1000, level=1000, nr_resources=1
+    )
+    dest = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=1000, level=0, nr_resources=1
+    )
 
-    processor = Processor(env=env, loading_func=model.get_loading_func(2), unloading_func=model.get_unloading_func(2), geometry = geometry_a)
+    processor = Processor(
+        env=env,
+        loading_func=model.get_loading_func(2),
+        unloading_func=model.get_unloading_func(2),
+        geometry=geometry_a,
+    )
 
     env.process(processor.process(source, 400, dest))
     env.run()
