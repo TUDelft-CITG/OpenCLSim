@@ -52,10 +52,7 @@ class Activity(core.Identifiable, core.Log):
         """Initialization"""
 
         self.start_event = start_event if start_event is None or isinstance(start_event, simpy.Event) else self.env.all_of(events=start_event)
-        self.stop_event = stop_event if stop_event is not None else self.env.any_of(events=[
-            origin.container.empty_event,
-            destination.container.full_event
-        ])
+        self.stop_event = stop_event 
 
         self.origin = origin
         self.destination = destination
@@ -71,11 +68,11 @@ class Activity(core.Identifiable, core.Log):
             loader=loader,
             mover=mover,
             unloader=unloader,
-            stop_reservation_waiting_event=self.stop_event,
+            stop_reservation_waiting_event=self.stop_event_checker,
             verbose=self.print
         )
         main_proc = partial(conditional_process,
-            stop_event=self.stop_event,
+            stop_event=self.stop_event_checker,
             sub_processes=[single_run_proc]
         )
         if start_event is not None:
@@ -84,6 +81,22 @@ class Activity(core.Identifiable, core.Log):
                 sub_processes=[main_proc]
             )
         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
+
+    @property
+    def stop_event_checker(self):
+        """
+        Stop events can be triggered before the activitiy is started.
+        The stop event should be checked anytime because it might reset.
+        """
+
+        if self.stop_event is None:
+            return self.env.any_of(events=[
+                self.origin.container.empty_event,
+                self.destination.container.full_event
+                ])
+        
+        else:
+            return self.stop_event
 
 
 def delayed_process(activity_log, env, start_event, sub_processes):
@@ -120,6 +133,11 @@ def conditional_process(activity_log, env, stop_event, sub_processes):
                    the sub_processes will be executed sequentially, in the order in which they are given as long
                    as the stop_event has not occurred.
     """
+
+    if activity_log.log["Message"]:
+        if activity_log.log["Message"][-1] == "delayed activity started":
+            stop_event = activity_log.stop_event_checker
+
     while not stop_event.processed:
         for sub_process in sub_processes:
             yield from sub_process(activity_log=activity_log, env=env)
