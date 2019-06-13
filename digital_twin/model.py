@@ -154,9 +154,7 @@ def conditional_process(activity_log, env, stop_event, sub_processes):
     """
 
     if activity_log.log["Message"]:
-        if activity_log.log["Message"][-1] == "delayed activity started" and hasattr(
-            activity_log, "stop_event"
-        ):
+        if activity_log.log["Message"][-1] == "delayed activity started" and hasattr(stop_event, "__call__"):
             stop_event = stop_event(activity_log.start_event)
 
     while not stop_event.processed:
