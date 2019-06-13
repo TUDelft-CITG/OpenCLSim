@@ -69,20 +69,27 @@ class Activity(core.Identifiable, core.Log):
                 stop_event
                 if stop_event is not None
                 else self.env.any_of(
-                    events=[origin.container.empty_event, destination.container.full_event]
+                    events=[
+                        origin.container.empty_event,
+                        destination.container.full_event,
+                    ]
                 )
             )
-        
+
         else:
             self.stop_event = (
                 stop_event
                 if stop_event is not None
-                else [origin.container.get_empty_event, destination.container.get_full_event]
+                else [
+                    origin.container.get_empty_event,
+                    destination.container.get_full_event,
+                ]
             )
 
-
         self.stop_reservation_waiting_event = (
-            self.stop_event() if hasattr(self.stop_event, "__call__") else self.stop_event
+            self.stop_event()
+            if hasattr(self.stop_event, "__call__")
+            else self.stop_event
         )
 
         self.origin = origin
@@ -158,13 +165,11 @@ def conditional_process(activity_log, env, stop_event, sub_processes):
             stop_event, "__call__"
         ):
             stop_event = stop_event()
-    
+
     if hasattr(stop_event, "__call__"):
-            stop_event = stop_event()
+        stop_event = stop_event()
     elif type(stop_event) == list:
-        stop_event = env.any_of(
-                    events=[event() for event in stop_event]
-                )
+        stop_event = env.any_of(events=[event() for event in stop_event])
 
     while not stop_event.processed:
         for sub_process in sub_processes:
@@ -280,7 +285,7 @@ def single_run_process(
         )
 
     if hasattr(stop_reservation_waiting_event, "__call__"):
-        stop_reservation_waiting_event = stop_reservation_waiting_event()    
+        stop_reservation_waiting_event = stop_reservation_waiting_event()
 
     if amount > 0:
         resource_requests = {}
