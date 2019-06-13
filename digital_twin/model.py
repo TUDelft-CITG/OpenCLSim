@@ -72,7 +72,7 @@ class Activity(core.Identifiable, core.Log):
         )
 
         self.stop_reservation_waiting_event = (
-            self.stop_event() if stop_event is not None else self.stop_event
+            self.stop_event() if hasattr(self.stop_event, "__call__") else self.stop_event
         )
 
         self.origin = origin
@@ -95,7 +95,7 @@ class Activity(core.Identifiable, core.Log):
         )
         main_proc = partial(
             conditional_process,
-            stop_event=stop_event_checker(self),
+            stop_event=self.stop_event,
             sub_processes=[single_run_proc],
         )
         if start_event is not None:
@@ -103,24 +103,6 @@ class Activity(core.Identifiable, core.Log):
                 delayed_process, start_event=self.start_event, sub_processes=[main_proc]
             )
         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
-
-
-def stop_event_checker(activity):
-    """
-    Stop events can be triggered before the activitiy is started.
-    The stop event should be checked anytime because it might reset.
-    """
-
-    if activity.stop_event is None:
-        return activity.env.any_of(
-            events=[
-                activity.origin.container.empty_event,
-                activity.destination.container.full_event,
-            ]
-        )
-
-    else:
-        return activity.stop_event
 
 
 def delayed_process(activity_log, env, start_event, sub_processes):
@@ -162,7 +144,7 @@ def conditional_process(activity_log, env, stop_event, sub_processes):
         if activity_log.log["Message"][-1] == "delayed activity started" and hasattr(
             stop_event, "__call__"
         ):
-            stop_event = stop_event(activity_log.start_event)
+            stop_event = stop_event()
 
     while not stop_event.processed:
         for sub_process in sub_processes:
@@ -754,10 +736,10 @@ class Simulation(core.Identifiable, core.Log):
 
         if operator == "is_full":
             operand = self.get_level_event_operand(condition)
-            return operand.container.full_event
+            return operand.container.get_full_event
         elif operator == "is_empty":
             operand = self.get_level_event_operand(condition)
-            return operand.container.empty_event
+            return operand.container.get_empty_event
         elif operator == "is_done":
             operand_key = condition["operand"]
             return self.activities[operand_key][
