@@ -1,0 +1,163 @@
+{
+    "initialTime":0,
+    "saveSimulation":true,
+    "sites":[
+       {
+          "id":"borrow area",
+          "name":"Borrow area",
+          "type":[
+             "Locatable",
+             "HasResource",
+             "HasContainer"
+          ],
+          "properties":{
+             "geometry":{
+                "type":"Point",
+                "coordinates":[
+                   4.212372,
+                   52.114205
+                ]
+             },
+             "capacity":9000,
+             "level":9000
+          }
+       },
+       {
+          "id":"reclamation",
+          "name":"Reclamation",
+          "type":[
+             "Locatable",
+             "HasResource",
+             "HasContainer"
+          ],
+          "properties":{
+             "geometry":{
+                "type":"Point",
+                "coordinates":[
+                   4.278752,
+                   52.115987
+                ]
+             },
+             "capacity":9000,
+             "level":0
+          }
+       }
+    ],
+    "equipment":[
+       {
+          "id":"trailing suction hopper dredger",
+          "name":"Trailing Suction Hopper Dredger",
+          "type":[
+             "HasResource",
+             "ContainerDependentMovable",
+             "Processor"
+          ],
+          "properties":{
+             "location":"borrow area",
+             "loadingRate":[
+                {
+                   "level":0,
+                   "rate":1
+                },
+                {
+                   "level":3000,
+                   "rate":1
+                }
+             ],
+             "unloadingRate":[
+                {
+                   "level":0,
+                   "rate":1
+                },
+                {
+                   "level":3000,
+                   "rate":1
+                }
+             ],
+             "capacity":3000,
+             "level":0,
+             "speed":[
+                {
+                   "level":0,
+                   "speed":4.115555552
+                },
+                {
+                   "level":3000,
+                   "speed":4.115555552
+                }
+             ]
+          },
+          "blockly":{
+             "image":"/design/trailing_suction_hopper_dredger.svg",
+             "colour":"#000099",
+             "output":[
+                "mover",
+                "loader",
+                "unloader"
+             ]
+          }
+       }
+    ],
+    "activities":[
+       {
+          "id":"do something",
+          "type":"sequential",
+          "activities":[
+             {
+                "id":"do something-0",
+                "type":"conditional",
+                "condition":{
+                   "operator":"is_empty",
+                   "operand":"borrow area"
+                },
+                "activities":[
+                   {
+                      "id":"undefined-0",
+                      "type":"single_run",
+                      "origin":"borrow area",
+                      "destination":"reclamation",
+                      "loader":"trailing suction hopper dredger",
+                      "unloader":"trailing suction hopper dredger",
+                      "mover":"trailing suction hopper dredger",
+                      "moverProperties":{
+                         "engineOrder":1
+                      }
+                   }
+                ]
+             }
+          ]
+       },
+       {
+          "id":"do something 2",
+          "type":"delayed",
+          "condition":{
+             "operator":"is_done",
+             "operand":"do something"
+          },
+          "activities":[
+             {
+                "id":"do something 2-0",
+                "type":"conditional",
+                "condition":{
+                   "operator":"is_full",
+                   "operand":"borrow area"
+                },
+                "activities":[
+                   {
+                      "id":"undefined-0",
+                      "type":"single_run",
+                      "origin":"reclamation",
+                      "destination":"borrow area",
+                      "loader":"trailing suction hopper dredger",
+                      "unloader":"trailing suction hopper dredger",
+                      "mover":"trailing suction hopper dredger",
+                      "moverProperties":{
+                         "engineOrder":1
+                      }
+                   }
+                ]
+             }
+          ]
+       }
+    ]
+ }

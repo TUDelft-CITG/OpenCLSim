@@ -134,7 +134,7 @@ def test_temp_site_no_stop(env, Location, TransportProcessingResource):
     start = env.now
     env.run()
 
-    assert start - env.epoch != 2 * 24 * 3600
+    assert env.now - start != 2 * 24 * 3600
 
 
 def test_temp_site_with_stop(env, Location, TransportProcessingResource):
@@ -211,4 +211,4 @@ def test_temp_site_with_stop(env, Location, TransportProcessingResource):
     start = env.now
     env.run()
 
-    assert start - env.epoch != 2 * 24 * 3600
+    assert env.now - start != 2 * 24 * 3600
