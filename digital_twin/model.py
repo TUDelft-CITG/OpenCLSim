@@ -63,7 +63,12 @@ class Activity(core.Identifiable, core.Log):
             if start_event is None or isinstance(start_event, simpy.Event)
             else self.env.all_of(events=start_event)
         )
-        self.stop_event = stop_event
+        self.stop_event = stop_event if stop_event is not None else self.env.any_of(events=[
+            origin.container.empty_event,
+            destination.container.full_event
+        ]) 
+
+        self.stop_reservation_waiting_event = self.stop_event() if stop_event is not None else self.stop_event
 
         self.origin = origin
         self.destination = destination
@@ -80,7 +85,7 @@ class Activity(core.Identifiable, core.Log):
             loader=loader,
             mover=mover,
             unloader=unloader,
-            stop_reservation_waiting_event=stop_event_checker(self),
+            stop_reservation_waiting_event=self.stop_reservation_waiting_event,
             verbose=self.print,
         )
         main_proc = partial(
@@ -152,7 +157,7 @@ def conditional_process(activity_log, env, stop_event, sub_processes):
         if activity_log.log["Message"][-1] == "delayed activity started" and hasattr(
             activity_log, "stop_event"
         ):
-            stop_event = stop_event_checker(activity_log)
+            stop_event = stop_event(activity_log.start_event)
 
     while not stop_event.processed:
         for sub_process in sub_processes:
