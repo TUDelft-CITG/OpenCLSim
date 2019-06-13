@@ -136,6 +136,7 @@ def test_temp_site_no_stop(env, Location, TransportProcessingResource):
 
     assert start - env.epoch != 2 * 24 * 3600
 
+
 def test_temp_site_with_stop(env, Location, TransportProcessingResource):
 
     # make the locations that have soil

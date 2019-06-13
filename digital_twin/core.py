@@ -157,13 +157,13 @@ class EventsContainer(simpy.Container):
         self._put_available_events[amount] = new_event
         return new_event
 
-    def get_empty_event(self, start_event = False):
+    def get_empty_event(self, start_event=False):
         if not start_event or start_event.processed:
             return self.empty_event
         else:
             return self._env.event()
-        
-    def get_full_event(self, start_event = False):
+
+    def get_full_event(self, start_event=False):
         if not start_event or start_event.processed:
             return self.full_event
         else:
