@@ -211,3 +211,13 @@ def test_circular_dependency():
         "Unable to instantiate activities act_1, act_2; their is_done conditions form a circle."
         in str(err)
     )
+
+
+def test_temporary_site():
+    """
+    Run a simulation in which a site is emptied after a short while.
+    """
+    run_and_compare_completion_time(
+        config_file="tests/configs/temporary_site.json",
+        expected_result_file="tests/results/temporary_site.json",
+    )
