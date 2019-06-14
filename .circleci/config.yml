@@ -14,11 +14,18 @@ jobs:
             docker exec -it hydraulic-infrastructure-realisation bash -c "pip install coverage coverage-badge "
       
       - run:
-          name: Run tests
+          name: Run tests - Pytest
           command: |
             docker exec -it hydraulic-infrastructure-realisation bash -c "python setup.py test"
             docker cp hydraulic-infrastructure-realisation:/Hydraulic-Infrastructure-Realisation/htmlcov /tmp/artifacts
       
+      - run:
+          name: Run tests - Formatting
+          command: |
+            docker exec -it hydraulic-infrastructure-realisation bash -c "pip install black"
+            docker exec -it hydraulic-infrastructure-realisation bash -c "black --check digital_twin"
+            docker exec -it hydraulic-infrastructure-realisation bash -c "black --check tests"
+
       - run:
           name: Build docs
           command: |
