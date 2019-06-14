@@ -12,7 +12,7 @@ Hydraulic-Infrastructure-Realisation
 Features
 --------
 
-Complex Logistics Simulation - Rule based planning of cyclic activities and in depth comparison of different system concepts
+Complex Logistics Simulation - Rule based planning of cyclic activities for in-depth comparison of different system concepts
 
 Example notebooks:
 * **Example 01 - Basic Hopper Operation** - Example of a trailing suction hopper dredge shipping sediment from origin to destination site.
