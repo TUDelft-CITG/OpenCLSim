@@ -14,65 +14,67 @@ logger = logging.getLogger(__name__)
 
 
 def env(dct):
-    if dct.get('__type__') == 'simpy.Environment':
+    if dct.get("__type__") == "simpy.Environment":
         env = simpy.Environment()
         return env
-    if dct.get('__type__') == 'simpy.Resource':
+    if dct.get("__type__") == "simpy.Resource":
         resource = simpy.Resource(**dct)
         return resource
-    if dct.get('__type__') == 'simpy.Container':
+    if dct.get("__type__") == "simpy.Container":
         container = simpy.Container(**dct)
         return container
-    if 'geometry' in dct:
+    if "geometry" in dct:
         return shapely.geometry.asShape(dct)
-    if dct.get('__type__') == 'pyproj.Geod':
+    if dct.get("__type__") == "pyproj.Geod":
         return pyproj.Geod(**dct)
 
     return dct
+
 
 class EnvEnvoder(json.JSONEncoder):
     def default(self, obj):
         # not serialable, recognized  by key  in instance
         if isinstance(obj, simpy.Environment):
-            return {'__type__': 'simpy.Environment'}
-        elif getattr(obj, '__name__', None) == 'env':
-            return {'__type__': 'simpy.Environment'}
+            return {"__type__": "simpy.Environment"}
+        elif getattr(obj, "__name__", None) == "env":
+            return {"__type__": "simpy.Environment"}
         elif isinstance(obj, types.FunctionType):
             # we can't serialize functions
-            logger.warning('could not serialize %s', obj)
+            logger.warning("could not serialize %s", obj)
             return None
         elif isinstance(obj, simpy.Resource):
-            return {'capacity': obj.capacity}
+            return {"capacity": obj.capacity}
         elif isinstance(obj, simpy.Container):
-            return {'capacity': obj.capacity, 'level': obj.level}
+            return {"capacity": obj.capacity, "level": obj.level}
         elif isinstance(obj, simpy.Process):
-            logger.warning('could not serialize %s', obj)
+            logger.warning("could not serialize %s", obj)
             return None
         elif isinstance(obj, SimpyObject):
             dct = vars(obj)
-            dct['__type__'] = obj.__class__.__name__
+            dct["__type__"] = obj.__class__.__name__
             return dct
         elif isinstance(obj, simpy.Event):
-            logger.warning('could not serialize %s', obj)
+            logger.warning("could not serialize %s", obj)
             return None
         elif isinstance(obj, types.FunctionType):
             # we can't serialize functions
-            logger.warning('could not serialize %s', obj)
+            logger.warning("could not serialize %s", obj)
             return None
 
-        elif hasattr(obj, '__geo_interface__'):
+        elif hasattr(obj, "__geo_interface__"):
             # geospatial objects
             return obj.__geo_interface__
         elif isinstance(obj, pyproj.Geod):
-            return {'initstring': obj.initstring, '__type__': 'pyproj.Geod'}
+            return {"initstring": obj.initstring, "__type__": "pyproj.Geod"}
 
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, obj)
 
+
 def save(obj, path, **kwargs):
     result = obj.copy()
 
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         json.dump(obj, f, cls=EnvEnvoder, **kwargs)
 
 

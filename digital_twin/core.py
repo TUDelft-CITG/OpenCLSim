@@ -157,6 +157,22 @@ class EventsContainer(simpy.Container):
         self._put_available_events[amount] = new_event
         return new_event
 
+    def get_empty_event(self, start_event=False):
+        if not start_event:
+            return self.empty_event
+        elif start_event.processed:
+            return self.empty_event
+        else:
+            return self._env.event()
+
+    def get_full_event(self, start_event=False):
+        if not start_event:
+            return self.full_event
+        elif start_event.processed:
+            return self.full_event
+        else:
+            return self._env.event()
+
     @property
     def empty_event(self):
         return self.put_available(self.capacity)
@@ -1219,13 +1235,13 @@ class Movable(SimpyObject, Locatable):
             if destination.name in list(self.env.FG.nodes):
                 route = nx.dijkstra_path(self.env.FG, origin, destination.name)
             else:
-                for node in self.env.FG.nodes(data = True):
+                for node in self.env.FG.nodes(data=True):
                     if node[1]["name"] == destination.name:
                         destination = node[0]
                         break
 
                 route = nx.dijkstra_path(self.env.FG, origin, destination)
-            
+
             sailtime = 0
             for node in enumerate(route):
                 from_node = route[node[0]]

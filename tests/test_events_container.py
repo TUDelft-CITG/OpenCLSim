@@ -18,7 +18,7 @@ def test_put_available():
         at_most_3 = container.put_available(7)
         assert not at_most_3.triggered
 
-        yield container.get(1) # contains 4
+        yield container.get(1)  # contains 4
         assert not at_most_3.triggered
 
         yield container.put(1)  # contains 5
@@ -75,16 +75,24 @@ def test_empty_full_events():
         assert empty_event.triggered
         assert not full_event.triggered
 
-        empty_event = container.empty_event  # creates a new event for if the container is empty again
-        assert empty_event.triggered  # it is still empty so the event should immediately trigger
+        empty_event = (
+            container.empty_event
+        )  # creates a new event for if the container is empty again
+        assert (
+            empty_event.triggered
+        )  # it is still empty so the event should immediately trigger
 
         yield container.put(10)
         empty_event = container.empty_event
         assert full_event.triggered
         assert not empty_event.triggered
 
-        full_event = container.full_event  # creates a new event for if the container is full again
-        assert full_event.triggered  # it is still full so the event should immediately trigger
+        full_event = (
+            container.full_event
+        )  # creates a new event for if the container is full again
+        assert (
+            full_event.triggered
+        )  # it is still full so the event should immediately trigger
 
         yield container.get(5)
         full_event = container.full_event
