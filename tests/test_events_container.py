@@ -1,7 +1,7 @@
 import pytest
 import simpy
 
-from digital_twin import core
+from openclsim import core
 
 
 def test_put_available():
@@ -59,7 +59,7 @@ def test_get_available():
 
 
 def test_empty_full_events():
-    """Tests the empty_event and full_event properties of digital_twin.core.HasContainer.
+    """Tests the empty_event and full_event properties of openclsim.core.HasContainer.
     Checks whether the events are triggered at the appropriate time."""
     env = simpy.Environment()
     container = core.EventsContainer(env=env, capacity=10, init=5)

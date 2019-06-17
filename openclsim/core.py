@@ -1763,7 +1763,7 @@ class Processor(SimpyObject):
 
 
 class DictEncoder(json.JSONEncoder):
-    """serialize a simpy digital_twin object to json"""
+    """serialize a simpy openclsim object to json"""
 
     def default(self, o):
         result = {}

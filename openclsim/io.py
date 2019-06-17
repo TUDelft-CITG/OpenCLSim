@@ -7,8 +7,8 @@ import simpy
 import shapely.geometry
 import pyproj
 
-from digital_twin.core import SimpyObject
-import digital_twin.model
+from openclsim.core import SimpyObject
+import openclsim.model
 
 logger = logging.getLogger(__name__)
 

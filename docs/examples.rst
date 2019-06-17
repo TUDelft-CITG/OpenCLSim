@@ -49,7 +49,7 @@ Create necessary classes
     import numpy as np
     
     # digital twin package
-    from  digital_twin.core import Identifiable, Site, TransportResource, TransportProcessingResource, ProcessingResource
+    from  openclsim.core import Identifiable, Site, TransportResource, TransportProcessingResource, ProcessingResource
 
 Activities
 ----------

@@ -67,19 +67,19 @@ setup(
     description="The Digital Twin package aims to facilitate basic nautical traffic simulations.",
     entry_points={
         'console_scripts': [
-            'digital_twin=digital_twin.cli:cli',
+            'openclsim=openclsim.cli:cli',
         ],
     },
     install_requires=requires,
     long_description="",  # README + '\n\n' + CHANGES,
     include_package_data=True,
     keywords="Digital Twin",
-    name="digital_twin",
-    packages=find_packages(include=["digital_twin"]),
+    name="openclsim",
+    packages=find_packages(include=["openclsim"]),
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=tests_require,
-    url="https://github.com/TUDelft-CITG/digital_twin",
+    url="https://github.com/TUDelft-CITG/openclsim",
     version="0.3.0",
     zip_safe=False,
 )

@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=digital_twin
+set SPHINXPROJ=openclsim
 
 if "%1" == "" goto help
 

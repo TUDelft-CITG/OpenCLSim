@@ -1,6 +1,6 @@
 import simpy
 
-from digital_twin.core import ReservationContainer
+from openclsim.core import ReservationContainer
 
 
 class DummyShip:

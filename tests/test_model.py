@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `digital_twin` package."""
+"""Tests for `openclsim` package."""
 
 import datetime
 import logging
@@ -13,8 +13,8 @@ import pyproj
 import shapely.geometry
 import simpy
 
-from digital_twin import model
-from digital_twin import core
+from openclsim import model
+from openclsim import core
 
 logger = logging.getLogger(__name__)
 

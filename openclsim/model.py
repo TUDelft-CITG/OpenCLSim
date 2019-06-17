@@ -1,5 +1,5 @@
 from functools import partial
-import digital_twin.core as core
+import openclsim.core as core
 import datetime
 import simpy
 import shapely

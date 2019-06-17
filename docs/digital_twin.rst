@@ -7,7 +7,7 @@ Submodules
 digital\_twin\.cli module
 -------------------------
 
-.. automodule:: digital_twin.cli
+.. automodule:: openclsim.cli
     :members:
     :undoc-members:
     :show-inheritance:
@@ -15,7 +15,7 @@ digital\_twin\.cli module
 digital\_twin\.core module
 --------------------------
 
-.. automodule:: digital_twin.core
+.. automodule:: openclsim.core
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ digital\_twin\.core module
 Module contents
 ---------------
 
-.. automodule:: digital_twin
+.. automodule:: openclsim
     :members:
     :undoc-members:
     :show-inheritance:

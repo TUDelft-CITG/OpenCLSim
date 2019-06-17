@@ -1,7 +1,7 @@
-digital_twin
+openclsim
 ============
 
 .. toctree::
    :maxdepth: 4
 
-   digital_twin
+   openclsim

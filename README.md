@@ -25,7 +25,7 @@ Example notebooks:
 
 ## Installation
 
-Installation using *pip install digital_twin* is not yet available. Running following three lines in your command prompt will allow you installing the package as well:
+Installation using *pip install openclsim* is not yet available. Running following three lines in your command prompt will allow you installing the package as well:
 
 ``` bash
 # Download the package
@@ -42,7 +42,7 @@ pip install -e .
 
 ``` bash
 # Set Flask app
-set FLASK_APP=digital_twin/server.py
+set FLASK_APP=openclsim/server.py
 
 # Set Flask environment
 set FLASK_ENV=development

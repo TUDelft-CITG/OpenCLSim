@@ -11,12 +11,12 @@ import shapely.geometry
 from simplekml import Kml, Style
 
 # digital twin package
-import digital_twin.core as core
-import digital_twin.model as model
-import digital_twin.plot as plot
+import openclsim.core as core
+import openclsim.model as model
+import openclsim.plot as plot
 
 # Additional import to save the initialization of the simulation
-import digital_twin.savesim as savesim
+import openclsim.savesim as savesim
 import halem
 import pickle
 import networkx as nx

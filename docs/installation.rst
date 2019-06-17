@@ -12,7 +12,7 @@ To install Hydraulic-Infrastructure-Realisation, run this command in your termin
 
 .. code-block:: console
 
-    $ pip install digital_twin
+    $ pip install openclsim
 
 This is the preferred method to install Hydraulic-Infrastructure-Realisation, as it will always install the most recent stable release.
 

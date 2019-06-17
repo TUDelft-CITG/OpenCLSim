@@ -23,7 +23,7 @@ jobs:
           name: Run tests - Formatting
           command: |
             docker exec -it hydraulic-infrastructure-realisation bash -c "pip install black"
-            docker exec -it hydraulic-infrastructure-realisation bash -c "black --check digital_twin"
+            docker exec -it hydraulic-infrastructure-realisation bash -c "black --check openclsim"
             docker exec -it hydraulic-infrastructure-realisation bash -c "black --check tests"
 
       - run:

@@ -16,10 +16,10 @@ import matplotlib
 matplotlib.use("Agg")
 
 import simpy
-from digital_twin import model
-from digital_twin import savesim
-from digital_twin import core
-from digital_twin import plot
+from openclsim import model
+from openclsim import savesim
+from openclsim import core
+from openclsim import plot
 
 import datetime
 import functools

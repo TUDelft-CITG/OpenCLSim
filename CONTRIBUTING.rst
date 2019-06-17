@@ -66,8 +66,8 @@ Ready to contribute? Here's how to set up `Hydraulic-Infrastructure-Realisation`
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
-    $ mkvirtualenv digital_twin
-    $ cd digital_twin/
+    $ mkvirtualenv openclsim
+    $ cd openclsim/
     $ python setup.py develop
 
 4. Create a branch for local development::
@@ -79,7 +79,7 @@ Ready to contribute? Here's how to set up `Hydraulic-Infrastructure-Realisation`
 5. When you're done making changes, check that your changes pass flake8 and the
    tests, including testing other Python versions with tox::
 
-    $ flake8 digital_twin tests
+    $ flake8 openclsim tests
     $ python setup.py test or py.test
     $ tox
 
@@ -111,15 +111,15 @@ Tips
 
 To run a subset of tests::
 
-$ py.test tests.test_digital_twin
+$ py.test tests.test_openclsim
 
 To make the documentation pages
 $ make docs # for linux/osx
 
 For windows
-$ del docs\digital_twin.rst
+$ del docs\openclsim.rst
 $ del docs\modules.rst
-$ sphinx-apidoc -o docs/ digital_twin
+$ sphinx-apidoc -o docs/ openclsim
 $ cd docs
 $ make html
 $ start explorer _build\html\index.html

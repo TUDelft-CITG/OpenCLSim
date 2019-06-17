@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `digital_twin` package."""
+"""Tests for `openclsim` package."""
 
 import pytest
 import simpy
@@ -13,8 +13,8 @@ import numpy as np
 
 from click.testing import CliRunner
 
-from digital_twin import core
-from digital_twin import cli
+from openclsim import core
+from openclsim import cli
 
 logger = logging.getLogger(__name__)
 

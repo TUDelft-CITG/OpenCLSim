@@ -6,8 +6,8 @@ import numpy as np
 import pint
 import datetime
 import time
-import digital_twin.core as core
-import digital_twin.model as model
+import openclsim.core as core
+import openclsim.model as model
 
 
 def type_to_class_name(type):
