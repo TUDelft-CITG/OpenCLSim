@@ -286,6 +286,10 @@ def single_run_process(
 
     if hasattr(stop_reservation_waiting_event, "__call__"):
         stop_reservation_waiting_event = stop_reservation_waiting_event()
+    elif type(stop_reservation_waiting_event) == list:
+        stop_reservation_waiting_event = env.any_of(
+            events=[event() for event in stop_reservation_waiting_event]
+        )
 
     if amount > 0:
         resource_requests = {}
