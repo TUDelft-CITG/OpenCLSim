@@ -4,9 +4,9 @@ Examples
 
 This small example guide will cover the basic start-up and the three main elements of the OpenClSim package:
 
-- Start-Up
+- Start-Up (Minimal set-up)
 - Locations (Sites or stockpiles)
-- Processors (Loaders, Movers or Unloaders)
+- Resources (Processors and transporters)
 - Activities (Rule-based operations)
 
 Once the elements above are explained some small simulations examples are presented.
@@ -122,26 +122,149 @@ The code below illustrates how a location can be created that is capable of stor
     location_03 = ProcessingStorageLocation(**location_data)
 
 
-Processors
+Optionally a *OpenCLSim.core.log* mixin can be added to all locations to keep track of all the events that are taking place.
+
+
+Resources
 ----------
 
-(Un)Loaders
-~~~~~~~~~~~
+OpenCLSim resources can be used to process and transport units. The OpenCLSim.model activity class requires a loader, an unloader and a mover, this are examples of resources. A resource will always interact with another resource in an OpenClSim.model activity, but it is possible to initiate a simpy process to keep track of a single resource.
+
+Processing Resource
+~~~~~~~~~~~~~~~~~~~
+
+An example of a processing resource is a harbour crane, it processes units from a storage location to a transporting resource or vice versa. In the OpenClSim.model activity such a processing resource could be selected as the loader or unloader. The example code is presented below.
+
+.. code:: ipython3
+
+    # Create a resource
+    ProcessingResource = type('ProcessingResource', 
+                    (core.Identifiable, # Give it a name and unique UUID
+                     core.HasResource,  # Add information on the number of resources
+                     core.Locatable,    # Add coordinates to extract distance information
+                     core.Processor,    # Add information on processing
+                    ),
+                   {})
+    
+    # The next step is to define all the required parameters for the defined metaclass
+    # Create a processing function
+    processing_rate = lambda x: x
+
+    location_resource = {"env": env,                              # The SimPy environment
+                         "name": "Resource 01",                   # Name of the location
+                         "geometry":location_01.geometry, # The lat, lon coordinates
+                     "loading_func": processing_rate,         # Loading rate of 1 unit per 1 unit time
+                     "unloading_func": processing_rate}       # Unloading rate of 1 unit per 1 unit time
+    
+    # Create an object based on the metaclass and vessel data
+    resource_01 = ProcessingStorageLocation(**location_data)
 
 
-Transporters
-~~~~~~~~~~~~
+Transporting Resource
+~~~~~~~~~~~~~~~~~~~~~
 
+A harbour crane will service transporting resources. To continue with the harbour crane example, basically any vessel is a transporting resource because it is capable of moving units from location A to location B. In the OpenClSim.model activity such a processing resource could be selected as the mover.
 
-Transporting Processors
-~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: ipython3
 
+    # Create a resource
+    TransportingResource = type('TransportingResource', 
+                        (core.Identifiable, # Give it a name and unique UUID
+                         core.HasResource,  # Add information on the number of resources
+                         core.Locatable,    # Add coordinates to extract distance information
+                         core.Movable,      # It can move
+                         core.HasContainer, # It can transport an amount
+                         core.HasResource,  # Add information on serving equipment
+                         ),
+                        {})
+    
+    # The next step is to define all the required parameters for the defined metaclass
+    # For more realistic simulation you might want to have speed dependent on the filling degree
+    v_full  = 8     # meters per second
+    v_empty = 5     # meters per second
+
+    def variable_speed(v_empty, v_full):
+        return lambda x: x * (v_full - v_empty) + v_empty
+    
+    # Other variables
+    data_vessel = {
+               "env": simpy.Environment(),                   # The simpy environment 
+               "name": "Resource 02",                   # Name of the location
+               "geometry":location_01.geometry, # The lat, lon coordinates
+               "capacity": 5_000,                            # Capacity of the vessel 
+               "compute_v": variable_speed(v_empty, v_full), # Variable speed 
+               }
+    
+    # Create an object based on the metaclass and vessel data
+    vessel_02 = ContainerVessel(**data_vessel)
+
+Transporting Processing Resource
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Finally, some resources are capable of both processing and moving units. Examples are dredging vessels or container vessels with deck cranes. These specific vessels have the unique property that they can act as the loader, unloader and mover in the OpenClSim.model activity.
+
+.. code:: ipython3
+
+    # Create a resource
+    TransportingResource = type('TransportingResource', 
+                        (core.Identifiable, # Give it a name and unique UUID
+                         core.HasResource,  # Add information on the number of resources
+                         core.Locatable,    # Add coordinates to extract distance information
+                         core.Movable,      # It can move
+                         core.HasContainer, # It can transport an amount
+                         core.HasResource,  # Add information on serving equipment
+                         core.Processor,    # Add information on processing
+                         ),
+                        {})
+    
+    # The next step is to define all the required parameters for the defined metaclass
+    # For more realistic simulation you might want to have speed dependent on the filling degree
+    v_full  = 8     # meters per second
+    v_empty = 5     # meters per second
+
+    def variable_speed(v_empty, v_full):
+        return lambda x: x * (v_full - v_empty) + v_empty
+    
+    # Create a processing function
+    processing_rate = lambda x: x
+    
+    # Other variables
+    data_vessel = {
+               "env": simpy.Environment(),                   # The simpy environment 
+               "name": "Resource 02",                   # Name of the location
+               "geometry":location_01.geometry, # The lat, lon coordinates
+               "capacity": 5_000,                            # Capacity of the vessel 
+               "compute_v": variable_speed(v_empty, v_full), # Variable speed 
+                     "loading_func": processing_rate,         # Loading rate of 1 unit per 1 unit time
+                     "unloading_func": processing_rate,       # Unloading rate of 1 unit per 1 unit time
+               }
+    
+    # Create an object based on the metaclass and vessel data
+    vessel_03 = ContainerVessel(**data_vessel)
 
 
 Activities
 ----------
 
+Unconditional
+~~~~~~~~~~~~~
 
 
+Start Events
+~~~~~~~~~~~~
+
+
+Stop Events
+~~~~~~~~~~~
+
+
+Simulations
+-----------
+
+SimPy processes
+~~~~~~~~~~~~~~~
+
+OpenClSim model
+~~~~~~~~~~~~~~~
 
 .. _documentation: https://simpy.readthedocs.io/en/latest/

@@ -41,20 +41,20 @@ The Open Complex Logistics Simulation package is developed with the goal of reus
     v_full  = 8     # meters per second
     v_empty = 5     # meters per second
 
-    def compute_v_provider(v_empty, v_full):
+    def variable_speed(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
     
     # Other variables
     data_vessel = {
-               "env": simpy.Environment(),                          # The simpy environment 
-               "name": "Vessel 01",                                 # Name
-               "geometry": shapely.geometry.Point(0, 0),            # The lat, lon coordinates
-               "capacity": 5_000,                                   # Capacity of the vessel 
-               "compute_v": compute_v_provider(v_empty, v_full),    # Variable speed 
+               "env": simpy.Environment(),                   # The simpy environment 
+               "name": "Vessel 01",                          # Name
+               "geometry": shapely.geometry.Point(0, 0),     # The lat, lon coordinates
+               "capacity": 5_000,                            # Capacity of the vessel 
+               "compute_v": variable_speed(v_empty, v_full), # Variable speed 
                }
     
     # Create an object based on the metaclass and vessel data
-    vessel_1 = ContainerVessel(**data_vessel)
+    vessel_01 = ContainerVessel(**data_vessel)
 
 For more elaboration and examples please check the `examples`_ documentation. Large example `notebooks`_ can also be used.
 
