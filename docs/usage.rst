@@ -47,7 +47,7 @@ The Open Complex Logistics Simulation package is developed with the goal of reus
     # Other variables
     data_vessel = {
                "env": simpy.Environment(),                          # The simpy environment 
-               "name": "Vessek 01",                                 # Name
+               "name": "Vessel 01",                                 # Name
                "geometry": shapely.geometry.Point(0, 0),            # The lat, lon coordinates
                "capacity": 5_000,                                   # Capacity of the vessel 
                "compute_v": compute_v_provider(v_empty, v_full),    # Variable speed 
