@@ -48,19 +48,25 @@ The code below illustrates how a basic location can be created using OpenClSim. 
 
     # Import the library required to add coordinates
     import shapely.geometry
-    
+
     # Create a location class
-    Location = type('Location', 
-                    (core.Identifiable, # Give it a name and unique UUID
-                     core.HasResource,  # Add information on the number of resources
-                     core.Locatable,    # Add coordinates to extract distance information
-                    ),
-                   {})
-    
-    location_data = {"env": env,                              # The SimPy environment
-                     "name": "Location 01",                   # Name of the location
-                     "geometry":shapely.geometry.Point(0, 0)} # The lat, lon coordinates
-    
+    Location = type(
+        "Location",
+        (
+            core.Identifiable,  # Give it a name and unique UUID
+            core.Log,           # To keep track of all events
+            core.HasResource,   # Add information on the number of resources
+            core.Locatable,     # Add coordinates to extract distance information
+        ),
+        {},
+    )
+
+    location_data = {
+        "env": env,                               # The SimPy environment
+        "name": "Location 01",                    # Name of the location
+        "geometry": shapely.geometry.Point(0, 0), # The lat, lon coordinates
+    }  
+
     location_01 = Location(**location_data)
 
 Storage Location
@@ -72,22 +78,30 @@ The code below illustrates how a location can be created that is capable of stor
 
     # Import the library required to add coordinates
     import shapely.geometry
-    
+
     # Create a location class
-    StorageLocation = type('StorageLocation', 
-                    (core.Identifiable, # Give it a name and unique UUID
-                     core.HasResource,  # Add information on the number of resources
-                     core.Locatable,    # Add coordinates to extract distance information
-                     core.HasContainer, # Add information on storage capacity
-                    ),
-                   {})
-    
-    location_data = {"env": env,                              # The SimPy environment
-                     "name": "Location 02",                   # Name of the location
-                     "geometry":shapely.geometry.Point(0, 0), # The lat, lon coordinates
-                     "capacity": 10_000}                      # The maximum number of units
-    
+    StorageLocation = type(
+        "StorageLocation",
+        (
+            core.Identifiable,  # Give it a name and unique UUID
+            core.Log,           # To keep track of all events
+            core.HasResource,   # Add information on the number of resources
+            core.Locatable,     # Add coordinates to extract distance information
+            core.HasContainer,  # Add information on storage capacity
+        ),
+        {},
+    )
+
+    location_data = {
+        "env": env,                               # The SimPy environment
+        "name": "Location 02",                    # Name of the location
+        "geometry": shapely.geometry.Point(0, 0), # The lat, lon coordinates
+        "capacity": 10_000,                       # The maximum number of units
+        "level": 10_000,                         # The number of units in the location
+    }  
+
     location_02 = StorageLocation(**location_data)
+
 
 Processing Storage Location
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -98,31 +112,38 @@ The code below illustrates how a location can be created that is capable of stor
 
     # Import the library required to add coordinates
     import shapely.geometry
-    
+
     # Create a location class
-    ProcessingStorageLocation = type('ProcessingStorageLocation', 
-                    (core.Identifiable, # Give it a name and unique UUID
-                     core.HasResource,  # Add information on the number of resources
-                     core.Locatable,    # Add coordinates to extract distance information
-                     core.HasContainer, # Add information on storage capacity
-                     core.Processor,    # Add information on processing
-                    ),
-                   {})
-    
+    ProcessingStorageLocation = type(
+        "ProcessingStorageLocation",
+        (
+            core.Identifiable,  # Give it a name and unique UUID
+            core.Log,           # To keep track of all events
+            core.HasResource,   # Add information on the number of resources
+            core.Locatable,     # Add coordinates to extract distance information
+            core.HasContainer,  # Add information on storage capacity
+            core.Processor,     # Add information on processing
+        ),
+        {},
+    )
+
     # Create a processing function
     processing_rate = lambda x: x
 
-    location_data = {"env": env,                              # The SimPy environment
-                     "name": "Location 03",                   # Name of the location
-                     "geometry":shapely.geometry.Point(0, 0), # The lat, lon coordinates
-                     "capacity": 10_000,                      # The maximum number of units
-                     "loading_func": processing_rate,         # Loading rate of 1 unit per 1 unit time
-                     "unloading_func": processing_rate}       # Unloading rate of 1 unit per 1 unit time
-    
+    location_data = {
+        "env": env,                               # The SimPy environment
+        "name": "Location 03",                    # Name of the location
+        "geometry": shapely.geometry.Point(0, 1), # The lat, lon coordinates
+        "capacity": 10_000,                       # The maximum number of units
+        "level": 0,                              # The number of units in the location
+        "loading_func": processing_rate,          # Loading rate of 1 unit per 1 unit time
+        "unloading_func": processing_rate,        # Unloading rate of 1 unit per 1 unit time
+    }  
+
     location_03 = ProcessingStorageLocation(**location_data)
 
 
-Optionally a *OpenCLSim.core.log* mixin can be added to all locations to keep track of all the events that are taking place.
+Optionally a *OpenCLSim.core.Log* mixin can be added to all locations to keep track of all the events that are taking place.
 
 
 Resources
@@ -138,24 +159,30 @@ An example of a processing resource is a harbour crane, it processes units from 
 .. code:: ipython3
 
     # Create a resource
-    ProcessingResource = type('ProcessingResource', 
-                    (core.Identifiable, # Give it a name and unique UUID
-                     core.HasResource,  # Add information on the number of resources
-                     core.Locatable,    # Add coordinates to extract distance information
-                     core.Processor,    # Add information on processing
-                    ),
-                   {})
-    
+    ProcessingResource = type(
+        "ProcessingResource",
+        (
+            core.Identifiable,  # Give it a name and unique UUID
+            core.Log,           # To keep track of all events
+            core.HasResource,   # Add information on the number of resources
+            core.Locatable,     # Add coordinates to extract distance information
+            core.Processor,     # Add information on processing
+        ),
+        {},
+    )
+
     # The next step is to define all the required parameters for the defined metaclass
     # Create a processing function
     processing_rate = lambda x: x
 
-    location_resource = {"env": env,                              # The SimPy environment
-                         "name": "Resource 01",                   # Name of the location
-                         "geometry":location_01.geometry, # The lat, lon coordinates
-                     "loading_func": processing_rate,         # Loading rate of 1 unit per 1 unit time
-                     "unloading_func": processing_rate}       # Unloading rate of 1 unit per 1 unit time
-    
+    location_resource = {
+        "env": env,                         # The SimPy environment
+        "name": "Resource 01",              # Name of the location
+        "geometry": location_01.geometry,   # The lat, lon coordinates
+        "loading_func": processing_rate,    # Loading rate of 1 unit per 1 unit time
+        "unloading_func": processing_rate,  # Unloading rate of 1 unit per 1 unit time
+    }  
+
     # Create an object based on the metaclass and vessel data
     resource_01 = ProcessingStorageLocation(**location_data)
 
@@ -168,35 +195,36 @@ A harbour crane will service transporting resources. To continue with the harbou
 .. code:: ipython3
 
     # Create a resource
-    TransportingResource = type('TransportingResource', 
-                        (core.Identifiable, # Give it a name and unique UUID
-                         core.HasResource,  # Add information on the number of resources
-                         core.Locatable,    # Add coordinates to extract distance information
-                         core.Movable,      # It can move
-                         core.HasContainer, # It can transport an amount
-                         core.HasResource,  # Add information on serving equipment
-                         ),
-                        {})
-    
+    TransportingResource = type(
+        "TransportingResource",
+        (
+            core.Identifiable,              # Give it a name and unique UUID
+            core.Log,                       # To keep track of all events
+            core.HasResource,               # Add information on the number of resources
+            core.ContainerDependentMovable, # It can transport an amount
+        ),
+        {},
+    )
+
     # The next step is to define all the required parameters for the defined metaclass
     # For more realistic simulation you might want to have speed dependent on the filling degree
-    v_full  = 8     # meters per second
-    v_empty = 5     # meters per second
+    v_full = 8  # meters per second
+    v_empty = 5  # meters per second
 
     def variable_speed(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
-    
+
     # Other variables
     data_vessel = {
-               "env": simpy.Environment(),                   # The simpy environment 
-               "name": "Resource 02",                   # Name of the location
-               "geometry":location_01.geometry, # The lat, lon coordinates
-               "capacity": 5_000,                            # Capacity of the vessel 
-               "compute_v": variable_speed(v_empty, v_full), # Variable speed 
-               }
-    
+        "env": simpy.Environment(),                   # The simpy environment
+        "name": "Resource 02",                        # Name of the location
+        "geometry": location_01.geometry,             # The lat, lon coordinates
+        "capacity": 5_000,                            # Capacity of the vessel
+        "compute_v": variable_speed(v_empty, v_full), # Variable speed
+    }
+
     # Create an object based on the metaclass and vessel data
-    vessel_02 = ContainerVessel(**data_vessel)
+    resource_02 = TransportingResource(**data_vessel)
 
 Transporting Processing Resource
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -206,65 +234,130 @@ Finally, some resources are capable of both processing and moving units. Example
 .. code:: ipython3
 
     # Create a resource
-    TransportingResource = type('TransportingResource', 
-                        (core.Identifiable, # Give it a name and unique UUID
-                         core.HasResource,  # Add information on the number of resources
-                         core.Locatable,    # Add coordinates to extract distance information
-                         core.Movable,      # It can move
-                         core.HasContainer, # It can transport an amount
-                         core.HasResource,  # Add information on serving equipment
-                         core.Processor,    # Add information on processing
-                         ),
-                        {})
-    
+    TransportingProcessingResource = type(
+        "TransportingProcessingResource",
+        (
+            core.Identifiable,              # Give it a name and unique UUID
+            core.Log,                       # To keep track of all events
+            core.HasResource,               # Add information on the number of resources
+            core.ContainerDependentMovable, # It can transport an amount
+            core.Processor,                 # Add information on processing
+        ),
+        {},
+    )
+
     # The next step is to define all the required parameters for the defined metaclass
     # For more realistic simulation you might want to have speed dependent on the filling degree
-    v_full  = 8     # meters per second
-    v_empty = 5     # meters per second
+    v_full = 8  # meters per second
+    v_empty = 5  # meters per second
 
     def variable_speed(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
-    
+
     # Create a processing function
     processing_rate = lambda x: x
-    
+
     # Other variables
     data_vessel = {
-               "env": simpy.Environment(),                   # The simpy environment 
-               "name": "Resource 02",                   # Name of the location
-               "geometry":location_01.geometry, # The lat, lon coordinates
-               "capacity": 5_000,                            # Capacity of the vessel 
-               "compute_v": variable_speed(v_empty, v_full), # Variable speed 
-                     "loading_func": processing_rate,         # Loading rate of 1 unit per 1 unit time
-                     "unloading_func": processing_rate,       # Unloading rate of 1 unit per 1 unit time
-               }
-    
+        "env": simpy.Environment(),                   # The simpy environment
+        "name": "Resource 02",                        # Name of the location
+        "geometry": location_01.geometry,             # The lat, lon coordinates
+        "capacity": 5_000,                            # Capacity of the vessel
+        "compute_v": variable_speed(v_empty, v_full), # Variable speed
+        "loading_func": processing_rate,              # Loading rate of 1 unit per 1 unit time
+        "unloading_func": processing_rate,            # Unloading rate of 1 unit per 1 unit time
+    }
+
     # Create an object based on the metaclass and vessel data
-    vessel_03 = ContainerVessel(**data_vessel)
-
-
-Activities
-----------
-
-Unconditional
-~~~~~~~~~~~~~
-
-
-Start Events
-~~~~~~~~~~~~
-
-
-Stop Events
-~~~~~~~~~~~
+    resource_03 = TransportingProcessingResource(**data_vessel)
 
 
 Simulations
 -----------
 
+The code below will start the simulation if SimPy processes are added to the environment. These SimPy processes can be added using a combination of SimPy and OpenCLSim, or by using OpenCLSim activities.
+
+.. code:: ipython3
+
+    env.run()
+
 SimPy processes
 ~~~~~~~~~~~~~~~
 
-OpenClSim model
-~~~~~~~~~~~~~~~
+A SimPy process can be initiated using the code below. The code below will instruct Resource 02, which was a TransportingResource, to sail from Location 01 (at Lat, Long (0, 0)) to Location 02 (at Lat, Long (0, 1)). The simulation will stop as soon as Resource 02 is at Location 02.
+
+.. code:: ipython3
+
+    # Create the process function
+    def move_resource(mover, destination):
+
+        # the is_at function is part of core.Movable
+        while not mover.is_at(destination):
+
+          # the move function is part of core.Movable
+          mover.move(destination)
+
+    # Add to the SimPy environment
+    env.process(move_resource(resource_02, location_03))
+
+    # Run the simulation
+    env.run()
+
+
+Unconditional Activities
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Activities are at the core of what OpenCLSim adds to SimPy, an activity is a collection of SimPy Processes. These activities schedule cyclic events, which could be production or logistical processes and, but the current OpenCLSim.model.activity assumes the following cycle:
+
+- Loading
+- Transporting
+- Unloading
+- Transporting
+
+This cycle is repeated until a certain condition is met. Between the individual components of the cycle waiting events can occur due to arising queues, equipment failure or weather events. The minimal input for an activity is listed below.
+
+- Origin
+- Destination
+- Loader
+- Mover
+- Unloader
+
+If no additional input is provided, the cyclic process will be repeated until either the origin is empty or the destination is full. The example activity below will stop after two cycles because the origin will be empty and the destination will be full.
+
+.. code:: ipython3
+
+    # Define the activity
+    activity_01 = model.Activity(
+        env=env,                  # The simpy environment defined in the first cel
+        name="Activity 01",       # Name of the activity
+        origin=location_02,       # Location 02 was filled with 10_000 units
+        destination=location_03,  # Location 03 was empty
+        loader=resource_03,       # Resource 03 could load
+        mover=resource_03,        # Resource 03 could move
+        unloader=resource_03,     # Resource 03 could unload
+    )  
+
+Conditional Activities
+~~~~~~~~~~~~~~~~~~~~~~
+
+Additionally, start and stop events can be added to the activity. The process will only start as soon as a start event (or a list of start events) is completed and it will stop as soon as the stop event (or a list of stop events) are completed. These can be any SimPy event, such as a time-out, but OpenClSim provides some additional events as well, such as empty- or full events. The activity in the example below will start as soon as the previous activity is finished, but not sooner than 2 days after the simulation is started.
+
+.. code:: ipython3
+
+    start_event = [activity_01.main_process, env.timeout(2 * 24 * 3600)]
+
+    # Define the activity
+    activity_02 = model.Activity(
+        env=env,                  # The simpy environment defined in the first cel
+        name="Activity 02",       # Name of the activity
+        origin=location_03,       # Location 02 will be filled
+        destination=location_02,  # Location 03 will be empty
+        loader=resource_03,       # Resource 03 could load
+        mover=resource_03,        # Resource 03 could move
+        unloader=resource_03,     # Resource 03 could unload
+        start_event=start_event,  # Start Event
+    )  
+
+
 
 .. _documentation: https://simpy.readthedocs.io/en/latest/

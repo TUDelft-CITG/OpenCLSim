@@ -28,11 +28,10 @@ The Open Complex Logistics Simulation package is developed with the goal of reus
     # Define the core components
     # A generic class for an object that can move and transport material
     ContainerVessel = type('ContainerVessel', 
-                        (core.Identifiable, # Give it a name and unique UUID
-                         core.Log,          # Allow logging of all discrete events
-                         core.Movable,      # It can move
-                         core.HasContainer, # It can transport an amount
-                         core.HasResource,  # Add information on serving equipment
+                        (core.Identifiable,             # Give it a name and unique UUID
+                         core.Log,                      # Allow logging of all discrete events
+                         core.ContainerDependentMovable,# It can transport an amount
+                         core.HasResource,              # Add information on serving equipment
                          ),
                         {})
     
