@@ -10,9 +10,7 @@ import openclsim.server
 @click.group()
 def cli(args=None):
     """Digital twin simulation."""
-    click.echo(
-        "Replace this message by putting your code into " "openclsim.cli.main"
-    )
+    click.echo("Replace this message by putting your code into " "openclsim.cli.main")
     click.echo("See click documentation at http://click.pocoo.org/")
     return 0
 
