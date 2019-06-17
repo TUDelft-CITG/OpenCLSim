@@ -37,7 +37,7 @@ jobs:
           name: Generate coverage badge
           command: |
             docker exec -it openclsim bash -c "coverage-badge -o coverage.svg"
-            docker cp openclsim:/openclsim/coverage.svg /tmp/artifacts/
+            docker cp openclsim:/OpenCLSim/coverage.svg /tmp/artifacts/
       
       - store_artifacts:
           path: /tmp/artifacts
