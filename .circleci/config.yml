@@ -17,8 +17,7 @@ jobs:
           name: Run tests - Pytest
           command: |
             docker exec -it openclsim bash -c "python setup.py test"
-            docker exec -it openclsim bash -c "ls"
-            docker cp hydraulic-infrastructure-realisation:/openclsim/htmlcov /tmp/artifacts
+            docker cp openclsim:/Hydraulic-Infrastructure-Realisation/htmlcov /tmp/artifacts
       
       - run:
           name: Run tests - Formatting
@@ -32,7 +31,7 @@ jobs:
           command: |
             docker exec -it openclsim bash -c "pip install sphinx"
             docker exec -it openclsim bash -c "python setup.py docs"
-            docker cp openclsim:/openclsim/docs/_build/html /tmp/artifacts/docs
+            docker cp openclsim:/Hydraulic-Infrastructure-Realisation/docs/_build/html /tmp/artifacts/docs
       
       - run:
           name: Generate coverage badge
