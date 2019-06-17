@@ -15,6 +15,11 @@ Once the elements above are explained some small simulations examples are presen
 Start-Up
 ---------
 
+The first part of every OpenClSim simulation is to import the required libraries and to initiate the simulation environment.
+
+Required Libraries
+~~~~~~~~~~~~~~~~~~
+
 Depending on the simulation it might be required to import additional libraries. The minimal set-up of an OpenCLSim project has the following import statements:
 
 .. code:: ipython3
@@ -25,6 +30,9 @@ Depending on the simulation it might be required to import additional libraries.
 
     # Import simpy for the simulation environment
     import simpy
+
+Simulation Environment
+~~~~~~~~~~~~~~~~~~~~~~
 
 OpenClSim continues on the SimPy discrete event simulation package. Some components are modified, such as the resources and container objects, but the simulation environment is pure SimPy. Starting the simulation environment can be done with the following line of code. For more information in SimPy environment please refer to the SimPy `documentation`_.
 
