@@ -17,8 +17,7 @@ jobs:
           name: Run tests - Pytest
           command: |
             docker exec -it openclsim bash -c "python setup.py test"
-            docker exec -it openclsim bash -c "ls"
-            docker cp openclsim:/openclsim/htmlcov /tmp/artifacts
+            docker cp openclsim:/htmlcov /tmp/artifacts
       
       - run:
           name: Run tests - Formatting
