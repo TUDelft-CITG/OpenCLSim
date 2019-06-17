@@ -6,8 +6,8 @@ RUN conda install numpy pandas nomkl pyproj
 # Then install rest via pip
 RUN pip install pint Flask dill
 
-ADD . /Hydraulic-Infrastructure-Realisation
-WORKDIR /Hydraulic-Infrastructure-Realisation
+ADD . /OpenCLSim
+WORKDIR /OpenCLSim
 
 # Install the application
 RUN pip install -e .
