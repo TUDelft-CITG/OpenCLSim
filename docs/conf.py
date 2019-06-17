@@ -47,9 +47,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Hydraulic-Infrastructure-Realisation'
-copyright = u"2018, Fedor Baart"
-author = u"Fedor Baart"
+project = u'OpenCLSim'
+copyright = u"2019, MIT"
+author = u"Mark van Koningsveld"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -129,8 +129,8 @@ latex_elements = {
 # [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'openclsim.tex',
-     u'Hydraulic-Infrastructure-Realisation Documentation',
-     u'Fedor Baart', 'manual'),
+     u'OpenCLSim Documentation',
+     u'Mark van Koningsveld', 'manual'),
 ]
 
 
