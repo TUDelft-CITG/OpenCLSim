@@ -4,10 +4,10 @@ openclsim package
 Submodules
 ----------
 
-openclsim\.cli module
--------------------------
+openclsim\.model module
+--------------------------
 
-.. automodule:: openclsim.cli
+.. automodule:: openclsim.model
     :members:
     :undoc-members:
     :show-inheritance:
@@ -16,14 +16,6 @@ openclsim\.core module
 --------------------------
 
 .. automodule:: openclsim.core
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-openclsim\.model module
---------------------------
-
-.. automodule:: openclsim.model
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,4 +1,4 @@
-Welcome to Hydraulic-Infrastructure-Realisation's documentation!
+Welcome to OpenCLSim documentation!
 ======================================
 
 .. toctree::
