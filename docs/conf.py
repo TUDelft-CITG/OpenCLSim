@@ -48,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'OpenCLSim'
-copyright = u"2019, MIT"
+copyright = u"2019, TU Delft"
 author = u"Mark van Koningsveld"
 
 # The version info for the project you're documenting, acts as replacement
@@ -81,10 +81,14 @@ todo_include_todos = False
 
 # -- Options for HTML output -------------------------------------------
 
+# Add a logo
+html_logo = "OpenCLSim.png"
+
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
 html_theme = "sphinx_rtd_theme"
+
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
