@@ -64,7 +64,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-    description="The Digital Twin package aims to facilitate basic nautical traffic simulations.",
+    description="The OpenCLSim package aims to facilitate basic nautical traffic simulations.",
     entry_points={
         'console_scripts': [
             'openclsim=openclsim.cli:cli',
@@ -73,7 +73,7 @@ setup(
     install_requires=requires,
     long_description="",  # README + '\n\n' + CHANGES,
     include_package_data=True,
-    keywords="Digital Twin",
+    keywords="OpenCLSim",
     name="openclsim",
     packages=find_packages(include=["openclsim"]),
     setup_requires=setup_requirements,
