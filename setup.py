@@ -37,7 +37,7 @@ requires = [
     "Flask",
     "Flask-cors",
     "Dill>=0.2.8",
-    "phinx_rtd_theme",
+    "sphinx_rtd_theme",
 ]
 
 setup_requirements = [

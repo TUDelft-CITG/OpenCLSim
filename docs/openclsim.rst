@@ -1,10 +1,10 @@
-digital\_twin package
+openclsim package
 =====================
 
 Submodules
 ----------
 
-digital\_twin\.cli module
+openclsim\.cli module
 -------------------------
 
 .. automodule:: openclsim.cli
@@ -12,7 +12,7 @@ digital\_twin\.cli module
     :undoc-members:
     :show-inheritance:
 
-digital\_twin\.core module
+openclsim\.core module
 --------------------------
 
 .. automodule:: openclsim.core
@@ -20,6 +20,13 @@ digital\_twin\.core module
     :undoc-members:
     :show-inheritance:
 
+openclsim\.model module
+--------------------------
+
+.. automodule:: openclsim.model
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Module contents
 ---------------
