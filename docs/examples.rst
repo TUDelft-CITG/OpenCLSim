@@ -19,11 +19,11 @@ Depending on the simulation it might be required to import additional libraries.
 
 .. code:: ipython3
 
-    # import openclsim for the logistical components
+    # Import openclsim for the logistical components
     import openclsim.model as model
     import openclsim.core as core
 
-    # import simpy for the simulation environment
+    # Import simpy for the simulation environment
     import simpy
 
 OpenClSim continues on the SimPy discrete event simulation package. Some components are modified, such as the resources and container objects, but the simulation environment is pure SimPy. Starting the simulation environment can be done with the following line of code. For more information in SimPy environment please refer to the SimPy `documentation`_.
@@ -175,7 +175,7 @@ An example of a processing resource is a harbour crane, it processes units from 
     # Create a processing function
     processing_rate = lambda x: x
 
-    location_resource = {
+    resource_data = {
         "env": env,                         # The SimPy environment
         "name": "Resource 01",              # Name of the location
         "geometry": location_01.geometry,   # The lat, lon coordinates
@@ -184,7 +184,7 @@ An example of a processing resource is a harbour crane, it processes units from 
     }  
 
     # Create an object based on the metaclass and vessel data
-    resource_01 = ProcessingStorageLocation(**location_data)
+    resource_01 = ProcessingResource(**resource_data)
 
 
 Transporting Resource
@@ -215,7 +215,7 @@ A harbour crane will service transporting resources. To continue with the harbou
         return lambda x: x * (v_full - v_empty) + v_empty
 
     # Other variables
-    data_vessel = {
+    resource_data = {
         "env": simpy.Environment(),                   # The simpy environment
         "name": "Resource 02",                        # Name of the location
         "geometry": location_01.geometry,             # The lat, lon coordinates
@@ -224,7 +224,7 @@ A harbour crane will service transporting resources. To continue with the harbou
     }
 
     # Create an object based on the metaclass and vessel data
-    resource_02 = TransportingResource(**data_vessel)
+    resource_02 = TransportingResource(**resource_data)
 
 Transporting Processing Resource
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -258,9 +258,9 @@ Finally, some resources are capable of both processing and moving units. Example
     processing_rate = lambda x: x
 
     # Other variables
-    data_vessel = {
+    resource_data = {
         "env": simpy.Environment(),                   # The simpy environment
-        "name": "Resource 02",                        # Name of the location
+        "name": "Resource 03",                        # Name of the location
         "geometry": location_01.geometry,             # The lat, lon coordinates
         "capacity": 5_000,                            # Capacity of the vessel
         "compute_v": variable_speed(v_empty, v_full), # Variable speed
@@ -269,7 +269,7 @@ Finally, some resources are capable of both processing and moving units. Example
     }
 
     # Create an object based on the metaclass and vessel data
-    resource_03 = TransportingProcessingResource(**data_vessel)
+    resource_03 = TransportingProcessingResource(**resource_data)
 
 
 Simulations
@@ -335,7 +335,10 @@ If no additional input is provided, the cyclic process will be repeated until ei
         loader=resource_03,       # Resource 03 could load
         mover=resource_03,        # Resource 03 could move
         unloader=resource_03,     # Resource 03 could unload
-    )  
+    )
+
+    # Run the simulation
+    env.run()
 
 Conditional Activities
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -344,19 +347,25 @@ Additionally, start and stop events can be added to the activity. The process wi
 
 .. code:: ipython3
 
+    # Activity starts after both
+    #  - Activity 01 is finished
+    #  - A minimum of 2 days after the simulation starts
     start_event = [activity_01.main_process, env.timeout(2 * 24 * 3600)]
 
     # Define the activity
     activity_02 = model.Activity(
         env=env,                  # The simpy environment defined in the first cel
         name="Activity 02",       # Name of the activity
-        origin=location_03,       # Location 02 will be filled
-        destination=location_02,  # Location 03 will be empty
+        origin=location_03,       # Location 03 will be filled
+        destination=location_02,  # Location 02 will be empty
         loader=resource_03,       # Resource 03 could load
         mover=resource_03,        # Resource 03 could move
         unloader=resource_03,     # Resource 03 could unload
         start_event=start_event,  # Start Event
-    )  
+    )
+
+    # Run the simulation
+    env.run()
 
 
 

@@ -10,11 +10,11 @@ To use OpenCLSim in a project you have to import the following three components:
 
 .. code:: ipython3
 
-    # import openclsim for the logistical components
+    # Import openclsim for the logistical components
     import openclsim.model as model
     import openclsim.core as core
 
-    # import simpy for the simulation environment
+    # Import simpy for the simulation environment
     import simpy
 
 
