@@ -12,6 +12,7 @@ jobs:
           name: Install coverage badge beforte running tests
           command: |
             docker exec -it openclsim bash -c "pip install coverage coverage-badge"
+            docker exec -it openclsim bash -c "mkdir openclsim/htmlcov"
       
       - run:
           name: Run tests - Pytest
