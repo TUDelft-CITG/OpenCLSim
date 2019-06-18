@@ -9,7 +9,7 @@ Welcome to OpenCLSim documentation!
    installation
    usage
    examples
-   modules
+   openclsim
    contributing
    authors
    history

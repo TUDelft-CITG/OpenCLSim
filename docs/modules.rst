@@ -1,5 +1,9 @@
-openclsim
-============
+=========
+OpenCLSim
+=========
+
+Submodules
+----------
 
 .. toctree::
    :maxdepth: 4

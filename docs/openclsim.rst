@@ -2,8 +2,12 @@
 OpenCLSim
 =========
 
+Text on the OpenCLSim package.
+
 Submodules
 ----------
+
+The main components are the Model module and the Core module.
 
 openclsim\.model module
 --------------------------
