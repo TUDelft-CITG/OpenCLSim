@@ -1,5 +1,6 @@
-OpenCLSim package
-=================
+=========
+OpenCLSim
+=========
 
 Submodules
 ----------

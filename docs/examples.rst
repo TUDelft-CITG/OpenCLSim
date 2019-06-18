@@ -105,7 +105,7 @@ The code below illustrates how a location can be created that is capable of stor
         "name": "Location 02",                    # Name of the location
         "geometry": shapely.geometry.Point(0, 0), # The lat, lon coordinates
         "capacity": 10_000,                       # The maximum number of units
-        "level": 10_000,                         # The number of units in the location
+        "level": 10_000,                          # The number of units in the location
     }  
 
     location_02 = StorageLocation(**location_data)
@@ -143,7 +143,7 @@ The code below illustrates how a location can be created that is capable of stor
         "name": "Location 03",                    # Name of the location
         "geometry": shapely.geometry.Point(0, 1), # The lat, lon coordinates
         "capacity": 10_000,                       # The maximum number of units
-        "level": 0,                              # The number of units in the location
+        "level": 0,                               # The number of units in the location
         "loading_func": processing_rate,          # Loading rate of 1 unit per 1 unit time
         "unloading_func": processing_rate,        # Unloading rate of 1 unit per 1 unit time
     }  
@@ -224,7 +224,7 @@ A harbour crane will service transporting resources. To continue with the harbou
 
     # Other variables
     resource_data = {
-        "env": simpy.Environment(),                   # The simpy environment
+        "env": env,                                   # The SimPy environment
         "name": "Resource 02",                        # Name of the location
         "geometry": location_01.geometry,             # The lat, lon coordinates
         "capacity": 5_000,                            # Capacity of the vessel
@@ -267,7 +267,7 @@ Finally, some resources are capable of both processing and moving units. Example
 
     # Other variables
     resource_data = {
-        "env": simpy.Environment(),                   # The simpy environment
+        "env": env,                                   # The SimPy environment
         "name": "Resource 03",                        # Name of the location
         "geometry": location_01.geometry,             # The lat, lon coordinates
         "capacity": 5_000,                            # Capacity of the vessel
@@ -303,7 +303,7 @@ A SimPy process can be initiated using the code below. The code below will instr
         while not mover.is_at(destination):
 
           # the move function is part of core.Movable
-          mover.move(destination)
+          yield from mover.move(destination)
 
     # Add to the SimPy environment
     env.process(move_resource(resource_02, location_03))
