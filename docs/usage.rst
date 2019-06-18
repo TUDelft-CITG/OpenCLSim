@@ -55,7 +55,7 @@ The Open Complex Logistics Simulation package is developed with the goal of reus
     # Create an object based on the metaclass and vessel data
     vessel_01 = ContainerVessel(**data_vessel)
 
-For more elaboration and examples please check the `examples`_ documentation. Large example `notebooks`_ can also be used.
+For more elaboration and examples please check the `examples`_ documentation. In-depth `Jupyter Notebooks`_ can also be used.
 
 .. _examples: /examples.html
-.. _notebooks: https://notebooks.azure.com/home/projects
+.. _Jupyter Notebooks: http://docs.python-guide.org/en/latest/starting/installation/
