@@ -12,11 +12,17 @@ Documentation can be found [here](https://oedm.vanoord.com/proxy/circleci_no_red
 
 ## Installation
 
-OpenCLSim is available on [pypi](https://pypi.org/project/openclsim/), this allows easy installation using pip. You can read the [documentation](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/installation.html) for other installation methods.
+To install Hydraulic-Infrastructure-Realisation, run this command in your terminal:
 
 ``` bash
 pip install openclsim
 ```
+
+This is the preferred method to install Hydraulic-Infrastructure-Realisation, as it will always install the most recent stable release.
+
+If you don’t have [pip](https://pip.pypa.io) installed, this [Python installation guide](http://docs.python-guide.org/en/latest/starting/installation/) can guide you through the process.
+
+You can read the [documentation](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/installation.html) for other installation methods.
 
 ## Example notebooks
 
