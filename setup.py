@@ -51,6 +51,8 @@ tests_require = [
     "pytest-datadir"
 ]
 
+with open("README.md", "r") as des:
+    long_description = des.read()
 
 setup(
     author="Mark van Koningsveld",
@@ -65,14 +67,15 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-    description="The OpenCLSim package aims to facilitate basic nautical traffic simulations.",
+    description="The OpenCLSim package aims to facilitate rule based planning of cyclic activities and in depth comparison of different system concepts.",
     entry_points={
         'console_scripts': [
             'openclsim=openclsim.cli:cli',
         ],
     },
     install_requires=requires,
-    long_description="",  # README + '\n\n' + CHANGES,
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     include_package_data=True,
     keywords="OpenCLSim",
     name="openclsim",
