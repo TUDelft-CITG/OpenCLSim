@@ -1,32 +1,32 @@
-[![CircleCI](https://circleci.com/gh/TUDelft-CITG/Hydraulic-Infrastructure-Realisation.svg?style=svg&circle-token=fc95d870dc21fdf11e1ebc02f9defcd99212197a)](https://circleci.com/gh/TUDelft-CITG/Hydraulic-Infrastructure-Realisation)
+[![CircleCI](https://circleci.com/gh/TUDelft-CITG/OpenCLSim.svg?style=svg&circle-token=fc95d870dc21fdf11e1ebc02f9defcd99212197a)](https://circleci.com/gh/TUDelft-CITG/OpenCLSim)
 
-[![Coverage](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/coverage.svg)](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/index.html)
-[ ![Documentation](https://img.shields.io/badge/sphinx-documentation-brightgreen.svg)](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/index.html)
-[ ![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/blob/master/LICENSE.txt)
+[![Coverage](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/OpenCLSim/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/coverage.svg)](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/OpenCLSim/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/index.html)
+[ ![Documentation](https://img.shields.io/badge/sphinx-documentation-brightgreen.svg)](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/OpenCLSim/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/index.html)
+[ ![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/TUDelft-CITG/OpenCLSim/blob/master/LICENSE.txt)
 
-# Hydraulic-Infrastructure-Realisation
+# OpenCLSim
 
 Complex Logistics Simulation - Rule based planning of cyclic activities for in-depth comparison of different system concepts.
 
-Documentation can be found [here](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/index.html).
+Documentation can be found [here](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/OpenCLSim/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/index.html).
 
 ## Installation
 
-To install Hydraulic-Infrastructure-Realisation, run this command in your terminal:
+To install OpenCLSim, run this command in your terminal:
 
 ``` bash
 pip install openclsim
 ```
 
-This is the preferred method to install Hydraulic-Infrastructure-Realisation, as it will always install the most recent stable release.
+This is the preferred method to install OpenCLSim, as it will always install the most recent stable release.
 
 If you don’t have [pip](https://pip.pypa.io) installed, this [Python installation guide](http://docs.python-guide.org/en/latest/starting/installation/) can guide you through the process.
 
-You can read the [documentation](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/installation.html) for other installation methods.
+You can read the [documentation](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/OpenCLSim/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/installation.html) for other installation methods.
 
 ## Example notebooks
 
-The benefit of OpenCLSim is the generic set-up. This set-up allows the creation of complex logistical flows. A number of examples are presented in the [notebooks folder](https://github.com/TUDelft-CITG/Hydraulic-Infrastructure-Realisation/tree/master/notebooks). You can run them locally or as an [Azure notebook](https://notebooks.azure.com/home/projects).
+The benefit of OpenCLSim is the generic set-up. This set-up allows the creation of complex logistical flows. A number of examples are presented in the [notebooks folder](https://github.com/TUDelft-CITG/OpenCLSim/tree/master/notebooks). You can run them locally or as an [Azure notebook](https://notebooks.azure.com/home/projects).
 
 ## Start server
 

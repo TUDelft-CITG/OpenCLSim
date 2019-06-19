@@ -22,5 +22,5 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. _GitHub: https://github.com/TUDelft-CITG/Hydraulic-Infrastructure-Realisation
+.. _GitHub: https://github.com/TUDelft-CITG/OpenCLSim
 .. _Jupyter Notebooks: http://docs.python-guide.org/en/latest/starting/installation/

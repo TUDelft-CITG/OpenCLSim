@@ -144,7 +144,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     (master_doc, 'openclsim',
-     u'Hydraulic-Infrastructure-Realisation Documentation',
+     u'OpenCLSim Documentation',
      [author], 1)
 ]
 
@@ -156,7 +156,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'openclsim',
-     u'Hydraulic-Infrastructure-Realisation Documentation',
+     u'OpenCLSim Documentation',
      author,
      'openclsim',
      'One line description of project.',
