@@ -32,6 +32,7 @@ requires = [
     "pyproj",
     "plotly",
     "simplekml",
+    "halem",
     "nose",
     "Flask",
     "Flask-cors",
