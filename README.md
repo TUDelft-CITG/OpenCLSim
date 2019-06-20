@@ -8,7 +8,7 @@
 
 Complex Logistics Simulation - Rule based planning of cyclic activities for in-depth comparison of different system concepts.
 
-Documentation can be found [here](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/OpenCLSim/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/index.html).
+Documentation can be found [here](https://openclsim.readthedocs.io).
 
 ## Installation
 
@@ -27,18 +27,3 @@ You can read the [documentation](https://oedm.vanoord.com/proxy/circleci_no_redi
 ## Examples
 
 The benefit of OpenCLSim is the generic set-up. This set-up allows the creation of complex logistical flows. A number of examples are presented in a seperate [Jupyter Notebook repository](https://github.com/TUDelft-CITG/OpenCLSim-Notebooks). Information on how to use the notebooks is presented in that repository as well.
-
-## Start server
-
-A flask server is part of the OpenCLSim package. The example code below lets you start the Flask server from the windows command line, for other operation systems please check the [Flask Documentation](http://flask.pocoo.org/docs/dev/cli/).
-
-``` bash
-# Set Flask app
-set FLASK_APP=openclsim/server.py
-
-# Set Flask environment
-set FLASK_ENV=development
-
-# Run Flask
-flask run
-```

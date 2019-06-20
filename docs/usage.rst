@@ -57,5 +57,5 @@ The Open Complex Logistics Simulation package is developed with the goal of reus
 
 For more elaboration and examples please check the `examples`_ documentation. In-depth `Jupyter Notebooks`_ can also be used.
 
-.. _examples: /examples.html
-.. _Jupyter Notebooks: http://docs.python-guide.org/en/latest/starting/installation/
+.. _examples: https://openclsim.readthedocs.io/en/latest/examples
+.. _Jupyter Notebooks: https://github.com/TUDelft-CITG/OpenCLSim-Notebooks

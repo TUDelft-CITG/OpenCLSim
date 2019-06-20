@@ -12,6 +12,7 @@ Welcome to OpenCLSim documentation! Please check the contents below for informat
    usage
    examples
    openclsim
+   openclsim-api
    contributing
    authors
    history

@@ -25,6 +25,14 @@ openclsim\.core module
     :undoc-members:
     :show-inheritance:
 
+openclsim\.server module
+--------------------------
+
+.. automodule:: openclsim.server
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Module contents
 ---------------
 
