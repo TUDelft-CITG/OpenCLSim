@@ -8,7 +8,7 @@ Import required components
 
 To use OpenCLSim in a project you have to import the following three components:
 
-.. code:: ipython3
+.. code:: python3
 
     # Import openclsim for the logistical components
     import openclsim.model as model
@@ -23,7 +23,7 @@ Using Mixins and Metaclasses
 
 The Open Complex Logistics Simulation package is developed with the goal of reusable and generic components in mind. A new class can be instatiated by combining mixins from the *openclsim.core*, such as presented below. The following lines of code demonstrate how a containervessel can be defined:
 
-.. code:: ipython3
+.. code:: python3
 
     # Define the core components
     # A generic class for an object that can move and transport material

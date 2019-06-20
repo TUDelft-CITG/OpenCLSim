@@ -22,7 +22,7 @@ Required Libraries
 
 Depending on the simulation it might be required to import additional libraries. The minimal set-up of an OpenCLSim project has the following import statements:
 
-.. code:: ipython3
+.. code:: python3
 
     # Import openclsim for the logistical components
     import openclsim.model as model
@@ -36,7 +36,7 @@ Simulation Environment
 
 OpenClSim continues on the SimPy discrete event simulation package. Some components are modified, such as the resources and container objects, but the simulation environment is pure SimPy. Starting the simulation environment can be done with the following line of code. For more information in SimPy environment please refer to the SimPy `documentation`_.
 
-.. code:: ipython3
+.. code:: python3
 
     # Start the SimPy environment
     env = simpy.Environment()
@@ -52,7 +52,7 @@ Basic Location
 
 The code below illustrates how a basic location can be created using OpenClSim. Such a location can be used to add information on events in space, such as tracking movement events or creating paths to follow.
 
-.. code:: ipython3
+.. code:: python3
 
     # Import the library required to add coordinates
     import shapely.geometry
@@ -82,7 +82,7 @@ Storage Location
 
 The code below illustrates how a location can be created that is capable of storing an amount. Such a location can be used by the OpenClSim.model activities as origin or destination. 
 
-.. code:: ipython3
+.. code:: python3
 
     # Import the library required to add coordinates
     import shapely.geometry
@@ -116,7 +116,7 @@ Processing Storage Location
 
 The code below illustrates how a location can be created that is capable of storing an amount. Additional to the storage location, a processing- and storage location can be used as both the origin and loader or destination and unloader in a OpenClSim.model activity. 
 
-.. code:: ipython3
+.. code:: python3
 
     # Import the library required to add coordinates
     import shapely.geometry
@@ -164,7 +164,7 @@ Processing Resource
 
 An example of a processing resource is a harbour crane, it processes units from a storage location to a transporting resource or vice versa. In the OpenClSim.model activity such a processing resource could be selected as the loader or unloader. The example code is presented below.
 
-.. code:: ipython3
+.. code:: python3
 
     # Create a resource
     ProcessingResource = type(
@@ -200,7 +200,7 @@ Transporting Resource
 
 A harbour crane will service transporting resources. To continue with the harbour crane example, basically any vessel is a transporting resource because it is capable of moving units from location A to location B. In the OpenClSim.model activity such a processing resource could be selected as the mover.
 
-.. code:: ipython3
+.. code:: python3
 
     # Create a resource
     TransportingResource = type(
@@ -239,7 +239,7 @@ Transporting Processing Resource
 
 Finally, some resources are capable of both processing and moving units. Examples are dredging vessels or container vessels with deck cranes. These specific vessels have the unique property that they can act as the loader, unloader and mover in the OpenClSim.model activity.
 
-.. code:: ipython3
+.. code:: python3
 
     # Create a resource
     TransportingProcessingResource = type(
@@ -285,7 +285,7 @@ Simulations
 
 The code below will start the simulation if SimPy processes are added to the environment. These SimPy processes can be added using a combination of SimPy and OpenCLSim, or by using OpenCLSim activities.
 
-.. code:: ipython3
+.. code:: python3
 
     env.run()
 
@@ -294,7 +294,7 @@ SimPy processes
 
 A SimPy process can be initiated using the code below. The code below will instruct Resource 02, which was a TransportingResource, to sail from Location 01 (at Lat, Long (0, 0)) to Location 02 (at Lat, Long (0, 1)). The simulation will stop as soon as Resource 02 is at Location 02.
 
-.. code:: ipython3
+.. code:: python3
 
     # Create the process function
     def move_resource(mover, destination):
@@ -332,7 +332,7 @@ This cycle is repeated until a certain condition is met. Between the individual 
 
 If no additional input is provided, the cyclic process will be repeated until either the origin is empty or the destination is full. The example activity below will stop after two cycles because the origin will be empty and the destination will be full.
 
-.. code:: ipython3
+.. code:: python3
 
     # Define the activity
     activity_01 = model.Activity(
@@ -353,7 +353,7 @@ Conditional Activities
 
 Additionally, start and stop events can be added to the activity. The process will only start as soon as a start event (or a list of start events) is completed and it will stop as soon as the stop event (or a list of stop events) are completed. These can be any SimPy event, such as a time-out, but OpenClSim provides some additional events as well, such as empty- or full events. The activity in the example below will start as soon as the previous activity is finished, but not sooner than 2 days after the simulation is started.
 
-.. code:: ipython3
+.. code:: python3
 
     # Activity starts after both
     #  - Activity 01 is finished
