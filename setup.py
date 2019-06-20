@@ -35,7 +35,6 @@ requires = [
     "nose",
     "Flask",
     "Flask-cors",
-    "Dill",
     "sphinx_rtd_theme",
 ]
 
@@ -79,6 +78,6 @@ setup(
     test_suite="tests",
     tests_require=tests_require,
     url="https://github.com/TUDelft-CITG/openclsim",
-    version="0.3.1",
+    version="0.3.0",
     zip_safe=False,
 )

@@ -4,7 +4,7 @@
 
 # OpenCLSim
 
-Complex Logistics Simulation - Rule based planning of cyclic activities for in-depth comparison of different system concepts.
+Open Source Complex Logistics Simulation - Rule based planning of cyclic activities for in-depth comparison of different system concepts.
 
 Documentation can be found [here](https://openclsim.readthedocs.io).
 
