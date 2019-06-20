@@ -36,6 +36,8 @@ requires = [
     "Flask",
     "Flask-cors",
     "sphinx_rtd_theme",
+    "Dill==0.2.5",
+    "halem",
 ]
 
 setup_requirements = [
@@ -43,8 +45,6 @@ setup_requirements = [
 ]
 
 tests_require = [
-    "halem",
-    "Dill",
     "pytest",
     "pytest-cov",
     "pytest-timeout",
