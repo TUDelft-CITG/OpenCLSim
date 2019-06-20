@@ -1,7 +1,11 @@
-digital_twin
-============
+=========
+OpenCLSim
+=========
+
+Submodules
+----------
 
 .. toctree::
    :maxdepth: 4
 
-   digital_twin
+   openclsim

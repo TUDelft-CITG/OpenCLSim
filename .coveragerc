@@ -1,5 +1,5 @@
 [run]
-source = digital_twin
+source = openclsim
 
 [report]
-omit = test*, .eggs*, digital_twin/plot.py
+omit = test*, .eggs*, openclsim/plot.py

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `digital_twin` package."""
+"""Tests for `openclsim` package."""
 
 import types
 

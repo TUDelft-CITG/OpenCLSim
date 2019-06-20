@@ -4,7 +4,7 @@ import pytest
 import datetime
 import time
 
-from digital_twin import core
+from openclsim import core
 
 
 @pytest.fixture

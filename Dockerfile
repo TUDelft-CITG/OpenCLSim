@@ -6,8 +6,8 @@ RUN conda install numpy pandas nomkl pyproj
 # Then install rest via pip
 RUN pip install pint Flask dill
 
-ADD . /Hydraulic-Infrastructure-Realisation
-WORKDIR /Hydraulic-Infrastructure-Realisation
+ADD . /OpenCLSim
+WORKDIR /OpenCLSim
 
 # Install the application
 RUN pip install -e .
@@ -15,4 +15,4 @@ RUN pip install -e .
 # expose port 5000
 EXPOSE 5000
 # Serve on port 5000
-CMD digital_twin serve --port 5000
+CMD openclsim serve --port 5000

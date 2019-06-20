@@ -8,7 +8,7 @@ import pytest
 
 from io import StringIO
 
-from digital_twin import server
+from openclsim import server
 
 
 def run_and_compare_completion_time(config_file, expected_result_file, tmp_path=""):

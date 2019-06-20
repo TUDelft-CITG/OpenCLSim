@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 
-"""Console script for digital_twin."""
+"""Console script for openclsim."""
 import sys
 import click
 
-import digital_twin.server
+import openclsim.server
 
 
 @click.group()
 def cli(args=None):
     """Digital twin simulation."""
-    click.echo(
-        "Replace this message by putting your code into " "digital_twin.cli.main"
-    )
+    click.echo("Replace this message by putting your code into " "openclsim.cli.main")
     click.echo("See click documentation at http://click.pocoo.org/")
     return 0
 
@@ -23,7 +21,7 @@ def cli(args=None):
 @click.option("--debug/--no-debug", default=False)
 def serve(host, port, debug, args=None):
     """Run a flask server with the backend code"""
-    app = digital_twin.server.app
+    app = openclsim.server.app
     app.run(host=host, debug=debug, port=port)
 
 

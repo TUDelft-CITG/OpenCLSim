@@ -11,7 +11,7 @@ import simpy
 import dill as pickle
 
 
-import digital_twin.model
+import openclsim.model
 
 
 def save_logs(simulation, location, file_prefix):
@@ -44,7 +44,7 @@ class ToSave:
     def __init__(self, data_type, data, *args, **kwargs):
 
         # This is the case for activities
-        if data_type == digital_twin.model.Activity:
+        if data_type == openclsim.model.Activity:
             self.data_type = "Activity"
 
             self.data = {
@@ -65,7 +65,7 @@ class ToSave:
 
             for subclass in data_type.__mro__:
                 if (
-                    subclass.__module__ == "digital_twin.core"
+                    subclass.__module__ == "openclsim.core"
                     and subclass.__name__ not in ["Identifiable", "Log", "SimpyObject"]
                 ):
                     self.data_type.append(subclass.__name__)
@@ -175,7 +175,7 @@ class SimulationOpen:
         equipment = []
 
         for site in self.simulation["Sites"]:
-            site_object = digital_twin.model.get_class_from_type_list(
+            site_object = openclsim.model.get_class_from_type_list(
                 "Site", site.data_type
             )
             site.data["env"] = environment
@@ -183,7 +183,7 @@ class SimulationOpen:
             sites.append(site_object(**site.data))
 
         for ship in self.simulation["Equipment"]:
-            ship_object = digital_twin.model.get_class_from_type_list(
+            ship_object = openclsim.model.get_class_from_type_list(
                 "Ship", ship.data_type
             )
             ship.data["env"] = environment
@@ -203,7 +203,7 @@ class SimulationOpen:
             destination = [i for i in sites if i.name == data["destination"]][0]
 
             activities.append(
-                digital_twin.model.Activity(
+                openclsim.model.Activity(
                     env=environment,  # The simpy environment defined in the first cel
                     name=data["name"],  # We are moving soil
                     ID=data["id"],  # The id
@@ -743,7 +743,7 @@ class LogSaver:
         starts = []
 
         for piece in self.equipment:
-            if isinstance(piece, digital_twin.core.HasCosts):
+            if isinstance(piece, openclsim.core.HasCosts):
                 costs += piece.cost
 
         for activity in self.activities:
