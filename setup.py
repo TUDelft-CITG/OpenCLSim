@@ -32,7 +32,6 @@ requires = [
     "pyproj",
     "plotly",
     "simplekml",
-    "halem",
     "nose",
     "Flask",
     "Flask-cors",
@@ -44,6 +43,8 @@ setup_requirements = [
 ]
 
 tests_require = [
+    "halem",
+    "Dill",
     "pytest",
     "pytest-cov",
     "pytest-timeout",
