@@ -2,10 +2,6 @@
 History
 =======
 
-0.3.1 (2019-06-20)
-------------------
-
-* Fixed compatibility issues with Azure Notebooks
 
 0.3.0 (2019-06-19)
 ------------------
