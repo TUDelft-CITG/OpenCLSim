@@ -10,9 +10,10 @@ Stable release
 
 To install OpenCLSim, run this command in your terminal:
 
-.. code-block:: console
+.. code-block:: bash
 
-    $ pip install openclsim
+    # Use pip to install OpenClSim
+    pip install openclsim
 
 This is the preferred method to install OpenCLSim, as it will always install the most recent stable release.
 
@@ -30,21 +31,26 @@ The sources for OpenCLSim can be downloaded from the `Github repo`_.
 
 You can either clone the public repository:
 
-.. code-block:: console
+.. code-block:: bash
 
-    $ git clone git://github.com/TUDelft-CITG/OpenCLSim
+    # Use git to clone OpenCLSim
+    git clone git://github.com/TUDelft-CITG/OpenCLSim
+
 
 Or download the `tarball`_:
 
-.. code-block:: console
+.. code-block:: bash
 
-    $ curl  -OL https://github.com/TUDelft-CITG/OpenCLSim/tarball/master
+    # Use curl to obtain the tarball
+    curl  -OL https://github.com/TUDelft-CITG/OpenCLSim/tarball/master
+
 
 Once you have a copy of the source, you can install it with:
 
-.. code-block:: console
+.. code-block:: bash
 
-    $ python setup.py install
+    # Use python to install
+    python setup.py install
 
 
 .. _Github repo: https://github.com/TUDelft-CITG/OpenCLSim
