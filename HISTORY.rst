@@ -2,7 +2,7 @@
 History
 =======
 
-0.4.0 (2019-06-20)
+0.3.1 (2019-06-20)
 ------------------
 
 * Fixed compatibility issues with Azure Notebooks
@@ -10,7 +10,7 @@ History
 0.3.0 (2019-06-19)
 ------------------
 
-* First release to PyPI
+* First release to PyPI and rename to OpenClSim
 
 0.2.0 (2019-02-14)
 ------------------

@@ -24,7 +24,6 @@ requires = [
     "numpy",
     "simpy",
     "networkx",
-    "halem",
     "shapely",
     "scipy",
     "click",
@@ -80,6 +79,6 @@ setup(
     test_suite="tests",
     tests_require=tests_require,
     url="https://github.com/TUDelft-CITG/openclsim",
-    version="0.4.0",
+    version="0.3.1",
     zip_safe=False,
 )
