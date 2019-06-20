@@ -24,9 +24,9 @@ If you don’t have [pip](https://pip.pypa.io) installed, this [Python installat
 
 You can read the [documentation](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/OpenCLSim/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/installation.html) for other installation methods.
 
-## Example notebooks
+## Examples
 
-The benefit of OpenCLSim is the generic set-up. This set-up allows the creation of complex logistical flows. A number of examples are presented in the [notebooks folder](https://github.com/TUDelft-CITG/OpenCLSim/tree/master/notebooks). You can run them locally or as an [Azure notebook](https://notebooks.azure.com/joris-denuijl/projects/openclsim/tree/notebooks).
+The benefit of OpenCLSim is the generic set-up. This set-up allows the creation of complex logistical flows. A number of examples are presented in a seperate [Jupyter Notebook repository](https://github.com/TUDelft-CITG/OpenCLSim-Notebooks). Information on how to use the notebooks is presented in that repository as well.
 
 ## Start server
 
