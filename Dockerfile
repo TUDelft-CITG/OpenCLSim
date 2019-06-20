@@ -4,7 +4,7 @@ FROM continuumio/miniconda3
 # Install conda stuff first
 RUN conda install numpy pandas nomkl pyproj
 # Then install rest via pip
-RUN pip install pint Flask dill
+RUN pip install pint Flask
 
 ADD . /OpenCLSim
 WORKDIR /OpenCLSim
