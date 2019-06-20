@@ -4,4 +4,4 @@
 
 __author__ = """Mark van Koningsveld"""
 __email__ = "M.vanKoningsveld@tudelft.nl"
-__version__ = "0.3.0"
+__version__ = "0.4.0"

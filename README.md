@@ -26,7 +26,7 @@ You can read the [documentation](https://oedm.vanoord.com/proxy/circleci_no_redi
 
 ## Example notebooks
 
-The benefit of OpenCLSim is the generic set-up. This set-up allows the creation of complex logistical flows. A number of examples are presented in the [notebooks folder](https://github.com/TUDelft-CITG/OpenCLSim/tree/master/notebooks). You can run them locally or as an [Azure notebook](https://notebooks.azure.com/home/projects).
+The benefit of OpenCLSim is the generic set-up. This set-up allows the creation of complex logistical flows. A number of examples are presented in the [notebooks folder](https://github.com/TUDelft-CITG/OpenCLSim/tree/master/notebooks). You can run them locally or as an [Azure notebook](https://notebooks.azure.com/joris-denuijl/projects/openclsim/tree/notebooks).
 
 ## Start server
 

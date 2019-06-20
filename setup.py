@@ -36,7 +36,7 @@ requires = [
     "nose",
     "Flask",
     "Flask-cors",
-    "Dill>=0.2.8",
+    "Dill",
     "sphinx_rtd_theme",
 ]
 
@@ -62,10 +62,6 @@ setup(
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
     ],
     description="The OpenCLSim package aims to facilitate rule based planning of cyclic activities and in depth comparison of different system concepts.",
     entry_points={
@@ -84,6 +80,6 @@ setup(
     test_suite="tests",
     tests_require=tests_require,
     url="https://github.com/TUDelft-CITG/openclsim",
-    version="0.3.0",
+    version="0.4.0",
     zip_safe=False,
 )
