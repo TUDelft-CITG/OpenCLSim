@@ -36,7 +36,7 @@ requires = [
     "Flask",
     "Flask-cors",
     "sphinx_rtd_theme",
-    "Dill==0.2.5",
+    "Dill",
     "halem",
 ]
 
