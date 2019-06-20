@@ -1,6 +1,4 @@
 [![CircleCI](https://circleci.com/gh/TUDelft-CITG/OpenCLSim.svg?style=svg&circle-token=fc95d870dc21fdf11e1ebc02f9defcd99212197a)](https://circleci.com/gh/TUDelft-CITG/OpenCLSim)
-
-[![Coverage](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/OpenCLSim/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/coverage.svg)](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/OpenCLSim/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/index.html)
 [ ![Documentation](https://img.shields.io/badge/sphinx-documentation-brightgreen.svg)](https://openclsim.readthedocs.io)
 [ ![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/TUDelft-CITG/OpenCLSim/blob/master/LICENSE.txt)
 
@@ -22,7 +20,7 @@ This is the preferred method to install OpenCLSim, as it will always install the
 
 If you don’t have [pip](https://pip.pypa.io) installed, this [Python installation guide](http://docs.python-guide.org/en/latest/starting/installation/) can guide you through the process.
 
-You can read the [documentation](https://oedm.vanoord.com/proxy/circleci_no_redirect/github/TUDelft-CITG/OpenCLSim/master/latest/3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a/tmp/artifacts/docs/installation.html) for other installation methods.
+You can read the [documentation](https://openclsim.readthedocs.io/en/latest/installation.html) for other installation methods.
 
 ## Examples
 
