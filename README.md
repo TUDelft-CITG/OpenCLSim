@@ -6,7 +6,7 @@
 
 # OpenCLSim
 
-Open Source Complex Logistics Simulation - Rule driven scheduling of cyclic activities for in-depth comparison of alternative operating strategies.
+Open source Complex Logistics Simulation - Rule driven scheduling of cyclic activities for in-depth comparison of alternative operating strategies.
 
 Documentation can be found [here](https://openclsim.readthedocs.io).
 
