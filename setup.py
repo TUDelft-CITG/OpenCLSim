@@ -33,7 +33,7 @@ requires = [
     "plotly",
     "simplekml",
     "nose",
-    "Flask",
+    "Flask>=1.0",
     "Flask-cors",
     "sphinx_rtd_theme",
     "Dill",

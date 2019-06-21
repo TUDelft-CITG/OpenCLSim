@@ -13,30 +13,30 @@ openclsim\.model module
 --------------------------
 
 .. automodule:: openclsim.model
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 openclsim\.core module
 --------------------------
 
 .. automodule:: openclsim.core
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 openclsim\.server module
 --------------------------
 
 .. automodule:: openclsim.server
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Module contents
 ---------------
 
 .. automodule:: openclsim
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
