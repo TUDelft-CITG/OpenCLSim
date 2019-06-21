@@ -3,6 +3,12 @@ Open Complex Logistics Simulation
 
 Welcome to OpenCLSim documentation! Please check the contents below for information on installation, getting started and actual example code. If you want to dive straight into the code you can check out our `GitHub`_ page or the working examples presented in `Jupyter Notebooks`_.
 
+OpenCLSim
+---------
+
+Rule driven scheduling of cyclic activities for in-depth comparison of alternative operating strategies.
+
+
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
