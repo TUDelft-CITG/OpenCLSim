@@ -20,7 +20,7 @@ pip install openclsim
 
 This is the preferred method to install OpenCLSim, as it will always install the most recent stable release.
 
-If you don’t have [pip](https://pip.pypa.io) installed, this [Python installation guide](http://docs.python-guide.org/en/latest/starting/installation/) can guide you through the process.
+If you don not have [pip](https://pip.pypa.io) installed, this [Python installation guide](http://docs.python-guide.org/en/latest/starting/installation/) can guide you through the process.
 
 You can read the [documentation](https://openclsim.readthedocs.io/en/latest/installation.html) for other installation methods.
 

@@ -3,7 +3,7 @@ History
 =======
 
 
-0.3.0 (2019-06-19)
+0.3.0 (2019-06-20)
 ------------------
 
 * First release to PyPI and rename to OpenClSim
