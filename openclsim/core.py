@@ -455,7 +455,7 @@ class HasSpill(SimpyObject):
             self.env.now,
             m_d + m_op,
             self.geometry,
-            processor.activityID,
+            processor.ActivityID,
         )
 
         return m_d + m_op
@@ -1378,7 +1378,13 @@ class Log(SimpyObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.log = {"Message": [], "Timestamp": [], "Value": [], "Geometry": [], "ActivityID": []}
+        self.log = {
+            "Message": [],
+            "Timestamp": [],
+            "Value": [],
+            "Geometry": [],
+            "ActivityID": [],
+        }
 
     def log_entry(self, log, t, value, geometry_log, ActivityID):
         """Log"""

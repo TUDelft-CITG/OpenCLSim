@@ -154,7 +154,11 @@ def interrupt_processes(event, activities, env):
         if not process.processed:
             process.interrupt()
             activity["activity_log"].log_entry(
-                "interrupted by 100 year timeout", env.now, -1, None
+                "interrupted by 100 year timeout",
+                env.now,
+                -1,
+                None,
+                activity["activity_log"].id,
             )
 
 
@@ -253,6 +257,7 @@ def energy_use_plot_from_json(jsonFile):
                     t=feature["properties"]["time"],
                     value=feature["properties"]["value"],
                     geometry_log=feature["geometry"]["coordinates"],
+                    ActivityID=None,
                 )
 
             vessels.append(vessel)
@@ -275,6 +280,7 @@ def equipment_plot_from_json(jsonFile):
                     t=feature["properties"]["time"],
                     value=feature["properties"]["value"],
                     geometry_log=feature["geometry"]["coordinates"],
+                    ActivityID=None,
                 )
 
             vessels.append(vessel)
