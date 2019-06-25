@@ -138,7 +138,9 @@ def delayed_process(activity_log, env, start_event, sub_processes):
         start_event = start_event()
 
     yield start_event
-    activity_log.log_entry("delayed activity started", env.now, -1, None)
+    activity_log.log_entry(
+        "delayed activity started", env.now, -1, None, activity_log.id
+    )
 
     for sub_process in sub_processes:
         yield from sub_process(activity_log=activity_log, env=env)
@@ -175,7 +177,7 @@ def conditional_process(activity_log, env, stop_event, sub_processes):
         for sub_process in sub_processes:
             yield from sub_process(activity_log=activity_log, env=env)
 
-    activity_log.log_entry("stopped", env.now, -1, None)
+    activity_log.log_entry("stopped", env.now, -1, None, activity_log.id)
 
 
 def sequential_process(activity_log, env, sub_processes):
@@ -188,10 +190,10 @@ def sequential_process(activity_log, env, sub_processes):
                    return a generator which could be added as a process to a simpy.Environment
                    the sub_processes will be executed sequentially, in the order in which they are given
     """
-    activity_log.log_entry("sequential start", env.now, -1, None)
+    activity_log.log_entry("sequential start", env.now, -1, None, activity_log.id)
     for sub_process in sub_processes:
         yield from sub_process(activity_log=activity_log, env=env)
-    activity_log.log_entry("sequential stop", env.now, -1, None)
+    activity_log.log_entry("sequential stop", env.now, -1, None, activity_log.id)
 
 
 def move_process(activity_log, env, mover, destination, engine_order=1.0):
@@ -212,10 +214,13 @@ def move_process(activity_log, env, mover, destination, engine_order=1.0):
         env.now,
         -1,
         mover.geometry,
+        activity_log.id,
     )
 
     with mover.resource.request() as my_mover_turn:
         yield my_mover_turn
+
+        mover.ActivityID = activity_log.id
         yield from mover.move(destination=destination, engine_order=engine_order)
 
     activity_log.log_entry(
@@ -223,6 +228,7 @@ def move_process(activity_log, env, mover, destination, engine_order=1.0):
         env.now,
         -1,
         mover.geometry,
+        activity_log.id,
     )
 
 
@@ -309,7 +315,9 @@ def single_run_process(
 
         if verbose:
             print("Using " + mover.name + " to process " + str(amount))
-        activity_log.log_entry("transporting start", env.now, amount, mover.geometry)
+        activity_log.log_entry(
+            "transporting start", env.now, amount, mover.geometry, activity_log.id
+        )
 
         # request the mover's resource
         yield from _request_resource(resource_requests, mover.resource)
@@ -317,7 +325,11 @@ def single_run_process(
         # move the mover to the origin (if necessary)
         if not mover.is_at(origin):
             yield from _move_mover(
-                mover, origin, engine_order=engine_order, verbose=verbose
+                mover,
+                origin,
+                ActivityID=activity_log.id,
+                engine_order=engine_order,
+                verbose=verbose,
             )
 
         yield from _request_resources_if_transfer_possible(
@@ -334,7 +346,13 @@ def single_run_process(
 
         # load the mover
         yield from _shift_amount(
-            env, loader, mover, mover.container.level + amount, origin, verbose=verbose
+            env,
+            loader,
+            mover,
+            mover.container.level + amount,
+            origin,
+            ActivityID=activity_log.id,
+            verbose=verbose,
         )
 
         # release the loader and origin resources (but always keep the mover requested)
@@ -348,7 +366,11 @@ def single_run_process(
         # move the mover to the destination
         if not mover.is_at(destination):
             yield from _move_mover(
-                mover, destination, engine_order=engine_order, verbose=verbose
+                mover,
+                destination,
+                ActivityID=activity_log.id,
+                engine_order=engine_order,
+                verbose=verbose,
             )
 
         yield from _request_resources_if_transfer_possible(
@@ -370,6 +392,7 @@ def single_run_process(
             mover,
             mover.container.level - amount,
             destination,
+            ActivityID=activity_log.id,
             verbose=verbose,
         )
 
@@ -380,7 +403,9 @@ def single_run_process(
         if mover.resource in resource_requests:
             _release_resource(resource_requests, mover.resource)
 
-        activity_log.log_entry("transporting stop", env.now, amount, mover.geometry)
+        activity_log.log_entry(
+            "transporting stop", env.now, amount, mover.geometry, activity_log.id
+        )
     else:
         if origin.container.expected_level == 0:
             activity_log.log_entry(
@@ -388,6 +413,7 @@ def single_run_process(
                 env.now,
                 origin.container.expected_level,
                 origin.geometry,
+                activity_log.id,
             )
             yield _or_optional_event(
                 env,
@@ -399,6 +425,7 @@ def single_run_process(
                 env.now,
                 origin.container.expected_level,
                 origin.geometry,
+                activity_log.id,
             )
         elif destination.container.expected_level == destination.container.capacity:
             activity_log.log_entry(
@@ -406,6 +433,7 @@ def single_run_process(
                 env.now,
                 destination.container.expected_level,
                 destination.geometry,
+                activity_log.id,
             )
             yield _or_optional_event(
                 env,
@@ -417,6 +445,7 @@ def single_run_process(
                 env.now,
                 destination.container.expected_level,
                 destination.geometry,
+                activity_log.id,
             )
         else:
             raise RuntimeError("Attempting to move content with a full ship")
@@ -448,9 +477,13 @@ def _release_resource(requested_resources, resource, kept_resource=None):
         del requested_resources[resource]
 
 
-def _shift_amount(env, processor, ship, desired_level, site, verbose=False):
+def _shift_amount(env, processor, ship, desired_level, site, ActivityID, verbose=False):
     """Calls the processor.process method, giving debug print statements when verbose is True."""
     amount = np.abs(ship.container.level - desired_level)
+
+    # Set ActivityID to processor and ship
+    processor.ActivityID = ActivityID
+    ship.ActivityID = ActivityID
 
     # Check if loading or unloading
     yield from processor.process(ship, desired_level, site)
@@ -510,7 +543,11 @@ def _request_resources_if_transfer_possible(
         if not processor.is_at(origin):
             # todo have the processor move simultaneously with the mover by starting a different process for it?
             yield from _move_mover(
-                processor, origin, engine_order=engine_order, verbose=verbose
+                processor,
+                origin,
+                ActivityID=activity_log.id,
+                engine_order=engine_order,
+                verbose=verbose,
             )
             if (
                 origin.container.level < amount
@@ -553,10 +590,12 @@ def _request_resources_if_transfer_possible(
         all_available = True
 
 
-def _move_mover(mover, origin, engine_order=1.0, verbose=False):
+def _move_mover(mover, origin, ActivityID, engine_order=1.0, verbose=False):
     """Calls the mover.move method, giving debug print statements when verbose is True."""
     old_location = mover.geometry
 
+    # Set ActivityID to mover
+    mover.ActivityID = ActivityID
     yield from mover.move(origin, engine_order=engine_order)
 
     if verbose:
