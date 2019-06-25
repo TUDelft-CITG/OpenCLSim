@@ -450,7 +450,13 @@ class HasSpill(SimpyObject):
         m_op = mover.sigma_o * m_o
         mover.m_r = m_h - m_o
 
-        processor.log_entry("fines released", self.env.now, m_d + m_op, self.geometry)
+        processor.log_entry(
+            "fines released",
+            self.env.now,
+            m_d + m_op,
+            self.geometry,
+            processor.ActivityID,
+        )
 
         return m_d + m_op
 
@@ -462,6 +468,7 @@ class HasSpill(SimpyObject):
                 self.env.now,
                 mover.m_r * processor.sigma_p,
                 self.geometry,
+                processor.ActivityID,
             )
 
         return mover.m_r * processor.sigma_p
@@ -798,11 +805,19 @@ class HasWorkabilityCriteria:
 
         if waiting:
             self.log_entry(
-                "waiting for weather start", self.env.now, waiting, self.geometry
+                "waiting for weather start",
+                self.env.now,
+                waiting,
+                self.geometry,
+                self.ActivityID,
             )
             yield self.env.timeout(np.max(waiting))
             self.log_entry(
-                "waiting for weather stop", self.env.now, waiting, self.geometry
+                "waiting for weather stop",
+                self.env.now,
+                waiting,
+                self.geometry,
+                self.ActivityID,
             )
 
 
@@ -1002,6 +1017,7 @@ class HasDepthRestriction:
                 self.env.now,
                 -1,
                 self.geometry,
+                self.ActivityID,
             )
             waiting = 0
 
@@ -1020,11 +1036,19 @@ class HasDepthRestriction:
 
         if waiting != 0:
             self.log_entry(
-                "waiting for tide start", self.env.now, waiting, self.geometry
+                "waiting for tide start",
+                self.env.now,
+                waiting,
+                self.geometry,
+                self.ActivityID,
             )
             yield self.env.timeout(waiting)
             self.log_entry(
-                "waiting for tide stop", self.env.now, waiting, self.geometry
+                "waiting for tide stop",
+                self.env.now,
+                waiting,
+                self.geometry,
+                self.ActivityID,
             )
 
     def calc_required_depth(self, draught, wave_height):
@@ -1167,9 +1191,12 @@ class Movable(SimpyObject, Locatable):
                     self.env.now,
                     self.container.level,
                     self.geometry,
+                    self.ActivityID,
                 )
             else:
-                self.log_entry("sailing start", self.env.now, -1, self.geometry)
+                self.log_entry(
+                    "sailing start", self.env.now, -1, self.geometry, self.ActivityID
+                )
 
         """determine distance between origin and destination. 
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
@@ -1205,9 +1232,12 @@ class Movable(SimpyObject, Locatable):
                     self.env.now,
                     self.container.level,
                     self.geometry,
+                    self.ActivityID,
                 )
             else:
-                self.log_entry("sailing stop", self.env.now, -1, self.geometry)
+                self.log_entry(
+                    "sailing stop", self.env.now, -1, self.geometry, self.ActivityID
+                )
 
     @property
     def current_speed(self):
@@ -1265,9 +1295,13 @@ class Movable(SimpyObject, Locatable):
 
                     for i in range(path.shape[0]):
                         dest_temp = shapely.geometry.Point(path[i])
-                        self.log_entry("Sailing", time[i + 1], 0, dest_temp)
+                        self.log_entry(
+                            "Sailing", time[i + 1], 0, dest_temp, self.ActivityID
+                        )
                         if i + 2 == path.shape[0]:
-                            self.log_entry("Sailing", time[i + 1], 0, dest_temp)
+                            self.log_entry(
+                                "Sailing", time[i + 1], 0, dest_temp, self.ActivityID
+                            )
                             break
 
                     sailtimeb = time[-1] - time[0]
@@ -1277,7 +1311,9 @@ class Movable(SimpyObject, Locatable):
                     distb = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
                     sailtimeb = distb / self.current_speed
 
-                self.log_entry("Sailing", self.env.now + sailtimeb, 0, dest)
+                self.log_entry(
+                    "Sailing", self.env.now + sailtimeb, 0, dest, self.ActivityID
+                )
 
                 dista += distb
                 sailtime += sailtimeb
@@ -1298,7 +1334,9 @@ class Movable(SimpyObject, Locatable):
                 filling = self.container.level / self.container.capacity
 
             energy = self.energy_use_sailing(distance, speed, filling)
-            self.log_entry(message, self.env.now, energy, self.geometry)
+            self.log_entry(
+                message, self.env.now, energy, self.geometry, self.ActivityID
+            )
 
 
 class ContainerDependentMovable(Movable, HasContainer):
@@ -1340,14 +1378,21 @@ class Log(SimpyObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.log = {"Message": [], "Timestamp": [], "Value": [], "Geometry": []}
+        self.log = {
+            "Message": [],
+            "Timestamp": [],
+            "Value": [],
+            "Geometry": [],
+            "ActivityID": [],
+        }
 
-    def log_entry(self, log, t, value, geometry_log):
+    def log_entry(self, log, t, value, geometry_log, ActivityID):
         """Log"""
         self.log["Message"].append(log)
         self.log["Timestamp"].append(datetime.datetime.fromtimestamp(t))
         self.log["Value"].append(value)
         self.log["Geometry"].append(geometry_log)
+        self.log["ActivityID"].append(ActivityID)
 
     def get_log_as_json(self):
         json = []
@@ -1449,10 +1494,18 @@ class Processor(SimpyObject):
             yield from self.checkSpill(origin, destination, amount)
 
         origin.log_entry(
-            "unloading start", self.env.now, origin.container.level, self.geometry
+            "unloading start",
+            self.env.now,
+            origin.container.level,
+            self.geometry,
+            self.ActivityID,
         )
         destination.log_entry(
-            "loading start", self.env.now, destination.container.level, self.geometry
+            "loading start",
+            self.env.now,
+            destination.container.level,
+            self.geometry,
+            self.ActivityID,
         )
 
         # Add spill the location where processing is taking place
@@ -1472,20 +1525,26 @@ class Processor(SimpyObject):
                 t=start_time,
                 value=amount,
                 geometry_log=self.geometry,
+                activityID=self.ActivityID,
             )
             self.log_entry(
                 log="waiting origin content stop",
                 t=end_time,
                 value=amount,
                 geometry_log=self.geometry,
+                activityID=self.ActivityID,
             )
 
         # Checkout the time
         current_level = ship.container.level
         log = "loading" if current_level < desired_level else "unloading"
-        self.log_entry(log + " start", self.env.now, amount, self.geometry)
+        self.log_entry(
+            log + " start", self.env.now, amount, self.geometry, self.ActivityID
+        )
         yield self.env.timeout(duration)
-        self.log_entry(log + " stop", self.env.now, amount, self.geometry)
+        self.log_entry(
+            log + " stop", self.env.now, amount, self.geometry, self.ActivityID
+        )
 
         start_time = self.env.now
         yield destination.container.put(amount)
@@ -1496,12 +1555,14 @@ class Processor(SimpyObject):
                 t=start_time,
                 value=amount,
                 geometry_log=self.geometry,
+                activityID=self.ActivityID,
             )
             self.log_entry(
                 log="waiting destination content stop",
                 t=end_time,
                 value=amount,
                 geometry_log=self.geometry,
+                activityID=self.ActivityID,
             )
 
         # Compute the energy use
@@ -1509,10 +1570,18 @@ class Processor(SimpyObject):
 
         # Log the end of the activity
         origin.log_entry(
-            "unloading stop", self.env.now, origin.container.level, self.geometry
+            "unloading stop",
+            self.env.now,
+            origin.container.level,
+            self.geometry,
+            self.ActivityID,
         )
         destination.log_entry(
-            "loading stop", self.env.now, destination.container.level, self.geometry
+            "loading stop",
+            self.env.now,
+            destination.container.level,
+            self.geometry,
+            self.ActivityID,
         )
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
@@ -1534,12 +1603,14 @@ class Processor(SimpyObject):
             if isinstance(self, EnergyUse):
                 energy = self.energy_use_unloading(duration)
                 message = "Energy use unloading"
-                self.log_entry(message, self.env.now, energy, self.geometry)
+                self.log_entry(
+                    message, self.env.now, energy, self.geometry, self.ActivityID
+                )
             if isinstance(destination, EnergyUse):
                 energy = destination.energy_use_loading(duration)
                 message = "Energy use loading"
                 destination.log_entry(
-                    message, self.env.now, energy, destination.geometry
+                    message, self.env.now, energy, destination.geometry, self.ActivityID
                 )
 
         # If self == destination --> loading
@@ -1547,27 +1618,35 @@ class Processor(SimpyObject):
             if isinstance(self, EnergyUse):
                 energy = self.energy_use_loading(duration)
                 message = "Energy use loading"
-                self.log_entry(message, self.env.now, energy, self.geometry)
+                self.log_entry(
+                    message, self.env.now, energy, self.geometry, self.ActivityID
+                )
             if isinstance(origin, EnergyUse):
                 energy = origin.energy_use_unloading(duration)
                 message = "Energy use unloading"
-                origin.log_entry(message, self.env.now, energy, origin.geometry)
+                origin.log_entry(
+                    message, self.env.now, energy, origin.geometry, self.ActivityID
+                )
 
         # If self != origin and self != destination --> processing
         else:
             if isinstance(self, EnergyUse):
                 energy = self.energy_use_loading(duration)
                 message = "Energy use loading"
-                self.log_entry(message, self.env.now, energy, self.geometry)
+                self.log_entry(
+                    message, self.env.now, energy, self.geometry, self.ActivityID
+                )
             if isinstance(origin, EnergyUse):
                 energy = origin.energy_use_unloading(duration)
                 message = "Energy use unloading"
-                origin.log_entry(message, self.env.now, energy, origin.geometry)
+                origin.log_entry(
+                    message, self.env.now, energy, origin.geometry, self.ActivityID
+                )
             if isinstance(destination, EnergyUse):
                 energy = destination.energy_use_loading(duration)
                 message = "Energy use loading"
                 destination.log_entry(
-                    message, self.env.now, energy, destination.geometry
+                    message, self.env.now, energy, destination.geometry, self.ActivityID
                 )
 
     def checkSpill(self, origin, destination, amount):
@@ -1598,11 +1677,19 @@ class Processor(SimpyObject):
 
                 if 0 < waiting:
                     self.log_entry(
-                        "waiting for spill start", self.env.now, 0, self.geometry
+                        "waiting for spill start",
+                        self.env.now,
+                        0,
+                        self.geometry,
+                        self.ActivityID,
                     )
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry(
-                        "waiting for spill stop", self.env.now, 0, self.geometry
+                        "waiting for spill stop",
+                        self.env.now,
+                        0,
+                        self.geometry,
+                        self.ActivityID,
                     )
 
         # If self == destination --> origin is a retrieval location
@@ -1619,11 +1706,19 @@ class Processor(SimpyObject):
 
                 if 0 < waiting:
                     self.log_entry(
-                        "waiting for spill start", self.env.now, 0, self.geometry
+                        "waiting for spill start",
+                        self.env.now,
+                        0,
+                        self.geometry,
+                        self.ActivityID,
                     )
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry(
-                        "waiting for spill stop", self.env.now, 0, self.geometry
+                        "waiting for spill stop",
+                        self.env.now,
+                        0,
+                        self.geometry,
+                        self.ActivityID,
                     )
 
         # If self != origin and self != destination --> processing
@@ -1640,11 +1735,19 @@ class Processor(SimpyObject):
 
                 if 0 < waiting:
                     self.log_entry(
-                        "waiting for spill start", self.env.now, 0, self.geometry
+                        "waiting for spill start",
+                        self.env.now,
+                        0,
+                        self.geometry,
+                        self.ActivityID,
                     )
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry(
-                        "waiting for spill stop", self.env.now, 0, self.geometry
+                        "waiting for spill stop",
+                        self.env.now,
+                        0,
+                        self.geometry,
+                        self.ActivityID,
                     )
 
             elif (
@@ -1659,11 +1762,19 @@ class Processor(SimpyObject):
 
                 if 0 < waiting:
                     self.log_entry(
-                        "waiting for spill start", self.env.now, 0, self.geometry
+                        "waiting for spill start",
+                        self.env.now,
+                        0,
+                        self.geometry,
+                        self.ActivityID,
                     )
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry(
-                        "waiting for spill stop", self.env.now, 0, self.geometry
+                        "waiting for spill stop",
+                        self.env.now,
+                        0,
+                        self.geometry,
+                        self.ActivityID,
                     )
 
     def checkTide(self, ship, site, desired_level, duration):

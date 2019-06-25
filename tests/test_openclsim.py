@@ -61,6 +61,7 @@ def test_command_line_interface():
 
 def test_movable(env, geometry_a, locatable_a, locatable_b):
     movable = core.Movable(v=10, geometry=geometry_a, env=env)
+    movable.ActivityID = "Test activity"
     env.process(movable.move(locatable_b))
     env.run()
     assert movable.geometry.equals(locatable_b.geometry)
@@ -76,6 +77,8 @@ def test_container_dependent_movable(env, geometry_a, locatable_a, locatable_b):
     movable = core.ContainerDependentMovable(
         env=env, geometry=geometry_a, compute_v=compute_v, capacity=10
     )
+
+    movable.ActivityID = "Test activity"
 
     move_and_test(env, locatable_b, movable, 20, 2.18)
 
@@ -132,6 +135,8 @@ def test_basic_processor(env, geometry_a):
         unloading_func=model.get_unloading_func(2),
         geometry=geometry_a,
     )
+
+    processor.ActivityID = "Test activity"
 
     env.process(processor.process(source, 400, dest))
     env.run()

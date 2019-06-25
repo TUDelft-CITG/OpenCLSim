@@ -139,6 +139,7 @@ def test_calc_restrictions(
     }  # The filling degree
 
     mover = Mover(**data)
+    mover.ActivityID = "Test activity"
 
     data = {
         "env": env,  # The simpy environment
@@ -149,6 +150,7 @@ def test_calc_restrictions(
     }  # Unloading rate
 
     crane = Processor(**data)
+    crane.ActivityID = "Test activity"
     crane.rate = crane.loading_func
 
     # Initialize the LocationWeather
