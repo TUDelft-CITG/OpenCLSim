@@ -488,6 +488,7 @@ class LogSaver:
             "SimulationID": [],
             "ObjectID": [],
             "EventID": [],
+            "ActivityID": [],
             "LocationID": [],
             "EventStart": [],
             "EventStop": [],
@@ -508,6 +509,7 @@ class LogSaver:
                         object_dict["SimulationID"].append(self.id)
                         object_dict["ObjectID"].append(piece.id)
                         object_dict["EventID"].append(self.unique_events["EventID"][j])
+                        object_dict["ActivityID"].append(object_log["ActivityID"][i])
                         object_dict["EventStart"].append(object_log["Timestamp"][i])
 
                         x, y = object_log["Geometry"][i].x, object_log["Geometry"][i].y
@@ -568,6 +570,7 @@ class LogSaver:
             "SimulationID": [],
             "ObjectID": [],
             "EventID": [],
+            "ActivityID": [],
             "LocationID": [],
             "SpillStart": [],
             "SpillStop": [],
@@ -608,6 +611,7 @@ class LogSaver:
                             object_dict["EventID"].append(
                                 self.unique_events["EventID"][j]
                             )
+                            object_dict["ActivityID"].append(object_log["ActivityID"][i])
                             object_dict["SpillStart"].append(event_start_time)
                             object_dict["SpillStop"].append(event_stop_time)
                             object_dict["SpillDuration"].append(
@@ -666,6 +670,7 @@ class LogSaver:
             "SimulationID": [],
             "ObjectID": [],
             "EventID": [],
+            "ActivityID": [],
             "LocationID": [],
             "EnergyUseStart": [],
             "EnergyUseStop": [],
@@ -706,6 +711,7 @@ class LogSaver:
                             object_dict["EventID"].append(
                                 self.unique_events["EventID"][j]
                             )
+                            object_dict["ActivityID"].append(object_log["ActivityID"][i])
                             object_dict["EnergyUseStart"].append(event_start_time)
                             object_dict["EnergyUseStop"].append(event_stop_time)
                             object_dict["EnergyUseDuration"].append(
