@@ -97,6 +97,7 @@ def test_movable(
     }
 
     mover = mover(**data_mover)
+    mover.ActivityID = "Test activity"
 
     # Moving from a to b - energy use should be equal to duration * 2
     start = env.now
@@ -138,6 +139,7 @@ def test_processor(
     }
 
     processor = processor(**data_processor)
+    processor.ActivityID = "Test activity"
 
     # Log fuel use of the processor in step 1
     start = env.now
@@ -203,6 +205,7 @@ def test_TransportProcessingResource(
 
     # The simulation object
     hopper = TransportProcessingResource(**data_hopper)
+    hopper.ActivityID = "Test activity"
 
     # Simulation starts with moving to A
     start = env.now
@@ -317,6 +320,10 @@ def test_Processor_ContainerDependentMovable(
     processor_1 = ProcessingResource(**processor_1)
     processor_2 = ProcessingResource(**processor_2)
     containervessel = mover(**data_mover)
+
+    processor_1.ActivityID = "Test activity"
+    processor_2.ActivityID = "Test activity"
+    containervessel.ActivityID = "Test activity"
 
     # Simulation starts with loading
     start = env.now

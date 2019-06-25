@@ -53,7 +53,9 @@ class BasicStorageUnit(core.HasContainer, core.HasResource, core.Locatable, core
         super().__init__(*args, **kwargs)
 
 
-class Processor(core.Processor, core.Log, core.Locatable, core.HasResource):
+class Processor(
+    core.Processor, core.Log, core.Locatable, core.HasResource, core.Identifiable
+):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -72,16 +74,21 @@ def test_dual_processors(env, geometry_a):
 
     processor1 = Processor(
         env=env,
+        name="Processor 1",
         loading_func=model.get_loading_func(2),
         unloading_func=model.get_unloading_func(2),
         geometry=geometry_a,
     )
     processor2 = Processor(
         env=env,
+        name="Processor 2",
         loading_func=model.get_loading_func(1),
         unloading_func=model.get_unloading_func(1),
         geometry=geometry_a,
     )
+
+    processor1.ActivityID = "Test activity"
+    processor2.ActivityID = "Test activity"
 
     env.process(processor1.process(limited_container_1, 400, unlimited_container))
     env.process(processor2.process(limited_container_2, 400, unlimited_container))
@@ -121,16 +128,21 @@ def test_dual_processors_with_limit(env, geometry_a):
 
     processor1 = Processor(
         env=env,
+        name="Processor 1",
         loading_func=model.get_loading_func(1),
         unloading_func=model.get_unloading_func(1),
         geometry=geometry_a,
     )
     processor2 = Processor(
         env=env,
+        name="Processor 2",
         loading_func=model.get_loading_func(1),
         unloading_func=model.get_unloading_func(1),
         geometry=geometry_a,
     )
+
+    processor1.ActivityID = "Test activity"
+    processor2.ActivityID = "Test activity"
 
     env.process(
         model.single_run_process(

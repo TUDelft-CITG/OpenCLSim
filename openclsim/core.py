@@ -1378,15 +1378,15 @@ class Log(SimpyObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.log = {"Message": [], "Timestamp": [], "Value": [], "Geometry": []}
+        self.log = {"Message": [], "Timestamp": [], "Value": [], "Geometry": [], "ActivityID": []}
 
-    def log_entry(self, log, t, value, geometry_log, activityID):
+    def log_entry(self, log, t, value, geometry_log, ActivityID):
         """Log"""
         self.log["Message"].append(log)
         self.log["Timestamp"].append(datetime.datetime.fromtimestamp(t))
         self.log["Value"].append(value)
         self.log["Geometry"].append(geometry_log)
-        self.log["ActivityID"].append(activityID)
+        self.log["ActivityID"].append(ActivityID)
 
     def get_log_as_json(self):
         json = []
