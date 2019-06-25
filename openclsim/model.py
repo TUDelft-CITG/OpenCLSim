@@ -271,6 +271,15 @@ def single_run_process(
                                     available.
     verbose: optional boolean indicating whether additional debug prints should be given.
     """
+
+    # Required for logging from json
+    if not hasattr(activity_log, "loader"):
+        activity_log.loader = loader
+    if not hasattr(activity_log, "mover"):
+        activity_log.mover = mover
+    if not hasattr(activity_log, "unloader"):
+        activity_log.unloader = unloader
+
     amount = min(
         mover.container.capacity * filling - mover.container.level,
         origin.container.expected_level,
