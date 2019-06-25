@@ -340,6 +340,7 @@ def single_run_process(
             mover,
             amount,
             mover.resource,
+            activity_log.id,
             engine_order=engine_order,
             verbose=verbose,
         )
@@ -381,6 +382,7 @@ def single_run_process(
             destination,
             amount,
             mover.resource,
+            activity_log.id,
             engine_order=engine_order,
             verbose=verbose,
         )
@@ -503,6 +505,7 @@ def _request_resources_if_transfer_possible(
     destination,
     amount,
     kept_resource,
+    ActivityID,
     engine_order=1.0,
     verbose=False,
 ):
@@ -545,7 +548,7 @@ def _request_resources_if_transfer_possible(
             yield from _move_mover(
                 processor,
                 origin,
-                ActivityID=activity_log.id,
+                ActivityID=ActivityID,
                 engine_order=engine_order,
                 verbose=verbose,
             )
