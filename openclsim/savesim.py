@@ -611,7 +611,9 @@ class LogSaver:
                             object_dict["EventID"].append(
                                 self.unique_events["EventID"][j]
                             )
-                            object_dict["ActivityID"].append(object_log["ActivityID"][i])
+                            object_dict["ActivityID"].append(
+                                object_log["ActivityID"][i]
+                            )
                             object_dict["SpillStart"].append(event_start_time)
                             object_dict["SpillStop"].append(event_stop_time)
                             object_dict["SpillDuration"].append(
@@ -711,7 +713,9 @@ class LogSaver:
                             object_dict["EventID"].append(
                                 self.unique_events["EventID"][j]
                             )
-                            object_dict["ActivityID"].append(object_log["ActivityID"][i])
+                            object_dict["ActivityID"].append(
+                                object_log["ActivityID"][i]
+                            )
                             object_dict["EnergyUseStart"].append(event_start_time)
                             object_dict["EnergyUseStop"].append(event_stop_time)
                             object_dict["EnergyUseDuration"].append(
