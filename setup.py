@@ -20,7 +20,7 @@ except VersionConflict:
     sys.exit(1)
 
 requires = [
-    "pandas",
+    "pandas>=0.24.0",
     "numpy",
     "simpy",
     "networkx",
