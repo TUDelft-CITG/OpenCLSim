@@ -293,7 +293,11 @@ class LogSaver:
         self.get_unique_properties("activities", activity_dict)
 
         # Obtain information on equipment per activity
-        activity_equipment_dict = {"EquipmentID": [], "ActivityFunction": []}
+        activity_equipment_dict = {
+            "ActivityID": [],
+            "EquipmentID": [],
+            "ActivityFunction": [],
+        }
         self.get_unique_properties(
             "activityequipmentassignment", activity_equipment_dict
         )
@@ -391,8 +395,16 @@ class LogSaver:
         If it is filled with similar values, raise an error unless self.overwrite == True.
         """
 
-        if object_id.id not in list(existing_df[object_type + "ID"]):
-            if object_type != "Location" and object_type != "Activity":
+        object_type_str = (
+            object_type if object_type != "ActivityEquipmentAssignment" else "Activity"
+        )
+
+        if object_id.id not in list(existing_df[object_type_str + "ID"]):
+            if (
+                object_type != "Location"
+                and object_type != "Activity"
+                and object_type != "ActivityEquipmentAssignment"
+            ):
                 existing_df = existing_df.append(
                     {
                         object_type + "ID": object_id.id,
@@ -411,8 +423,7 @@ class LogSaver:
             elif object_type == "ActivityEquipmentAssignment":
                 existing_df = existing_df.append(
                     {
-                        object_type + "ID": object_id.id,
-                        object_type + "Name": object_id.name,
+                        object_type_str + "ID": object_id.id,
                         "EquipmentID": object_id.loader.id,
                         "ActivityFunction": "Loader",
                     },
@@ -420,8 +431,7 @@ class LogSaver:
                 )
                 existing_df = existing_df.append(
                     {
-                        object_type + "ID": object_id.id,
-                        object_type + "Name": object_id.name,
+                        object_type_str + "ID": object_id.id,
                         "EquipmentID": object_id.mover.id,
                         "ActivityFunction": "Mover",
                     },
@@ -429,8 +439,7 @@ class LogSaver:
                 )
                 existing_df = existing_df.append(
                     {
-                        object_type + "ID": object_id.id,
-                        object_type + "Name": object_id.name,
+                        object_type_str + "ID": object_id.id,
                         "EquipmentID": object_id.unloader.id,
                         "ActivityFunction": "Unloader",
                     },
@@ -448,9 +457,15 @@ class LogSaver:
                 )
 
         elif self.overwrite == True:
-            existing_df = existing_df[existing_df[object_type + "ID"] != object_id.id]
+            existing_df = existing_df[
+                existing_df[object_type_str + "ID"] != object_id.id
+            ]
 
-            if object_type != "Location" and object_type != "Activity":
+            if (
+                object_type != "Location"
+                and object_type != "Activity"
+                and object_type != "ActivityEquipmentAssignment"
+            ):
                 existing_df = existing_df.append(
                     {
                         object_type + "ID": object_id.id,
@@ -469,8 +484,7 @@ class LogSaver:
             elif object_type == "ActivityEquipmentAssignment":
                 existing_df = existing_df.append(
                     {
-                        object_type + "ID": object_id.id,
-                        object_type + "Name": object_id.name,
+                        object_type_str + "ID": object_id.id,
                         "EquipmentID": object_id.loader.id,
                         "ActivityFunction": "Loader",
                     },
@@ -478,8 +492,7 @@ class LogSaver:
                 )
                 existing_df = existing_df.append(
                     {
-                        object_type + "ID": object_id.id,
-                        object_type + "Name": object_id.name,
+                        object_type_str + "ID": object_id.id,
                         "EquipmentID": object_id.mover.id,
                         "ActivityFunction": "Mover",
                     },
@@ -487,8 +500,7 @@ class LogSaver:
                 )
                 existing_df = existing_df.append(
                     {
-                        object_type + "ID": object_id.id,
-                        object_type + "Name": object_id.name,
+                        object_type_str + "ID": object_id.id,
                         "EquipmentID": object_id.unloader.id,
                         "ActivityFunction": "Unloader",
                     },
