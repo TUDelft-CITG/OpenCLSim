@@ -289,13 +289,14 @@ class LogSaver:
         self.get_unique_properties("simulations", simulation_dict)
 
         # Obtain information on activities
-        activity_dict = {
-            "ActivityID": [],
-            "ActivityName": [],
-            "EquipmentID": [],
-            "ActivityFunction": [],
-        }
+        activity_dict = {"ActivityID": [], "ActivityName": []}
         self.get_unique_properties("activities", activity_dict)
+
+        # Obtain information on equipment per activity
+        activity_equipment_dict = {"EquipmentID": [], "ActivityFunction": []}
+        self.get_unique_properties(
+            "activityequipmentassignment", activity_equipment_dict
+        )
 
         # Obtain information on equipment
         equipment_dict = {"EquipmentID": [], "EquipmentName": []}
@@ -327,6 +328,9 @@ class LogSaver:
         self.equipment_log.to_csv(self.location + "equipment_log.csv", index=False)
         self.unique_events.to_csv(self.location + "events.csv", index=False)
         self.unique_activities.to_csv(self.location + "activities.csv", index=False)
+        self.unique_activities_equipment.to_csv(
+            self.location + "activityequipmentassignment.csv", index=False
+        )
         self.unique_equipment.to_csv(self.location + "equipment.csv", index=False)
         self.unique_locations.to_csv(self.location + "locations.csv", index=False)
         self.unique_simulations.to_csv(self.location + "simulations.csv", index=False)
@@ -354,6 +358,14 @@ class LogSaver:
                 unique_df = self.append_dataframe(unique_df, activity, "Activity")
 
             self.unique_activities = unique_df
+
+        elif object_type == "activityequipmentassignment":
+            for activity in self.activities:
+                unique_df = self.append_dataframe(
+                    unique_df, activity, "ActivityEquipmentAssignment"
+                )
+
+            self.unique_activities_equipment = unique_df
 
         elif object_type == "equipment":
             for piece in self.equipment:
@@ -389,6 +401,14 @@ class LogSaver:
                     ignore_index=True,
                 )
             elif object_type == "Activity":
+                existing_df = existing_df.append(
+                    {
+                        object_type + "ID": object_id.id,
+                        object_type + "Name": object_id.name,
+                    },
+                    ignore_index=True,
+                )
+            elif object_type == "ActivityEquipmentAssignment":
                 existing_df = existing_df.append(
                     {
                         object_type + "ID": object_id.id,
@@ -439,6 +459,14 @@ class LogSaver:
                     ignore_index=True,
                 )
             elif object_type == "Activity":
+                existing_df = existing_df.append(
+                    {
+                        object_type + "ID": object_id.id,
+                        object_type + "Name": object_id.name,
+                    },
+                    ignore_index=True,
+                )
+            elif object_type == "ActivityEquipmentAssignment":
                 existing_df = existing_df.append(
                     {
                         object_type + "ID": object_id.id,
