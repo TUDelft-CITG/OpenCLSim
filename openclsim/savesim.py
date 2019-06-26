@@ -430,7 +430,7 @@ class LogSaver:
         elif self.overwrite == True:
             existing_df = existing_df[existing_df[object_type + "ID"] != object_id.id]
 
-            if object_type != "Location":
+            if object_type != "Location" and object_type != "Activity":
                 existing_df = existing_df.append(
                     {
                         object_type + "ID": object_id.id,
@@ -438,7 +438,35 @@ class LogSaver:
                     },
                     ignore_index=True,
                 )
-            else:
+            elif object_type == "Activity":
+                existing_df = existing_df.append(
+                    {
+                        object_type + "ID": object_id.id,
+                        object_type + "Name": object_id.name,
+                        "EquipmentID": object_id.loader.id,
+                        "ActivityFunction": "Loader",
+                    },
+                    ignore_index=True,
+                )
+                existing_df = existing_df.append(
+                    {
+                        object_type + "ID": object_id.id,
+                        object_type + "Name": object_id.name,
+                        "EquipmentID": object_id.mover.id,
+                        "ActivityFunction": "Mover",
+                    },
+                    ignore_index=True,
+                )
+                existing_df = existing_df.append(
+                    {
+                        object_type + "ID": object_id.id,
+                        object_type + "Name": object_id.name,
+                        "EquipmentID": object_id.unloader.id,
+                        "ActivityFunction": "Unloader",
+                    },
+                    ignore_index=True,
+                )
+            elif object_type == "Location":
                 existing_df = existing_df.append(
                     {
                         object_type + "ID": object_id.id,
