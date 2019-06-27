@@ -13,6 +13,18 @@ import dill as pickle
 
 import openclsim.model
 
+def flattenlist(input):
+    """Turn a nested list of any depth into flat list"""
+    if type(input) == list:
+        output = []
+        for item in input:
+            if type(item) == list:
+               output+=flattenlist(item) 
+            else:
+                output.append(item)
+        return output
+    else:
+        output = None
 
 def save_logs(simulation, location, file_prefix):
     # todo add code to LogSaver to allow adding a file_prefix to each file
@@ -95,12 +107,15 @@ class SimulationSave:
         self.simulation_start = environment.now
 
         # Save all properties
+        activities = flattenlist(activities)
         assert type(activities) == list
         self.activities = activities
 
+        equipment = flattenlist(equipment)
         assert type(equipment) == list
         self.equipment = equipment
 
+        sites = flattenlist(sites)
         assert type(sites) == list
         self.sites = sites
 
@@ -242,12 +257,15 @@ class LogSaver:
         """ Initialization """
 
         # Save all properties
+        activities = flattenlist(activities)
         assert type(activities) == list
         self.activities = activities
 
+        activiequipmentties = flattenlist(equipment)
         assert type(equipment) == list
         self.equipment = equipment
 
+        sites = flattenlist(sites)
         assert type(sites) == list
         self.sites = sites
 
@@ -271,16 +289,20 @@ class LogSaver:
         Save all logs to a specified location.
         If location is "", the logs will be saved in the current working directory.
 
-        A file is saved with unique events             -- events.csv
-        A file is saved with unique location objects   -- locations.csv
-        A file is saved with unique equipment objects  -- equipment.csv
-        A file is saved with unique activity objects   -- activities.csv
-        A file is saved with unique simulations        -- simulations.csv
+        A file is saved with :
+        unique simulations                     -- simulations.csv
+        simulation properties                  -- generic_results.csv
 
-        A file is saved with equipment logs            -- equipment_log.csv
-        A file is saved with energy use                -- energy_use.csv
-        A file is saved with dredging spill info       -- dredging_spill.csv
-        A file is saved with simulation properties     -- generic_results.csv
+        unique events                          -- events.csv
+        unique location objects                -- locations.csv
+        unique equipment objects               -- equipment.csv
+        unique activity objects                -- activities.csv
+
+        unique activity-equipment combinations -- activityequipmentassignment.csv
+        
+        equipment logs                         -- equipment_log.csv
+        energy use                             -- energy_use.csv
+        dredging spill info                    -- dredging_spill.csv
         """
 
         # First get all unique properties
@@ -531,6 +553,13 @@ class LogSaver:
         If it is filled with similar values, raise an error unless self.overwrite == True.
         """
 
+        # keep only core OpenCLSim columns, in case dict is enriched by user with other fields,
+        # by openclsim.plot.vessel_kml 
+
+        flds = ['Message', 'Timestamp', 'Value', 'Geometry', 'ActivityID']
+
+        piece.log = dict((k, piece.log[k]) for k in flds)
+
         log = pd.DataFrame.from_dict(piece.log)
         events = list(log["Message"].unique())
 
@@ -573,6 +602,7 @@ class LogSaver:
             for i, message in enumerate(object_log["Message"]):
                 for j, event in enumerate(self.unique_events["EventName"]):
 
+                    location = None # default for delayed or sequential activity
                     if message == event + " start":
                         object_dict["SimulationID"].append(self.id)
                         object_dict["ObjectID"].append(piece.id)
@@ -589,12 +619,13 @@ class LogSaver:
                                 x == self.unique_locations["Longitude"][k]
                                 and y == self.unique_locations["Latitude"][k]
                             ):
-                                object_dict["LocationID"].append(LocationID)
-
+                                location = LocationID
+                        object_dict["LocationID"].append(location)
                     elif message == event + " stop":
                         object_dict["EventStop"].append(object_log["Timestamp"][i])
 
         # Create durations column
+
         object_df = pd.DataFrame.from_dict(object_dict)
         durations = object_df["EventStop"] - object_df["EventStart"]
         durations_days = []
