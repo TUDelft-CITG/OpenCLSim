@@ -335,7 +335,7 @@ class LogSaver:
             "Longitude": [],
             "Latitude": [],
         }
-        self.get_unique_properties("location", location_dict)
+        self.get_unique_properties("locations", location_dict)
 
         # Obtain information on events
         event_dict = {"EventID": [], "EventName": []}
@@ -405,7 +405,7 @@ class LogSaver:
 
             self.unique_events = unique_df
 
-        elif object_type == "location":
+        elif object_type == "locations":
             for site in self.sites:
                 unique_df = self.append_dataframe(unique_df, site, "Location")
 
