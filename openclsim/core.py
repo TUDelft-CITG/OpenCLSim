@@ -776,14 +776,16 @@ class HasWorkabilityCriteria:
                             )
                         )
 
-            self.work_restrictions[location.name][criterion.condition] = np.array(
+            self.work_restrictions[location.name][criterion.event_name] = np.array(
                 ranges
             )
 
-    def check_weather_restriction(self, location, amount):
+    def check_weather_restriction(self, location, event):
         waiting = []
 
         if location.name not in self.work_restrictions.keys():
+            self.calc_work_restrictions(location)
+        elif event not in self.work_restrictions[location.name].keys():
             self.calc_work_restrictions(location)
 
         for criterion in sorted(self.work_restrictions[location.name].keys()):
@@ -825,13 +827,17 @@ class WorkabilityCriterion:
     """WorkabilityCriterion class
 
     Used to add limits to vessels (and therefore acitivities)
+    event_name: name of the event for which this criterion applies
     condition: column name of the metocean data (Hs, Tp, etc.)
+    minimum: minimum value
     maximum: maximum value
     window_length: minimal length of the window (minutes)"""
 
     def __init__(
         self,
+        event_name,
         condition,
+        minimum=math.inf * -1,
         maximum=math.inf,
         window_length=datetime.timedelta(minutes=60),
         *args,
@@ -839,7 +845,9 @@ class WorkabilityCriterion:
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
+        self.event_name = event_name
         self.condition = condition
+        self.minimum = minimum
         self.maximum = maximum
         self.window_length = window_length
 
@@ -1422,6 +1430,9 @@ class Processor(SimpyObject):
     loading_func:   lambda function to determine the duration of loading event based on input parameter amount
     unloading_func: lambda function to determine the duration of unloading event based on input parameter amount
 
+    loading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
+    unloading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
+
     Example function could be as follows.
     The duration of the loading event is equal to: amount / rate.
 
@@ -1439,11 +1450,41 @@ class Processor(SimpyObject):
 
     """
 
-    def __init__(self, loading_func=None, unloading_func=None, *args, **kwargs):
+    def __init__(
+        self,
+        loading_func=None,
+        unloading_func=None,
+        loading_subcycle=None,
+        unloading_subcycle=None,
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.loading_func = loading_func
         self.unloading_func = unloading_func
+
+        self.loading_subcycle = loading_subcycle
+        if type(self.loading_subcycle) != pd.core.frame.DataFrame:
+            raise AssertionError("The subcycle table has to be a Pandas DataFrame")
+        else:
+            if "EventName" not in list(
+                self.loading_subcycle.columns
+            ) or "Duration" not in list(self.loading_subcycle.columns):
+                raise AssertionError(
+                    "The subcycle table should specify events and durations"
+                )
+
+        self.unloading_subcycle = unloading_subcycle
+        if type(self.unloading_subcycle) != pd.core.frame.DataFrame:
+            raise AssertionError("The subcycle table has to be a Pandas DataFrame")
+        else:
+            if "EventName" not in list(
+                self.unloading_subcycle.columns
+            ) or "Duration" not in list(self.unloading_subcycle.columns):
+                raise AssertionError(
+                    "The subcycle table should specify events and durations"
+                )
 
     # noinspection PyUnresolvedReferences
     def process(self, ship, desired_level, site):
@@ -1467,31 +1508,32 @@ class Processor(SimpyObject):
             origin = site
             destination = ship
             rate = self.loading_func
+            subcycle = self.loading_subcycle
+            event_log_str = "loading"
         else:
             amount = current_level - desired_level
             origin = ship
             destination = site
             rate = self.unloading_func
+            subcycle = self.unloading_subcycle
+            event_log_str = "unloading"
 
-        # Activity can only start if environmental conditions allow it
-        time = 0
-
-        duration = rate(current_level, desired_level)
-
-        # Waiting event should be combined to check if all conditions allow starting
-        while time != self.env.now:
-            time = self.env.now
-
-            # Check weather
-            yield from self.checkWeather(origin, destination, amount)
-
-            # Check tide
-            yield from self.checkTide(
-                ship=ship, site=site, desired_level=desired_level, duration=duration
+        if rate:
+            duration = rate(current_level, desired_level)
+            yield from self.check_possible_downtime(
+                origin, destination, duration, ship, site, desired_level, amount
             )
 
-            # Check spill
-            yield from self.checkSpill(origin, destination, amount)
+        else:
+            duration = 0
+
+            for _ in range(int(amount)):
+                for i in subcycle.index:
+                    event = subcycle.iloc[i]["EventName"]
+                    duration += subcycle.iloc[i]["Duration"] * 60
+                    yield from self.check_possible_downtime(
+                        origin, destination, duration, ship, site, desired_level, 1
+                    )
 
         origin.log_entry(
             "unloading start",
@@ -1585,6 +1627,27 @@ class Processor(SimpyObject):
         )
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
+
+    def check_possible_downtime(
+        self, origin, destination, duration, ship, site, desired_level, amount
+    ):
+        # Activity can only start if environmental conditions allow it
+        time = 0
+
+        # Waiting event should be combined to check if all conditions allow starting
+        while time != self.env.now:
+            time = self.env.now
+
+            # Check weather
+            yield from self.checkWeather(origin, destination, duration)
+
+            # Check tide
+            yield from self.checkTide(
+                ship=ship, site=site, desired_level=desired_level, duration=duration
+            )
+
+            # Check spill
+            yield from self.checkSpill(origin, destination, amount)
 
     def computeEnergy(self, duration, origin, destination):
         """
