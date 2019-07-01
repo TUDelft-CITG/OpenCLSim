@@ -1465,26 +1465,28 @@ class Processor(SimpyObject):
         self.unloading_func = unloading_func
 
         self.loading_subcycle = loading_subcycle
-        if type(self.loading_subcycle) != pd.core.frame.DataFrame:
-            raise AssertionError("The subcycle table has to be a Pandas DataFrame")
-        else:
-            if "EventName" not in list(
-                self.loading_subcycle.columns
-            ) or "Duration" not in list(self.loading_subcycle.columns):
-                raise AssertionError(
-                    "The subcycle table should specify events and durations"
-                )
+        if loading_subcycle:
+            if type(self.loading_subcycle) != pd.core.frame.DataFrame:
+                raise AssertionError("The subcycle table has to be a Pandas DataFrame")
+            else:
+                if "EventName" not in list(
+                    self.loading_subcycle.columns
+                ) or "Duration" not in list(self.loading_subcycle.columns):
+                    raise AssertionError(
+                        "The subcycle table should specify events and durations with the columnnames EventName and Duration respectively."
+                    )
 
         self.unloading_subcycle = unloading_subcycle
-        if type(self.unloading_subcycle) != pd.core.frame.DataFrame:
-            raise AssertionError("The subcycle table has to be a Pandas DataFrame")
-        else:
-            if "EventName" not in list(
-                self.unloading_subcycle.columns
-            ) or "Duration" not in list(self.unloading_subcycle.columns):
-                raise AssertionError(
-                    "The subcycle table should specify events and durations"
-                )
+        if unloading_subcycle:
+            if type(self.unloading_subcycle) != pd.core.frame.DataFrame:
+                raise AssertionError("The subcycle table has to be a Pandas DataFrame")
+            else:
+                if "EventName" not in list(
+                    self.unloading_subcycle.columns
+                ) or "Duration" not in list(self.unloading_subcycle.columns):
+                    raise AssertionError(
+                        "The subcycle table should specify events and durations with the columnnames EventName and Duration respectively."
+                    )
 
     # noinspection PyUnresolvedReferences
     def process(self, ship, desired_level, site):
@@ -1535,21 +1537,6 @@ class Processor(SimpyObject):
                         origin, destination, duration, ship, site, desired_level, 1
                     )
 
-        origin.log_entry(
-            "unloading start",
-            self.env.now,
-            origin.container.level,
-            self.geometry,
-            self.ActivityID,
-        )
-        destination.log_entry(
-            "loading start",
-            self.env.now,
-            destination.container.level,
-            self.geometry,
-            self.ActivityID,
-        )
-
         # Add spill the location where processing is taking place
         self.addSpill(origin, destination, amount, duration)
 
@@ -1578,14 +1565,18 @@ class Processor(SimpyObject):
             )
 
         # Checkout the time
-        current_level = ship.container.level
-        log = "loading" if current_level < desired_level else "unloading"
-        self.log_entry(
-            log + " start", self.env.now, amount, self.geometry, self.ActivityID
+        origin.log_entry(
+            "unloading start", self.env.now, amount, self.geometry, self.ActivityID
+        )
+        destination.log_entry(
+            "loading start", self.env.now, amount, self.geometry, self.ActivityID
         )
         yield self.env.timeout(duration)
-        self.log_entry(
-            log + " stop", self.env.now, amount, self.geometry, self.ActivityID
+        origin.log_entry(
+            "unloading stop", self.env.now, amount, self.geometry, self.ActivityID
+        )
+        destination.log_entry(
+            "loading stop", self.env.now, amount, self.geometry, self.ActivityID
         )
 
         start_time = self.env.now
@@ -1609,22 +1600,6 @@ class Processor(SimpyObject):
 
         # Compute the energy use
         self.computeEnergy(duration, origin, destination)
-
-        # Log the end of the activity
-        origin.log_entry(
-            "unloading stop",
-            self.env.now,
-            origin.container.level,
-            self.geometry,
-            self.ActivityID,
-        )
-        destination.log_entry(
-            "loading stop",
-            self.env.now,
-            destination.container.level,
-            self.geometry,
-            self.ActivityID,
-        )
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
 

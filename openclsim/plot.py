@@ -488,7 +488,7 @@ def energy_use(vessels, testing=False, web=False):
 
 
 def activity_distribution(vessel, testing=False):
-    activities = ["loading", "unloading", "sailing full", "sailing empty", "waiting"]
+    activities = ["loading", "unloading", "sailing filled", "sailing empty", "waiting"]
     activities_times = [0, 0, 0, 0, 0]
 
     for i, activity in enumerate(activities):
