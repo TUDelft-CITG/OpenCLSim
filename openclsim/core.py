@@ -1424,69 +1424,121 @@ class Log(SimpyObject):
         return json
 
 
+class LoadingFunction:
+    """
+    Create a loading function and add it a processor.
+    This is a generic and easy to read function, you can create your own LoadingFunction class and add this as a mixin.
+
+    loading_rate: the rate at which units are loaded per second
+    manoeuvring: the time it takes to manoeuvring in minutes
+    """
+
+    def __init__(self, loading_rate, manoeuvring=0):
+        """Initialization"""
+        self.loading_rate = loading_rate
+        self.manoeuvring = manoeuvring
+
+    def loading(self, origin, destination, amount):
+        """
+        Determine the duration based on an amount that is given as input with processing.
+        The origin an destination are also part of the input, because other functions might be dependent on the location.
+        """
+
+        return amount / self.loading_rate + self.manoeuvring * 60
+
+
+class UnloadingFunction:
+    """
+    Create an unloading function and add it a processor.
+    This is a generic and easy to read function, you can create your own LoadingFunction class and add this as a mixin.
+
+    unloading_rate: the rate at which units are loaded per second
+    manoeuvring: the time it takes to manoeuvring in minutes
+    """
+
+    def __init__(self, unloading_rate, manoeuvring=0):
+        """Initialization"""
+        self.unloading_rate = unloading_rate
+        self.manoeuvring = manoeuvring
+
+    def unloading(self, origin, destination, amount):
+        """
+        Determine the duration based on an amount that is given as input with processing.
+        The origin an destination are also part of the input, because other functions might be dependent on the location.
+        """
+
+        return amount / self.unloading_rate + self.manoeuvring * 60
+
+
+class LoadingSubcycle:
+    """
+    loading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
+    """
+
+    def __init__(self, loading_subcycle):
+        """Initialization"""
+
+        self.loading_subcycle = loading_subcycle
+
+        if type(self.loading_subcycle) != pd.core.frame.DataFrame:
+            raise AssertionError("The subcycle table has to be a Pandas DataFrame")
+        else:
+            if "EventName" not in list(
+                self.loading_subcycle.columns
+            ) or "Duration" not in list(self.loading_subcycle.columns):
+                raise AssertionError(
+                    "The subcycle table should specify events and durations with the columnnames EventName and Duration respectively."
+                )
+
+
+class UnloadingSubcycle:
+    """
+    unloading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
+    """
+
+    def __init__(self, unloading_subcycle):
+        """Initialization"""
+
+        self.unloading_subcycle = unloading_subcycle
+
+        if type(self.unloading_subcycle) != pd.core.frame.DataFrame:
+            raise AssertionError("The subcycle table has to be a Pandas DataFrame")
+        else:
+            if "EventName" not in list(
+                self.unloading_subcycle.columns
+            ) or "Duration" not in list(self.unloading_subcycle.columns):
+                raise AssertionError(
+                    "The subcycle table should specify events and durations with the columnnames EventName and Duration respectively."
+                )
+
+
 class Processor(SimpyObject):
     """Processor class
 
-    loading_func:   lambda function to determine the duration of loading event based on input parameter amount
-    unloading_func: lambda function to determine the duration of unloading event based on input parameter amount
-
-    loading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
-    unloading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
-
-    Example function could be as follows.
-    The duration of the loading event is equal to: amount / rate.
-
-    def loading_func(loading_rate):
-        return lambda x: x / loading_rate
-
-
-    A more complex example function could be as follows.
-    The duration of the loading event is equal to: manoeuvring + amount / rate + cleaning.
-
-    def loading_func(manoeuvring, loading_rate, cleaning):
-        return lambda x: datetime.timedelta(minutes = manoeuvring).total_seconds() + \
-                         x / loading_rate + \
-                         datetime.timedelta(minutes = cleaning).total_seconds()
-
+    Adds the loading and unloading components and checks for possible downtime. 
+    
+    If the processor class is used to allow "loading" or "unloading" the mixins "LoadingFunction" and "UnloadingFunction" should be added as well. 
+    If no functions are used a subcycle should be used, which is possible with the mixins "LoadingSubcycle" and "UnloadingSubcycle".
     """
 
-    def __init__(
-        self,
-        loading_func=None,
-        unloading_func=None,
-        loading_subcycle=None,
-        unloading_subcycle=None,
-        *args,
-        **kwargs
-    ):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.loading_func = loading_func
-        self.unloading_func = unloading_func
 
-        self.loading_subcycle = loading_subcycle
-        if loading_subcycle:
-            if type(self.loading_subcycle) != pd.core.frame.DataFrame:
-                raise AssertionError("The subcycle table has to be a Pandas DataFrame")
-            else:
-                if "EventName" not in list(
-                    self.loading_subcycle.columns
-                ) or "Duration" not in list(self.loading_subcycle.columns):
-                    raise AssertionError(
-                        "The subcycle table should specify events and durations with the columnnames EventName and Duration respectively."
-                    )
+        assert (
+            hasattr(self, "loading")
+            or hasattr(self, "unloading")
+            or hasattr(self, "loading_subcycle")
+            or hasattr(self, "unloading_subcycle")
+        )
 
-        self.unloading_subcycle = unloading_subcycle
-        if unloading_subcycle:
-            if type(self.unloading_subcycle) != pd.core.frame.DataFrame:
-                raise AssertionError("The subcycle table has to be a Pandas DataFrame")
-            else:
-                if "EventName" not in list(
-                    self.unloading_subcycle.columns
-                ) or "Duration" not in list(self.unloading_subcycle.columns):
-                    raise AssertionError(
-                        "The subcycle table should specify events and durations with the columnnames EventName and Duration respectively."
-                    )
+        # Inherit the (un)loading functions
+        if not hasattr(self, "loading"): self.loading = None
+        if not hasattr(self, "unloading"): self.unloading = None
+        
+        # Inherit the subcycles
+        if not hasattr(self, "loading_subcycle"): self.loading_subcycle = None
+        if not hasattr(self, "unloading_subcycle"): self.unloading_subcycle = None
 
     # noinspection PyUnresolvedReferences
     def process(self, ship, desired_level, site):
@@ -1509,19 +1561,19 @@ class Processor(SimpyObject):
             amount = desired_level - current_level
             origin = site
             destination = ship
-            rate = self.loading_func
+            rate = self.loading
             subcycle = self.loading_subcycle
             event_log_str = "loading"
         else:
             amount = current_level - desired_level
             origin = ship
             destination = site
-            rate = self.unloading_func
+            rate = self.unloading
             subcycle = self.unloading_subcycle
             event_log_str = "unloading"
 
         if rate:
-            duration = rate(current_level, desired_level)
+            duration = rate(origin, destination, amount)
             yield from self.check_possible_downtime(
                 origin, destination, duration, ship, site, desired_level, amount
             )
@@ -1544,7 +1596,6 @@ class Processor(SimpyObject):
         self.shiftSoil(origin, destination, amount)
 
         # Shift volumes in containers
-
         start_time = self.env.now
         yield origin.container.get(amount)
         end_time = self.env.now
