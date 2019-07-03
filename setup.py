@@ -45,7 +45,7 @@ setup_requirements = [
 ]
 
 tests_require = [
-    "pytest",
+    "pytest==3.10.1",
     "pytest-cov",
     "pytest-timeout",
     "pytest-datadir"
