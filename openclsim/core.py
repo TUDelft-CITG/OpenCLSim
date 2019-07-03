@@ -1168,7 +1168,29 @@ class Routeable:
                 self.optimization_func = halem.HALEM_co2
             else:
                 print("No known optimization method selected")
+    
+    def check_optimal_filling_Roadmap(self, origin, destination, capacity):
+        orig = shapely.geometry.asShape(origin.geometry)
+        dest = shapely.geometry.asShape(destination.geometry)
+        start = (orig.x, orig.y)
+        stop = (dest.x, dest.y)
+        t0 = datetime.datetime.fromtimestamp(self.env.now).strftime("%d/%m/%Y %H:%M:%S")
+        prods = []
+        for i in range(len(self.env.Roadmap.loadfactors)):
 
+            _ , TT, _ = self.optimization_func(start, stop, t0, self.env.Roadmap.vship[0,-1], self.env.Roadmap)
+            TTT = self.env.now + (TT[-1] - TT[0]) + self.loading_func(0, capacity*self.env.Roadmap.loadfactors[i])
+            t0 = datetime.datetime.fromtimestamp(TTT).strftime("%d/%m/%Y %H:%M:%S")
+
+            _ , TT, _ = self.optimization_func(start, stop, t0, self.env.Roadmap.vship[i,-1], self.env.Roadmap)
+            prod = self.env.Roadmap.loadfactors[i] / (TT[-1] - self.env.now)
+            prods.append(prod)
+            
+        otpimal_loadfactor = self.env.Roadmap.loadfactors[np.argwhere(prods == max(prods))[0,0]]
+        print('optimal load factor is:', otpimal_loadfactor)
+        print(start,stop, t0, self.env.Roadmap.vship[np.argwhere(prods == max(prods))[0,0]])
+
+        return otpimal_loadfactor
 
 class Movable(SimpyObject, Locatable):
     """Movable class
@@ -1289,6 +1311,7 @@ class Movable(SimpyObject, Locatable):
                     start = (orig.x, orig.y)
                     stop = (dest.x, dest.y)
 
+                    print(start, stop, t0, vship)
                     path, time, dist = self.optimization_func(
                         start, stop, t0, vship, self.env.Roadmap
                     )

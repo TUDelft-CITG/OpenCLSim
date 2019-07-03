@@ -299,6 +299,10 @@ def single_run_process(
             amount, mover.check_optimal_filling(loader, unloader, origin, destination)
         )
 
+    if isinstance(mover, core.Routeable) and mover.optimize_route == True:
+        opt_LF = mover.check_optimal_filling_Roadmap(origin, destination, amount)
+        amount = amount * opt_LF
+
     if hasattr(stop_reservation_waiting_event, "__call__"):
         stop_reservation_waiting_event = stop_reservation_waiting_event()
     elif type(stop_reservation_waiting_event) == list:
@@ -363,6 +367,8 @@ def single_run_process(
         _release_resource(
             resource_requests, origin.resource, kept_resource=mover.resource
         )
+
+
 
         # move the mover to the destination
         if not mover.is_at(destination):
