@@ -1,0 +1,46 @@
+{
+    "origins": {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        52.3,
+                        5.1
+                    ]
+                },
+                "properties": {
+                    "name": "MyFirstSite",
+                    "capacity": 10000
+                }
+            }
+        ]
+    },
+    "destination": {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [
+                        [52.4, 5.3],
+                        [52.5, 5.32],
+                        [52.6, 5.34]
+                    ]
+                },
+                "properties": {
+                    "name": "MyFirstLine",
+                    "capacity": 1000
+                }
+            }
+        ]
+    },
+    "equipment": {
+        "loader": "C1",
+        "mover": "S1",
+        "unloader": "C2"
+    }
+}

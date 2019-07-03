@@ -1,0 +1,58 @@
+{
+    "origins": {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        52.3,
+                        5.1
+                    ]
+                },
+                "properties": {
+                    "name": "MyFirstSite",
+                    "capacity": 10000
+                }
+            }
+        ]
+    },
+    "destination": {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        52.4,
+                        5.3
+                    ]
+                },
+                "properties": {
+                    "name": "MySecondSite",
+                    "capacity": 1000
+                }
+            },{
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        52.5,
+                        5.32
+                    ]
+                },
+                "properties": {
+                    "name": "MyThirdSite",
+                    "capacity": 2000
+                }
+            }
+        ]
+    },
+    "equipment": {
+        "loader": "C1",
+        "mover": "S1",
+        "unloader": "C2"
+    }
+}

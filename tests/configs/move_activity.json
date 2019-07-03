@@ -1,0 +1,74 @@
+{
+    "initialTime": 0,
+    "sites": [
+        {
+            "id": "afsluitdijk",
+            "name": "Afsluitdijk",
+            "type": [
+                "Locatable"
+            ],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        53,
+                        4
+                    ]
+                }
+            }
+        },
+        {
+            "id": "maasvlakte",
+            "name": "Maasvlakte",
+            "type": [
+                "Locatable"
+            ],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        53,
+                        3
+                    ]
+                }
+            }
+        },
+        {
+            "id": "home",
+            "name": "Home",
+            "type": [
+                "Locatable"
+            ],
+            "properties": {
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        52,
+                        3
+                    ]
+                }
+            }
+        }
+    ],
+    "equipment": [
+        {
+            "id": "hopper",
+            "name": "Boaty McBoatstone",
+            "type": [
+                "Movable", "HasResource"
+            ],
+            "properties": {
+                "speed": 1,
+                "location": "home"
+            }
+        }
+    ],
+    "activities": [
+        {
+            "id": "sailing",
+            "type": "move",
+            "destination": "maasvlakte",
+            "mover": "hopper"
+        }
+    ]
+}

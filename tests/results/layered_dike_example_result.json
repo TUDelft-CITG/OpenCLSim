@@ -1,0 +1,3552 @@
+{
+  "sites": [
+    {
+      "type": "FeatureCollection",
+      "id": "afsluitdijk",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 176673,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 236673,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 269004,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 329004,
+            "value": 6000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 361336,
+            "value": 6000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 421336,
+            "value": 9000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 453667,
+            "value": 9000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 513667,
+            "value": 12000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 545999,
+            "value": 12000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 605999,
+            "value": 15000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 623801,
+            "value": 15000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 643801,
+            "value": 16000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 700753,
+            "value": 16000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 760753,
+            "value": 19000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 817705,
+            "value": 19000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 877705,
+            "value": 22000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 934657,
+            "value": 22000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 994657,
+            "value": 25000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 1051609,
+            "value": 25000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 1111609,
+            "value": 28000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 1153683,
+            "value": 28000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 1193683,
+            "value": 30000
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "clay reserve",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 150074,
+            "value": 16000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 168074,
+            "value": 13000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 242405,
+            "value": 13000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 260405,
+            "value": 10000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 334737,
+            "value": 10000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 352737,
+            "value": 7000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 427068,
+            "value": 7000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 445068,
+            "value": 4000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 519400,
+            "value": 4000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 537400,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 611732,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 617732,
+            "value": 0
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "levvel reserve",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 652182,
+            "value": 14000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 688182,
+            "value": 11000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 769134,
+            "value": 11000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 805134,
+            "value": 8000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 886086,
+            "value": 8000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 922086,
+            "value": 5000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 1003038,
+            "value": 5000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 1039038,
+            "value": 2000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 1119990,
+            "value": 2000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 1143990,
+            "value": 0
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "home",
+      "features": []
+    }
+  ],
+  "equipment": [
+    {
+      "type": "FeatureCollection",
+      "id": "barge",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.083546999999999,
+              51.978471
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 0,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 50024,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 150074,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 168074,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 168074,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 176673,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 176673,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 236673,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 236673,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 242405,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 242405,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 260405,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 260405,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 269004,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 269004,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 329004,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 329004,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 334737,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 334737,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 352737,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 352737,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 361336,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 361336,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 421336,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 421336,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 427068,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 427068,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 445068,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 445068,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 453667,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 453667,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 513667,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 513667,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 519400,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 519400,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 537400,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 537400,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 545999,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 545999,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 605999,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 605999,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 611732,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 611732,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 617732,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 617732,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 623801,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 623801,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 643801,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 643801,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 652182,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 652182,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 688182,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 688182,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 700753,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 700753,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 760753,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 760753,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 769134,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 769134,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 805134,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 805134,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 817705,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 817705,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 877705,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 877705,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 886086,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 886086,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 922086,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 922086,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 934657,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 934657,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 994657,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 994657,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 1003038,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 1003038,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 1039038,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 1039038,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 1051609,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 1051609,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 1111609,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 1111609,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 1119990,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 1119990,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 1143990,
+            "value": 2000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "sailing filled start",
+            "time": 1143990,
+            "value": 2000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing filled stop",
+            "time": 1153683,
+            "value": 2000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 1153683,
+            "value": 2000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 1193683,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing empty start",
+            "time": 1193683,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.083546999999999,
+              51.978471
+            ]
+          },
+          "properties": {
+            "message": "sailing empty stop",
+            "time": 1248865,
+            "value": 0
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "clay crane",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.083546999999999,
+              51.978471
+            ]
+          },
+          "properties": {
+            "message": "sailing start",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing stop",
+            "time": 150074,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 150074,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 168074,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 242405,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 260405,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 334737,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 352737,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 427068,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 445068,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 519400,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 537400,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 611732,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 617732,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "sailing start",
+            "time": 617732,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.083546999999999,
+              51.978471
+            ]
+          },
+          "properties": {
+            "message": "sailing stop",
+            "time": 767806,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "levvel crane",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 652182,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 688182,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 769134,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 805134,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 886086,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 922086,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 1003038,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 1039038,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading start",
+            "time": 1119990,
+            "value": 2000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "loading stop",
+            "time": 1143990,
+            "value": 2000
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "installation crane",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.083546999999999,
+              51.978471
+            ]
+          },
+          "properties": {
+            "message": "sailing start",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing stop",
+            "time": 165547,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 176673,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 236673,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 269004,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 329004,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 361336,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 421336,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 453667,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 513667,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 545999,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 605999,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 623801,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 643801,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 700753,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 760753,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 817705,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 877705,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 934657,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 994657,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 1051609,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 1111609,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading start",
+            "time": 1153683,
+            "value": 2000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "unloading stop",
+            "time": 1193683,
+            "value": 2000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "sailing start",
+            "time": 1193683,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.083546999999999,
+              51.978471
+            ]
+          },
+          "properties": {
+            "message": "sailing stop",
+            "time": 1359230,
+            "value": -1
+          }
+        }
+      ]
+    }
+  ],
+  "activities": [
+    {
+      "type": "FeatureCollection",
+      "id": "mobilise barge",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "sequential start",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.083546999999999,
+              51.978471
+            ]
+          },
+          "properties": {
+            "message": "started move activity of Barge to Clay reserve",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "completed move activity of Barge to Clay reserve",
+            "time": 50024,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "sequential stop",
+            "time": 50024,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "mobilise clay crane",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "sequential start",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.083546999999999,
+              51.978471
+            ]
+          },
+          "properties": {
+            "message": "started move activity of Clay crane to Clay reserve",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "completed move activity of Clay crane to Clay reserve",
+            "time": 150074,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "sequential stop",
+            "time": 150074,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "mobilise installation crane",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "sequential start",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.083546999999999,
+              51.978471
+            ]
+          },
+          "properties": {
+            "message": "started move activity of Installation crane to Afsluitdijk",
+            "time": 0,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "completed move activity of Installation crane to Afsluitdijk",
+            "time": 165547,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "sequential stop",
+            "time": 165547,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "install clay layer",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "delayed activity started",
+            "time": 150074,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 150074,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 236673,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 236673,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 329004,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 329004,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 421336,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 421336,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 513667,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 513667,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 605999,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 605999,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 643801,
+            "value": 1000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "stopped",
+            "time": 643801,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "install levvel layer",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "delayed activity started",
+            "time": 643801,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 643801,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 760753,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 760753,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 877705,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 877705,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 994657,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 994657,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 1111609,
+            "value": 3000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting start",
+            "time": 1111609,
+            "value": 2000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "transporting stop",
+            "time": 1193683,
+            "value": 2000
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "waiting origin reservation start",
+            "time": 1193683,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.893572,
+              53.080268999999994
+            ]
+          },
+          "properties": {
+            "message": "waiting origin reservation stop",
+            "time": 1193683,
+            "value": 0
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "stopped",
+            "time": 1193683,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "demobilise barge",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "delayed activity started",
+            "time": 1193683,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "started move activity of Barge to Home",
+            "time": 1193683,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.083546999999999,
+              51.978471
+            ]
+          },
+          "properties": {
+            "message": "completed move activity of Barge to Home",
+            "time": 1248865,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "demobilise installation crane",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "delayed activity started",
+            "time": 1193683,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              5.176108999999999,
+              53.005531
+            ]
+          },
+          "properties": {
+            "message": "started move activity of Installation crane to Home",
+            "time": 1193683,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.083546999999999,
+              51.978471
+            ]
+          },
+          "properties": {
+            "message": "completed move activity of Installation crane to Home",
+            "time": 1359230,
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "id": "demobilise clay crane",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": "None",
+          "properties": {
+            "message": "delayed activity started",
+            "time": 611732,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.997591,
+              52.937954999999995
+            ]
+          },
+          "properties": {
+            "message": "started move activity of Clay crane to Home",
+            "time": 611732,
+            "value": -1
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              4.083546999999999,
+              51.978471
+            ]
+          },
+          "properties": {
+            "message": "completed move activity of Clay crane to Home",
+            "time": 767806,
+            "value": -1
+          }
+        }
+      ]
+    }
+  ],
+  "completionTime": 1359230.659147652,
+  "completionCost": 0
+}
