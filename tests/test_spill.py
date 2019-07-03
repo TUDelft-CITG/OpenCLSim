@@ -174,7 +174,6 @@ def test_spill_dredging(env, Location, Processor, Soil):
     }  # Loading production is 1 amount / s
 
     processor = Processor(**data_processor)
-    processor.ActivityID = "Test activity"
 
     # Log fuel use of the processor in step 1
     env.process(processor.process(from_site, 0, to_site))
@@ -228,7 +227,6 @@ def test_spill_placement(env, Location, Mover, Processor, Soil):
     }  # Loading production is 1 amount / s
 
     processor = Processor(**data_processor)
-    processor.ActivityID = "Test activity"
     processor.rate = lambda x: x / 1
 
     # make the mover
@@ -240,7 +238,6 @@ def test_spill_placement(env, Location, Mover, Processor, Soil):
     }  # The unloading function 1 amount per second
 
     mover = Mover(**data_mover)
-    mover.ActivityID = "Test activity"
 
     # Log fuel use of the processor in step 1
     env.process(processor.process(mover, 1000, from_site))
@@ -310,7 +307,6 @@ def test_spill_requirement(env, LocationReq, Location, Processor, Soil):
     }  # Loading production is 1 amount / s
 
     processor = Processor(**data_processor)
-    processor.ActivityID = "Test activity"
     processor.rate = lambda x: x / 1
 
     # Log fuel use of the processor in step 1
