@@ -18,3 +18,7 @@ Contributors
 ------------
 
 Various MSc projects
+
+* `Vibeke van der Bilt`_, 2019. Assessing emission performance of dredging projects. MSc thesis. Delft University of Technology, Civil Engineering and Geosciences, Hydraulic Engineering - Ports and Waterways. Delft, the Netherlands.
+
+.. _Vibeke van der Bilt: https://repository.tudelft.nl/
