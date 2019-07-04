@@ -8,6 +8,7 @@ import scipy.interpolate
 import scipy.integrate
 import pandas as pd
 import numpy as np
+from IPython.display import clear_output
 
 
 class Activity(core.Identifiable, core.Log):
@@ -278,6 +279,11 @@ def single_run_process(
     verbose: optional boolean indicating whether additional debug prints should be given.
     """
 
+    if hasattr(env, 'print_progress'):
+        if env.print_progress == True:
+            clear_output(wait = True)
+            print(np.round(destination.container.level / destination.container.capacity*100, 2), '%')
+
     # Required for logging from json
     if not hasattr(activity_log, "loader"):
         activity_log.loader = loader
@@ -299,7 +305,7 @@ def single_run_process(
             amount, mover.check_optimal_filling(loader, unloader, origin, destination)
         )
 
-    if isinstance(mover, core.Routeable) and mover.optimize_route == True and list(mover.loadfactors) != None:
+    if isinstance(mover, core.Routeable) and mover.optimize_route == True and type(mover.loadfactors) != type(None):
         opt_LF = mover.check_optimal_filling_Roadmap(origin, destination, amount)
         amount = amount * opt_LF
 

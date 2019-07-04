@@ -1175,21 +1175,23 @@ class Routeable:
         dest = shapely.geometry.asShape(destination.geometry)
         start = (orig.x, orig.y)
         stop = (dest.x, dest.y)
-        t0 = datetime.datetime.fromtimestamp(self.env.now).strftime("%d/%m/%Y %H:%M:%S")
         prods = []
+        tQQ= []
         for i in range(len(self.loadfactors)):
-
+            t0 = datetime.datetime.fromtimestamp(self.env.now).strftime("%d/%m/%Y %H:%M:%S")
             _ , TT, _ = self.optimization_func(stop, start, t0, self.env.Roadmap.vship[0,-1], self.env.Roadmap)
             TTT = self.env.now + (TT[-1] - TT[0]) + self.loading_func(0, capacity*self.loadfactors[i])
             t0 = datetime.datetime.fromtimestamp(TTT).strftime("%d/%m/%Y %H:%M:%S")
 
             _ , TT, _ = self.optimization_func(start, stop, t0, self.env.Roadmap.vship[i,-1], self.env.Roadmap)
-            prod = self.loadfactors[i] / (TT[-1] - self.env.now)
+            TTT = TTT + (TT[-1] - TT[0]) + self.unloading_func(capacity*self.loadfactors[i], 0)
+            prod = self.loadfactors[i] / (TTT - self.env.now)
             prods.append(prod)
+            tQQ.append(t0)
             
         otpimal_loadfactor = self.loadfactors[np.argwhere(prods == max(prods))[0,0]]
-        print('optimal load factor is:', otpimal_loadfactor)
-        print(start,stop, t0, self.env.Roadmap.vship[np.argwhere(prods == max(prods))[0,0]])
+        # print('optimal load factor is:', otpimal_loadfactor)
+        # print(start,stop, tQQ[np.argwhere(prods == max(prods))[0,0]], self.env.Roadmap.vship[np.argwhere(prods == max(prods))[0,0]])
 
         return otpimal_loadfactor
 
@@ -1312,7 +1314,7 @@ class Movable(SimpyObject, Locatable):
                     start = (orig.x, orig.y)
                     stop = (dest.x, dest.y)
 
-                    print(start, stop, t0, vship)
+                    # print(start, stop, t0, vship)
                     path, time, dist = self.optimization_func(
                         start, stop, t0, vship, self.env.Roadmap
                     )
