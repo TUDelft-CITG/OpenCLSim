@@ -1,0 +1,7 @@
+ActivityID,ActivityName,EquipmentID,ActivityFunction
+c9d026f1-9e24-11e9-b8d2-2079183a5c9a,do something,c9d026f0-9e24-11e9-93dd-2079183a5c9a,Loader
+c9d026f1-9e24-11e9-b8d2-2079183a5c9a,do something,c9d026f0-9e24-11e9-93dd-2079183a5c9a,Mover
+c9d026f1-9e24-11e9-b8d2-2079183a5c9a,do something,c9d026f0-9e24-11e9-93dd-2079183a5c9a,Unloader
+c9d026f2-9e24-11e9-9c9c-2079183a5c9a,do something 2,c9d026f0-9e24-11e9-93dd-2079183a5c9a,Loader
+c9d026f2-9e24-11e9-9c9c-2079183a5c9a,do something 2,c9d026f0-9e24-11e9-93dd-2079183a5c9a,Mover
+c9d026f2-9e24-11e9-9c9c-2079183a5c9a,do something 2,c9d026f0-9e24-11e9-93dd-2079183a5c9a,Unloader

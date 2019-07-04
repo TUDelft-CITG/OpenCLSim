@@ -299,7 +299,7 @@ def single_run_process(
             amount, mover.check_optimal_filling(loader, unloader, origin, destination)
         )
 
-    if isinstance(mover, core.Routeable) and mover.optimize_route == True:
+    if isinstance(mover, core.Routeable) and mover.optimize_route == True and list(mover.loadfactors) != None:
         opt_LF = mover.check_optimal_filling_Roadmap(origin, destination, amount)
         amount = amount * opt_LF
 
