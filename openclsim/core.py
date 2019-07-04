@@ -1430,13 +1430,14 @@ class LoadingFunction:
     This is a generic and easy to read function, you can create your own LoadingFunction class and add this as a mixin.
 
     loading_rate: the rate at which units are loaded per second
-    manoeuvring: the time it takes to manoeuvring in minutes
+    load_manoeuvring: the time it takes to manoeuvring in minutes
     """
 
-    def __init__(self, loading_rate, manoeuvring=0):
+    def __init__(self, loading_rate, load_manoeuvring=0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         """Initialization"""
         self.loading_rate = loading_rate
-        self.manoeuvring = manoeuvring
+        self.load_manoeuvring = load_manoeuvring
 
     def loading(self, origin, destination, amount):
         """
@@ -1444,7 +1445,7 @@ class LoadingFunction:
         The origin an destination are also part of the input, because other functions might be dependent on the location.
         """
 
-        return amount / self.loading_rate + self.manoeuvring * 60
+        return amount / self.loading_rate + self.load_manoeuvring * 60
 
 
 class UnloadingFunction:
@@ -1453,13 +1454,14 @@ class UnloadingFunction:
     This is a generic and easy to read function, you can create your own LoadingFunction class and add this as a mixin.
 
     unloading_rate: the rate at which units are loaded per second
-    manoeuvring: the time it takes to manoeuvring in minutes
+    unload_manoeuvring: the time it takes to manoeuvring in minutes
     """
 
-    def __init__(self, unloading_rate, manoeuvring=0):
+    def __init__(self, unloading_rate, unload_manoeuvring=0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         """Initialization"""
         self.unloading_rate = unloading_rate
-        self.manoeuvring = manoeuvring
+        self.unload_manoeuvring = unload_manoeuvring
 
     def unloading(self, origin, destination, amount):
         """
@@ -1467,7 +1469,7 @@ class UnloadingFunction:
         The origin an destination are also part of the input, because other functions might be dependent on the location.
         """
 
-        return amount / self.unloading_rate + self.manoeuvring * 60
+        return amount / self.unloading_rate + self.unload_manoeuvring * 60
 
 
 class LoadingSubcycle:
@@ -1475,7 +1477,8 @@ class LoadingSubcycle:
     loading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
     """
 
-    def __init__(self, loading_subcycle):
+    def __init__(self, loading_subcycle, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         """Initialization"""
 
         self.loading_subcycle = loading_subcycle
@@ -1496,7 +1499,8 @@ class UnloadingSubcycle:
     unloading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
     """
 
-    def __init__(self, unloading_subcycle):
+    def __init__(self, unloading_subcycle, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         """Initialization"""
 
         self.unloading_subcycle = unloading_subcycle
