@@ -64,6 +64,11 @@ class Activity(core.Identifiable, core.Log):
             else self.env.all_of(events=start_event)
         )
 
+        if type(stop_event) == list:
+            stop_event = self.env.any_of(
+                    events=stop_event
+                )
+
         if not start_event:
             self.stop_event = (
                 stop_event
@@ -295,6 +300,7 @@ def single_run_process(
     if isinstance(mover, core.HasDepthRestriction) and isinstance(
         destination, core.HasWeather
     ):
+        # mover.grain_size = origin.grain_size
         amount = min(
             amount, mover.check_optimal_filling(loader, unloader, origin, destination)
         )
