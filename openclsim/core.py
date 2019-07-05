@@ -1082,6 +1082,13 @@ class HasDepthRestriction:
             if isinstance(destination, HasWeather):
                 self.calc_depth_restrictions(destination, unloader)
 
+        elif origin.name not in self.depth_data.keys() or destination.name not in self.depth_data.keys():
+            if isinstance(origin, HasWeather):
+                self.calc_depth_restrictions(origin, loader)
+            if isinstance(destination, HasWeather):
+                self.calc_depth_restrictions(destination, unloader)
+
+
         # If a filling degee has been specified
         if self.filling is not None:
             return self.filling * self.container.capacity / 100
@@ -1099,8 +1106,11 @@ class HasDepthRestriction:
 
                 if len(ranges) != 0:
                     # Determine length of cycle
-                    loading = loader.loading_func(
-                        self.container.level, filling * self.container.capacity
+                    loading = loader.loading(
+                        origin,
+                        destination,
+                        filling * self.container.capacity - self.container.level,
+                        False
                     )
 
                     orig = shapely.geometry.asShape(origin.geometry)
