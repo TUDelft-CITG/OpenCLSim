@@ -868,8 +868,8 @@ class HasDepthRestriction:
     def __init__(
         self,
         compute_draught,
-        waves,
         ukc,
+        waves=None,
         filling=None,
         min_filling=None,
         max_filling=None,
@@ -881,8 +881,8 @@ class HasDepthRestriction:
 
         # Information required to determine whether vessel can access an area
         self.compute_draught = compute_draught
-        self.waves = waves
         self.ukc = ukc
+        self.waves = waves
 
         # Information require to self-select filling degree
         if min_filling is not None and max_filling is not None:
@@ -917,8 +917,10 @@ class HasDepthRestriction:
             # Determine characteristics based on filling
             draught = self.compute_draught(filling_degree)
             duration = datetime.timedelta(
-                seconds=processor.unloading_func(
-                    self.container.level, filling_degree * self.container.capacity
+                seconds=processor.unloading(
+                    self, 
+                    location,
+                    self.container.level - filling_degree * self.container.capacity
                 )
             )
 
@@ -1062,11 +1064,15 @@ class HasDepthRestriction:
     def calc_required_depth(self, draught, wave_height):
         required_depth = np.nan
 
-        for i, wave in enumerate(self.waves):
-            if wave_height <= wave:
-                required_depth = self.ukc[i] + draught
+        if self.waves:
+            for i, wave in enumerate(self.waves):
+                if wave_height <= wave:
+                    required_depth = self.ukc[i] + draught
 
-        return required_depth
+            return required_depth
+        
+        else:
+            return self.ukc + draught
 
     def check_optimal_filling(self, loader, unloader, origin, destination):
         # Calculate depth restrictions
@@ -1578,11 +1584,12 @@ class Processor(SimpyObject):
 
         if rate:
             duration = rate(origin, destination, amount)
+            
             yield from self.check_possible_downtime(
                 origin, destination, duration, ship, site, desired_level, amount
             )
 
-        else:
+        elif subcycle:
             duration = 0
 
             for _ in range(int(amount)):
