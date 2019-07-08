@@ -1185,7 +1185,7 @@ class Routeable:
 
             _ , TT, _ = self.optimization_func(start, stop, t0, self.env.Roadmap.vship[i,-1], self.env.Roadmap)
             TTT = TTT + (TT[-1] - TT[0]) + self.unloading_func(capacity*self.loadfactors[i], 0)
-            prod = self.loadfactors[i] / (TTT - self.env.now)
+            prod = capacity*self.loadfactors[i] / (TTT - self.env.now)
             prods.append(prod)
             tQQ.append(t0)
             
