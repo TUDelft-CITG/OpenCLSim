@@ -1267,7 +1267,7 @@ class Movable(SimpyObject, Locatable):
     def current_speed(self):
         return self.v
 
-    def get_distance(self, origin, destination):
+    def get_distance(self, origin, destination, verbose = True):
         if not isinstance(self, Routeable):
             orig = shapely.geometry.asShape(self.geometry)
             dest = shapely.geometry.asShape(destination.geometry)
@@ -1335,9 +1335,10 @@ class Movable(SimpyObject, Locatable):
                     distb = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
                     sailtimeb = distb / self.current_speed
 
-                self.log_entry(
-                    "Sailing", self.env.now + sailtimeb, 0, dest, self.ActivityID
-                )
+                if verbose:
+                    self.log_entry(
+                        "Sailing", self.env.now + sailtimeb, 0, dest, self.ActivityID
+                    )
 
                 dista += distb
                 sailtime += sailtimeb
@@ -1888,7 +1889,7 @@ class Processor(SimpyObject):
                     )
 
     def checkTide(self, ship, site, desired_level, duration):
-        if isinstance(ship, HasDepthRestriction) and isinstance(site, HasWeather):
+        if hasattr(ship, "calc_depth_restrictions") and isinstance(site, HasWeather):
             max_level = max(ship.container.level, desired_level)
             fill_degree = max_level / ship.container.capacity
             yield from ship.check_depth_restriction(site, fill_degree, duration)

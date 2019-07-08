@@ -297,10 +297,9 @@ def single_run_process(
         destination.container.capacity - destination.container.expected_level,
     )
 
-    if isinstance(mover, core.HasDepthRestriction) and isinstance(
+    if hasattr(mover, "calc_depth_restrictions") and isinstance(
         destination, core.HasWeather
     ):
-        # mover.grain_size = origin.grain_size
         amount = min(
             amount, mover.check_optimal_filling(loader, unloader, origin, destination)
         )
