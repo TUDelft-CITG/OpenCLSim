@@ -918,9 +918,9 @@ class HasDepthRestriction:
             draught = self.compute_draught(filling_degree)
             duration = datetime.timedelta(
                 seconds=processor.unloading(
-                    self, 
+                    self,
                     location,
-                    self.container.level - filling_degree * self.container.capacity
+                    self.container.level - filling_degree * self.container.capacity,
                 )
             )
 
@@ -1070,7 +1070,7 @@ class HasDepthRestriction:
                     required_depth = self.ukc[i] + draught
 
             return required_depth
-        
+
         else:
             return self.ukc + draught
 
@@ -1082,12 +1082,14 @@ class HasDepthRestriction:
             if isinstance(destination, HasWeather):
                 self.calc_depth_restrictions(destination, unloader)
 
-        elif origin.name not in self.depth_data.keys() or destination.name not in self.depth_data.keys():
+        elif (
+            origin.name not in self.depth_data.keys()
+            or destination.name not in self.depth_data.keys()
+        ):
             if isinstance(origin, HasWeather):
                 self.calc_depth_restrictions(origin, loader)
             if isinstance(destination, HasWeather):
                 self.calc_depth_restrictions(destination, unloader)
-
 
         # If a filling degee has been specified
         if self.filling is not None:
@@ -1110,7 +1112,7 @@ class HasDepthRestriction:
                         origin,
                         destination,
                         filling * self.container.capacity - self.container.level,
-                        False
+                        False,
                     )
 
                     orig = shapely.geometry.asShape(origin.geometry)
@@ -1267,7 +1269,7 @@ class Movable(SimpyObject, Locatable):
     def current_speed(self):
         return self.v
 
-    def get_distance(self, origin, destination, verbose = True):
+    def get_distance(self, origin, destination, verbose=True):
         if not isinstance(self, Routeable):
             orig = shapely.geometry.asShape(self.geometry)
             dest = shapely.geometry.asShape(destination.geometry)
@@ -1554,12 +1556,16 @@ class Processor(SimpyObject):
         )
 
         # Inherit the (un)loading functions
-        if not hasattr(self, "loading"): self.loading = None
-        if not hasattr(self, "unloading"): self.unloading = None
-        
+        if not hasattr(self, "loading"):
+            self.loading = None
+        if not hasattr(self, "unloading"):
+            self.unloading = None
+
         # Inherit the subcycles
-        if not hasattr(self, "loading_subcycle"): self.loading_subcycle = None
-        if not hasattr(self, "unloading_subcycle"): self.unloading_subcycle = None
+        if not hasattr(self, "loading_subcycle"):
+            self.loading_subcycle = None
+        if not hasattr(self, "unloading_subcycle"):
+            self.unloading_subcycle = None
 
     # noinspection PyUnresolvedReferences
     def process(self, ship, desired_level, site):
@@ -1584,28 +1590,25 @@ class Processor(SimpyObject):
             destination = ship
             rate = self.loading
             subcycle = self.loading_subcycle
-            event_log_str = "loading"
         else:
             amount = current_level - desired_level
             origin = ship
             destination = site
             rate = self.unloading
             subcycle = self.unloading_subcycle
-            event_log_str = "unloading"
 
         if rate:
             duration = rate(origin, destination, amount)
-            
+
             yield from self.check_possible_downtime(
                 origin, destination, duration, ship, site, desired_level, amount
             )
 
-        elif subcycle:
+        elif type(subcycle) == pd.core.frame.DataFrame:
             duration = 0
 
             for _ in range(int(amount)):
                 for i in subcycle.index:
-                    event = subcycle.iloc[i]["EventName"]
                     duration += subcycle.iloc[i]["Duration"] * 60
                     yield from self.check_possible_downtime(
                         origin, destination, duration, ship, site, desired_level, 1

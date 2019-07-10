@@ -65,9 +65,7 @@ class Activity(core.Identifiable, core.Log):
         )
 
         if type(stop_event) == list:
-            stop_event = self.env.any_of(
-                    events=stop_event
-                )
+            stop_event = self.env.any_of(events=stop_event)
 
         if not start_event:
             self.stop_event = (
@@ -297,7 +295,7 @@ def single_run_process(
         destination.container.capacity - destination.container.expected_level,
     )
 
-    if hasattr(mover, "calc_depth_restrictions") and isinstance(
+    if hasattr(mover, "check_optimal_filling") and isinstance(
         destination, core.HasWeather
     ):
         amount = min(
