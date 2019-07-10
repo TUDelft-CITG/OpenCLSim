@@ -12,12 +12,12 @@ History
 
 * First release to PyPI and rename to OpenClSim
 
-0.2.0 (2019-02-14)
+v0.2.0 (2019-02-14)
 ------------------
 
 * Second tag on GitHub
 
-0.1.0 (2018-08-01)
+v0.1.0 (2018-08-01)
 ------------------
 
 * First tag on GitHub
