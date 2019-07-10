@@ -96,7 +96,16 @@ def Location():
 @pytest.fixture
 def Processor():
     return type(
-        "Processor", (core.Identifiable, core.Processor, core.Log, core.Locatable), {}
+        "Processor",
+        (
+            core.Identifiable,
+            core.Processor,
+            core.LoadingFunction,
+            core.UnloadingFunction,
+            core.Log,
+            core.Locatable,
+        ),
+        {},
     )
 
 
@@ -145,13 +154,13 @@ def test_calc_restrictions(
         "env": env,  # The simpy environment
         "name": "Quay Crane",  # Name
         "geometry": geometry_a,  # It starts at the "from site"
-        "loading_func": model.get_loading_func(1.0),  # Loading rate
-        "unloading_func": model.get_unloading_func(1.0),
+        "loading_rate": 1,  # Loading rate
+        "unloading_rate": 1,
     }  # Unloading rate
 
     crane = Processor(**data)
     crane.ActivityID = "Test activity"
-    crane.rate = crane.loading_func
+    crane.rate = crane.loading
 
     # Initialize the LocationWeather
     data = {

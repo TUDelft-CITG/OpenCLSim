@@ -50,7 +50,9 @@
           "type":[
              "HasResource",
              "ContainerDependentMovable",
-             "Processor"
+             "Processor", 
+             "LoadingFunction", 
+             "UnloadingFunction"
           ],
           "properties":{
              "location":"borrow area",

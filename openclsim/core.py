@@ -1464,7 +1464,13 @@ class LoadingFunction:
         The origin an destination are also part of the input, because other functions might be dependent on the location.
         """
 
-        return amount / self.loading_rate + self.load_manoeuvring * 60
+        if not hasattr(self.loading_rate, "__call__"):
+            return amount / self.loading_rate + self.load_manoeuvring * 60
+        else:
+            return (
+                self.loading_rate(self.container.level, self.container.level + amount)
+                + self.load_manoeuvring * 60
+            )
 
 
 class UnloadingFunction:
@@ -1488,7 +1494,13 @@ class UnloadingFunction:
         The origin an destination are also part of the input, because other functions might be dependent on the location.
         """
 
-        return amount / self.unloading_rate + self.unload_manoeuvring * 60
+        if not hasattr(self.unloading_rate, "__call__"):
+            return amount / self.unloading_rate + self.load_manoeuvring * 60
+        else:
+            return (
+                self.unloading_rate(self.container.level, self.container.level - amount)
+                + self.load_manoeuvring * 60
+            )
 
 
 class LoadingSubcycle:
@@ -1648,6 +1660,10 @@ class Processor(SimpyObject):
             "loading start", self.env.now, amount, self.geometry, self.ActivityID
         )
         yield self.env.timeout(duration)
+
+        # Compute the energy use
+        self.computeEnergy(duration, origin, destination)
+
         origin.log_entry(
             "unloading stop", self.env.now, amount, self.geometry, self.ActivityID
         )
@@ -1673,9 +1689,6 @@ class Processor(SimpyObject):
                 geometry_log=self.geometry,
                 activityID=self.ActivityID,
             )
-
-        # Compute the energy use
-        self.computeEnergy(duration, origin, destination)
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
 

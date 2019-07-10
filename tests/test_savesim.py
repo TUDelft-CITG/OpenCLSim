@@ -34,7 +34,13 @@ class BasicStorageUnit(
 
 # The generic class for an object that can process (a quay crane for example)
 class ProcessingResource(
-    core.Identifiable, core.Locatable, core.Log, core.Processor, core.HasResource
+    core.Identifiable,
+    core.Locatable,
+    core.Log,
+    core.Processor,
+    core.LoadingFunction,
+    core.UnloadingFunction,
+    core.HasResource,
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -73,38 +79,28 @@ def compute_v_provider():
 
 
 @pytest.fixture
-def compute_loading():
-    return lambda current_level, desired_level: (desired_level - current_level) / 1
-
-
-@pytest.fixture
-def compute_unloading():
-    return lambda current_level, desired_level: (current_level - desired_level) / 1
-
-
-@pytest.fixture
-def loader(env, geometry_a, compute_loading, compute_unloading):
+def loader(env, geometry_a):
     # Initialize the loader
     data_loader = {
         "env": env,
         "name": "loader",
         "geometry": geometry_a,
-        "loading_func": compute_loading,
-        "unloading_func": compute_unloading,
+        "loading_rate": 1,
+        "unloading_rate": 1,
     }
     loader = ProcessingResource(**data_loader)
     return loader
 
 
 @pytest.fixture
-def unloader(env, geometry_b, compute_loading, compute_unloading):
+def unloader(env, geometry_b):
     # Initialize the unloader
     data_unloader = {
         "env": env,
         "name": "unloader",
         "geometry": geometry_b,
-        "loading_func": compute_loading,
-        "unloading_func": compute_unloading,
+        "loading_rate": 1,
+        "unloading_rate": 1,
     }
     unloader = ProcessingResource(**data_unloader)
     return unloader

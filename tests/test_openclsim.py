@@ -115,7 +115,13 @@ class BasicStorageUnit(core.HasContainer, core.HasResource, core.Locatable, core
         super().__init__(*args, **kwargs)
 
 
-class Processor(core.Processor, core.Log, core.Locatable):
+class Processor(
+    core.Processor,
+    core.LoadingFunction,
+    core.UnloadingFunction,
+    core.Log,
+    core.Locatable,
+):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -130,10 +136,7 @@ def test_basic_processor(env, geometry_a):
     )
 
     processor = Processor(
-        env=env,
-        loading_func=model.get_loading_func(2),
-        unloading_func=model.get_unloading_func(2),
-        geometry=geometry_a,
+        env=env, loading_rate=2, unloading_rate=2, geometry=geometry_a
     )
 
     processor.ActivityID = "Test activity"

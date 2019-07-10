@@ -77,7 +77,16 @@ def Soil():
 @pytest.fixture
 def Processor():
     return type(
-        "Processor", (core.Processor, core.Log, core.Locatable, core.HasPlume), {}
+        "Processor",
+        (
+            core.Processor,
+            core.LoadingFunction,
+            core.UnloadingFunction,
+            core.Log,
+            core.Locatable,
+            core.HasPlume,
+        ),
+        {},
     )
 
 
@@ -167,11 +176,9 @@ def test_spill_dredging(env, Location, Processor, Soil):
     data_processor = {
         "env": env,  # The simpy environment
         "geometry": location,  # The coordinates of the "processore"
-        "unloading_func": model.get_unloading_func(
-            1
-        ),  # Unloading production is 1 amount / s
-        "loading_func": model.get_loading_func(1),
-    }  # Loading production is 1 amount / s
+        "unloading_rate": 1,  # Unloading production is 1 amount / s
+        "loading_rate": 1,  # Loading production is 1 amount / s
+    }
 
     processor = Processor(**data_processor)
     processor.ActivityID = "Test activity"
@@ -221,11 +228,9 @@ def test_spill_placement(env, Location, Mover, Processor, Soil):
     data_processor = {
         "env": env,  # The simpy environment
         "geometry": location,  # The coordinates of the "processore"
-        "unloading_func": model.get_unloading_func(
-            1
-        ),  # Unloading production is 1 amount / s
-        "loading_func": model.get_loading_func(1),
-    }  # Loading production is 1 amount / s
+        "unloading_rate": 1,  # Unloading production is 1 amount / s
+        "loading_rate": 1,  # Loading production is 1 amount / s
+    }
 
     processor = Processor(**data_processor)
     processor.ActivityID = "Test activity"
@@ -303,15 +308,12 @@ def test_spill_requirement(env, LocationReq, Location, Processor, Soil):
     data_processor = {
         "env": env,  # The simpy environment
         "geometry": location,  # The coordinates of the "processore"
-        "unloading_func": model.get_unloading_func(
-            1
-        ),  # Unloading production is 1 amount / s
-        "loading_func": model.get_loading_func(1),
-    }  # Loading production is 1 amount / s
+        "unloading_rate": 1,  # Unloading production is 1 amount / s
+        "loading_rate": 1,  # Loading production is 1 amount / s
+    }
 
     processor = Processor(**data_processor)
     processor.ActivityID = "Test activity"
-    processor.rate = lambda x: x / 1
 
     # Log fuel use of the processor in step 1
     env.process(processor.process(from_site, 0, to_site))
