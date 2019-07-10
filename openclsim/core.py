@@ -574,7 +574,7 @@ class HasSoil:
         """Remove soil from self."""
 
         # If soil is a mover, the mover should be initialized with an empty soil dict after emptying
-        if isinstance(self, Movable) and volume == self.container.level:
+        if isinstance(self, Movable) and 0 == self.container.level:
             removed_soil = list(self.soil.items())[0]
 
             self.soil = {}
@@ -1626,12 +1626,6 @@ class Processor(SimpyObject):
                         origin, destination, duration, ship, site, desired_level, 1
                     )
 
-        # Add spill the location where processing is taking place
-        self.addSpill(origin, destination, amount, duration)
-
-        # Shift soil from container volumes
-        self.shiftSoil(origin, destination, amount)
-
         # Shift volumes in containers
         start_time = self.env.now
         yield origin.container.get(amount)
@@ -1659,7 +1653,15 @@ class Processor(SimpyObject):
         destination.log_entry(
             "loading start", self.env.now, amount, self.geometry, self.ActivityID
         )
+
+        # Check out the time
         yield self.env.timeout(duration)
+
+        # Add spill the location where processing is taking place
+        self.addSpill(origin, destination, amount, duration)
+
+        # Shift soil from container volumes
+        self.shiftSoil(origin, destination, amount)
 
         # Compute the energy use
         self.computeEnergy(duration, origin, destination)
