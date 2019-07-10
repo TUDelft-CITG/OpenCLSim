@@ -164,7 +164,7 @@ def test_halem_single_path():
         path_MVK.append([g.x, g.y])
 
     path_MVK = np.array(path_MVK)
-    path_MVK = path_MVK[5:-6, :]
+    path_MVK = path_MVK[3:-4, :]
     vmax = 7
     path_halem, time_halem, _ = halem.HALEM_time(
         start, stop, "17/04/2019 1:58:18", vmax, Roadmap
