@@ -125,13 +125,22 @@ def test_processor(
     )
 
     processor = type(
-        "processor", (core.Processor, core.EnergyUse, core.Locatable, core.Log), {}
+        "processor",
+        (
+            core.Processor,
+            core.LoadingFunction,
+            core.UnloadingFunction,
+            core.EnergyUse,
+            core.Locatable,
+            core.Log,
+        ),
+        {},
     )
 
     data_processor = {
         "env": env,
-        "unloading_func": model.get_unloading_func(2),
-        "loading_func": model.get_loading_func(2),
+        "unloading_rate": 2,
+        "loading_rate": 2,
         "geometry": geometry_a,
         "energy_use_sailing": energy_use_sailing,
         "energy_use_loading": energy_use_loading,
@@ -183,6 +192,8 @@ def test_TransportProcessingResource(
             core.Log,  # Allow logging of all discrete events
             core.ContainerDependentMovable,  # A moving container, so capacity and location
             core.Processor,  # Allow for loading and unloading
+            core.LoadingFunction,
+            core.UnloadingFunction,
             core.HasResource,  # Allow queueing
             core.EnergyUse,
         ),  # Allow logging energy use
@@ -194,8 +205,8 @@ def test_TransportProcessingResource(
         "env": env,  # The simpy environment
         "name": "Hopper",  # Name
         "geometry": geometry_b,  # It starts at the "to site"
-        "unloading_func": model.get_unloading_func(1),  # Unloading rate
-        "loading_func": model.get_loading_func(2),  # Loading rate
+        "loading_rate": 2,  # Loading rate
+        "unloading_rate": 1,  # Unloading rate
         "capacity": 500,  # Capacity of the hopper
         "compute_v": lambda x: 1,  # Variable speed
         "energy_use_loading": energy_use_loading,  # Variable fuel use
@@ -237,7 +248,7 @@ def test_TransportProcessingResource(
     )
 
     # Simulation ends with unloading
-    hopper.rate = hopper.unloading_func
+    hopper.rate = hopper.unloading
     start = env.now
     env.process(hopper.process(hopper, 0, dest))
     env.run()
@@ -272,6 +283,8 @@ def test_Processor_ContainerDependentMovable(
             core.Locatable,  # Allow logging of location
             core.Log,  # Allow logging of all discrete events
             core.Processor,  # Allow for loading and unloading
+            core.LoadingFunction,
+            core.UnloadingFunction,
             core.HasResource,  # Add information on serving equipment
             core.EnergyUse,
         ),  # Add information on fuel
@@ -282,8 +295,8 @@ def test_Processor_ContainerDependentMovable(
         "env": env,  # The simpy environment
         "name": "Processor 1",  # Name
         "geometry": geometry_a,  # It is located at location A
-        "unloading_func": model.get_unloading_func(1),  # Unloading rate
-        "loading_func": model.get_loading_func(2),  # Loading rate
+        "unloading_rate": 1,  # Unloading rate
+        "loading_rate": 2,  # Loading rate
         "energy_use_loading": energy_use_loading,  # Variable fuel use
         "energy_use_sailing": energy_use_sailing,  # Variable fuel use
         "energy_use_unloading": energy_use_loading,
@@ -292,8 +305,8 @@ def test_Processor_ContainerDependentMovable(
         "env": env,  # The simpy environment
         "name": "Processor 2",  # Name
         "geometry": geometry_b,  # It is located at location B
-        "unloading_func": model.get_unloading_func(1),  # Unloading rate
-        "loading_func": model.get_loading_func(2),  # Loading rate
+        "unloading_rate": 1,  # Unloading rate
+        "loading_rate": 2,  # Loading rate
         "energy_use_loading": energy_use_unloading,  # Variable fuel use
         "energy_use_sailing": energy_use_sailing,  # Variable fuel use
         "energy_use_unloading": energy_use_unloading,

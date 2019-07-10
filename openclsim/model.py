@@ -64,6 +64,9 @@ class Activity(core.Identifiable, core.Log):
             else self.env.all_of(events=start_event)
         )
 
+        if type(stop_event) == list:
+            stop_event = self.env.any_of(events=stop_event)
+
         if not start_event:
             self.stop_event = (
                 stop_event
@@ -292,7 +295,7 @@ def single_run_process(
         destination.container.capacity - destination.container.expected_level,
     )
 
-    if isinstance(mover, core.HasDepthRestriction) and isinstance(
+    if hasattr(mover, "check_optimal_filling") and isinstance(
         destination, core.HasWeather
     ):
         amount = min(
@@ -1035,9 +1038,9 @@ def get_kwargs_from_properties(environment, name, properties, sites):
 
     # Processor
     if "loadingRate" in properties:
-        kwargs["loading_func"] = get_loading_func(properties["loadingRate"])
+        kwargs["loading_rate"] = get_loading_func(properties["loadingRate"])
     if "unloadingRate" in properties:
-        kwargs["unloading_func"] = get_unloading_func(properties["unloadingRate"])
+        kwargs["unloading_rate"] = get_unloading_func(properties["unloadingRate"])
 
     return kwargs
 
@@ -1083,10 +1086,7 @@ def get_loading_func(property):
         )[0]
     else:
         # given property is a flat rate
-        return (
-            lambda current_level, desired_level: (desired_level - current_level)
-            / property
-        )
+        return property
 
 
 def get_unloading_func(property):
@@ -1104,10 +1104,7 @@ def get_unloading_func(property):
         )[0]
     else:
         # given property is a flat rate
-        return (
-            lambda current_level, desired_level: (current_level - desired_level)
-            / property
-        )
+        return property
 
 
 def energy_use_sailing(

@@ -64,6 +64,8 @@ def TransportProcessingResource():
             core.Log,  # Allow logging of all discrete events
             core.ContainerDependentMovable,  # A moving container, so capacity and location
             core.Processor,  # Allow for loading and unloading
+            core.LoadingFunction,
+            core.UnloadingFunction,
             core.HasResource,
         ),  # Add information on serving equipment
         {},
@@ -100,10 +102,8 @@ def test_model_one_trip(
         "env": env,  # The simpy environment
         "name": "Vessel 01",  # Name of the vessel
         "geometry": geometry_a,  # It is located at the "from location"
-        "unloading_func": model.get_unloading_func(
-            1
-        ),  # Unloading production is 1 amount / s
-        "loading_func": model.get_loading_func(1),  # Loading production is 1 amount / s
+        "loading_rate": 1,  # Unloading production is 1 amount / s
+        "unloading_rate": 1,  # Loading production is 1 amount / s
         "capacity": 1_000,  # Capacity of the vessel
         "compute_v": (lambda x: 1),
     }  # Speed is always 1 m / s
@@ -167,10 +167,8 @@ def test_model_multiple_trips(
         "env": env,  # The simpy environment
         "name": "Vessel 01",  # Name of the vessel
         "geometry": geometry_a,  # It is located at the "from location"
-        "unloading_func": model.get_unloading_func(
-            1
-        ),  # Unloading production is 1 amount / s
-        "loading_func": model.get_loading_func(1),  # Loading production is 1 amount / s
+        "loading_rate": 1,  # Unloading production is 1 amount / s
+        "unloading_rate": 1,  # Loading production is 1 amount / s
         "capacity": 1_000,  # Capacity of the vessel
         "compute_v": (lambda x: 1),
     }  # Speed is always 1 m / s
@@ -234,10 +232,8 @@ def test_start_condition(
         "env": env,  # The simpy environment
         "name": "Vessel 01",  # Name of the vessel
         "geometry": geometry_a,  # It is located at the "from location"
-        "unloading_func": model.get_unloading_func(
-            1
-        ),  # Unloading production is 1 amount / s
-        "loading_func": model.get_loading_func(1),  # Loading production is 1 amount / s
+        "loading_rate": 1,  # Unloading production is 1 amount / s
+        "unloading_rate": 1,  # Loading production is 1 amount / s
         "capacity": 1_000,  # Capacity of the vessel
         "compute_v": (lambda x: 1),
     }  # Speed is always 1 m / s
@@ -289,8 +285,8 @@ def test_container_transfer_hub(env, geometry_a, Location, TransportProcessingRe
         env=env,
         name="Delivery",
         geometry=geometry_a,
-        loading_func=model.get_loading_func(1),
-        unloading_func=model.get_unloading_func(1),
+        loading_rate=1,
+        unloading_rate=1,
         capacity=100,
         compute_v=(lambda x: 1),
     )
@@ -299,8 +295,8 @@ def test_container_transfer_hub(env, geometry_a, Location, TransportProcessingRe
         env=env,
         name="Collection",
         geometry=geometry_a,
-        loading_func=model.get_loading_func(2),
-        unloading_func=model.get_unloading_func(2),
+        loading_rate=2,
+        unloading_rate=2,
         capacity=100,
         compute_v=(lambda x: 1),
     )
@@ -362,10 +358,8 @@ def test_and_condition(
         "env": env,  # The simpy environment
         "name": "Vessel 01",  # Name of the vessel
         "geometry": geometry_a,  # It is located at the "from location"
-        "unloading_func": model.get_unloading_func(
-            1
-        ),  # Unloading production is 1 amount / s
-        "loading_func": model.get_loading_func(1),  # Loading production is 1 amount / s
+        "loading_rate": 1,
+        "unloading_rate": 1,
         "capacity": 1_000,  # Capacity of the vessel
         "compute_v": (lambda x: 1),
     }  # Speed is always 1 m / s
@@ -439,10 +433,8 @@ def test_sequential_activities(
         "env": env,  # The simpy environment
         "name": "Vessel",
         "geometry": geometry_a,  # It is located at the "from location"
-        "unloading_func": model.get_unloading_func(
-            1
-        ),  # Unloading production is 1 amount / s
-        "loading_func": model.get_loading_func(1),  # Loading production is 1 amount / s
+        "loading_rate": 1,
+        "unloading_rate": 1,
         "capacity": 1_000,  # Capacity of the vessel
         "compute_v": (lambda x: 1),
     }  # Speed is always 1 m / s

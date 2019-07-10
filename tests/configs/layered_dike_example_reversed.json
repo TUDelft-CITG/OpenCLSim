@@ -127,7 +127,9 @@
       "type": [
         "HasResource",
         "Movable",
-        "Processor"
+        "Processor",
+        "LoadingFunction", 
+        "UnloadingFunction"
       ],
       "properties": {
         "location": "home",
@@ -149,7 +151,9 @@
       "type": [
         "HasResource",
         "Locatable",
-        "Processor"
+        "Processor", 
+        "LoadingFunction", 
+        "UnloadingFunction"
       ],
       "properties": {
         "location": "levvel reserve",
@@ -169,7 +173,9 @@
       "type": [
         "HasResource",
         "Movable",
-        "Processor"
+        "Processor", 
+        "LoadingFunction", 
+        "UnloadingFunction"
       ],
       "properties": {
         "location": "home",

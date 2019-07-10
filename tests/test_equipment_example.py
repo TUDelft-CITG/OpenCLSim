@@ -80,6 +80,8 @@ def available_equipment(env):
             core.Log,
             core.ContainerDependentMovable,
             core.Processor,
+            core.LoadingFunction,
+            core.UnloadingFunction,
             core.HasResource,
             core.Locatable,
         ),
@@ -87,6 +89,8 @@ def available_equipment(env):
             core.Identifiable,
             core.Log,
             core.Processor,
+            core.LoadingFunction,
+            core.UnloadingFunction,
             core.HasResource,
             core.Locatable,
         ),
@@ -103,10 +107,8 @@ def available_equipment(env):
             processing_speed = (
                 data["capacity"] * ureg.ton / ureg.minute
             ).to_base_units()
-            kwargs["loading_func"] = model.get_loading_func(processing_speed.magnitude)
-            kwargs["unloading_func"] = model.get_unloading_func(
-                processing_speed.magnitude
-            )
+            kwargs["loading_rate"] = processing_speed.magnitude
+            kwargs["unloading_rate"] = processing_speed.magnitude
         if issubclass(klass, core.HasResource):
             kwargs["nr_resources"] = 1
         if issubclass(klass, core.HasContainer):

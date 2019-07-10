@@ -574,7 +574,7 @@ class HasSoil:
         """Remove soil from self."""
 
         # If soil is a mover, the mover should be initialized with an empty soil dict after emptying
-        if isinstance(self, Movable) and volume == self.container.level:
+        if isinstance(self, Movable) and 0 == self.container.level:
             removed_soil = list(self.soil.items())[0]
 
             self.soil = {}
@@ -776,14 +776,16 @@ class HasWorkabilityCriteria:
                             )
                         )
 
-            self.work_restrictions[location.name][criterion.condition] = np.array(
+            self.work_restrictions[location.name][criterion.event_name] = np.array(
                 ranges
             )
 
-    def check_weather_restriction(self, location, amount):
+    def check_weather_restriction(self, location, event):
         waiting = []
 
         if location.name not in self.work_restrictions.keys():
+            self.calc_work_restrictions(location)
+        elif event not in self.work_restrictions[location.name].keys():
             self.calc_work_restrictions(location)
 
         for criterion in sorted(self.work_restrictions[location.name].keys()):
@@ -825,13 +827,17 @@ class WorkabilityCriterion:
     """WorkabilityCriterion class
 
     Used to add limits to vessels (and therefore acitivities)
+    event_name: name of the event for which this criterion applies
     condition: column name of the metocean data (Hs, Tp, etc.)
+    minimum: minimum value
     maximum: maximum value
     window_length: minimal length of the window (minutes)"""
 
     def __init__(
         self,
+        event_name,
         condition,
+        minimum=math.inf * -1,
         maximum=math.inf,
         window_length=datetime.timedelta(minutes=60),
         *args,
@@ -839,7 +845,9 @@ class WorkabilityCriterion:
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
+        self.event_name = event_name
         self.condition = condition
+        self.minimum = minimum
         self.maximum = maximum
         self.window_length = window_length
 
@@ -860,8 +868,8 @@ class HasDepthRestriction:
     def __init__(
         self,
         compute_draught,
-        waves,
         ukc,
+        waves=None,
         filling=None,
         min_filling=None,
         max_filling=None,
@@ -873,8 +881,8 @@ class HasDepthRestriction:
 
         # Information required to determine whether vessel can access an area
         self.compute_draught = compute_draught
-        self.waves = waves
         self.ukc = ukc
+        self.waves = waves
 
         # Information require to self-select filling degree
         if min_filling is not None and max_filling is not None:
@@ -909,8 +917,10 @@ class HasDepthRestriction:
             # Determine characteristics based on filling
             draught = self.compute_draught(filling_degree)
             duration = datetime.timedelta(
-                seconds=processor.unloading_func(
-                    self.container.level, filling_degree * self.container.capacity
+                seconds=processor.unloading(
+                    self,
+                    location,
+                    self.container.level - filling_degree * self.container.capacity,
                 )
             )
 
@@ -1054,15 +1064,28 @@ class HasDepthRestriction:
     def calc_required_depth(self, draught, wave_height):
         required_depth = np.nan
 
-        for i, wave in enumerate(self.waves):
-            if wave_height <= wave:
-                required_depth = self.ukc[i] + draught
+        if self.waves:
+            for i, wave in enumerate(self.waves):
+                if wave_height <= wave:
+                    required_depth = self.ukc[i] + draught
 
-        return required_depth
+            return required_depth
+
+        else:
+            return self.ukc + draught
 
     def check_optimal_filling(self, loader, unloader, origin, destination):
         # Calculate depth restrictions
         if not self.depth_data:
+            if isinstance(origin, HasWeather):
+                self.calc_depth_restrictions(origin, loader)
+            if isinstance(destination, HasWeather):
+                self.calc_depth_restrictions(destination, unloader)
+
+        elif (
+            origin.name not in self.depth_data.keys()
+            or destination.name not in self.depth_data.keys()
+        ):
             if isinstance(origin, HasWeather):
                 self.calc_depth_restrictions(origin, loader)
             if isinstance(destination, HasWeather):
@@ -1085,8 +1108,11 @@ class HasDepthRestriction:
 
                 if len(ranges) != 0:
                     # Determine length of cycle
-                    loading = loader.loading_func(
-                        self.container.level, filling * self.container.capacity
+                    loading = loader.loading(
+                        origin,
+                        destination,
+                        filling * self.container.capacity - self.container.level,
+                        False,
                     )
 
                     orig = shapely.geometry.asShape(origin.geometry)
@@ -1243,7 +1269,7 @@ class Movable(SimpyObject, Locatable):
     def current_speed(self):
         return self.v
 
-    def get_distance(self, origin, destination):
+    def get_distance(self, origin, destination, verbose=True):
         if not isinstance(self, Routeable):
             orig = shapely.geometry.asShape(self.geometry)
             dest = shapely.geometry.asShape(destination.geometry)
@@ -1311,9 +1337,10 @@ class Movable(SimpyObject, Locatable):
                     distb = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
                     sailtimeb = distb / self.current_speed
 
-                self.log_entry(
-                    "Sailing", self.env.now + sailtimeb, 0, dest, self.ActivityID
-                )
+                if verbose:
+                    self.log_entry(
+                        "Sailing", self.env.now + sailtimeb, 0, dest, self.ActivityID
+                    )
 
                 dista += distb
                 sailtime += sailtimeb
@@ -1416,34 +1443,141 @@ class Log(SimpyObject):
         return json
 
 
+class LoadingFunction:
+    """
+    Create a loading function and add it a processor.
+    This is a generic and easy to read function, you can create your own LoadingFunction class and add this as a mixin.
+
+    loading_rate: the rate at which units are loaded per second
+    load_manoeuvring: the time it takes to manoeuvring in minutes
+    """
+
+    def __init__(self, loading_rate, load_manoeuvring=0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.loading_rate = loading_rate
+        self.load_manoeuvring = load_manoeuvring
+
+    def loading(self, origin, destination, amount):
+        """
+        Determine the duration based on an amount that is given as input with processing.
+        The origin an destination are also part of the input, because other functions might be dependent on the location.
+        """
+
+        if not hasattr(self.loading_rate, "__call__"):
+            return amount / self.loading_rate + self.load_manoeuvring * 60
+        else:
+            return (
+                self.loading_rate(self.container.level, self.container.level + amount)
+                + self.load_manoeuvring * 60
+            )
+
+
+class UnloadingFunction:
+    """
+    Create an unloading function and add it a processor.
+    This is a generic and easy to read function, you can create your own LoadingFunction class and add this as a mixin.
+
+    unloading_rate: the rate at which units are loaded per second
+    unload_manoeuvring: the time it takes to manoeuvring in minutes
+    """
+
+    def __init__(self, unloading_rate, unload_manoeuvring=0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.unloading_rate = unloading_rate
+        self.unload_manoeuvring = unload_manoeuvring
+
+    def unloading(self, origin, destination, amount):
+        """
+        Determine the duration based on an amount that is given as input with processing.
+        The origin an destination are also part of the input, because other functions might be dependent on the location.
+        """
+
+        if not hasattr(self.unloading_rate, "__call__"):
+            return amount / self.unloading_rate + self.load_manoeuvring * 60
+        else:
+            return (
+                self.unloading_rate(self.container.level, self.container.level - amount)
+                + self.load_manoeuvring * 60
+            )
+
+
+class LoadingSubcycle:
+    """
+    loading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
+    """
+
+    def __init__(self, loading_subcycle, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+
+        self.loading_subcycle = loading_subcycle
+
+        if type(self.loading_subcycle) != pd.core.frame.DataFrame:
+            raise AssertionError("The subcycle table has to be a Pandas DataFrame")
+        else:
+            if "EventName" not in list(
+                self.loading_subcycle.columns
+            ) or "Duration" not in list(self.loading_subcycle.columns):
+                raise AssertionError(
+                    "The subcycle table should specify events and durations with the columnnames EventName and Duration respectively."
+                )
+
+
+class UnloadingSubcycle:
+    """
+    unloading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
+    """
+
+    def __init__(self, unloading_subcycle, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+
+        self.unloading_subcycle = unloading_subcycle
+
+        if type(self.unloading_subcycle) != pd.core.frame.DataFrame:
+            raise AssertionError("The subcycle table has to be a Pandas DataFrame")
+        else:
+            if "EventName" not in list(
+                self.unloading_subcycle.columns
+            ) or "Duration" not in list(self.unloading_subcycle.columns):
+                raise AssertionError(
+                    "The subcycle table should specify events and durations with the columnnames EventName and Duration respectively."
+                )
+
+
 class Processor(SimpyObject):
     """Processor class
 
-    loading_func:   lambda function to determine the duration of loading event based on input parameter amount
-    unloading_func: lambda function to determine the duration of unloading event based on input parameter amount
-
-    Example function could be as follows.
-    The duration of the loading event is equal to: amount / rate.
-
-    def loading_func(loading_rate):
-        return lambda x: x / loading_rate
-
-
-    A more complex example function could be as follows.
-    The duration of the loading event is equal to: manoeuvring + amount / rate + cleaning.
-
-    def loading_func(manoeuvring, loading_rate, cleaning):
-        return lambda x: datetime.timedelta(minutes = manoeuvring).total_seconds() + \
-                         x / loading_rate + \
-                         datetime.timedelta(minutes = cleaning).total_seconds()
-
+    Adds the loading and unloading components and checks for possible downtime. 
+    
+    If the processor class is used to allow "loading" or "unloading" the mixins "LoadingFunction" and "UnloadingFunction" should be added as well. 
+    If no functions are used a subcycle should be used, which is possible with the mixins "LoadingSubcycle" and "UnloadingSubcycle".
     """
 
-    def __init__(self, loading_func=None, unloading_func=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.loading_func = loading_func
-        self.unloading_func = unloading_func
+
+        assert (
+            hasattr(self, "loading")
+            or hasattr(self, "unloading")
+            or hasattr(self, "loading_subcycle")
+            or hasattr(self, "unloading_subcycle")
+        )
+
+        # Inherit the (un)loading functions
+        if not hasattr(self, "loading"):
+            self.loading = None
+        if not hasattr(self, "unloading"):
+            self.unloading = None
+
+        # Inherit the subcycles
+        if not hasattr(self, "loading_subcycle"):
+            self.loading_subcycle = None
+        if not hasattr(self, "unloading_subcycle"):
+            self.unloading_subcycle = None
 
     # noinspection PyUnresolvedReferences
     def process(self, ship, desired_level, site):
@@ -1466,56 +1600,33 @@ class Processor(SimpyObject):
             amount = desired_level - current_level
             origin = site
             destination = ship
-            rate = self.loading_func
+            rate = self.loading
+            subcycle = self.loading_subcycle
         else:
             amount = current_level - desired_level
             origin = ship
             destination = site
-            rate = self.unloading_func
+            rate = self.unloading
+            subcycle = self.unloading_subcycle
 
-        # Activity can only start if environmental conditions allow it
-        time = 0
+        if rate:
+            duration = rate(origin, destination, amount)
 
-        duration = rate(current_level, desired_level)
-
-        # Waiting event should be combined to check if all conditions allow starting
-        while time != self.env.now:
-            time = self.env.now
-
-            # Check weather
-            yield from self.checkWeather(origin, destination, amount)
-
-            # Check tide
-            yield from self.checkTide(
-                ship=ship, site=site, desired_level=desired_level, duration=duration
+            yield from self.check_possible_downtime(
+                origin, destination, duration, ship, site, desired_level, amount
             )
 
-            # Check spill
-            yield from self.checkSpill(origin, destination, amount)
+        elif type(subcycle) == pd.core.frame.DataFrame:
+            duration = 0
 
-        origin.log_entry(
-            "unloading start",
-            self.env.now,
-            origin.container.level,
-            self.geometry,
-            self.ActivityID,
-        )
-        destination.log_entry(
-            "loading start",
-            self.env.now,
-            destination.container.level,
-            self.geometry,
-            self.ActivityID,
-        )
-
-        # Add spill the location where processing is taking place
-        self.addSpill(origin, destination, amount, duration)
-
-        # Shift soil from container volumes
-        self.shiftSoil(origin, destination, amount)
+            for _ in range(int(amount)):
+                for i in subcycle.index:
+                    duration += subcycle.iloc[i]["Duration"] * 60
+                    yield from self.check_possible_downtime(
+                        origin, destination, duration, ship, site, desired_level, 1
+                    )
 
         # Shift volumes in containers
-
         start_time = self.env.now
         yield origin.container.get(amount)
         end_time = self.env.now
@@ -1536,14 +1647,30 @@ class Processor(SimpyObject):
             )
 
         # Checkout the time
-        current_level = ship.container.level
-        log = "loading" if current_level < desired_level else "unloading"
-        self.log_entry(
-            log + " start", self.env.now, amount, self.geometry, self.ActivityID
+        origin.log_entry(
+            "unloading start", self.env.now, amount, self.geometry, self.ActivityID
         )
+        destination.log_entry(
+            "loading start", self.env.now, amount, self.geometry, self.ActivityID
+        )
+
+        # Check out the time
         yield self.env.timeout(duration)
-        self.log_entry(
-            log + " stop", self.env.now, amount, self.geometry, self.ActivityID
+
+        # Add spill the location where processing is taking place
+        self.addSpill(origin, destination, amount, duration)
+
+        # Shift soil from container volumes
+        self.shiftSoil(origin, destination, amount)
+
+        # Compute the energy use
+        self.computeEnergy(duration, origin, destination)
+
+        origin.log_entry(
+            "unloading stop", self.env.now, amount, self.geometry, self.ActivityID
+        )
+        destination.log_entry(
+            "loading stop", self.env.now, amount, self.geometry, self.ActivityID
         )
 
         start_time = self.env.now
@@ -1565,26 +1692,28 @@ class Processor(SimpyObject):
                 activityID=self.ActivityID,
             )
 
-        # Compute the energy use
-        self.computeEnergy(duration, origin, destination)
-
-        # Log the end of the activity
-        origin.log_entry(
-            "unloading stop",
-            self.env.now,
-            origin.container.level,
-            self.geometry,
-            self.ActivityID,
-        )
-        destination.log_entry(
-            "loading stop",
-            self.env.now,
-            destination.container.level,
-            self.geometry,
-            self.ActivityID,
-        )
-
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
+
+    def check_possible_downtime(
+        self, origin, destination, duration, ship, site, desired_level, amount
+    ):
+        # Activity can only start if environmental conditions allow it
+        time = 0
+
+        # Waiting event should be combined to check if all conditions allow starting
+        while time != self.env.now:
+            time = self.env.now
+
+            # Check weather
+            yield from self.checkWeather(origin, destination, duration)
+
+            # Check tide
+            yield from self.checkTide(
+                ship=ship, site=site, desired_level=desired_level, duration=duration
+            )
+
+            # Check spill
+            yield from self.checkSpill(origin, destination, amount)
 
     def computeEnergy(self, duration, origin, destination):
         """
@@ -1778,7 +1907,7 @@ class Processor(SimpyObject):
                     )
 
     def checkTide(self, ship, site, desired_level, duration):
-        if isinstance(ship, HasDepthRestriction) and isinstance(site, HasWeather):
+        if hasattr(ship, "calc_depth_restrictions") and isinstance(site, HasWeather):
             max_level = max(ship.container.level, desired_level)
             fill_degree = max_level / ship.container.capacity
             yield from ship.check_depth_restriction(site, fill_degree, duration)

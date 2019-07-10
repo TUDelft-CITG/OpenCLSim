@@ -24,12 +24,15 @@ import numpy as np
 
 
 def test_halem_single_path():
-    T0 = "16/04/2019 01:00:00"
-    d = datetime.datetime.strptime(T0, "%d/%m/%Y %H:%M:%S")
+    name_textfile_load = "tests/Roadmap/General_waddensea_dt=3h"
+    with open(name_textfile_load, "rb") as input:
+        Roadmap = pickle.load(input)
+    t0 = "17/04/2019 01:00:00"
+    start = (4.788699, 52.970919)
+    stop = (4.541166, 53.093619)
+    d = datetime.datetime.strptime(t0, "%d/%m/%Y %H:%M:%S")
     t0 = d.timestamp()
-
     simulation_start = datetime.datetime.fromtimestamp(t0)
-
     my_env = simpy.Environment(initial_time=time.mktime(simulation_start.timetuple()))
     my_env.epoch = time.mktime(simulation_start.timetuple())
 
@@ -87,37 +90,29 @@ def test_halem_single_path():
         "capacity": 5_000,  # The capacity of the site
         "level": 5_000,
     }  # The actual volume of the site
-
     data_node = {
         "env": my_env,  # The simpy environment defined in the first cel
         "name": "Intermediate site",  # The name of the site
         "geometry": [],
     }  # The coordinates of the project site
-
     data_to_site = {
         "env": my_env,  # The simpy environment defined in the first cel
         "name": "Dumplocatie",  # The name of the site
         "geometry": [],  # The coordinates of the project site
         "capacity": 5_000,  # The capacity of the site
         "level": 0,
-    }
-
-    path = [[4.788699, 52.970919], [4.541166, 53.093619]]
-
+    }  # The actual volume of the site (empty of course)
+    path = [start, stop]
     Nodes, Edges = connect_sites_with_path(
         data_from_site, data_to_site, data_node, path
     )
-
     FG = nx.Graph()
-
     positions = {}
     for node in Nodes:
         positions[node.name] = (node.geometry.x, node.geometry.y)
         FG.add_node(node.name, geometry=node.geometry)
-
     for edge in Edges:
         FG.add_edge(edge[0].name, edge[1].name, weight=1)
-
     TransportProcessingResource = type(
         "TransportProcessingResource",
         (
@@ -125,6 +120,8 @@ def test_halem_single_path():
             core.Log,  # Allow logging of all discrete events
             core.ContainerDependentMovable,  # A moving container, so capacity and location
             core.Processor,  # Allow for loading and unloading
+            core.LoadingFunction,
+            core.UnloadingFunction,
             core.HasResource,  # Add information on serving equipment
             core.Routeable,
         ),  # Initialize spill terms
@@ -134,34 +131,20 @@ def test_halem_single_path():
     def compute_v_provider(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
 
-    def compute_loading(rate):
-        return (
-            lambda current_level, desired_level: (desired_level - current_level) / rate
-        )
-
-    def compute_unloading(rate):
-        return (
-            lambda current_level, desired_level: (current_level - desired_level) / rate
-        )
-
     route = []
-
-    # TSHD variables
     data_hopper = {
         "env": my_env,  # The simpy environment
         "name": "Hopper 01",  # Name
         "geometry": Nodes[0].geometry,  # It starts at the "from site"
-        "loading_func": compute_loading(1.5),  # Loading rate
-        "unloading_func": compute_unloading(1.5),  # Unloading rate
+        "loading_rate": 1.5,  # Loading rate
+        "unloading_rate": 1.5,  # Unloading rate
         "capacity": 5_000,  # Capacity of the hopper - "Beunvolume"
         "compute_v": compute_v_provider(7, 5),  # Variable speed
         "route": route,
         "optimize_route": True,  # Optimize the Route
         "optimization_type": "time",  # Optimize for the fastest path
     }
-
     hopper = TransportProcessingResource(**data_hopper)
-
     activity = model.Activity(
         env=my_env,  # The simpy environment defined in the first cel
         name="Soil movement",  # We are moving soil
@@ -173,38 +156,21 @@ def test_halem_single_path():
         start_event=None,  # We can start right away
         stop_event=None,
     )  # We stop once there is nothing more to move
-
-    name_textfile_load = "tests/Roadmap/General_waddensea_dt=3h"
-
-    with open(name_textfile_load, "rb") as input:
-        Roadmap = pickle.load(input)
     my_env.FG = FG
     my_env.Roadmap = Roadmap
     my_env.run()
+    path_MVK = []
+    for g in hopper.log["Geometry"]:
+        path_MVK.append([g.x, g.y])
 
-    path = []
-    for point in hopper.log["Geometry"]:
-        x = point.x
-        y = point.y
-        path.append((x, y))
-    path = np.array(path[6:-6])
-
-    time_path = []
-
-    for t in hopper.log["Timestamp"][6:-6]:
-        time_path.append(t.timestamp())
-
-    time_path = np.array(time_path)
-
-    start_loc = (Nodes[0].geometry.x, Nodes[0].geometry.y)
-    stop_loc = (Nodes[1].geometry.x, Nodes[1].geometry.y)
-
-    T0 = datetime.datetime.fromtimestamp(time_path[0]).strftime("%d/%m/%Y %H:%M:%S")
-    path_calc, time_path__calc, _ = halem.HALEM_time(
-        start_loc, stop_loc, T0, 7, Roadmap
+    path_MVK = np.array(path_MVK)
+    path_MVK = path_MVK[3:-4, :]
+    vmax = 7
+    path_halem, time_halem, _ = halem.HALEM_time(
+        start, stop, "17/04/2019 1:58:18", vmax, Roadmap
     )
 
-    np.testing.assert_array_equal(path_calc[1:-2], path[:-2])
+    np.testing.assert_array_equal(path_halem[:-1, :], path_MVK[:-1, :])
 
 
 def test_halem_not_twice_the_same():
@@ -311,6 +277,8 @@ def test_halem_not_twice_the_same():
             core.Log,  # Allow logging of all discrete events
             core.ContainerDependentMovable,  # A moving container, so capacity and location
             core.Processor,  # Allow for loading and unloading
+            core.LoadingFunction,
+            core.UnloadingFunction,
             core.HasResource,  # Add information on serving equipment
             core.Routeable,
         ),  # Initialize spill terms
@@ -320,16 +288,6 @@ def test_halem_not_twice_the_same():
     def compute_v_provider(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
 
-    def compute_loading(rate):
-        return (
-            lambda current_level, desired_level: (desired_level - current_level) / rate
-        )
-
-    def compute_unloading(rate):
-        return (
-            lambda current_level, desired_level: (current_level - desired_level) / rate
-        )
-
     route = []
 
     # TSHD variables
@@ -337,8 +295,8 @@ def test_halem_not_twice_the_same():
         "env": my_env,  # The simpy environment
         "name": "Hopper 01",  # Name
         "geometry": Nodes[0].geometry,  # It starts at the "from site"
-        "loading_func": compute_loading(1.5),  # Loading rate
-        "unloading_func": compute_unloading(1.5),  # Unloading rate
+        "loading_rate": 1.5,  # Loading rate
+        "unloading_rate": 1.5,  # Unloading rate
         "capacity": 5_000,  # Capacity of the hopper - "Beunvolume"
         "compute_v": compute_v_provider(7, 5),  # Variable speed
         "route": route,
@@ -492,6 +450,8 @@ def test_halem_hopper_on_route():
             core.Log,  # Allow logging of all discrete events
             core.ContainerDependentMovable,  # A moving container, so capacity and location
             core.Processor,  # Allow for loading and unloading
+            core.LoadingFunction,
+            core.UnloadingFunction,
             core.HasResource,  # Add information on serving equipment
             core.Routeable,
         ),  # Initialize spill terms
@@ -501,16 +461,6 @@ def test_halem_hopper_on_route():
     def compute_v_provider(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
 
-    def compute_loading(rate):
-        return (
-            lambda current_level, desired_level: (desired_level - current_level) / rate
-        )
-
-    def compute_unloading(rate):
-        return (
-            lambda current_level, desired_level: (current_level - desired_level) / rate
-        )
-
     route = []
 
     # TSHD variables
@@ -518,8 +468,8 @@ def test_halem_hopper_on_route():
         "env": my_env,  # The simpy environment
         "name": "Hopper 01",  # Name
         "geometry": Nodes[0].geometry,  # It starts at the "from site"
-        "loading_func": compute_loading(1.5),  # Loading rate
-        "unloading_func": compute_unloading(1.5),  # Unloading rate
+        "loading_rate": 1.5,  # Loading rate
+        "unloading_rate": 1.5,  # Unloading rate
         "capacity": 5_000,  # Capacity of the hopper - "Beunvolume"
         "compute_v": compute_v_provider(7, 5),  # Variable speed
         "route": route,
