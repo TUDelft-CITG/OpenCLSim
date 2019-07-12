@@ -306,8 +306,8 @@ def single_run_process(
         )
 
     if isinstance(mover, core.Routeable) and mover.optimize_route == True and type(mover.loadfactors) != type(None):
-        opt_LF = mover.check_optimal_filling_Roadmap(origin, destination, amount)
-        amount = amount * opt_LF
+        opt_LF = mover.check_optimal_filling_Roadmap(loader, unloader, origin, destination)
+        amount = min(amount, mover.container.capacity * opt_LF)
 
     if hasattr(stop_reservation_waiting_event, "__call__"):
         stop_reservation_waiting_event = stop_reservation_waiting_event()
