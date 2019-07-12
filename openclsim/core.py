@@ -1170,30 +1170,43 @@ class Routeable:
             else:
                 print("No known optimization method selected")
     
-    def check_optimal_filling_Roadmap(self, origin, destination, capacity):
+    def check_optimal_filling_Roadmap(self, loader, unloader, origin, destination):
         orig = shapely.geometry.asShape(origin.geometry)
         dest = shapely.geometry.asShape(destination.geometry)
         start = (orig.x, orig.y)
         stop = (dest.x, dest.y)
         prods = []
-        tQQ= []
+        tQQ = []
+
         for i in range(len(self.loadfactors)):
+            # Departure time sailing empty
             t0 = datetime.datetime.fromtimestamp(self.env.now).strftime("%d/%m/%Y %H:%M:%S")
+            
+            # Duration of sailing empty
             _ , TT, _ = self.optimization_func(stop, start, t0, self.env.Roadmap.vship[0,-1], self.env.Roadmap)
-            TTT = self.env.now + (TT[-1] - TT[0]) + self.loading_func(0, capacity*self.loadfactors[i])
+            
+            # Duration of sailing empty + loading
+            TTT = self.env.now + (TT[-1] - TT[0]) + loader.loading_func(0, self.container.capacity*self.loadfactors[i])
+            
+            # Departure time sailing full
             t0 = datetime.datetime.fromtimestamp(TTT).strftime("%d/%m/%Y %H:%M:%S")
 
+            # Duration of sailing full
             _ , TT, _ = self.optimization_func(start, stop, t0, self.env.Roadmap.vship[i,-1], self.env.Roadmap)
-            TTT = TTT + (TT[-1] - TT[0]) + self.unloading_func(capacity*self.loadfactors[i], 0)
-            prod = capacity*self.loadfactors[i] / (TTT - self.env.now)
+            
+            # Duration of sailing empty + loading + sailing full + unloading
+            TTT += (TT[-1] - TT[0]) + unloader.unloading_func(self.container.capacity*self.loadfactors[i], 0)
+            
+            # Determine production
+            prod = (self.loadfactors[i] * self.container.capacity) / (TTT - self.env.now)
             prods.append(prod)
             tQQ.append(t0)
             
-        otpimal_loadfactor = self.loadfactors[np.argwhere(prods == max(prods))[0,0]]
-        # print('optimal load factor is:', otpimal_loadfactor)
+        optimal_loadfactor = self.loadfactors[np.argwhere(prods == max(prods))[0,0]]
+        # print('optimal load factor is:', optimal_loadfactor)
         # print(start,stop, tQQ[np.argwhere(prods == max(prods))[0,0]], self.env.Roadmap.vship[np.argwhere(prods == max(prods))[0,0]])
 
-        return otpimal_loadfactor
+        return optimal_loadfactor
 
 class Movable(SimpyObject, Locatable):
     """Movable class
