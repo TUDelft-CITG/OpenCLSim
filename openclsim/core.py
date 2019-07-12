@@ -1187,6 +1187,8 @@ class Routeable:
             
             # Duration of sailing empty + loading
             TTT = self.env.now + (TT[-1] - TT[0]) + loader.loading_func(0, self.container.capacity*self.loadfactors[i])
+            duration_sailing_empty = TT[-1] - TT[0]
+            duration_dredging = loader.loading_func(0, self.container.capacity*self.loadfactors[i])
             
             # Departure time sailing full
             t0 = datetime.datetime.fromtimestamp(TTT).strftime("%d/%m/%Y %H:%M:%S")
@@ -1196,16 +1198,15 @@ class Routeable:
             
             # Duration of sailing empty + loading + sailing full + unloading
             TTT += (TT[-1] - TT[0]) + unloader.unloading_func(self.container.capacity*self.loadfactors[i], 0)
-            
+            duration_sailing_full = TT[-1] - TT[0]
+            duration_unloading = unloader.unloading_func(self.container.capacity*self.loadfactors[i], 0)
+           
             # Determine production
-            prod = (self.loadfactors[i] * self.container.capacity) / (TTT - self.env.now)
+            prod = (self.loadfactors[i] * self.container.capacity) / (duration_sailing_empty + duration_sailing_full + duration_dredging + duration_unloading)
             prods.append(prod)
             tQQ.append(t0)
-            
+           
         optimal_loadfactor = self.loadfactors[np.argwhere(prods == max(prods))[0,0]]
-        # print('optimal load factor is:', optimal_loadfactor)
-        # print(start,stop, tQQ[np.argwhere(prods == max(prods))[0,0]], self.env.Roadmap.vship[np.argwhere(prods == max(prods))[0,0]])
-
         return optimal_loadfactor
 
 class Movable(SimpyObject, Locatable):
@@ -1327,7 +1328,6 @@ class Movable(SimpyObject, Locatable):
                     start = (orig.x, orig.y)
                     stop = (dest.x, dest.y)
 
-                    # print(start, stop, t0, vship)
                     path, time, dist = self.optimization_func(
                         start, stop, t0, vship, self.env.Roadmap
                     )
