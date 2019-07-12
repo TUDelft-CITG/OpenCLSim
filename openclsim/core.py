@@ -1203,8 +1203,8 @@ class Routeable:
             tQQ.append(t0)
             
         optimal_loadfactor = self.loadfactors[np.argwhere(prods == max(prods))[0,0]]
-        print('optimal load factor is:', optimal_loadfactor)
-        print(start,stop, tQQ[np.argwhere(prods == max(prods))[0,0]], self.env.Roadmap.vship[np.argwhere(prods == max(prods))[0,0]])
+        # print('optimal load factor is:', optimal_loadfactor)
+        # print(start,stop, tQQ[np.argwhere(prods == max(prods))[0,0]], self.env.Roadmap.vship[np.argwhere(prods == max(prods))[0,0]])
 
         return optimal_loadfactor
 
@@ -1327,7 +1327,7 @@ class Movable(SimpyObject, Locatable):
                     start = (orig.x, orig.y)
                     stop = (dest.x, dest.y)
 
-                    print(start, stop, t0, vship)
+                    # print(start, stop, t0, vship)
                     path, time, dist = self.optimization_func(
                         start, stop, t0, vship, self.env.Roadmap
                     )
