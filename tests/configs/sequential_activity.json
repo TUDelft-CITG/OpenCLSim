@@ -84,7 +84,7 @@
             "id": "hopper1",
             "name": "Hoppy McHopper",
             "type": [
-                "ContainerDependentMovable", "HasResource", "Processor"
+                "ContainerDependentMovable", "HasResource", "Processor", "LoadingFunction", "UnloadingFunction"
             ],
             "properties": {
                 "speed": [
@@ -125,7 +125,7 @@
             "id": "hopper2",
             "name": "Hippety Hoppety",
             "type": [
-                "ContainerDependentMovable", "HasResource", "Processor"
+                "ContainerDependentMovable", "HasResource", "Processor", "LoadingFunction", "UnloadingFunction"
             ],
             "properties": {
                 "speed": [

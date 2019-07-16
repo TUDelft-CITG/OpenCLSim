@@ -120,6 +120,8 @@ def test_halem_single_path():
             core.Log,  # Allow logging of all discrete events
             core.ContainerDependentMovable,  # A moving container, so capacity and location
             core.Processor,  # Allow for loading and unloading
+            core.LoadingFunction,
+            core.UnloadingFunction,
             core.HasResource,  # Add information on serving equipment
             core.Routeable,
         ),  # Initialize spill terms
@@ -129,23 +131,13 @@ def test_halem_single_path():
     def compute_v_provider(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
 
-    def compute_loading(rate):
-        return (
-            lambda current_level, desired_level: (desired_level - current_level) / rate
-        )
-
-    def compute_unloading(rate):
-        return (
-            lambda current_level, desired_level: (current_level - desired_level) / rate
-        )
-
     route = []
     data_hopper = {
         "env": my_env,  # The simpy environment
         "name": "Hopper 01",  # Name
         "geometry": Nodes[0].geometry,  # It starts at the "from site"
-        "loading_func": compute_loading(1.5),  # Loading rate
-        "unloading_func": compute_unloading(1.5),  # Unloading rate
+        "loading_rate": 1.5,  # Loading rate
+        "unloading_rate": 1.5,  # Unloading rate
         "capacity": 5_000,  # Capacity of the hopper - "Beunvolume"
         "compute_v": compute_v_provider(7, 5),  # Variable speed
         "route": route,
@@ -172,7 +164,7 @@ def test_halem_single_path():
         path_MVK.append([g.x, g.y])
 
     path_MVK = np.array(path_MVK)
-    path_MVK = path_MVK[5:-6, :]
+    path_MVK = path_MVK[3:-4, :]
     vmax = 7
     path_halem, time_halem, _ = halem.HALEM_time(
         start, stop, "17/04/2019 1:58:18", vmax, Roadmap
@@ -285,6 +277,8 @@ def test_halem_not_twice_the_same():
             core.Log,  # Allow logging of all discrete events
             core.ContainerDependentMovable,  # A moving container, so capacity and location
             core.Processor,  # Allow for loading and unloading
+            core.LoadingFunction,
+            core.UnloadingFunction,
             core.HasResource,  # Add information on serving equipment
             core.Routeable,
         ),  # Initialize spill terms
@@ -294,16 +288,6 @@ def test_halem_not_twice_the_same():
     def compute_v_provider(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
 
-    def compute_loading(rate):
-        return (
-            lambda current_level, desired_level: (desired_level - current_level) / rate
-        )
-
-    def compute_unloading(rate):
-        return (
-            lambda current_level, desired_level: (current_level - desired_level) / rate
-        )
-
     route = []
 
     # TSHD variables
@@ -311,8 +295,8 @@ def test_halem_not_twice_the_same():
         "env": my_env,  # The simpy environment
         "name": "Hopper 01",  # Name
         "geometry": Nodes[0].geometry,  # It starts at the "from site"
-        "loading_func": compute_loading(1.5),  # Loading rate
-        "unloading_func": compute_unloading(1.5),  # Unloading rate
+        "loading_rate": 1.5,  # Loading rate
+        "unloading_rate": 1.5,  # Unloading rate
         "capacity": 5_000,  # Capacity of the hopper - "Beunvolume"
         "compute_v": compute_v_provider(7, 5),  # Variable speed
         "route": route,
@@ -466,6 +450,8 @@ def test_halem_hopper_on_route():
             core.Log,  # Allow logging of all discrete events
             core.ContainerDependentMovable,  # A moving container, so capacity and location
             core.Processor,  # Allow for loading and unloading
+            core.LoadingFunction,
+            core.UnloadingFunction,
             core.HasResource,  # Add information on serving equipment
             core.Routeable,
         ),  # Initialize spill terms
@@ -475,16 +461,6 @@ def test_halem_hopper_on_route():
     def compute_v_provider(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
 
-    def compute_loading(rate):
-        return (
-            lambda current_level, desired_level: (desired_level - current_level) / rate
-        )
-
-    def compute_unloading(rate):
-        return (
-            lambda current_level, desired_level: (current_level - desired_level) / rate
-        )
-
     route = []
 
     # TSHD variables
@@ -492,8 +468,8 @@ def test_halem_hopper_on_route():
         "env": my_env,  # The simpy environment
         "name": "Hopper 01",  # Name
         "geometry": Nodes[0].geometry,  # It starts at the "from site"
-        "loading_func": compute_loading(1.5),  # Loading rate
-        "unloading_func": compute_unloading(1.5),  # Unloading rate
+        "loading_rate": 1.5,  # Loading rate
+        "unloading_rate": 1.5,  # Unloading rate
         "capacity": 5_000,  # Capacity of the hopper - "Beunvolume"
         "compute_v": compute_v_provider(7, 5),  # Variable speed
         "route": route,

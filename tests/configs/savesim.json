@@ -63,7 +63,7 @@
             "id": "hopper",
             "name": "Boaty McBoatstone",
             "type": [
-                "ContainerDependentMovable", "HasResource", "Processor", "EnergyUse"
+                "ContainerDependentMovable", "HasResource", "Processor", "EnergyUse", "LoadingFunction", "UnloadingFunction"
             ],
             "properties": {
                 "speed": [

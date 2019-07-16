@@ -54,6 +54,8 @@ def TransportProcessingResource():
             core.Log,
             core.ContainerDependentMovable,
             core.Processor,
+            core.LoadingFunction,
+            core.UnloadingFunction,
             core.HasResource,
         ),
         {},
@@ -88,22 +90,12 @@ def test_temp_site_no_stop(env, Location, TransportProcessingResource):
     def compute_v_provider(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
 
-    def compute_loading(rate):
-        return (
-            lambda current_level, desired_level: (desired_level - current_level) / rate
-        )
-
-    def compute_unloading(rate):
-        return (
-            lambda current_level, desired_level: (current_level - desired_level) / rate
-        )
-
     data_tpr = {
         "env": env,  # The simpy environment
         "name": "Transport Processing Resource",  # Name
         "geometry": from_site.geometry,  # It starts at the "from site"
-        "loading_func": compute_loading(1.5),  # Loading rate
-        "unloading_func": compute_unloading(1.5),  # Unloading rate
+        "loading_rate": 1.5,  # Loading rate
+        "unloading_rate": 1.5,  # Unloading rate
         "capacity": 5_000,  # Capacity
         "compute_v": compute_v_provider(5, 4.5),
     }  # Variable speed
@@ -164,22 +156,12 @@ def test_temp_site_with_stop(env, Location, TransportProcessingResource):
     def compute_v_provider(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
 
-    def compute_loading(rate):
-        return (
-            lambda current_level, desired_level: (desired_level - current_level) / rate
-        )
-
-    def compute_unloading(rate):
-        return (
-            lambda current_level, desired_level: (current_level - desired_level) / rate
-        )
-
     data_tpr = {
         "env": env,  # The simpy environment
         "name": "Transport Processing Resource",  # Name
         "geometry": from_site.geometry,  # It starts at the "from site"
-        "loading_func": compute_loading(1.5),  # Loading rate
-        "unloading_func": compute_unloading(1.5),  # Unloading rate
+        "loading_rate": 1.5,  # Loading rate
+        "unloading_rate": 1.5,  # Unloading rate
         "capacity": 5_000,  # Capacity
         "compute_v": compute_v_provider(5, 4.5),
     }  # Variable speed
