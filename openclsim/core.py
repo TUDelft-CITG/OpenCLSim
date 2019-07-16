@@ -1212,9 +1212,10 @@ class Routeable:
             _ , TT, _ = self.optimization_func(stop, start, t0, self.env.Roadmap.vship[0,-1], self.env.Roadmap)
             
             # Duration of sailing empty + loading
-            TTT = self.env.now + (TT[-1] - TT[0]) + loader.loading_func(0, self.container.capacity*self.loadfactors[i])
+            duration_dredging = (self.container.capacity*self.loadfactors[i]) / self.loading_rate
+
+            TTT = self.env.now + (TT[-1] - TT[0]) + duration_dredging
             duration_sailing_empty = TT[-1] - TT[0]
-            duration_dredging = loader.loading_func(0, self.container.capacity*self.loadfactors[i])
             
             # Departure time sailing full
             t0 = datetime.datetime.fromtimestamp(TTT).strftime("%d/%m/%Y %H:%M:%S")
@@ -1223,9 +1224,10 @@ class Routeable:
             _ , TT, _ = self.optimization_func(start, stop, t0, self.env.Roadmap.vship[i,-1], self.env.Roadmap)
             
             # Duration of sailing empty + loading + sailing full + unloading
-            TTT += (TT[-1] - TT[0]) + unloader.unloading_func(self.container.capacity*self.loadfactors[i], 0)
+            duration_unloading = (self.container.capacity*self.loadfactors[i]) / self.unloading_rate
+            TTT += (TT[-1] - TT[0]) + duration_unloading
             duration_sailing_full = TT[-1] - TT[0]
-            duration_unloading = unloader.unloading_func(self.container.capacity*self.loadfactors[i], 0)
+            
            
             # Determine production
             prod = (self.loadfactors[i] * self.container.capacity) / (duration_sailing_empty + duration_sailing_full + duration_dredging + duration_unloading)
