@@ -511,66 +511,64 @@ def test_halem_hopper_on_route():
 
 
 def test_load_factor_optimiziation_with_HALEM():
-    class flow_potentiaalveld():
+    class flow_potentiaalveld:
         def __init__(self, name):
             d = datetime.datetime.strptime("23/03/2019 00:00:00", "%d/%m/%Y %H:%M:%S")
-            t0 = d.timestamp() 
-            x = np.arange(0,1,0.1)
-            y = np.arange(0,1,0.1)
-            t = np.arange(t0, (t0+2*30*60*30),30*60)
+            t0 = d.timestamp()
+            x = np.arange(0, 1, 0.1)
+            y = np.arange(0, 1, 0.1)
+            t = np.arange(t0, (t0 + 2 * 30 * 60 * 30), 30 * 60)
 
             y, x = np.meshgrid(y, x)
             y = y.reshape(y.size)
             x = x.reshape(y.size)
 
-            nodes = np.zeros((len(x),2))
-            nodes[:,0] = y
-            nodes[:,1] = x
+            nodes = np.zeros((len(x), 2))
+            nodes[:, 0] = y
+            nodes[:, 1] = x
 
             u = []
             v = []
             for node in nodes:
-                ut = 0*t + 2 * np.cos(np.pi*(node[0]))
-                vt = 0*t - 2 * np.cos(np.pi*(node[1]))
+                ut = 0 * t + 2 * np.cos(np.pi * (node[0]))
+                vt = 0 * t - 2 * np.cos(np.pi * (node[1]))
                 u.append(ut)
                 v.append(vt)
 
             self.v = np.transpose(np.array(v))
             self.u = np.transpose(np.array(u))
-            self.WD = np.random.rand(self.u.shape[0],self.u.shape[1])*12 + 8
+            self.WD = np.random.rand(self.u.shape[0], self.u.shape[1]) * 12 + 8
             self.t = t
             self.nodes = nodes
             self.tria = Delaunay(nodes)
 
-    nl = (3,2.5)
+    nl = (3, 2.5)
     dx_min = 0.01
     blend = 1
-    vship = np.array([[8],
-                      [10],
-                      [7]
-                     ])
-    WD_min = np.array([7,7,7])
+    vship = np.array([[8], [10], [7]])
+    WD_min = np.array([7, 7, 7])
     WPVI = np.array([10000, 10000, 10000])
     ukc = 1.5
     WWL = 40
-    name_textfile_flow = 'maaktnietuit'
+    name_textfile_flow = "maaktnietuit"
     Load_flow = flow_potentiaalveld
     number_of_neighbor_layers = 1
 
     loadfactors = [0, 0.99999, 1]
 
-    Roadmap = halem.Mesh_maker.Graph_flow_model(name_textfile_flow, 
-                                            dx_min, 
-                                            blend, 
-                                            nl, 
-                                            number_of_neighbor_layers, 
-                                            vship, 
-                                            Load_flow, 
-                                            WD_min,
-                                            WPVI,
-                                            WWL = WWL,
-                                            ukc = ukc,
-                                           )
+    Roadmap = halem.Mesh_maker.Graph_flow_model(
+        name_textfile_flow,
+        dx_min,
+        blend,
+        nl,
+        number_of_neighbor_layers,
+        vship,
+        Load_flow,
+        WD_min,
+        WPVI,
+        WWL=WWL,
+        ukc=ukc,
+    )
 
     def connect_sites_with_path(data_from_site, data_to_site, data_node, path):
         Nodes = []
@@ -688,8 +686,7 @@ def test_load_factor_optimiziation_with_HALEM():
         "route": route,
         "optimize_route": True,  # Optimize the Route
         "optimization_type": "time",  # Optimize for the fastest path
-        "loadfactors": loadfactors
-
+        "loadfactors": loadfactors,
     }
     hopper = TransportProcessingResource(**data_hopper)
     activity = model.Activity(
@@ -707,7 +704,9 @@ def test_load_factor_optimiziation_with_HALEM():
     my_env.Roadmap = Roadmap
     my_env.run()
 
-    no_opt_LF = len(list(set(np.array(hopper.log['Value'])[np.array(hopper.log['Value']) > 0])))
+    no_opt_LF = len(
+        list(set(np.array(hopper.log["Value"])[np.array(hopper.log["Value"]) > 0]))
+    )
 
     t0 = "17/04/2019 01:00:00"
     start = (0.2, 0.2)
@@ -779,7 +778,6 @@ def test_load_factor_optimiziation_with_HALEM():
         "route": route,
         "optimize_route": True,  # Optimize the Route
         "optimization_type": "time",  # Optimize for the fastest path
-
     }
     hopper = TransportProcessingResource(**data_hopper)
     activity = model.Activity(
@@ -797,6 +795,8 @@ def test_load_factor_optimiziation_with_HALEM():
     my_env.Roadmap = Roadmap
     my_env.run()
 
-    opt_LF = (len(list(set(np.array(hopper.log['Value'])[np.array(hopper.log['Value']) > 0]))))
+    opt_LF = len(
+        list(set(np.array(hopper.log["Value"])[np.array(hopper.log["Value"]) > 0]))
+    )
 
-    assert(opt_LF < no_opt_LF)
+    assert opt_LF < no_opt_LF
