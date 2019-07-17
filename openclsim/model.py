@@ -282,10 +282,16 @@ def single_run_process(
     verbose: optional boolean indicating whether additional debug prints should be given.
     """
 
-    if hasattr(env, 'print_progress'):
+    if hasattr(env, "print_progress"):
         if env.print_progress == True:
-            clear_output(wait = True)
-            print(np.round(destination.container.level / destination.container.capacity*100, 2), '%')
+            clear_output(wait=True)
+            print(
+                np.round(
+                    destination.container.level / destination.container.capacity * 100,
+                    2,
+                ),
+                "%",
+            )
 
     # Required for logging from json
     if not hasattr(activity_log, "loader"):
@@ -308,8 +314,14 @@ def single_run_process(
             amount, mover.check_optimal_filling(loader, unloader, origin, destination)
         )
 
-    if isinstance(mover, core.Routeable) and mover.optimize_route == True and type(mover.loadfactors) != type(None):
-        opt_LF = mover.check_optimal_filling_Roadmap(loader, unloader, origin, destination)
+    if (
+        isinstance(mover, core.Routeable)
+        and mover.optimize_route == True
+        and type(mover.loadfactors) != type(None)
+    ):
+        opt_LF = mover.check_optimal_filling_Roadmap(
+            loader, unloader, origin, destination
+        )
         amount = min(amount, mover.container.capacity * opt_LF)
 
     if hasattr(stop_reservation_waiting_event, "__call__"):
@@ -376,8 +388,6 @@ def single_run_process(
         _release_resource(
             resource_requests, origin.resource, kept_resource=mover.resource
         )
-
-
 
         # move the mover to the destination
         if not mover.is_at(destination):
