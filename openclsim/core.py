@@ -1212,7 +1212,7 @@ class Routeable:
             _ , TT, _ = self.optimization_func(stop, start, t0, self.env.Roadmap.vship[0,-1], self.env.Roadmap)
             
             # Duration of sailing empty + loading
-            duration_dredging = (self.container.capacity*self.loadfactors[i]) / self.loading_rate
+            duration_dredging = self.loading(None, None, self.container.capacity*self.loadfactors[i])
 
             TTT = self.env.now + (TT[-1] - TT[0]) + duration_dredging
             duration_sailing_empty = TT[-1] - TT[0]
@@ -1224,7 +1224,7 @@ class Routeable:
             _ , TT, _ = self.optimization_func(start, stop, t0, self.env.Roadmap.vship[i,-1], self.env.Roadmap)
             
             # Duration of sailing empty + loading + sailing full + unloading
-            duration_unloading = (self.container.capacity*self.loadfactors[i]) / self.unloading_rate
+            duration_unloading = self.unloading(None, None, self.container.capacity*self.loadfactors[i])
             TTT += (TT[-1] - TT[0]) + duration_unloading
             duration_sailing_full = TT[-1] - TT[0]
             
