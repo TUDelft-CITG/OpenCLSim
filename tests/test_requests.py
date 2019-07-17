@@ -93,6 +93,9 @@ def test_dual_processors(env, geometry_a):
         geometry=geometry_a,
     )
 
+    processor1.ActivityID = "Test activity"
+    processor2.ActivityID = "Test activity"
+
     env.process(processor1.process(limited_container_1, 400, unlimited_container))
     env.process(processor2.process(limited_container_2, 400, unlimited_container))
     env.run()
@@ -143,6 +146,9 @@ def test_dual_processors_with_limit(env, geometry_a):
         unloading_rate=1,
         geometry=geometry_a,
     )
+
+    processor1.ActivityID = "Test activity"
+    processor2.ActivityID = "Test activity"
 
     env.process(
         model.single_run_process(

@@ -148,6 +148,7 @@ def test_calc_restrictions(
     }  # The filling degree
 
     mover = Mover(**data)
+    mover.ActivityID = "Test activity"
 
     data = {
         "env": env,  # The simpy environment
