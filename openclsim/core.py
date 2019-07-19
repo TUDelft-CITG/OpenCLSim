@@ -1648,15 +1648,15 @@ class Processor(SimpyObject):
 
         # Checkout the time
         origin.log_entry(
-            "unloading start", self.env.now, amount, self.geometry, self.ActivityID
+            "unloading start", self.env.now, origin.container.level, self.geometry, self.ActivityID
         )
         destination.log_entry(
-            "loading start", self.env.now, amount, self.geometry, self.ActivityID
+            "loading start", self.env.now, destination.container.level, self.geometry, self.ActivityID
         )
 
         if self != origin and self != destination:
             self.log_entry(
-            "loading start", self.env.now, amount, self.geometry, self.ActivityID
+            "loading start", self.env.now, 0, self.geometry, self.ActivityID
         )
 
         # Check out the time
@@ -1672,10 +1672,10 @@ class Processor(SimpyObject):
         self.computeEnergy(duration, origin, destination)
 
         origin.log_entry(
-            "unloading stop", self.env.now, amount, self.geometry, self.ActivityID
+            "unloading stop", self.env.now, origin.container.level, self.geometry, self.ActivityID
         )
         destination.log_entry(
-            "loading stop", self.env.now, amount, self.geometry, self.ActivityID
+            "loading stop", self.env.now, destination.container.level, self.geometry, self.ActivityID
         )
 
         if self != origin and self != destination:
