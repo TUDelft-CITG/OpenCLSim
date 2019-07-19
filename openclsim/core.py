@@ -1106,7 +1106,7 @@ class HasDepthRestriction:
             for filling in fill_degrees:
                 ranges = self.depth_data[destination.name][filling]["Ranges"]
 
-                if len(ranges) != 0:dji phantom 4
+                if len(ranges) != 0:
                     # Determine length of cycle
                     loading = loader.loading(
                         origin,
