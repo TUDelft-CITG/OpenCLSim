@@ -1106,13 +1106,12 @@ class HasDepthRestriction:
             for filling in fill_degrees:
                 ranges = self.depth_data[destination.name][filling]["Ranges"]
 
-                if len(ranges) != 0:
+                if len(ranges) != 0:dji phantom 4
                     # Determine length of cycle
                     loading = loader.loading(
                         origin,
                         destination,
                         filling * self.container.capacity - self.container.level,
-                        False,
                     )
 
                     orig = shapely.geometry.asShape(origin.geometry)
@@ -1230,6 +1229,7 @@ class Movable(SimpyObject, Locatable):
             # Determine distance based on geometry objects
             # Determine speed based on filling degree
             distance, speed = self.get_distance(self.geometry, destination)
+
         else:
             # Determine distance based on geometry objects
             distance = self.get_distance(self.geometry, destination)
@@ -1495,11 +1495,11 @@ class UnloadingFunction:
         """
 
         if not hasattr(self.unloading_rate, "__call__"):
-            return amount / self.unloading_rate + self.load_manoeuvring * 60
+            return amount / self.unloading_rate + self.unload_manoeuvring * 60
         else:
             return (
                 self.unloading_rate(self.container.level, self.container.level - amount)
-                + self.load_manoeuvring * 60
+                + self.unload_manoeuvring * 60
             )
 
 
@@ -1654,6 +1654,11 @@ class Processor(SimpyObject):
             "loading start", self.env.now, amount, self.geometry, self.ActivityID
         )
 
+        if self != origin and self != destination:
+            self.log_entry(
+            "loading start", self.env.now, amount, self.geometry, self.ActivityID
+        )
+
         # Check out the time
         yield self.env.timeout(duration)
 
@@ -1670,6 +1675,11 @@ class Processor(SimpyObject):
             "unloading stop", self.env.now, amount, self.geometry, self.ActivityID
         )
         destination.log_entry(
+            "loading stop", self.env.now, amount, self.geometry, self.ActivityID
+        )
+
+        if self != origin and self != destination:
+            self.log_entry(
             "loading stop", self.env.now, amount, self.geometry, self.ActivityID
         )
 
