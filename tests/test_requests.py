@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `digital_twin` package."""
+"""Tests for `openclsim` package."""
 
 import pytest
 import simpy
@@ -13,9 +13,9 @@ import numpy as np
 
 from click.testing import CliRunner
 
-from digital_twin import core
-from digital_twin import model
-from digital_twin import cli
+from openclsim import core
+from openclsim import model
+from openclsim import cli
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 @pytest.fixture
 def env():
     simulation_start = datetime.datetime(2019, 1, 1)
-    my_env = simpy.Environment(initial_time = time.mktime(simulation_start.timetuple()))
+    my_env = simpy.Environment(initial_time=time.mktime(simulation_start.timetuple()))
     my_env.epoch = time.mktime(simulation_start.timetuple())
     return my_env
 
@@ -47,23 +47,54 @@ def locatable_a(geometry_a):
 def locatable_b(geometry_b):
     return core.Locatable(geometry_b)
 
+
 class BasicStorageUnit(core.HasContainer, core.HasResource, core.Locatable, core.Log):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
-class Processor(core.Processor, core.Log, core.Locatable, core.HasResource):
+class Processor(
+    core.Processor,
+    core.LoadingFunction,
+    core.UnloadingFunction,
+    core.Log,
+    core.Locatable,
+    core.HasResource,
+    core.Identifiable,
+):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+
 def test_dual_processors(env, geometry_a):
     # move content from two different limited containers to an unlimited container at the same time
-    limited_container_1 = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=0, nr_resources=1)
-    limited_container_2 = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=0, nr_resources=1)
-    unlimited_container = BasicStorageUnit(env=env, geometry = geometry_a, capacity=2000, level=1000, nr_resources=100)
+    limited_container_1 = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=1000, level=0, nr_resources=1
+    )
+    limited_container_2 = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=1000, level=0, nr_resources=1
+    )
+    unlimited_container = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=2000, level=1000, nr_resources=100
+    )
 
-    processor1 = Processor(env=env, loading_func=model.get_loading_func(2), unloading_func=model.get_unloading_func(2), geometry = geometry_a)
-    processor2 = Processor(env=env, loading_func=model.get_loading_func(1), unloading_func=model.get_unloading_func(1), geometry = geometry_a)
+    processor1 = Processor(
+        env=env,
+        name="Processor 1",
+        loading_rate=2,
+        unloading_rate=2,
+        geometry=geometry_a,
+    )
+    processor2 = Processor(
+        env=env,
+        name="Processor 2",
+        loading_rate=1,
+        unloading_rate=1,
+        geometry=geometry_a,
+    )
+
+    processor1.ActivityID = "Test activity"
+    processor2.ActivityID = "Test activity"
 
     env.process(processor1.process(limited_container_1, 400, unlimited_container))
     env.process(processor2.process(limited_container_2, 400, unlimited_container))
@@ -88,16 +119,59 @@ def test_dual_processors(env, geometry_a):
 
 def test_dual_processors_with_limit(env, geometry_a):
     # move content into a limited container, have two process wait for each other to finish
-    unlimited_container_1 = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=100)
-    unlimited_container_2 = BasicStorageUnit(env=env, geometry = geometry_a, capacity=1000, level=1000, nr_resources=100)
-    unlimited_container_3 = BasicStorageUnit(env=env, geometry = geometry_a, capacity=2000, level=0, nr_resources=100)
-    limited_container = BasicStorageUnit(env=env, geometry = geometry_a, capacity=2000, level=0, nr_resources=1)
+    unlimited_container_1 = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=1000, level=1000, nr_resources=100
+    )
+    unlimited_container_2 = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=1000, level=1000, nr_resources=100
+    )
+    unlimited_container_3 = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=2000, level=0, nr_resources=100
+    )
+    limited_container = BasicStorageUnit(
+        env=env, geometry=geometry_a, capacity=2000, level=0, nr_resources=1
+    )
 
-    processor1 = Processor(env=env, loading_func=model.get_loading_func(1), unloading_func=model.get_unloading_func(1), geometry = geometry_a)
-    processor2 = Processor(env=env, loading_func=model.get_loading_func(1), unloading_func=model.get_unloading_func(1), geometry = geometry_a)
+    processor1 = Processor(
+        env=env,
+        name="Processor 1",
+        loading_rate=1,
+        unloading_rate=1,
+        geometry=geometry_a,
+    )
+    processor2 = Processor(
+        env=env,
+        name="Processor 2",
+        loading_rate=1,
+        unloading_rate=1,
+        geometry=geometry_a,
+    )
 
-    env.process(model.single_run_process(processor1, env, unlimited_container_1, limited_container, processor1, unlimited_container_3, processor1))
-    env.process(model.single_run_process(processor2, env, unlimited_container_2, limited_container, processor2, unlimited_container_3, processor2))
+    processor1.ActivityID = "Test activity"
+    processor2.ActivityID = "Test activity"
+
+    env.process(
+        model.single_run_process(
+            processor1,
+            env,
+            unlimited_container_1,
+            limited_container,
+            processor1,
+            unlimited_container_3,
+            processor1,
+        )
+    )
+    env.process(
+        model.single_run_process(
+            processor2,
+            env,
+            unlimited_container_2,
+            limited_container,
+            processor2,
+            unlimited_container_3,
+            processor2,
+        )
+    )
     env.run()
 
     # Simultaneous accessing limited_container, so waiting event of 1000 seconds

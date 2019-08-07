@@ -11,26 +11,33 @@ jobs:
       - run:
           name: Install coverage badge beforte running tests
           command: |
-            docker exec -it hydraulic-infrastructure-realisation bash -c "pip install coverage coverage-badge "
+            docker exec -it openclsim bash -c "pip install coverage coverage-badge"
       
       - run:
-          name: Run tests
+          name: Run tests - Pytest
           command: |
-            docker exec -it hydraulic-infrastructure-realisation bash -c "python setup.py test"
-            docker cp hydraulic-infrastructure-realisation:/Hydraulic-Infrastructure-Realisation/htmlcov /tmp/artifacts
+            docker exec -it openclsim bash -c "python setup.py test"
+            docker cp openclsim:/OpenCLSim/htmlcov /tmp/artifacts
       
+      - run:
+          name: Run tests - Formatting
+          command: |
+            docker exec -it openclsim bash -c "pip install black"
+            docker exec -it openclsim bash -c "black --check openclsim"
+            docker exec -it openclsim bash -c "black --check tests"
+
       - run:
           name: Build docs
           command: |
-            docker exec -it hydraulic-infrastructure-realisation bash -c "pip install sphinx"
-            docker exec -it hydraulic-infrastructure-realisation bash -c "python setup.py docs"
-            docker cp hydraulic-infrastructure-realisation:/Hydraulic-Infrastructure-Realisation/docs/_build/html /tmp/artifacts/docs
+            docker exec -it openclsim bash -c "pip install sphinx"
+            docker exec -it openclsim bash -c "python setup.py docs"
+            docker cp openclsim:/OpenCLSim/docs/_build/html /tmp/artifacts/docs
       
       - run:
           name: Generate coverage badge
           command: |
-            docker exec -it hydraulic-infrastructure-realisation bash -c "coverage-badge -o coverage.svg"
-            docker cp hydraulic-infrastructure-realisation:/Hydraulic-Infrastructure-Realisation/coverage.svg /tmp/artifacts/
+            docker exec -it openclsim bash -c "coverage-badge -o coverage.svg"
+            docker cp openclsim:/OpenCLSim/coverage.svg /tmp/artifacts/
       
       - store_artifacts:
           path: /tmp/artifacts

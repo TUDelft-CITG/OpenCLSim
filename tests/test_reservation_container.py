@@ -1,18 +1,18 @@
 import simpy
 
-from digital_twin.core import ReservationContainer
+from openclsim.core import ReservationContainer
 
 
 class DummyShip:
     def __init__(self, env, name, capacity, relay_container, stop_event):
         self.env = env
-        self.print_tag = name + ':'
+        self.print_tag = name + ":"
         self.capacity = capacity
         self.relay_container = relay_container
         self.stop_event = stop_event
 
     def print(self, *args):
-        print(self.env.now, '-', self.print_tag, *args)
+        print(self.env.now, "-", self.print_tag, *args)
 
 
 class DeliveryShip(DummyShip):
@@ -24,23 +24,30 @@ class DeliveryShip(DummyShip):
 
     def delivery_process(self):
         while not self.stop_event.processed:
-            self.print('determining amount to load')
-            amount = min(self.capacity,
-                         self.relay_container.capacity - self.relay_container.expected_level)
+            self.print("determining amount to load")
+            amount = min(
+                self.capacity,
+                self.relay_container.capacity - self.relay_container.expected_level,
+            )
             if amount > 0:
-                self.print('reserving', amount, 'space')
+                self.print("reserving", amount, "space")
                 self.relay_container.reserve_put(amount)
-                self.print('performing delivery of', amount)
+                self.print("performing delivery of", amount)
                 yield self.env.timeout(self.delivery_time)
-                self.print('arriving at container for delivery, putting', amount)
+                self.print("arriving at container for delivery, putting", amount)
                 yield self.relay_container.put(amount)
-                self.print('delivery completed')
+                self.print("delivery completed")
                 self.total_delivered += amount
             else:
-                self.print('no space available for reservation, start waiting')
-                yield self.env.any_of(events=[(self.relay_container.reserve_put_available), self.stop_event])
-                self.print('waiting stop')
-        self.print('Stop event triggered!')
+                self.print("no space available for reservation, start waiting")
+                yield self.env.any_of(
+                    events=[
+                        (self.relay_container.reserve_put_available),
+                        self.stop_event,
+                    ]
+                )
+                self.print("waiting stop")
+        self.print("Stop event triggered!")
 
 
 class CollectionShip(DummyShip):
@@ -52,23 +59,27 @@ class CollectionShip(DummyShip):
 
     def collection_process(self):
         while not self.stop_event.processed:
-            self.print('determining amount to load')
-            amount = min(self.capacity,
-                         self.relay_container.expected_level)
+            self.print("determining amount to load")
+            amount = min(self.capacity, self.relay_container.expected_level)
             if amount > 0:
-                self.print('reserving', amount, 'content')
+                self.print("reserving", amount, "content")
                 self.relay_container.reserve_get(amount)
-                self.print('arriving at container for collection, getting', amount)
+                self.print("arriving at container for collection, getting", amount)
                 yield self.relay_container.get(amount)
-                self.print('content collected, delivering to dump')
+                self.print("content collected, delivering to dump")
                 yield self.env.timeout(self.collection_time)
-                self.print('contents dumped, collection completed')
+                self.print("contents dumped, collection completed")
                 self.total_dumped += amount
             else:
-                self.print('no content available for reservation, start waiting')
-                yield self.env.any_of(events=[(self.relay_container.reserve_get_available), self.stop_event])
-                self.print('waiting stop')
-        self.print('Stop event triggered!')
+                self.print("no content available for reservation, start waiting")
+                yield self.env.any_of(
+                    events=[
+                        (self.relay_container.reserve_get_available),
+                        self.stop_event,
+                    ]
+                )
+                self.print("waiting stop")
+        self.print("Stop event triggered!")
 
 
 def test_relay_container():
@@ -79,23 +90,25 @@ def test_relay_container():
     stop_event = env.timeout(5000)
     delivery_ship = DeliveryShip(
         env=env,
-        name='delivery',
+        name="delivery",
         capacity=1000,
         relay_container=container,
         stop_event=stop_event,
-        delivery_time=2000
+        delivery_time=2000,
     )
     collection_ship = CollectionShip(
         env=env,
-        name='collection',
+        name="collection",
         capacity=500,
         relay_container=container,
         stop_event=stop_event,
-        collection_time=300
+        collection_time=300,
     )
     env.run()
 
-    assert delivery_ship.total_delivered == container.level + collection_ship.total_dumped
+    assert (
+        delivery_ship.total_delivered == container.level + collection_ship.total_dumped
+    )
     assert delivery_ship.total_delivered == 2500
     # the ships only check the timeout (stop_event) after completing a collection / delivery, so the simulation keeps
     # running a while after it has reached the timeout.
@@ -112,23 +125,25 @@ def test_relay_container_reversed_init():
     stop_event = env.timeout(5000)
     collection_ship = CollectionShip(
         env=env,
-        name='collection',
+        name="collection",
         capacity=500,
         relay_container=container,
         stop_event=stop_event,
-        collection_time=300
+        collection_time=300,
     )
     delivery_ship = DeliveryShip(
         env=env,
-        name='delivery',
+        name="delivery",
         capacity=1000,
         relay_container=container,
         stop_event=stop_event,
-        delivery_time=2000
+        delivery_time=2000,
     )
     env.run()
 
-    assert delivery_ship.total_delivered == container.level + collection_ship.total_dumped
+    assert (
+        delivery_ship.total_delivered == container.level + collection_ship.total_dumped
+    )
     assert delivery_ship.total_delivered == 2500
     # the ships only check the timeout (stop_event) after completing a collection / delivery, so the simulation keeps
     # running a while after it has reached the timeout.
@@ -142,27 +157,29 @@ def test_relay_container_several_collectors():
     stop_event = env.timeout(5000)
     delivery_ship = DeliveryShip(
         env=env,
-        name='delivery',
+        name="delivery",
         capacity=1000,
         relay_container=container,
         stop_event=stop_event,
-        delivery_time=3000
+        delivery_time=3000,
     )
     collection_ships = []
     for i in range(4):
         collection_ships.append(
             CollectionShip(
                 env=env,
-                name='collection {}'.format(i),
-                capacity=50*(i + 2),
+                name="collection {}".format(i),
+                capacity=50 * (i + 2),
                 relay_container=container,
                 stop_event=stop_event,
-                collection_time=100*(i + 1)
+                collection_time=100 * (i + 1),
             )
         )
     env.run()
 
-    total_dumped = sum(collection_ship.total_dumped for collection_ship in collection_ships)
+    total_dumped = sum(
+        collection_ship.total_dumped for collection_ship in collection_ships
+    )
     assert delivery_ship.total_delivered == total_dumped + container.level
     assert delivery_ship.total_delivered == 1700
     assert collection_ships[0].total_dumped == 300
@@ -170,6 +187,7 @@ def test_relay_container_several_collectors():
     assert collection_ships[2].total_dumped == 400
     assert collection_ships[3].total_dumped == 500
     assert env.now == 6400
+
 
 # Notice how in test_relay_container_several_collectors, the delivery ship only takes 700 units on its second run, this
 # is because it first reserves content, then "sails to its collection point, loads content, sails to the delivery point

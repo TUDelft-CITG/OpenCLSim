@@ -20,7 +20,7 @@ except VersionConflict:
     sys.exit(1)
 
 requires = [
-    "pandas",
+    "pandas>=0.24.0",
     "numpy",
     "simpy",
     "networkx",
@@ -33,9 +33,11 @@ requires = [
     "plotly",
     "simplekml",
     "nose",
-    "Flask",
+    "Flask>=1.0",
     "Flask-cors",
-    "Dill>=0.2.8",
+    "sphinx_rtd_theme",
+    "Dill",
+    "halem==0.2.0",
 ]
 
 setup_requirements = [
@@ -43,12 +45,14 @@ setup_requirements = [
 ]
 
 tests_require = [
-    "pytest",
+    "pytest==3.10.1",
     "pytest-cov",
     "pytest-timeout",
     "pytest-datadir"
 ]
 
+with open("README.md", "r") as des:
+    long_description = des.read()
 
 setup(
     author="Mark van Koningsveld",
@@ -58,27 +62,24 @@ setup(
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
     ],
-    description="The Digital Twin package aims to facilitate basic nautical traffic simulations.",
+    description="The OpenCLSim package aims to facilitate rule based planning of cyclic activities and in depth comparison of different system concepts.",
     entry_points={
         'console_scripts': [
-            'digital_twin=digital_twin.cli:cli',
+            'openclsim=openclsim.cli:cli',
         ],
     },
     install_requires=requires,
-    long_description="",  # README + '\n\n' + CHANGES,
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     include_package_data=True,
-    keywords="Digital Twin",
-    name="digital_twin",
-    packages=find_packages(include=["digital_twin"]),
+    keywords="OpenCLSim",
+    name="openclsim",
+    packages=find_packages(include=["openclsim"]),
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=tests_require,
-    url="https://github.com/TUDelft-CITG/digital_twin",
-    version="0.3.0",
+    url="https://github.com/TUDelft-CITG/openclsim",
+    version="1.0.1",
     zip_safe=False,
 )
