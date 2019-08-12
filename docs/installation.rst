@@ -12,7 +12,7 @@ To install OpenCLSim, run this command in your terminal:
 
 .. code-block:: bash
 
-    # Use pip to install OpenClSim
+    # Use pip to install OpenCLSim
     pip install openclsim
 
 This is the preferred method to install OpenCLSim, as it will always install the most recent stable release.

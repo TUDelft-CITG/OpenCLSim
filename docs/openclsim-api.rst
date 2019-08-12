@@ -2,7 +2,7 @@
 OpenCLSim API
 =============
 
-A flask server is part of the OpenCLSim package. This allows using the python code from OpenClSim from a separate front-end. 
+A flask server is part of the OpenCLSim package. This allows using the python code from OpenCLSim from a separate front-end. 
 
 Starting the Flask Server
 -------------------------

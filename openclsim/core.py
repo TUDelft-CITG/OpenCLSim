@@ -1291,6 +1291,7 @@ class Movable(SimpyObject, Locatable):
             # Determine distance based on geometry objects
             # Determine speed based on filling degree
             distance, speed = self.get_distance(self.geometry, destination)
+
         else:
             # Determine distance based on geometry objects
             distance = self.get_distance(self.geometry, destination)
@@ -1556,11 +1557,11 @@ class UnloadingFunction:
         """
 
         if not hasattr(self.unloading_rate, "__call__"):
-            return amount / self.unloading_rate + self.load_manoeuvring * 60
+            return amount / self.unloading_rate + self.unload_manoeuvring * 60
         else:
             return (
                 self.unloading_rate(self.container.level, self.container.level - amount)
-                + self.load_manoeuvring * 60
+                + self.unload_manoeuvring * 60
             )
 
 
@@ -1709,11 +1710,24 @@ class Processor(SimpyObject):
 
         # Checkout the time
         origin.log_entry(
-            "unloading start", self.env.now, amount, self.geometry, self.ActivityID
+            "unloading start",
+            self.env.now,
+            origin.container.level,
+            self.geometry,
+            self.ActivityID,
         )
         destination.log_entry(
-            "loading start", self.env.now, amount, self.geometry, self.ActivityID
+            "loading start",
+            self.env.now,
+            destination.container.level,
+            self.geometry,
+            self.ActivityID,
         )
+
+        if self != origin and self != destination:
+            self.log_entry(
+                "loading start", self.env.now, 0, self.geometry, self.ActivityID
+            )
 
         # Check out the time
         yield self.env.timeout(duration)
@@ -1728,11 +1742,24 @@ class Processor(SimpyObject):
         self.computeEnergy(duration, origin, destination)
 
         origin.log_entry(
-            "unloading stop", self.env.now, amount, self.geometry, self.ActivityID
+            "unloading stop",
+            self.env.now,
+            origin.container.level + amount,
+            self.geometry,
+            self.ActivityID,
         )
         destination.log_entry(
-            "loading stop", self.env.now, amount, self.geometry, self.ActivityID
+            "loading stop",
+            self.env.now,
+            destination.container.level + amount,
+            self.geometry,
+            self.ActivityID,
         )
+
+        if self != origin and self != destination:
+            self.log_entry(
+                "loading stop", self.env.now, amount, self.geometry, self.ActivityID
+            )
 
         start_time = self.env.now
         yield destination.container.put(amount)
