@@ -11,6 +11,7 @@ import uuid
 # package(s) related to the simulation
 import simpy
 import networkx as nx
+from halem import Base_functions as halem
 
 # spatial libraries
 import pyproj
@@ -1187,8 +1188,6 @@ class Routeable:
         self.loadfactors = loadfactors
 
         if self.optimize_route == True:
-
-            import halem
 
             if self.optimization_type == "time":
                 self.optimization_func = halem.HALEM_time
