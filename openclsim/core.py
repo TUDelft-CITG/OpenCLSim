@@ -1112,7 +1112,6 @@ class HasDepthRestriction:
                         origin,
                         destination,
                         filling * self.container.capacity - self.container.level,
-                        False,
                     )
 
                     orig = shapely.geometry.asShape(origin.geometry)
