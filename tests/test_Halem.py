@@ -17,7 +17,7 @@ import openclsim.plot as plot
 
 # Additional import to save the initialization of the simulation
 import openclsim.savesim as savesim
-import halem
+import halem.Base_functions as halem
 import pickle
 import networkx as nx
 import numpy as np
