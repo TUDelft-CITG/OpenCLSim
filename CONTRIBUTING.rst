@@ -131,10 +131,12 @@ To run a subset of tests::
 
 $ py.test tests.test_openclsim
 
-To make the documentation pages
+To make the documentation pages::
+
 $ make docs # for linux/osx
 
-For windows
+For windows::
+
 $ del docs\openclsim.rst
 $ del docs\modules.rst
 $ sphinx-apidoc -o docs/ openclsim
