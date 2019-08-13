@@ -24,7 +24,10 @@ import numpy as np
 from scipy.spatial import Delaunay
 
 
+# Test if the path from HALEM is correctly implemented in the log files
 def test_halem_single_path():
+
+    # imput parameters
     name_textfile_load = "tests/Roadmap/General_waddensea_dt=3h"
     with open(name_textfile_load, "rb") as input:
         Roadmap = pickle.load(input)
@@ -159,7 +162,11 @@ def test_halem_single_path():
     )  # We stop once there is nothing more to move
     my_env.FG = FG
     my_env.Roadmap = Roadmap
+
+    # Run the simulation for one trip with HALEM
     my_env.run()
+
+    # extract the path that the log files describe
     path_MVK = []
     for g in hopper.log["Geometry"]:
         path_MVK.append([g.x, g.y])
@@ -167,22 +174,25 @@ def test_halem_single_path():
     path_MVK = np.array(path_MVK)
     path_MVK = path_MVK[3:-4, :]
     vmax = 7
+
+    # calculate the same path according to HALEM
     path_halem, time_halem, _ = halem.HALEM_time(
         start, stop, "17/04/2019 1:58:18", vmax, Roadmap
     )
 
+    # test if the HALEM path is the same as the OpenCLSim path
     np.testing.assert_array_equal(path_halem[:-1, :], path_MVK[:-1, :])
 
 
+# Test if OpenCLSim takes unique paths for each trip
 def test_halem_not_twice_the_same():
-    name_textfile_load = "tests/Roadmap/General_waddensea_dt=3h"
 
+    # imput parameters
+    name_textfile_load = "tests/Roadmap/General_waddensea_dt=3h"
     with open(name_textfile_load, "rb") as input:
         Roadmap = pickle.load(input)
     t0 = Roadmap.t[1]
-
     simulation_start = datetime.datetime.fromtimestamp(t0)
-
     my_env = simpy.Environment(initial_time=time.mktime(simulation_start.timetuple()))
     my_env.epoch = time.mktime(simulation_start.timetuple())
 
@@ -321,26 +331,27 @@ def test_halem_not_twice_the_same():
 
     my_env.FG = FG
     my_env.Roadmap = Roadmap
+
+    # Run the simulation for multiple paths
     my_env.run()
 
+    # Extract the paths from the log files
     path = []
     for point in hopper.log["Geometry"]:
         x = point.x
         y = point.y
         path.append((x, y))
     path = np.array(path)
-
     M = np.array(hopper.log["Message"])
     sailing_full_idx = np.argwhere(M == "sailing filled start")
     sailing_empt_idx = np.argwhere(M == "sailing empty start")
-
     full = []
     empt = []
-
     for i in range(len(sailing_empt_idx)):
         full.append(path[sailing_full_idx[i][0] + 2 : sailing_empt_idx[i][0] - 7])
         empt.append(path[sailing_empt_idx[i][0] + 2 : sailing_full_idx[i + 1][0] - 7])
 
+    # test if all the paths are unique
     np.testing.assert_raises(
         AssertionError, np.testing.assert_array_equal, full[0], full[1]
     )
@@ -349,13 +360,14 @@ def test_halem_not_twice_the_same():
     )
 
 
+# Test if OpenCLSim uses the specified route as way points
 def test_halem_hopper_on_route():
+
+    # imput parameters
     t0 = "16/04/2019 01:00:00"
     d = datetime.datetime.strptime(t0, "%d/%m/%Y %H:%M:%S")
     t0 = d.timestamp()
-
     simulation_start = datetime.datetime.fromtimestamp(t0)
-
     my_env = simpy.Environment(initial_time=time.mktime(simulation_start.timetuple()))
     my_env.epoch = time.mktime(simulation_start.timetuple())
 
@@ -498,8 +510,11 @@ def test_halem_hopper_on_route():
         Roadmap = pickle.load(input)
     my_env.FG = FG
     my_env.Roadmap = Roadmap
+
+    # Run the simulation for OpenCLSim and HALEM with Path
     my_env.run()
 
+    # extract the path from the log files
     path = []
     for point in hopper.log["Geometry"]:
         x = point.x
@@ -507,10 +522,14 @@ def test_halem_hopper_on_route():
         path.append((x, y))
     path = np.array(path[6:-6])
 
+    # Test if the path travels trough the way-points
     assert [4.568443, 52.922208] in path
 
 
+# Test if load factor optimization is done correctly
 def test_load_factor_optimiziation_with_HALEM():
+
+    # define the flow properties
     class flow_potentiaalveld:
         def __init__(self, name):
             d = datetime.datetime.strptime("23/03/2019 00:00:00", "%d/%m/%Y %H:%M:%S")
@@ -542,6 +561,7 @@ def test_load_factor_optimiziation_with_HALEM():
             self.nodes = nodes
             self.tria = Delaunay(nodes)
 
+    # Define a simulation without optimization of the load factors
     nl = (3, 2.5)
     dx_min = 0.01
     blend = 1
@@ -556,6 +576,7 @@ def test_load_factor_optimiziation_with_HALEM():
 
     loadfactors = [0, 0.99999, 1]
 
+    # Generate the Roadmap
     Roadmap = halem.Mesh_maker.Graph_flow_model(
         name_textfile_flow,
         dx_min,
@@ -702,12 +723,16 @@ def test_load_factor_optimiziation_with_HALEM():
     )  # We stop once there is nothing more to move
     my_env.FG = FG
     my_env.Roadmap = Roadmap
+
+    # Run the simulation for no optimization of the load factors
     my_env.run()
 
+    # extract the load factors from the log files for no optimization
     no_opt_LF = len(
         list(set(np.array(hopper.log["Value"])[np.array(hopper.log["Value"]) > 0]))
     )
 
+    # Run a second simulation With optimization of the load factors
     t0 = "17/04/2019 01:00:00"
     start = (0.2, 0.2)
     stop = (0.8, 0.8)
@@ -793,10 +818,14 @@ def test_load_factor_optimiziation_with_HALEM():
     )  # We stop once there is nothing more to move
     my_env.FG = FG
     my_env.Roadmap = Roadmap
+
+    # Run the sectond simulation
     my_env.run()
 
+    # Extract the load factors from the log files
     opt_LF = len(
         list(set(np.array(hopper.log["Value"])[np.array(hopper.log["Value"]) > 0]))
     )
 
+    # Check if the loadfactor for no optimization are different than the load factors with optimization
     assert opt_LF < no_opt_LF
