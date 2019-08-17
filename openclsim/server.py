@@ -1,5 +1,6 @@
 import json
 import logging
+import traceback
 
 from flask import abort
 from flask import Flask
@@ -80,10 +81,17 @@ def simulate():
     try:
         simulation_result = simulate_from_json(config)
     except ValueError as valerr:
-        return jsonify({"error": str(valerr)})
+        trace =  traceback.format_exc()
+        resp = jsonify({"error": str(valerr), "traceback": trace})
+        resp.status_code = 400
+        return resp 
     except RuntimeError as runerr:
-        return jsonify({"error": str(runerr)})
+        trace = traceback.format_exc()
+        resp = jsonify({"error": str(runerr), "traceback": trace})
+        resp.status_code = 500
+        return resp
     except Exception as e:
+        logging.exception('unexpected error')
         abort(500, description=str(e))
         return
 
