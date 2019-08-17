@@ -37,6 +37,17 @@ class SimpyObject:
         self.env = env
 
 
+class DebugArgs:
+    """Object that logs if leftover args are passed onto it.
+    """
+
+    def __init__(self, *args, **kwargs):
+        if args or kwargs:
+            message = 'leftover arguments passed to {}, args: {},  kwargs: {}'
+            logger.warn(message.format(self, args, kwargs))
+        super().__init__()
+        
+
 class Identifiable:
     """Something that has a name and id
 
@@ -1560,12 +1571,13 @@ class Processor(SimpyObject):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
+        message = '{} has no (un)loading(_subcycle) attribute'.format(self)
         assert (
             hasattr(self, "loading")
             or hasattr(self, "unloading")
             or hasattr(self, "loading_subcycle")
             or hasattr(self, "unloading_subcycle")
-        )
+        ), message
 
         # Inherit the (un)loading functions
         if not hasattr(self, "loading"):
