@@ -852,12 +852,10 @@ class Simulation(core.Identifiable, core.Log):
         try:
             new_object = klass(**kwargs)
         except TypeError as type_err:
-            raise ValueError(
-                "Unable to instantiate an object for '"
-                + class_name
-                + "': "
-                + str(type_err)
-            )
+            # create a useful error message
+            message_template = "Unable to instantiate {} for {}: {} with arguments {}"
+            message = message_template.format(klass, class_name, type_err, kwargs)
+            raise ValueError(message)
 
         add_object_properties(new_object, properties)
 
@@ -899,7 +897,7 @@ class Simulation(core.Identifiable, core.Log):
 def get_class_from_type_list(class_name, type_list):
     mixin_classes = [core.Identifiable, core.Log] + [
         string_to_class(text) for text in type_list
-    ]
+    ] + [core.DebugArgs]
     return type(class_name, tuple(mixin_classes), {})
 
 
