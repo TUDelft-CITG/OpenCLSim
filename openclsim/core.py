@@ -43,10 +43,10 @@ class DebugArgs:
 
     def __init__(self, *args, **kwargs):
         if args or kwargs:
-            message = 'leftover arguments passed to {}, args: {},  kwargs: {}'
+            message = "leftover arguments passed to {}, args: {},  kwargs: {}"
             logger.warn(message.format(self, args, kwargs))
         super().__init__()
-        
+
 
 class Identifiable:
     """Something that has a name and id
@@ -1571,7 +1571,7 @@ class Processor(SimpyObject):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
-        message = '{} has no (un)loading(_subcycle) attribute'.format(self)
+        message = "{} has no (un)loading(_subcycle) attribute".format(self)
         assert (
             hasattr(self, "loading")
             or hasattr(self, "unloading")

@@ -81,17 +81,17 @@ def simulate():
     try:
         simulation_result = simulate_from_json(config)
     except ValueError as valerr:
-        trace =  traceback.format_exc()
+        trace = traceback.format_exc()
         resp = jsonify({"error": str(valerr), "traceback": trace})
         resp.status_code = 400
-        return resp 
+        return resp
     except RuntimeError as runerr:
         trace = traceback.format_exc()
         resp = jsonify({"error": str(runerr), "traceback": trace})
         resp.status_code = 500
         return resp
     except Exception as e:
-        logging.exception('unexpected error')
+        logging.exception("unexpected error")
         abort(500, description=str(e))
         return
 

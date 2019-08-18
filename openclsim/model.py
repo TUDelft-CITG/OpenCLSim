@@ -895,9 +895,11 @@ class Simulation(core.Identifiable, core.Log):
 
 
 def get_class_from_type_list(class_name, type_list):
-    mixin_classes = [core.Identifiable, core.Log] + [
-        string_to_class(text) for text in type_list
-    ] + [core.DebugArgs]
+    mixin_classes = (
+        [core.Identifiable, core.Log]
+        + [string_to_class(text) for text in type_list]
+        + [core.DebugArgs]
+    )
     return type(class_name, tuple(mixin_classes), {})
 
 
