@@ -8,7 +8,6 @@ import scipy.interpolate
 import scipy.integrate
 import pandas as pd
 import numpy as np
-from IPython.display import clear_output
 
 
 class Activity(core.Identifiable, core.Log):
@@ -281,17 +280,6 @@ def single_run_process(
                                     available.
     verbose: optional boolean indicating whether additional debug prints should be given.
     """
-
-    if hasattr(env, "print_progress"):
-        if env.print_progress == True:
-            clear_output(wait=True)
-            print(
-                np.round(
-                    destination.container.level / destination.container.capacity * 100,
-                    2,
-                ),
-                "%",
-            )
 
     # Required for logging from json
     if not hasattr(activity_log, "loader"):
