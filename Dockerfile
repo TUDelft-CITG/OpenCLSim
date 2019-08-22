@@ -1,4 +1,4 @@
-# Start with pyramid app image
+# Start with docker image from anaconda
 FROM continuumio/miniconda3:4.6.14
 
 # Install conda stuff first
