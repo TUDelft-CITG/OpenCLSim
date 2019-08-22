@@ -95,7 +95,10 @@ def vessel_planning(vessels, activities, colors, web=False, static=False):
         xaxis=dict(
             title="Time",
             titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
-            range=[vessel.log["Timestamp"][0], vessel.log["Timestamp"][-1]],
+            range=[
+                vessel.log["Timestamp"][0],
+                vessel.log["Timestamp"][-1] + datetime.timedelta(seconds=4 * 3600),
+            ],
         ),
         yaxis=dict(
             title="Vessels",
