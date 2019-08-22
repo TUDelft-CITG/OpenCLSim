@@ -1162,7 +1162,7 @@ class HasDepthRestriction:
         return self.compute_draught(self.container.level / self.container.capacity)
 
 
-class Routeable:
+class Routeable(Movable):
     """
     Movement travels trough a Graph. When optimize_route == True the halem package optimizes the route for different cost functions
     if the optimization_type == 'time' then the fastest path is calculated by halem
@@ -1199,6 +1199,71 @@ class Routeable:
                 self.optimization_func = halem.HALEM_co2
             else:
                 print("No known optimization method selected")
+
+    def determine_route(self, origin, destination):
+        """ Determine the fastest sailing route based on distance """
+
+        # If travelling on route is required, assert environment has a graph
+        assert hasattr(self.env, "FG")
+
+        # Origin is geom - convert to node on graph
+        geom = nx.get_node_attributes(self.env.FG, "geometry")
+        for node in geom:
+            if origin.x == geom[node].x and origin.y == geom[node].y:
+                origin = node
+                break
+
+        if not origin.x == geom[node].x and not origin.y == geom[node].y:
+            raise AssertionError("The origin cannot be found in the graph")
+
+        # Determine fastest route
+        if destination.name in list(self.env.FG.nodes):
+            return nx.dijkstra_path(self.env.FG, origin, destination.name)
+        
+        else:
+            for node in self.env.FG.nodes(data=True):
+                if node[1]["name"] == destination.name:
+                    destination = node[0]
+                    break
+
+            return nx.dijkstra_path(self.env.FG, origin, destination)
+
+        if not route:
+            raise AssertionError("The destination cannot be found in the graph")
+
+    def determine_speed(self, node_from, node_to):
+        """ Determine the sailing speed based on edge properties """
+        edge_attrs = self.env.FG.get_edge_data(node_from, node_to)
+
+        if not edge_attrs:
+            return self.current_speed
+        
+        elif "Maximum speed" in edge_attrs.keys():
+            return min(self.current_speed, edge_attrs["Maximum speed"])
+
+    def sailing_duration(self, origin, destination, verbose=True):
+        """ Determine the sailing duration based on the properties of the sailing route """
+
+        # Determine the shortest route from origin to destination
+        route = self.determine_route(origin, destination)
+
+        # Determine the distance of the route
+        distance = 0
+        duration = 0
+        
+        for i, _ in enumerate(route):
+            if i + 1 != len(route):
+                orig = shapely.geometry.asShape(geom[route[i]])
+                dest = shapely.geometry.asShape(geom[route[i + 1]])
+
+                distance += self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
+                duration += distance / self.determine_speed(route[i], route[i + 1])
+
+                self.log_entry(
+                    "Sailing", self.env.now + duration, 0, dest, self.ActivityID
+                )
+        
+        return duration
 
     def check_optimal_filling_Roadmap(self, loader, unloader, origin, destination):
         orig = shapely.geometry.asShape(origin.geometry)
@@ -1286,30 +1351,20 @@ class Movable(SimpyObject, Locatable):
 
         """determine distance between origin and destination. 
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
-        if isinstance(self, Routeable):
-            # Determine distance based on geometry objects
-            # Determine speed based on filling degree
-            distance, speed = self.get_distance(self.geometry, destination)
-
-        else:
-            # Determine distance based on geometry objects
-            distance = self.get_distance(self.geometry, destination)
-            # Determine speed based on filling degree
-            speed = self.current_speed * engine_order
+        # Determine the sailing_duration
+        sailing_duration = self.sailing_duration(self.geometry, destination)
 
         # Check out the time based on duration of sailing event
-        yield self.env.timeout(distance / speed)
+        yield self.env.timeout(sailing_duration)
 
         # Set mover geometry to destination geometry
         self.geometry = shapely.geometry.asShape(destination.geometry)
 
         # Compute the energy use
-        self.energy_use(distance, speed)
+        self.energy_use(sailing_duration)
 
         # Debug logs
-        logger.debug("  distance: " + "%4.2f" % distance + " m")
-        logger.debug("  sailing:  " + "%4.2f" % speed + " m/s")
-        logger.debug("  duration: " + "%4.2f" % ((distance / speed) / 3600) + " hrs")
+        logger.debug("  duration: " + "%4.2f" % (sailing_duration / 3600) + " hrs")
 
         if isinstance(self, Log):
             if isinstance(self, HasContainer):
@@ -1330,86 +1385,13 @@ class Movable(SimpyObject, Locatable):
     def current_speed(self):
         return self.v
 
-    def get_distance(self, origin, destination, verbose=True):
-        if not isinstance(self, Routeable):
-            orig = shapely.geometry.asShape(self.geometry)
-            dest = shapely.geometry.asShape(destination.geometry)
-            _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+    def sailing_duration(self, origin, destination, verbose=True):
+        """ Determine the sailing duration """
+        orig = shapely.geometry.asShape(self.geometry)
+        dest = shapely.geometry.asShape(destination.geometry)
+        _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
-            return distance
-
-        elif isinstance(self, Routeable):
-            # If travelling on route is required, assert environment has a graph
-            assert hasattr(self.env, "FG")
-            # Origin is geom - convert to node on graph
-            geom = nx.get_node_attributes(self.env.FG, "geometry")
-            dista = 0
-            for node in geom:
-                if origin.x == geom[node].x and origin.y == geom[node].y:
-                    origin = node
-                    break
-
-            if destination.name in list(self.env.FG.nodes):
-                route = nx.dijkstra_path(self.env.FG, origin, destination.name)
-            else:
-                for node in self.env.FG.nodes(data=True):
-                    if node[1]["name"] == destination.name:
-                        destination = node[0]
-                        break
-
-                route = nx.dijkstra_path(self.env.FG, origin, destination)
-
-            sailtime = 0
-            for node in enumerate(route):
-                from_node = route[node[0]]
-                to_node = route[node[0] + 1]
-                orig = shapely.geometry.asShape(geom[from_node])
-                dest = shapely.geometry.asShape(geom[to_node])
-
-                # Check if optimize on flowfield is possible
-                if self.optimize_route == True:
-                    assert hasattr(self.env, "Roadmap")
-                    vship = self.current_speed
-                    t0 = datetime.datetime.fromtimestamp(self.env.now).strftime(
-                        "%d/%m/%Y %H:%M:%S"
-                    )
-                    start = (orig.x, orig.y)
-                    stop = (dest.x, dest.y)
-
-                    path, time, dist = self.optimization_func(
-                        start, stop, t0, vship, self.env.Roadmap
-                    )
-
-                    for i in range(path.shape[0]):
-                        dest_temp = shapely.geometry.Point(path[i])
-                        self.log_entry(
-                            "Sailing", time[i + 1], 0, dest_temp, self.ActivityID
-                        )
-                        if i + 2 == path.shape[0]:
-                            self.log_entry(
-                                "Sailing", time[i + 1], 0, dest_temp, self.ActivityID
-                            )
-                            break
-
-                    sailtimeb = time[-1] - time[0]
-                    distb = dist[-1] - dist[0]
-
-                else:
-                    distb = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
-                    sailtimeb = distb / self.current_speed
-
-                if verbose:
-                    self.log_entry(
-                        "Sailing", self.env.now + sailtimeb, 0, dest, self.ActivityID
-                    )
-
-                dista += distb
-                sailtime += sailtimeb
-
-                if node[0] + 2 == len(route):
-                    break
-
-            return dista, (dista / sailtime)
+        return distance / self.current_speed
 
     def energy_use(self, distance, speed):
         if isinstance(self, EnergyUse):

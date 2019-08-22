@@ -1,10 +1,10 @@
 # Start with docker image from anaconda
-FROM continuumio/miniconda3
+FROM continuumio/miniconda3:4.6.14
 
 # Install conda stuff first
-RUN . /opt/conda/etc/profile.d/conda.sh && conda install numpy pandas nomkl pyproj pip
+RUN conda install numpy pandas nomkl pyproj
 # Then install rest via pip
-RUN pip install pint Flask dill 
+RUN pip install pint Flask dill
 
 ADD . /OpenCLSim
 WORKDIR /OpenCLSim
