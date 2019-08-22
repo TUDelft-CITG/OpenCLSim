@@ -1,5 +1,5 @@
-# Start with pyramid app image
-FROM continuumio/miniconda3
+# Start with docker image from anaconda
+FROM continuumio/miniconda3:4.6.14
 
 # Install conda stuff first
 RUN conda install numpy pandas nomkl pyproj

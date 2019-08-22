@@ -302,6 +302,17 @@ def single_run_process(
             amount, mover.check_optimal_filling(loader, unloader, origin, destination)
         )
 
+    # Calculate the optimal load factor (Optimal_Loadfactor in %) for combination with HALEM
+    if (
+        isinstance(mover, core.Routeable)
+        and mover.optimize_route == True
+        and type(mover.loadfactors) != type(None)
+    ):
+        Optimal_Loadfactor = mover.check_optimal_filling_Roadmap(
+            loader, unloader, origin, destination
+        )
+        amount = min(amount, mover.container.capacity * Optimal_Loadfactor)
+
     if hasattr(stop_reservation_waiting_event, "__call__"):
         stop_reservation_waiting_event = stop_reservation_waiting_event()
     elif type(stop_reservation_waiting_event) == list:
