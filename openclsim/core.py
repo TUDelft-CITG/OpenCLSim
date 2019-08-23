@@ -1179,10 +1179,12 @@ class Movable(SimpyObject, Locatable):
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
 
         # Log the start event
-        self.log_sailing(event = "start")
+        self.log_sailing(event="start")
 
         # Determine the sailing_duration
-        sailing_duration = self.sailing_duration(self.geometry, destination, engine_order)
+        sailing_duration = self.sailing_duration(
+            self.geometry, destination, engine_order
+        )
 
         # Check out the time based on duration of sailing event
         yield self.env.timeout(sailing_duration)
@@ -1194,12 +1196,12 @@ class Movable(SimpyObject, Locatable):
         logger.debug("  duration: " + "%4.2f" % (sailing_duration / 3600) + " hrs")
 
         # Log the stop event
-        self.log_sailing(event = "stop")
+        self.log_sailing(event="stop")
 
     @property
     def current_speed(self):
         return self.v
-    
+
     def log_sailing(self, event):
         """ Log the start or stop of the sailing event """
 
@@ -1214,7 +1216,11 @@ class Movable(SimpyObject, Locatable):
             )
         else:
             self.log_entry(
-                "sailing {}".format(event), self.env.now, -1, self.geometry, self.ActivityID
+                "sailing {}".format(event),
+                self.env.now,
+                -1,
+                self.geometry,
+                self.ActivityID,
             )
 
     def sailing_duration(self, origin, destination, engine_order, verbose=True):
@@ -1244,6 +1250,22 @@ class Movable(SimpyObject, Locatable):
             )
 
 
+class ContainerDependentMovable(Movable, HasContainer):
+    """ContainerDependentMovable class
+
+    Used for objects that move with a speed dependent on the container level
+    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
+
+    def __init__(self, compute_v, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.compute_v = compute_v
+
+    @property
+    def current_speed(self):
+        return self.compute_v(self.container.level / self.container.capacity)
+
+
 class Routeable(Movable):
     """
     Moving folling a certain path
@@ -1261,27 +1283,30 @@ class Routeable(Movable):
 
         # Origin is geom - convert to node on graph
         geom = nx.get_node_attributes(self.env.FG, "geometry")
-        for node in geom:
+
+        for node in geom.keys():
             if origin.x == geom[node].x and origin.y == geom[node].y:
                 origin = node
                 break
 
-        if not origin.x == geom[node].x and not origin.y == geom[node].y:
+        if origin != node:
             raise AssertionError("The origin cannot be found in the graph")
 
         # Determine fastest route
-        if destination.name in list(self.env.FG.nodes):
-            return nx.dijkstra_path(self.env.FG, origin, destination.name)
+        if hasattr(destination, "name"):
+            if destination.name in list(self.env.FG.nodes):
+                return nx.dijkstra_path(self.env.FG, origin, destination.name)
 
         else:
-            for node in self.env.FG.nodes(data=True):
-                if node[1]["name"] == destination.name:
-                    destination = node[0]
-                    break
+            for node in geom.keys():
+                if (
+                    destination.geometry.x == geom[node].x
+                    and destination.geometry.y == geom[node].y
+                ):
+                    destination = node
+                    return nx.dijkstra_path(self.env.FG, origin, destination)
 
-            return nx.dijkstra_path(self.env.FG, origin, destination)
-
-        if not route:
+            # If no route is returned
             raise AssertionError("The destination cannot be found in the graph")
 
     def determine_speed(self, node_from, node_to):
@@ -1291,10 +1316,10 @@ class Routeable(Movable):
         if not edge_attrs:
             return self.current_speed
 
-        elif "Maximum speed" in edge_attrs.keys():
-            return min(self.current_speed, edge_attrs["Maximum speed"])
+        elif "maxSpeed" in edge_attrs.keys():
+            return min(self.current_speed, edge_attrs["maxSpeed"])
 
-    def sailing_duration(self, origin, destination, verbose=True):
+    def sailing_duration(self, origin, destination, engine_order, verbose=True):
         """ Determine the sailing duration based on the properties of the sailing route """
 
         # A dict with all nodes and the geometry property
@@ -1304,7 +1329,6 @@ class Routeable(Movable):
         route = self.determine_route(origin, destination)
 
         # Determine the distance of the route
-        distance = 0
         duration = 0
 
         for i, _ in enumerate(route):
@@ -1312,7 +1336,7 @@ class Routeable(Movable):
                 orig = shapely.geometry.asShape(geom[route[i]])
                 dest = shapely.geometry.asShape(geom[route[i + 1]])
 
-                distance += self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
+                distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
                 duration += distance / self.determine_speed(route[i], route[i + 1])
 
                 self.log_entry(
@@ -1322,8 +1346,8 @@ class Routeable(Movable):
         return duration
 
 
-class ContainerDependentMovable(Movable, HasContainer):
-    """ContainerDependentMovable class
+class ContainerDependentRouteable(Routeable, HasContainer):
+    """ContainerDependentRouteable class
 
     Used for objects that move with a speed dependent on the container level
     compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
@@ -1332,7 +1356,6 @@ class ContainerDependentMovable(Movable, HasContainer):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.compute_v = compute_v
-        self.wgs84 = pyproj.Geod(ellps="WGS84")
 
     @property
     def current_speed(self):
