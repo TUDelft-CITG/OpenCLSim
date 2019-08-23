@@ -1162,43 +1162,96 @@ class HasDepthRestriction:
         return self.compute_draught(self.container.level / self.container.capacity)
 
 
-class Routeable(Movable):
-    """
-    Movement travels trough a Graph. When optimize_route == True the halem package optimizes the route for different cost functions
-    if the optimization_type == 'time' then the fastest path is calculated by halem
-    if the optimization_type == 'cost' then the cheapest path is calculated by halem
-    if the optimization_type == 'space' then the shortest path is calculated by halem
-    Optimize_Route == False the route is determind by v = s/t 
-    """
+class Movable(SimpyObject, Locatable):
+    """Movable class
 
-    def __init__(
-        self,
-        route,
-        optimize_route=False,
-        optimization_type="time",
-        loadfactors=None,
-        *args,
-        **kwargs
-    ):
+    Used for object that can move with a fixed speed
+    geometry: point used to track its current location
+    v: speed"""
+
+    def __init__(self, v=1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.route = route
-        self.optimize_route = optimize_route
-        self.optimization_type = optimization_type
-        self.loadfactors = loadfactors
+        self.v = v
 
-        if self.optimize_route == True:
+    def move(self, destination, engine_order=1.0):
+        """determine distance between origin and destination. 
+        Yield the time it takes to travel based on flow properties and load factor of the flow."""
 
-            if self.optimization_type == "time":
-                self.optimization_func = halem.HALEM_time
-            elif self.optimization_type == "space":
-                self.optimization_func = halem.HALEM_space
-            elif self.optimization_type == "cost":
-                self.optimization_func = halem.HALEM_cost
-            elif self.optimization_type == "co2":
-                self.optimization_func = halem.HALEM_co2
+        # Log the start event
+        self.log_sailing(event = "start")
+
+        # Determine the sailing_duration
+        sailing_duration = self.sailing_duration(self.geometry, destination, engine_order)
+
+        # Check out the time based on duration of sailing event
+        yield self.env.timeout(sailing_duration)
+
+        # Set mover geometry to destination geometry
+        self.geometry = shapely.geometry.asShape(destination.geometry)
+
+        # Debug logs
+        logger.debug("  duration: " + "%4.2f" % (sailing_duration / 3600) + " hrs")
+
+        # Log the stop event
+        self.log_sailing(event = "stop")
+
+    @property
+    def current_speed(self):
+        return self.v
+    
+    def log_sailing(self, event):
+        """ Log the start or stop of the sailing event """
+
+        if isinstance(self, HasContainer):
+            status = "filled" if self.container.level > 0 else "empty"
+            self.log_entry(
+                "sailing {} {}".format(status, event),
+                self.env.now,
+                self.container.level,
+                self.geometry,
+                self.ActivityID,
+            )
+        else:
+            self.log_entry(
+                "sailing {}".format(event), self.env.now, -1, self.geometry, self.ActivityID
+            )
+
+    def sailing_duration(self, origin, destination, engine_order, verbose=True):
+        """ Determine the sailing duration """
+        orig = shapely.geometry.asShape(self.geometry)
+        dest = shapely.geometry.asShape(destination.geometry)
+        _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+
+        # Log the energy use
+        self.energy_use(distance, self.current_speed * engine_order)
+
+        return distance / (self.current_speed * engine_order)
+
+    def energy_use(self, distance, speed):
+        if isinstance(self, EnergyUse):
+            # message depends on filling degree: if container is empty --> sailing empt
+            if not isinstance(self, HasContainer) or self.container.level == 0:
+                message = "Energy use sailing empty"
+                filling = 0.0
             else:
-                print("No known optimization method selected")
+                message = "Energy use sailing filled"
+                filling = self.container.level / self.container.capacity
+
+            energy = self.energy_use_sailing(distance, speed, filling)
+            self.log_entry(
+                message, self.env.now, energy, self.geometry, self.ActivityID
+            )
+
+
+class Routeable(Movable):
+    """
+    Moving folling a certain path
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
 
     def determine_route(self, origin, destination):
         """ Determine the fastest sailing route based on distance """
@@ -1219,7 +1272,7 @@ class Routeable(Movable):
         # Determine fastest route
         if destination.name in list(self.env.FG.nodes):
             return nx.dijkstra_path(self.env.FG, origin, destination.name)
-        
+
         else:
             for node in self.env.FG.nodes(data=True):
                 if node[1]["name"] == destination.name:
@@ -1237,12 +1290,15 @@ class Routeable(Movable):
 
         if not edge_attrs:
             return self.current_speed
-        
+
         elif "Maximum speed" in edge_attrs.keys():
             return min(self.current_speed, edge_attrs["Maximum speed"])
 
     def sailing_duration(self, origin, destination, verbose=True):
         """ Determine the sailing duration based on the properties of the sailing route """
+
+        # A dict with all nodes and the geometry property
+        geom = nx.get_node_attributes(self.env.FG, "geometry")
 
         # Determine the shortest route from origin to destination
         route = self.determine_route(origin, destination)
@@ -1250,7 +1306,7 @@ class Routeable(Movable):
         # Determine the distance of the route
         distance = 0
         duration = 0
-        
+
         for i, _ in enumerate(route):
             if i + 1 != len(route):
                 orig = shapely.geometry.asShape(geom[route[i]])
@@ -1262,151 +1318,8 @@ class Routeable(Movable):
                 self.log_entry(
                     "Sailing", self.env.now + duration, 0, dest, self.ActivityID
                 )
-        
+
         return duration
-
-    def check_optimal_filling_Roadmap(self, loader, unloader, origin, destination):
-        orig = shapely.geometry.asShape(origin.geometry)
-        dest = shapely.geometry.asShape(destination.geometry)
-        start = (orig.x, orig.y)
-        stop = (dest.x, dest.y)
-        prods = []
-        tQQ = []
-
-        for i in range(len(self.loadfactors)):
-            # Departure time sailing empty
-            t0 = datetime.datetime.fromtimestamp(self.env.now).strftime(
-                "%d/%m/%Y %H:%M:%S"
-            )
-
-            # Duration of sailing empty
-            _, TT, _ = self.optimization_func(
-                stop, start, t0, self.env.Roadmap.vship[0, -1], self.env.Roadmap
-            )
-
-            # Duration of sailing empty + loading
-            duration_dredging = self.loading(
-                None, None, self.container.capacity * self.loadfactors[i]
-            )
-
-            TTT = self.env.now + (TT[-1] - TT[0]) + duration_dredging
-            duration_sailing_empty = TT[-1] - TT[0]
-
-            # Departure time sailing full
-            t0 = datetime.datetime.fromtimestamp(TTT).strftime("%d/%m/%Y %H:%M:%S")
-
-            # Duration of sailing full
-            _, TT, _ = self.optimization_func(
-                start, stop, t0, self.env.Roadmap.vship[i, -1], self.env.Roadmap
-            )
-
-            # Duration of sailing empty + loading + sailing full + unloading
-            duration_unloading = self.unloading(
-                None, None, self.container.capacity * self.loadfactors[i]
-            )
-            TTT += (TT[-1] - TT[0]) + duration_unloading
-            duration_sailing_full = TT[-1] - TT[0]
-
-            # Determine production
-            prod = (self.loadfactors[i] * self.container.capacity) / (
-                duration_sailing_empty
-                + duration_sailing_full
-                + duration_dredging
-                + duration_unloading
-            )
-            prods.append(prod)
-            tQQ.append(t0)
-
-        optimal_loadfactor = self.loadfactors[np.argwhere(prods == max(prods))[0, 0]]
-        return optimal_loadfactor
-
-
-class Movable(SimpyObject, Locatable):
-    """Movable class
-
-    Used for object that can move with a fixed speed
-    geometry: point used to track its current location
-    v: speed"""
-
-    def __init__(self, v=1, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        """Initialization"""
-        self.v = v
-
-    def move(self, destination, engine_order=1.0):
-        if isinstance(self, Log):
-            if isinstance(self, HasContainer):
-                status = "filled" if self.container.level > 0 else "empty"
-                self.log_entry(
-                    "sailing " + status + " start",
-                    self.env.now,
-                    self.container.level,
-                    self.geometry,
-                    self.ActivityID,
-                )
-            else:
-                self.log_entry(
-                    "sailing start", self.env.now, -1, self.geometry, self.ActivityID
-                )
-
-        """determine distance between origin and destination. 
-        Yield the time it takes to travel based on flow properties and load factor of the flow."""
-        # Determine the sailing_duration
-        sailing_duration = self.sailing_duration(self.geometry, destination)
-
-        # Check out the time based on duration of sailing event
-        yield self.env.timeout(sailing_duration)
-
-        # Set mover geometry to destination geometry
-        self.geometry = shapely.geometry.asShape(destination.geometry)
-
-        # Compute the energy use
-        self.energy_use(sailing_duration)
-
-        # Debug logs
-        logger.debug("  duration: " + "%4.2f" % (sailing_duration / 3600) + " hrs")
-
-        if isinstance(self, Log):
-            if isinstance(self, HasContainer):
-                status = "filled" if self.container.level > 0 else "empty"
-                self.log_entry(
-                    "sailing " + status + " stop",
-                    self.env.now,
-                    self.container.level,
-                    self.geometry,
-                    self.ActivityID,
-                )
-            else:
-                self.log_entry(
-                    "sailing stop", self.env.now, -1, self.geometry, self.ActivityID
-                )
-
-    @property
-    def current_speed(self):
-        return self.v
-
-    def sailing_duration(self, origin, destination, verbose=True):
-        """ Determine the sailing duration """
-        orig = shapely.geometry.asShape(self.geometry)
-        dest = shapely.geometry.asShape(destination.geometry)
-        _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
-
-        return distance / self.current_speed
-
-    def energy_use(self, distance, speed):
-        if isinstance(self, EnergyUse):
-            # message depends on filling degree: if container is empty --> sailing empt
-            if not isinstance(self, HasContainer) or self.container.level == 0:
-                message = "Energy use sailing empty"
-                filling = 0.0
-            else:
-                message = "Energy use sailing filled"
-                filling = self.container.level / self.container.capacity
-
-            energy = self.energy_use_sailing(distance, speed, filling)
-            self.log_entry(
-                message, self.env.now, energy, self.geometry, self.ActivityID
-            )
 
 
 class ContainerDependentMovable(Movable, HasContainer):

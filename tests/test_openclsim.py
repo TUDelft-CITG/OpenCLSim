@@ -60,7 +60,8 @@ def test_command_line_interface():
 
 
 def test_movable(env, geometry_a, locatable_a, locatable_b):
-    movable = core.Movable(v=10, geometry=geometry_a, env=env)
+    class movable(core.Movable, core.Log): pass
+    movable = movable(env=env, geometry=geometry_a, v=10)
     movable.ActivityID = "Test activity"
     env.process(movable.move(locatable_b))
     env.run()
@@ -74,10 +75,9 @@ def test_container_dependent_movable(env, geometry_a, locatable_a, locatable_b):
     v_full = 10
     v_empty = 20
     compute_v = lambda x: x * (v_full - v_empty) + v_empty
-    movable = core.ContainerDependentMovable(
-        env=env, geometry=geometry_a, compute_v=compute_v, capacity=10
-    )
-
+    
+    class movable(core.ContainerDependentMovable, core.Log): pass
+    movable = movable(env=env, geometry=geometry_a, compute_v=compute_v, capacity=10)
     movable.ActivityID = "Test activity"
 
     move_and_test(env, locatable_b, movable, 20, 2.18)
@@ -103,7 +103,10 @@ def move_and_test(env, destination, movable, expected_speed, expected_time):
 
 
 def test_move_to_same_place(env, geometry_a, locatable_a):
-    movable = core.Movable(v=10, geometry=geometry_a, env=env)
+    class movable(core.Movable, core.Log): pass
+    movable = movable(env=env, geometry=geometry_a, v=10)
+    movable.ActivityID = "Test activity"
+
     env.process(movable.move(locatable_a))
     env.run()
     assert movable.geometry.equals(locatable_a.geometry)
