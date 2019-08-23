@@ -213,9 +213,10 @@ def test_moving_over_path_container(locatable_a, locatable_c, distance, env):
     test if a mover follows a certain path 
 
     energy use is 4 units per second
-    from a to c, vessel is full, no limits, maximum speed is 0.5 m/s, so energy use is 16 * distance
-    from c to a, vessel is full, limits, maximum speed is 0.5 m/s, so energy use is 16 * distance
-    from a to c, vessel is empty, no limits, maximum speed is 1.0 m/s, so energy use is 8 * distance
+    from a to c, vessel is full, no limits, maximum speed is 0.5 m/s, so energy use is 32 * distance
+    from c to a, vessel is full, limits, maximum speed is 0.5 m/s, so energy use is 32 * distance
+    from a to c, vessel is empty, no limits, maximum speed is 1.0 m/s, so energy use is 4 * distance
+    from c to a, vessel is empty, no limits, maximum speed is 0.5 m/s, so energy use is 16 * distance
     """
 
     # Create mover class
@@ -224,7 +225,11 @@ def test_moving_over_path_container(locatable_a, locatable_c, distance, env):
 
     # Energy use
     def energy_use_sailing():
-        return lambda x, y, z: (x / y) * 4 * (1 / y)
+        # If empty and speed = 1.0: distance * 4 = distance * 4
+        # If empty and speed = 0.5: distance / 0.5 * 4 / 0.5 = distance * 16
+        # If full and speed = 0.5: distance / 0.5 * 4 * 2 / 0.5 = distance * 32
+
+        return lambda x, y, z: (x / y) * 4 * ((1 + z) / y)
 
     # Sailing speed
     def compute_v_provider(v_empty, v_full):
@@ -252,7 +257,7 @@ def test_moving_over_path_container(locatable_a, locatable_c, distance, env):
         if "Energy" in log.loc[i]["Message"]:
             energy_use += log.loc[i]["Value"]
 
-    assert energy_use == distance * 16
+    assert energy_use == distance * 32
 
     # Sail from c to a
     env.process(mover.move(locatable_a))
@@ -265,6 +270,8 @@ def test_moving_over_path_container(locatable_a, locatable_c, distance, env):
     env.process(remove_volume(mover, 1000))
     env.process(mover.move(locatable_c))
     env.run()
+    env.process(mover.move(locatable_a))
+    env.run()
 
     # Assert energy use
     log = pd.DataFrame.from_dict(mover.log)
@@ -274,4 +281,4 @@ def test_moving_over_path_container(locatable_a, locatable_c, distance, env):
         if "Energy" in log.loc[i]["Message"]:
             energy_use += log.loc[i]["Value"]
 
-    assert energy_use == distance * 16 * 2 + distance * 4
+    assert energy_use == distance * 84
