@@ -158,9 +158,9 @@ def test_moving_over_path_energy(locatable_a, locatable_c, distance, env):
     """ 
     test if a mover follows a certain path 
 
-    energy use is 2 kwh per second
-    from a to c, maximum speed is 1.0 m/s, so energy use is 2 * distance
-    from c to a, maximum speed is 0.5 m/s, so energy use is 4 * distance
+    energy use is 4 units per second
+    from a to c, maximum speed is 1.0 m/s, so energy use is 4 * distance
+    from c to a, maximum speed is 0.5 m/s, so energy use is 8 * distance
     """
 
     # Create mover class
@@ -206,3 +206,63 @@ def test_moving_over_path_energy(locatable_a, locatable_c, distance, env):
             energy_use += log.loc[i]["Value"]
 
     assert energy_use == distance * 4 + distance * 8
+
+def test_moving_over_path_container(locatable_a, locatable_c, distance, env):
+    """ 
+    test if a mover follows a certain path 
+
+    energy use is 4 units per second
+    from a to c, vessel is full, no limits, maximum speed is 0.5 m/s, so energy use is 16 * distance
+    from c to a, vessel is empty, limits, maximum speed is 0.5 m/s, so energy use is 16 * distance
+    """
+
+    # Create mover class
+    class routeable(core.ContainerDependentRouteable, core.Log, core.EnergyUse):
+        pass
+
+    # Energy use
+    def energy_use_sailing():
+        return lambda x, y, z: (x / y) * 4 * (1 / y)
+    
+    # Sailing speed
+    def compute_v_provider(v_empty, v_full):
+        return lambda x: x * (v_full - v_empty) + v_empty
+
+    mover = routeable(
+        env=env,
+        geometry=locatable_a.geometry,
+        compute_v=compute_v_provider(1, 0.5),
+        energy_use_sailing=energy_use_sailing(),
+        capacity=1000,
+        level=1000,
+    )
+    mover.ActivityID = "Test activity"
+
+    # Move the mover to geometry c
+    env.process(mover.move(locatable_c))
+    env.run()
+
+    # Assert energy use
+    log = pd.DataFrame.from_dict(mover.log)
+    energy_use = 0
+
+    for i in log.index:
+        if "Energy" in log.loc[i]["Message"]:
+            energy_use += log.loc[i]["Value"]
+
+    assert energy_use == distance * 16
+
+    # Move the mover to geometry a
+    mover.container.get(1000)
+    env.process(mover.move(locatable_a))
+    env.run()
+
+    # Assert energy use
+    log = pd.DataFrame.from_dict(mover.log)
+    energy_use = 0
+
+    for i in log.index:
+        if "Energy" in log.loc[i]["Message"]:
+            energy_use += log.loc[i]["Value"]
+
+    assert energy_use == distance * 16 + distance * 16

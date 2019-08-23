@@ -1368,7 +1368,6 @@ class Routeable(Movable):
                 self.ActivityID,
             )
 
-
 class ContainerDependentRouteable(Routeable, HasContainer):
     """ContainerDependentRouteable class
 
@@ -1383,6 +1382,25 @@ class ContainerDependentRouteable(Routeable, HasContainer):
     @property
     def current_speed(self):
         return self.compute_v(self.container.level / self.container.capacity)
+    
+    def energy_use(self, distance, speed):
+        if isinstance(self, EnergyUse):
+            filling = self.container.level / self.container.capacity
+            return self.energy_use_sailing(distance, speed, filling)
+        else:
+            return 0
+
+    def log_energy_use(self, energy):
+        if 0 < energy:
+            status = "filled" if self.container.level > 0 else "empty"
+            
+            self.log_entry(
+                "Energy use sailing {}".format(status),
+                self.env.now,
+                energy,
+                self.geometry,
+                self.ActivityID,
+            )
 
 
 class HasResource(SimpyObject):
