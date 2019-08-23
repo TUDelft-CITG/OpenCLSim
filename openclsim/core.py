@@ -1328,8 +1328,9 @@ class Routeable(Movable):
         # Determine the shortest route from origin to destination
         route = self.determine_route(origin, destination)
 
-        # Determine the distance of the route
+        # Determine the duration and energy use of following the route
         duration = 0
+        energy = 0
 
         for i, _ in enumerate(route):
             if i + 1 != len(route):
@@ -1337,13 +1338,35 @@ class Routeable(Movable):
                 dest = shapely.geometry.asShape(geom[route[i + 1]])
 
                 distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
-                duration += distance / self.determine_speed(route[i], route[i + 1])
+                speed = self.determine_speed(route[i], route[i + 1])
+
+                duration += distance / speed
+                energy += self.energy_use(distance, speed)
 
                 self.log_entry(
                     "Sailing", self.env.now + duration, 0, dest, self.ActivityID
                 )
 
+        # Log energy use
+        self.log_energy_use(energy)
+
         return duration
+
+    def energy_use(self, distance, speed):
+        if isinstance(self, EnergyUse):
+            return self.energy_use_sailing(distance, speed)
+        else:
+            return 0
+
+    def log_energy_use(self, energy):
+        if 0 < energy:
+            self.log_entry(
+                "Energy use sailing",
+                self.env.now,
+                energy,
+                self.geometry,
+                self.ActivityID,
+            )
 
 
 class ContainerDependentRouteable(Routeable, HasContainer):
