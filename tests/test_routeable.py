@@ -207,13 +207,15 @@ def test_moving_over_path_energy(locatable_a, locatable_c, distance, env):
 
     assert energy_use == distance * 4 + distance * 8
 
+
 def test_moving_over_path_container(locatable_a, locatable_c, distance, env):
     """ 
     test if a mover follows a certain path 
 
     energy use is 4 units per second
     from a to c, vessel is full, no limits, maximum speed is 0.5 m/s, so energy use is 16 * distance
-    from c to a, vessel is empty, limits, maximum speed is 0.5 m/s, so energy use is 16 * distance
+    from c to a, vessel is full, limits, maximum speed is 0.5 m/s, so energy use is 16 * distance
+    from a to c, vessel is empty, no limits, maximum speed is 1.0 m/s, so energy use is 8 * distance
     """
 
     # Create mover class
@@ -223,7 +225,7 @@ def test_moving_over_path_container(locatable_a, locatable_c, distance, env):
     # Energy use
     def energy_use_sailing():
         return lambda x, y, z: (x / y) * 4 * (1 / y)
-    
+
     # Sailing speed
     def compute_v_provider(v_empty, v_full):
         return lambda x: x * (v_full - v_empty) + v_empty
@@ -252,9 +254,16 @@ def test_moving_over_path_container(locatable_a, locatable_c, distance, env):
 
     assert energy_use == distance * 16
 
-    # Move the mover to geometry a
-    mover.container.get(1000)
+    # Sail from c to a
     env.process(mover.move(locatable_a))
+    env.run()
+
+    # Sail from a  to c with lower volume
+    def remove_volume(mover, amount):
+        yield mover.container.get(amount)
+
+    env.process(remove_volume(mover, 1000))
+    env.process(mover.move(locatable_c))
     env.run()
 
     # Assert energy use
@@ -265,4 +274,4 @@ def test_moving_over_path_container(locatable_a, locatable_c, distance, env):
         if "Energy" in log.loc[i]["Message"]:
             energy_use += log.loc[i]["Value"]
 
-    assert energy_use == distance * 16 + distance * 16
+    assert energy_use == distance * 16 * 2 + distance * 4
