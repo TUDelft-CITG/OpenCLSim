@@ -11,7 +11,6 @@ import uuid
 # package(s) related to the simulation
 import simpy
 import networkx as nx
-from halem import Base_functions as halem
 
 # spatial libraries
 import pyproj
@@ -1318,6 +1317,9 @@ class Routeable(Movable):
 
         elif "maxSpeed" in edge_attrs.keys():
             return min(self.current_speed, edge_attrs["maxSpeed"])
+        
+        else:
+            return self.current_speed
 
     def sailing_duration(self, origin, destination, engine_order, verbose=True):
         """ Determine the sailing duration based on the properties of the sailing route """

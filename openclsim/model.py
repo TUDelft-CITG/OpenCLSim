@@ -305,7 +305,7 @@ def single_run_process(
     # Calculate the optimal load factor (Optimal_Loadfactor in %) for combination with HALEM
     if (
         isinstance(mover, core.Routeable)
-        and mover.optimize_route == True
+        and hasattr(mover, "optimize_route")
         and type(mover.loadfactors) != type(None)
     ):
         Optimal_Loadfactor = mover.check_optimal_filling_Roadmap(
