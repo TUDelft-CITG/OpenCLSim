@@ -1317,7 +1317,7 @@ class Routeable(Movable):
 
         elif "maxSpeed" in edge_attrs.keys():
             return min(self.current_speed, edge_attrs["maxSpeed"])
-        
+
         else:
             return self.current_speed
 
