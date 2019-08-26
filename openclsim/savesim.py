@@ -389,29 +389,41 @@ class LogSaver:
                     ignore_index=True,
                 )
             elif object_type == "Activity":
+                # lookup the equipment
+                # TODO: clean this up, it's now not filled in for move activities
+                loader_id = ""
+                if hasattr(object_id, "loader"):
+                    loader_id = object_id.loader.id
                 existing_df = existing_df.append(
                     {
                         object_type + "ID": object_id.id,
                         object_type + "Name": object_id.name,
-                        "EquipmentID": object_id.loader.id,
+                        "EquipmentID": loader_id,
                         "ActivityFunction": "Loader",
                     },
                     ignore_index=True,
                 )
+
+                mover_id = ""
+                if hasattr(object_id, "mover"):
+                    mover_id = object_id.mover.id
                 existing_df = existing_df.append(
                     {
                         object_type + "ID": object_id.id,
                         object_type + "Name": object_id.name,
-                        "EquipmentID": object_id.mover.id,
+                        "EquipmentID": mover_id,
                         "ActivityFunction": "Mover",
                     },
                     ignore_index=True,
                 )
+                unloader_id = ""
+                if hasattr(object_id, "unloader"):
+                    unloader_id = object_id.unloader.id
                 existing_df = existing_df.append(
                     {
                         object_type + "ID": object_id.id,
                         object_type + "Name": object_id.name,
-                        "EquipmentID": object_id.unloader.id,
+                        "EquipmentID": unloader_id,
                         "ActivityFunction": "Unloader",
                     },
                     ignore_index=True,
