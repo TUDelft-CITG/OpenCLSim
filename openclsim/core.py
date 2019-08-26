@@ -1094,7 +1094,7 @@ class HasDepthRestriction:
         # If a filling degee has been specified
         if self.filling is not None:
             return self.filling * self.container.capacity / 100
-        
+
         elif destination.name not in self.depth_data.keys():
             return self.container.capacity
 
