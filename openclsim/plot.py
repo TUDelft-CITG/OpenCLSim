@@ -316,7 +316,7 @@ def graph_kml(
     nodes = list(env.FG.nodes)
 
     # each timestep will be represented as a single point
-    for log_index, value in enumerate(list(env.FG.nodes)[0 : -1 - 1]):
+    for log_index, _ in enumerate(list(env.FG.nodes)[0 : -1 - 1]):
 
         pnt = fol.newpoint(
             name="",
@@ -330,7 +330,7 @@ def graph_kml(
         pnt.style = shared_style
 
     edges = list(env.FG.edges)
-    for log_index, value in enumerate(list(env.FG.edges)[0 : -1 - 1]):
+    for log_index, _ in enumerate(list(env.FG.edges)[0 : -1 - 1]):
 
         lne = fol.newlinestring(
             name="",
@@ -563,10 +563,10 @@ def activity_distribution(vessel, testing=False):
         ax1.annotate("{:02.1f}%".format(txt * 100), (x_txt, y_txt), size=12)
 
     # Further markup
-    plt.ylabel("Total time spend on activities [Days]", size=12)
+    ax1.set_ylabel("Total time spend on activities [Days]", size=12)
     ax1.set_xticks(positions)
     ax1.set_xticklabels(labels, size=12)
-    plt.title("Distribution of spend time - {}".format(vessel.name), size=15)
+    ax1.set_title("Distribution of spend time - {}".format(vessel.name), size=15)
 
     if testing == False:
         plt.show()
@@ -620,7 +620,7 @@ def equipment_plot_json(vessels, web=False):
                     to_app = (date, y)
                     equipment_dict[vessel.name][act][-1].append(to_app)
 
-    fig, ax = plt.subplots(figsize=[16, 8])
+    equipment_fig, equipment_ax = plt.subplots(figsize=[16, 8])
 
     sailing_empty = []
     sailing_full = []
@@ -655,31 +655,31 @@ def equipment_plot_json(vessels, web=False):
         loading, label="Loading", linewidths=10, color=(55 / 255, 126 / 255, 184 / 255)
     )
 
-    ax.add_collection(act_1)
-    ax.add_collection(act_2)
-    ax.add_collection(act_3)
-    ax.add_collection(act_4)
+    equipment_ax.add_collection(act_1)
+    equipment_ax.add_collection(act_2)
+    equipment_ax.add_collection(act_3)
+    equipment_ax.add_collection(act_4)
 
-    ax.set_ylim(0, y + 0.25)
-    ax.set_yticks(ys)
-    ax.set_yticklabels(names)
+    equipment_ax.set_ylim(0, y + 0.25)
+    equipment_ax.set_yticks(ys)
+    equipment_ax.set_yticklabels(names)
 
-    ax.set_xlim(date2num(date_start) - 0.25, date2num(date_end) + 0.25)
-    ax.set_xticks([date2num(date_start), date2num(date_end)])
-    ax.set_xticklabels([date_start, date_end])
+    equipment_ax.set_xlim(date2num(date_start) - 0.25, date2num(date_end) + 0.25)
+    equipment_ax.set_xticks([date2num(date_start), date2num(date_end)])
+    equipment_ax.set_xticklabels([date_start, date_end])
 
-    plt.legend(loc="lower right")
-    plt.title("Equipment planning")
+    equipment_ax.legend(loc="lower right")
+    equipment_ax.set_title("Equipment planning")
 
     if web == False:
         plt.show()
     else:
-        return fig
+        return equipment_fig
 
 
 def energy_use_time(vessels, web=False):
 
-    fig, ax = plt.subplots(figsize=[16, 8])
+    energy_fig, energy_ax = plt.subplots(figsize=[16, 8])
 
     y_max = 0
 
@@ -714,23 +714,23 @@ def energy_use_time(vessels, web=False):
                 x.append(date)
                 y.append(y[-1] + df["Value"][i] * 0.2 * 3.5 / 1000)
 
-        plt.plot(x, y, label=vessel.name)
+        energy_ax.plot(x, y, label=vessel.name)
         if max(y) > y_max:
             y_max = max(y)
 
-    ax.set_ylim(0, y_max * 1.05)
+    energy_ax.set_ylim(0, y_max * 1.05)
 
-    ax.set_xlim(date2num(date_start) - 0.25, date2num(date_end) + 0.25)
-    ax.set_xticks([date2num(date_start), date2num(date_end)])
-    ax.set_xticklabels([date_start, date_end])
+    energy_ax.set_xlim(date2num(date_start) - 0.25, date2num(date_end) + 0.25)
+    energy_ax.set_xticks([date2num(date_start), date2num(date_end)])
+    energy_ax.set_xticklabels([date_start, date_end])
 
-    plt.legend(loc="lower right")
-    plt.title("ton CO2 emission per vessel")
+    energy_ax.legend(loc="lower right")
+    energy_ax.set_title("ton CO2 emission per vessel")
 
     if web == False:
         plt.show()
     else:
-        return fig
+        return energy_fig
 
 
 def plot_route(vessels):
