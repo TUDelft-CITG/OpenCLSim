@@ -289,30 +289,20 @@ def single_run_process(
     if not hasattr(activity_log, "unloader"):
         activity_log.unloader = unloader
 
+    # Determine the basic amount that should be transported
     amount = min(
         mover.container.capacity * filling - mover.container.level,
         origin.container.expected_level,
         destination.container.capacity - destination.container.expected_level,
     )
 
-    if hasattr(mover, "check_optimal_filling") and isinstance(
-        destination, core.HasWeather
-    ):
+    # If the mover has a function to optimize its load, check if the amount should be changed
+    if hasattr(mover, "check_optimal_filling"):
         amount = min(
             amount, mover.check_optimal_filling(loader, unloader, origin, destination)
         )
 
-    # Calculate the optimal load factor (Optimal_Loadfactor in %) for combination with HALEM
-    if (
-        isinstance(mover, core.Routeable)
-        and mover.optimize_route == True
-        and type(mover.loadfactors) != type(None)
-    ):
-        Optimal_Loadfactor = mover.check_optimal_filling_Roadmap(
-            loader, unloader, origin, destination
-        )
-        amount = min(amount, mover.container.capacity * Optimal_Loadfactor)
-
+    # Check if activity can start
     if hasattr(stop_reservation_waiting_event, "__call__"):
         stop_reservation_waiting_event = stop_reservation_waiting_event()
     elif type(stop_reservation_waiting_event) == list:
@@ -320,6 +310,7 @@ def single_run_process(
             events=[event() for event in stop_reservation_waiting_event]
         )
 
+    # If the transported amount is larger than zero, start activity
     if amount > 0:
         resource_requests = {}
 
