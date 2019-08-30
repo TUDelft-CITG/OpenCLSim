@@ -2,6 +2,13 @@
 History
 =======
 
+1.1.0 (2019-08-30)
+------------------
+
+* More generic Movable class
+* More generic Routeable class
+* Easier to implement own functions and adjustments
+
 1.0.1 (2019-07-26)
 ------------------
 
