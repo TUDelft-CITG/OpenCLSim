@@ -1,3 +1,4 @@
+import functools
 import io
 import datetime
 
@@ -473,15 +474,15 @@ def energy_use(vessels, testing=False, web=False):
         ax1.annotate("{:02.1f}%".format(txt * 100), (x_txt, y_txt), size=12)
 
     # Further markup
-    plt.ylabel("Energy useage in kWh", size=12)
+    ax1.set_ylabel("Energy useage in kWh", size=12)
     ax1.set_xticks(positions)
     ax1.set_xticklabels(labels, size=12)
 
     try:
         _ = len(vessels)
-        plt.title("Energy use - for all equipment", size=15)
+        ax1.set_title("Energy use - for all equipment", size=15)
     except:
-        plt.title("Energy use - {}".format(vessels.name), size=15)
+        ax1.set_title("Energy use - {}".format(vessels.name), size=15)
 
     if testing == False:
         if web == False:
@@ -733,10 +734,19 @@ def energy_use_time(vessels, web=False):
         return energy_fig
 
 
+def styled(f, style):
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        # execute in temporary styled context
+        with plt.style.use(style):
+            result = f(*args, **kwds)
+        return result
+    return wrapper
+
+@styled("ggplot")
 def plot_route(vessels):
     import matplotlib.pyplot as plt
 
-    plt.style.use("ggplot")
     from cartopy import config
     import cartopy.crs as ccrs
     import cartopy.feature as cfeature
@@ -744,7 +754,7 @@ def plot_route(vessels):
     from matplotlib.colors import ListedColormap, BoundaryNorm
 
     fig = plt.figure(figsize=(10, 10))
-    ax = plt.subplot(projection=ccrs.Mercator())
+    ax = plt.subplot(projection=ccrs.Mercator(), figure=fig)
     ax.coastlines(resolution="10m", color="black", linewidth=3)
     ax.gridlines(color="grey", zorder=3)
     ax.add_feature(
