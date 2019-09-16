@@ -734,8 +734,8 @@ def energy_use_time(vessels, web=False):
         return energy_fig
 
 
-def styled(f, style):
-    @wraps(f)
+def styled(f, style = "ggplot"):
+    @functools.wraps(f)
     def wrapper(*args, **kwds):
         # execute in temporary styled context
         with plt.style.use(style):
@@ -743,7 +743,7 @@ def styled(f, style):
         return result
     return wrapper
 
-@styled("ggplot")
+@styled
 def plot_route(vessels):
     import matplotlib.pyplot as plt
 
