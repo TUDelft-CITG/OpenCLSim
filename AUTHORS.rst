@@ -25,7 +25,7 @@ Various MSc projects
 
 .. _Joris den Uijl,: http://resolver.tudelft.nl/uuid:8d82b44c-59e3-4307-a0af-03a20f1a931e
 .. _Vibeke van der Bilt: http://resolver.tudelft.nl/uuid:ab6d12ea-34fe-4577-b72c-6aa688e0d1bf
-.. _Pieter van Halem: https://repository.tudelft.nl
+.. _Pieter van Halem: http://resolver.tudelft.nl/uuid:5d34d333-34fe-4181-95b6-d8d82f72d979
 
 Ongoing MSc work
 
