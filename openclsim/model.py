@@ -462,7 +462,7 @@ def single_run_process(
                 mover.geometry,
                 activity_log.id,
             )
-            
+
             yield env.timeout(3600)
 
             activity_log.log_entry(
@@ -476,7 +476,12 @@ def single_run_process(
         else:
             print(origin.log)
             print(origin.name, origin.container.level)
-            print(mover.name, mover.container.level, mover.container.capacity, mover.container.expected_level)
+            print(
+                mover.name,
+                mover.container.level,
+                mover.container.capacity,
+                mover.container.expected_level,
+            )
             print(destination.name, destination.container.level)
             raise RuntimeError("Attempting to move content with a full ship")
 
