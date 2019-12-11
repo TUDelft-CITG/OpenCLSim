@@ -1705,7 +1705,6 @@ class Processor(SimpyObject):
                 "loading start", self.env.now, 0, self.geometry, self.ActivityID
             )
 
-        # Check out the time
         yield self.env.timeout(duration)
 
         # Add spill the location where processing is taking place
