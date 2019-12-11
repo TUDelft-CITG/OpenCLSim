@@ -20,13 +20,6 @@ jobs:
             docker cp openclsim:/OpenCLSim/htmlcov /tmp/artifacts
       
       - run:
-          name: Run tests - Formatting
-          command: |
-            docker exec -it openclsim bash -c "pip install black"
-            docker exec -it openclsim bash -c "black --check openclsim"
-            docker exec -it openclsim bash -c "black --check tests"
-
-      - run:
           name: Build docs
           command: |
             docker exec -it openclsim bash -c "pip install sphinx"

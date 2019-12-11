@@ -1299,8 +1299,8 @@ class Routeable(Movable):
 
         for node in geom.keys():
             if (
-                abs(origin.x - geom[node].x) < 0.00000001
-                and abs(origin.y - geom[node].y) < 0.00000001
+                np.isclose(origin.x,geom[node].x,rtol = 1e-8)
+                and np.isclose(origin.y,geom[node].y,rtol = 1e-8)
             ):
                 origin = node
                 break
