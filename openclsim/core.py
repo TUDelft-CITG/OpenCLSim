@@ -1298,7 +1298,10 @@ class Routeable(Movable):
         geom = nx.get_node_attributes(self.env.FG, "geometry")
 
         for node in geom.keys():
-            if origin.x == geom[node].x and origin.y == geom[node].y:
+            if (
+                np.isclose(origin.x,geom[node].x,rtol = 1e-8)
+                and np.isclose(origin.y,geom[node].y,rtol = 1e-8)
+            ):
                 origin = node
                 break
 
