@@ -49,6 +49,7 @@ class Activity(core.Identifiable, core.Log):
         loader,
         mover,
         unloader,
+        filling = 1.0,
         start_event=None,
         stop_event=None,
         show=False,
@@ -100,7 +101,7 @@ class Activity(core.Identifiable, core.Log):
         self.loader = loader
         self.mover = mover
         self.unloader = unloader
-
+        self.filling = filling
         self.print = show
 
         single_run_proc = partial(
@@ -112,6 +113,7 @@ class Activity(core.Identifiable, core.Log):
             unloader=unloader,
             stop_reservation_waiting_event=self.stop_reservation_waiting_event,
             verbose=self.print,
+            filling = self.filling,
         )
         main_proc = partial(
             conditional_process,
