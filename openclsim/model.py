@@ -103,6 +103,10 @@ class Activity(core.Identifiable, core.Log):
 
         self.print = show
 
+        origin, destination = optimise_production(
+            origin, destination, loader, mover, unloader
+        )
+
         single_run_proc = partial(
             single_run_process,
             origin=origin,
@@ -123,6 +127,26 @@ class Activity(core.Identifiable, core.Log):
                 delayed_process, start_event=self.start_event, sub_processes=[main_proc]
             )
         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
+
+
+def determine_amount(origin, destination, loader, mover, unloader, filling):
+    """ Determine the maximum amount that can be carried """
+
+    # Determine the basic amount that should be transported
+    amount = min(
+        mover.container.capacity * filling - mover.container.level,
+        origin.container.expected_level,
+        destination.container.capacity - destination.container.expected_level,
+    )
+
+    # If the mover has a function to optimize its load, check if the amount should be changed
+    if not hasattr(mover, "check_optimal_filling"):
+        return amount
+
+    else:
+        return min(
+            amount, mover.check_optimal_filling(loader, unloader, origin, destination)
+        )
 
 
 def delayed_process(activity_log, env, start_event, sub_processes):
@@ -289,18 +313,7 @@ def single_run_process(
     if not hasattr(activity_log, "unloader"):
         activity_log.unloader = unloader
 
-    # Determine the basic amount that should be transported
-    amount = min(
-        mover.container.capacity * filling - mover.container.level,
-        origin.container.expected_level,
-        destination.container.capacity - destination.container.expected_level,
-    )
-
-    # If the mover has a function to optimize its load, check if the amount should be changed
-    if hasattr(mover, "check_optimal_filling"):
-        amount = min(
-            amount, mover.check_optimal_filling(loader, unloader, origin, destination)
-        )
+    amount = determine_amount(origin, destination, loader, mover, unloader, filling)
 
     # Check if activity can start
     if hasattr(stop_reservation_waiting_event, "__call__"):
