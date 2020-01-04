@@ -1,4 +1,5 @@
 from functools import partial
+import itertools
 import openclsim.core as core
 import datetime
 import simpy
@@ -104,7 +105,7 @@ class Activity(core.Identifiable, core.Log):
         self.print = show
 
         origin, destination = optimise_production(
-            origin, destination, loader, mover, unloader
+            origin, destination, loader, mover, unloader, 1, 1,
         )
 
         single_run_proc = partial(
@@ -147,6 +148,43 @@ def determine_amount(origin, destination, loader, mover, unloader, filling):
         return min(
             amount, mover.check_optimal_filling(loader, unloader, origin, destination)
         )
+
+
+def determine_duration(origin, destination, loader, mover, unloader, amount, engine_order):
+    """ Determine the duration of a trip """
+
+    duration = 0 
+    duration += mover.sailing_duration(mover.geometry, origin, engine_order)
+    duration += loader.loading(origin, mover, amount)
+    duration += mover.sailing_duration(origin.geometry, destination.geometry, engine_order)
+    duration += unloader.unloading(mover, destination, amount)
+    duration += mover.sailing_duration(destination.geometry, origin.geometry, engine_order)
+
+    return duration
+
+
+def optimise_production(origin, destination, loader, mover, unloader, filling, engine_order):
+    """ Select origin and destination to optimise trip production """
+
+    if type(origin) != list and type(destination) != list:
+        return origin, destination
+
+    elif type(origin) != list:
+        origin = [origin]
+    elif type(destination) != list:
+        destination = [destination]
+    
+    optimal_production = 0
+    
+    for orig, dest in itertools.product(origin, destination):
+        amount = determine_amount(orig, dest, loader, mover, unloader, filling)
+        duration = determine_duration(orig, dest, loader, mover, unloader, amount, engine_order)
+
+        if optimal_production < amount / duration:
+            optimal_origin = orig
+            optimal_destination = dest
+    
+    return optimal_origin, optimal_destination
 
 
 def delayed_process(activity_log, env, start_event, sub_processes):
