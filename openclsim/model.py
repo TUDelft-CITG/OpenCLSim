@@ -94,24 +94,22 @@ class Activity(core.Identifiable, core.Log):
             else self.stop_event
         )
 
-        self.origin = origin
-        self.destination = destination
         self.loader = loader
         self.mover = mover
         self.unloader = unloader
         self.print = show
 
-        origin, destination = optimise_production(
-            origin, destination, loader, mover, unloader, 1, 1
-        )
+        # origin, destination = optimise_production(
+        #     origin, destination, loader, mover, unloader, 1, 1
+        # )
 
         single_run_proc = partial(
             single_run_process,
-            origin=origin,
-            destination=destination,
-            loader=loader,
-            mover=mover,
-            unloader=unloader,
+            origin=self.origin,
+            destination=self.destination,
+            loader=self.loader,
+            mover=self.mover,
+            unloader=self.unloader,
             stop_reservation_waiting_event=self.stop_reservation_waiting_event,
             verbose=self.print,
         )
@@ -132,9 +130,18 @@ def determine_amount(origin, destination, loader, mover, unloader, filling):
 
     # Determine the basic amount that should be transported
     all_amounts = {}
-    all_amounts.update({"origin." + orig.id: orig.container.expected_level for orig in origin})
-    all_amounts.update({"destination." + dest.id: dest.container.capacity - dest.container.expected_level for dest in destination})
-    
+    all_amounts.update(
+        {"origin." + orig.id: orig.container.expected_level for orig in origin}
+    )
+    all_amounts.update(
+        {
+            "destination."
+            + dest.id: dest.container.capacity
+            - dest.container.expected_level
+            for dest in destination
+        }
+    )
+
     origin_requested = 0
     destination_requested = 0
 
@@ -143,7 +150,7 @@ def determine_amount(origin, destination, loader, mover, unloader, filling):
             origin_requested += all_amounts[key]
         else:
             destination_requested += all_amounts[key]
-    
+
     amount = min(
         mover.container.capacity * filling - mover.container.level,
         origin_requested,
@@ -371,7 +378,9 @@ def single_run_process(
     if not hasattr(activity_log, "unloader"):
         activity_log.unloader = unloader
 
-    amount, all_amounts = determine_amount(origin, destination, loader, mover, unloader, filling)
+    amount, all_amounts = determine_amount(
+        origin, destination, loader, mover, unloader, filling
+    )
 
     # Check if activity can start
     if hasattr(stop_reservation_waiting_event, "__call__"):
@@ -391,10 +400,10 @@ def single_run_process(
 
         # reserve the amount in origin an destination
         for orig in origin:
-            if all_amounts[orig.id] <= amount - to_retrieve:
-                to_retrieve += all_amounts[orig.id]
-                vrachtbrief[orig.id] = all_amounts[orig.id]
-                orig.container.reserve_get(all_amounts[orig.id])
+            if all_amounts["origin." + orig.id] <= amount - to_retrieve:
+                to_retrieve += all_amounts["origin." + orig.id]
+                vrachtbrief[orig.id] = all_amounts["origin." + orig.id]
+                orig.container.reserve_get(all_amounts["origin." + orig.id])
 
             else:
                 orig.container.reserve_get(amount - to_retrieve)
@@ -402,13 +411,14 @@ def single_run_process(
                 break
 
         for dest in destination:
-            if all_amounts[dest.id] <= amount - to_place:
-                to_place += all_amounts[orig.id]
-                vrachtbrief[dest.id] = all_amounts[dest.id]
-                dest.container.reserve_put(all_amounts[dest.id])
+            if all_amounts["destination." + dest.id] <= amount - to_place:
+                to_place += all_amounts["destination." + dest.id]
+                vrachtbrief[dest.id] = all_amounts["destination." + dest.id]
+                dest.container.reserve_put(all_amounts["destination." + dest.id])
 
             else:
                 dest.container.reserve_put(amount - to_place)
+                vrachtbrief[dest.id] = amount - to_place
                 break
 
         if verbose:
@@ -422,12 +432,12 @@ def single_run_process(
 
         for orig in origin:
             if orig.id in vrachtbrief.keys():
-                
+
                 # move the mover to the origin (if necessary)
-                if not mover.is_at(origin):
+                if not mover.is_at(orig):
                     yield from _move_mover(
                         mover,
-                        origin,
+                        orig,
                         ActivityID=activity_log.id,
                         engine_order=engine_order,
                         verbose=verbose,
@@ -436,10 +446,10 @@ def single_run_process(
                 yield from _request_resources_if_transfer_possible(
                     env,
                     resource_requests,
-                    origin,
+                    orig,
                     loader,
                     mover,
-                    vrachtbrief[dest.id],
+                    vrachtbrief[orig.id],
                     mover.resource,
                     activity_log.id,
                     engine_order=engine_order,
@@ -451,8 +461,8 @@ def single_run_process(
                     env,
                     loader,
                     mover,
-                    mover.container.level + vrachtbrief[dest.id],
-                    origin,
+                    mover.container.level + vrachtbrief[orig.id],
+                    orig,
                     ActivityID=activity_log.id,
                     verbose=verbose,
                 )
@@ -469,10 +479,10 @@ def single_run_process(
             if dest.id in vrachtbrief.keys():
 
                 # move the mover to the destination
-                if not mover.is_at(destination):
+                if not mover.is_at(dest):
                     yield from _move_mover(
                         mover,
-                        destination,
+                        dest,
                         ActivityID=activity_log.id,
                         engine_order=engine_order,
                         verbose=verbose,
@@ -483,7 +493,7 @@ def single_run_process(
                     resource_requests,
                     mover,
                     unloader,
-                    destination,
+                    dest,
                     vrachtbrief[dest.id],
                     mover.resource,
                     activity_log.id,
@@ -497,7 +507,7 @@ def single_run_process(
                     unloader,
                     mover,
                     mover.container.level - vrachtbrief[dest.id],
-                    destination,
+                    dest,
                     ActivityID=activity_log.id,
                     verbose=verbose,
                 )
