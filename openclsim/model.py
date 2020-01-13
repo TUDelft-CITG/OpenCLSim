@@ -59,8 +59,8 @@ class Activity(core.Identifiable, core.Log):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
-        self.origin = origin if origin == type(list) else [origin]
-        self.destination = destination if destination == type(list) else [destination]
+        self.origin = origin if type(origin) == list else [origin]
+        self.destination = destination if type(destination) == list else [destination]
 
         self.start_event = (
             start_event
