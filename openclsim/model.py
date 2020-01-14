@@ -99,10 +99,6 @@ class Activity(core.Identifiable, core.Log):
         self.unloader = unloader
         self.print = show
 
-        # origin, destination = optimise_production(
-        #     origin, destination, loader, mover, unloader, 1, 1
-        # )
-
         single_run_proc = partial(
             single_run_process,
             origin=self.origin,
@@ -162,56 +158,11 @@ def determine_amount(origin, destination, loader, mover, unloader, filling):
         return amount, all_amounts
 
     else:
-        return min(
+        amount = min(
             amount, mover.check_optimal_filling(loader, unloader, origin, destination)
         )
 
-
-def determine_duration(
-    origin, destination, loader, mover, unloader, amount, engine_order
-):
-    """ Determine the duration of a trip """
-
-    duration = 0
-    duration += mover.sailing_duration(mover.geometry, origin, engine_order)
-    duration += loader.loading(origin, mover, amount)
-    duration += mover.sailing_duration(
-        origin.geometry, destination.geometry, engine_order
-    )
-    duration += unloader.unloading(mover, destination, amount)
-    duration += mover.sailing_duration(
-        destination.geometry, origin.geometry, engine_order
-    )
-
-    return duration
-
-
-def optimise_production(
-    origin, destination, loader, mover, unloader, filling, engine_order
-):
-    """ Select origin and destination to optimise trip production """
-
-    if type(origin) != list and type(destination) != list:
-        return origin, destination
-
-    elif type(origin) != list:
-        origin = [origin]
-    elif type(destination) != list:
-        destination = [destination]
-
-    optimal_production = 0
-
-    for orig, dest in itertools.product(origin, destination):
-        amount = determine_amount(orig, dest, loader, mover, unloader, filling)
-        duration = determine_duration(
-            orig, dest, loader, mover, unloader, amount, engine_order
-        )
-
-        if optimal_production < amount / duration:
-            optimal_origin = orig
-            optimal_destination = dest
-
-    return optimal_origin, optimal_destination
+        return amount, all_amounts
 
 
 def delayed_process(activity_log, env, start_event, sub_processes):
@@ -522,45 +473,57 @@ def single_run_process(
         activity_log.log_entry(
             "transporting stop", env.now, amount, mover.geometry, activity_log.id
         )
+    
     else:
-        if origin.container.expected_level == 0:
+        origin_requested = 0
+        destination_requested = 0
+
+        for key in all_amounts.keys():
+            if "origin." in key:
+                origin_requested += all_amounts[key]
+            else:
+                destination_requested += all_amounts[key]
+
+        if origin_requested == 0:
+            events = [orig.container.reserve_get_available for orig in origin]
             activity_log.log_entry(
                 "waiting origin reservation start",
                 env.now,
-                origin.container.expected_level,
-                origin.geometry,
+                mover.container.level,
+                mover.geometry,
                 activity_log.id,
             )
             yield _or_optional_event(
                 env,
-                origin.container.reserve_get_available,
+                env.any_of(events),
                 stop_reservation_waiting_event,
             )
             activity_log.log_entry(
                 "waiting origin reservation stop",
                 env.now,
-                origin.container.expected_level,
-                origin.geometry,
+                mover.container.level,
+                mover.geometry,
                 activity_log.id,
             )
-        elif destination.container.expected_level == destination.container.capacity:
+        elif destination_requested == 0:
+            events = [dest.container.reserve_put_available for dest in destination]
             activity_log.log_entry(
                 "waiting destination reservation start",
                 env.now,
-                destination.container.expected_level,
-                destination.geometry,
+                mover.container.level,
+                mover.geometry,
                 activity_log.id,
             )
             yield _or_optional_event(
                 env,
-                destination.container.reserve_put_available,
+                env.any_of(events),
                 stop_reservation_waiting_event,
             )
             activity_log.log_entry(
                 "waiting destination reservation stop",
                 env.now,
-                destination.container.expected_level,
-                destination.geometry,
+                mover.container.level,
+                mover.geometry,
                 activity_log.id,
             )
         elif mover.container.level == mover.container.capacity:
@@ -571,9 +534,9 @@ def single_run_process(
                 mover.geometry,
                 activity_log.id,
             )
-
-            yield env.timeout(3600)
-
+            yield env.timeout(
+                3600
+            )
             activity_log.log_entry(
                 "waiting mover to finish stop",
                 env.now,
@@ -583,15 +546,6 @@ def single_run_process(
             )
 
         else:
-            print(origin.log)
-            print(origin.name, origin.container.level)
-            print(
-                mover.name,
-                mover.container.level,
-                mover.container.capacity,
-                mover.container.expected_level,
-            )
-            print(destination.name, destination.container.level)
             raise RuntimeError("Attempting to move content with a full ship")
 
 
