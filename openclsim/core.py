@@ -1439,16 +1439,15 @@ class Routeable(Movable):
             )
 
 
-class ContainerDependentRouteable(Routeable, HasContainer):
+class ContainerDependentRouteable(ContainerDependentMovable, Routeable):
     """ContainerDependentRouteable class
 
     Used for objects that move with a speed dependent on the container level
     compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
 
-    def __init__(self, compute_v, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.compute_v = compute_v
 
     @property
     def current_speed(self):
