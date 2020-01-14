@@ -48,7 +48,7 @@ def locatable_b(geometry_b):
     return core.Locatable(geometry_b)
 
 
-class BasicStorageUnit(core.HasContainer, core.HasResource, core.Locatable, core.Log):
+class BasicStorageUnit(core.HasContainer, core.HasResource, core.Locatable, core.Log, core.Identifiable):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -69,13 +69,13 @@ class Processor(
 def test_dual_processors(env, geometry_a):
     # move content from two different limited containers to an unlimited container at the same time
     limited_container_1 = BasicStorageUnit(
-        env=env, geometry=geometry_a, capacity=1000, level=0, nr_resources=1
+        env=env, name = "LC_1", geometry=geometry_a, capacity=1000, level=0, nr_resources=1
     )
     limited_container_2 = BasicStorageUnit(
-        env=env, geometry=geometry_a, capacity=1000, level=0, nr_resources=1
+        env=env, name = "LC_2", geometry=geometry_a, capacity=1000, level=0, nr_resources=1
     )
     unlimited_container = BasicStorageUnit(
-        env=env, geometry=geometry_a, capacity=2000, level=1000, nr_resources=100
+        env=env, name = "UC_1", geometry=geometry_a, capacity=2000, level=1000, nr_resources=100
     )
 
     processor1 = Processor(
@@ -120,16 +120,16 @@ def test_dual_processors(env, geometry_a):
 def test_dual_processors_with_limit(env, geometry_a):
     # move content into a limited container, have two process wait for each other to finish
     unlimited_container_1 = BasicStorageUnit(
-        env=env, geometry=geometry_a, capacity=1000, level=1000, nr_resources=100
+        env=env, name = "UC_1", geometry=geometry_a, capacity=1000, level=1000, nr_resources=100
     )
     unlimited_container_2 = BasicStorageUnit(
-        env=env, geometry=geometry_a, capacity=1000, level=1000, nr_resources=100
+        env=env, name = "UC_2", geometry=geometry_a, capacity=1000, level=1000, nr_resources=100
     )
     unlimited_container_3 = BasicStorageUnit(
-        env=env, geometry=geometry_a, capacity=2000, level=0, nr_resources=100
+        env=env, name = "UC_3", geometry=geometry_a, capacity=2000, level=0, nr_resources=100
     )
     limited_container = BasicStorageUnit(
-        env=env, geometry=geometry_a, capacity=2000, level=0, nr_resources=1
+        env=env, name = "LC_1", geometry=geometry_a, capacity=2000, level=0, nr_resources=1
     )
 
     processor1 = Processor(
@@ -154,8 +154,8 @@ def test_dual_processors_with_limit(env, geometry_a):
         model.single_run_process(
             processor1,
             env,
-            unlimited_container_1,
-            limited_container,
+            [unlimited_container_1],
+            [limited_container],
             processor1,
             unlimited_container_3,
             processor1,
@@ -165,8 +165,8 @@ def test_dual_processors_with_limit(env, geometry_a):
         model.single_run_process(
             processor2,
             env,
-            unlimited_container_2,
-            limited_container,
+            [unlimited_container_2],
+            [limited_container],
             processor2,
             unlimited_container_3,
             processor2,

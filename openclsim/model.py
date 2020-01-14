@@ -71,22 +71,22 @@ class Activity(core.Identifiable, core.Log):
         if type(stop_event) == list:
             stop_event = self.env.any_of(events=stop_event)
 
-        if not start_event and stop_event is not None:
+        if stop_event is not None:
             self.stop_event = stop_event
 
-        elif not start_event:
+        elif start_event is None:
             stop_event = []
             stop_event.extend(orig.container.empty_event for orig in self.origin)
             stop_event.extend(dest.container.full_event for dest in self.destination)
             self.stop_event = self.env.any_of(stop_event)
 
-        else:
+        elif start_event:
             stop_event = []
             stop_event.extend(orig.container.get_empty_event for orig in self.origin)
             stop_event.extend(
                 dest.container.get_full_event for dest in self.destination
             )
-            self.stop_event = self.env.any_of(stop_event)
+            self.stop_event = stop_event
 
         self.stop_reservation_waiting_event = (
             self.stop_event()
@@ -473,7 +473,7 @@ def single_run_process(
         activity_log.log_entry(
             "transporting stop", env.now, amount, mover.geometry, activity_log.id
         )
-    
+
     else:
         origin_requested = 0
         destination_requested = 0
@@ -494,9 +494,7 @@ def single_run_process(
                 activity_log.id,
             )
             yield _or_optional_event(
-                env,
-                env.any_of(events),
-                stop_reservation_waiting_event,
+                env, env.any_of(events), stop_reservation_waiting_event
             )
             activity_log.log_entry(
                 "waiting origin reservation stop",
@@ -515,9 +513,7 @@ def single_run_process(
                 activity_log.id,
             )
             yield _or_optional_event(
-                env,
-                env.any_of(events),
-                stop_reservation_waiting_event,
+                env, env.any_of(events), stop_reservation_waiting_event
             )
             activity_log.log_entry(
                 "waiting destination reservation stop",
@@ -534,9 +530,7 @@ def single_run_process(
                 mover.geometry,
                 activity_log.id,
             )
-            yield env.timeout(
-                3600
-            )
+            yield env.timeout(3600)
             activity_log.log_entry(
                 "waiting mover to finish stop",
                 env.now,
