@@ -6,6 +6,7 @@
 import json
 import logging
 import uuid
+import itertools
 
 # you need these dependencies (you can get these from anaconda)
 # package(s) related to the simulation
@@ -1248,6 +1249,7 @@ class Movable(SimpyObject, Locatable):
         return distance / (self.current_speed * engine_order)
 
     def energy_use(self, distance, speed):
+        """ Determine the energy use """
         if isinstance(self, EnergyUse):
             # message depends on filling degree: if container is empty --> sailing empt
             if not isinstance(self, HasContainer) or self.container.level == 0:
@@ -1277,6 +1279,56 @@ class ContainerDependentMovable(Movable, HasContainer):
     @property
     def current_speed(self):
         return self.compute_v(self.container.level / self.container.capacity)
+
+    def determine_amount(self, origins, destinations, loader, unloader, filling=1):
+        """ Determine the maximum amount that can be carried """
+
+        # Determine the basic amount that should be transported
+        all_amounts = {}
+        all_amounts.update(
+            {
+                "origin." + origin.id: origin.container.expected_level
+                for origin in origins
+            }
+        )
+        all_amounts.update(
+            {
+                "destination."
+                + destination.id: destination.container.capacity
+                - destination.container.expected_level
+                for destination in destinations
+            }
+        )
+
+        origin_requested = 0
+        destination_requested = 0
+
+        for key in all_amounts.keys():
+            if "origin." in key:
+                origin_requested += all_amounts[key]
+            else:
+                destination_requested += all_amounts[key]
+
+        amount = min(
+            self.container.capacity * filling - self.container.level,
+            origin_requested,
+            destination_requested,
+        )
+
+        # If the mover has a function to optimize its load, check if the amount should be changed
+        if not hasattr(self, "check_optimal_filling"):
+            return amount, all_amounts
+
+        else:
+            amounts = [amount]
+            amounts.extend(
+                [
+                    self.check_optimal_filling(loader, unloader, origin, destination)
+                    for origin, destination in itertools.product(origins, destinations)
+                ]
+            )
+
+            return min(amounts), all_amounts
 
 
 class Routeable(Movable):

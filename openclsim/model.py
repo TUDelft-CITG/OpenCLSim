@@ -121,54 +121,6 @@ class Activity(core.Identifiable, core.Log):
         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
 
 
-def determine_amount(origin, destination, loader, mover, unloader, filling):
-    """ Determine the maximum amount that can be carried """
-
-    # Determine the basic amount that should be transported
-    all_amounts = {}
-    all_amounts.update(
-        {"origin." + orig.id: orig.container.expected_level for orig in origin}
-    )
-    all_amounts.update(
-        {
-            "destination."
-            + dest.id: dest.container.capacity
-            - dest.container.expected_level
-            for dest in destination
-        }
-    )
-
-    origin_requested = 0
-    destination_requested = 0
-
-    for key in all_amounts.keys():
-        if "origin." in key:
-            origin_requested += all_amounts[key]
-        else:
-            destination_requested += all_amounts[key]
-
-    amount = min(
-        mover.container.capacity * filling - mover.container.level,
-        origin_requested,
-        destination_requested,
-    )
-
-    # If the mover has a function to optimize its load, check if the amount should be changed
-    if not hasattr(mover, "check_optimal_filling"):
-        return amount, all_amounts
-
-    else:
-        amounts = [amount]
-        amounts.extend(
-            [
-                mover.check_optimal_filling(loader, unloader, orig, dest)
-                for orig, dest in itertools.product(origin, destination)
-            ]
-        )
-
-        return min(amounts), all_amounts
-
-
 def delayed_process(activity_log, env, start_event, sub_processes):
     """"Returns a generator which can be added as a process to a simpy.Environment. In the process the given
     sub_processes will be executed after the given start_event occurs.
@@ -333,8 +285,8 @@ def single_run_process(
     if not hasattr(activity_log, "unloader"):
         activity_log.unloader = unloader
 
-    amount, all_amounts = determine_amount(
-        origin, destination, loader, mover, unloader, filling
+    amount, all_amounts = mover.determine_amount(
+        origin, destination, loader, unloader, filling
     )
 
     # Check if activity can start

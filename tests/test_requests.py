@@ -55,6 +55,13 @@ class BasicStorageUnit(
         super().__init__(*args, **kwargs)
 
 
+class Mover(
+    core.ContainerDependentMovable, core.HasResource, core.Log, core.Identifiable
+):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 class Processor(
     core.Processor,
     core.LoadingFunction,
@@ -136,6 +143,10 @@ def test_dual_processors(env, geometry_a):
 
 def test_dual_processors_with_limit(env, geometry_a):
     # move content into a limited container, have two process wait for each other to finish
+    v_full = 10
+    v_empty = 20
+    compute_v = lambda x: x * (v_full - v_empty) + v_empty
+
     unlimited_container_1 = BasicStorageUnit(
         env=env,
         name="UC_1",
@@ -152,10 +163,11 @@ def test_dual_processors_with_limit(env, geometry_a):
         level=1000,
         nr_resources=100,
     )
-    unlimited_container_3 = BasicStorageUnit(
+    unlimited_container_3 = Mover(
         env=env,
         name="UC_3",
         geometry=geometry_a,
+        compute_v=compute_v,
         capacity=2000,
         level=0,
         nr_resources=100,
