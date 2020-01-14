@@ -158,11 +158,15 @@ def determine_amount(origin, destination, loader, mover, unloader, filling):
         return amount, all_amounts
 
     else:
-        amount = min(
-            amount, mover.check_optimal_filling(loader, unloader, origin, destination)
+        amounts = [amount]
+        amounts.extend(
+            [
+                mover.check_optimal_filling(loader, unloader, orig, dest)
+                for orig, dest in itertools.product(origin, destination)
+            ]
         )
 
-        return amount, all_amounts
+        return min(amounts), all_amounts
 
 
 def delayed_process(activity_log, env, start_event, sub_processes):
@@ -835,8 +839,17 @@ class Simulation(core.Identifiable, core.Log):
         if activity_type == "single_run":
             kwargs = self.get_mover_properties_kwargs(activity)
             kwargs["mover"] = self.equipment[activity["mover"]]
-            kwargs["origin"] = self.sites[activity["origin"]]
-            kwargs["destination"] = self.sites[activity["destination"]]
+
+            if type(self.sites[activity["origin"]]) == list:
+                kwargs["origin"] = self.sites[activity["origin"]]
+            else:
+                kwargs["origin"] = [self.sites[activity["origin"]]]
+
+            if type(self.sites[activity["destination"]]) == list:
+                kwargs["destination"] = self.sites[activity["destination"]]
+            else:
+                kwargs["destination"] = [self.sites[activity["destination"]]]
+
             kwargs["loader"] = self.equipment[activity["loader"]]
             kwargs["unloader"] = self.equipment[activity["unloader"]]
             if stop_reservation_waiting_event is not None:
