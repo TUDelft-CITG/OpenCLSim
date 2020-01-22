@@ -1329,7 +1329,7 @@ class ContainerDependentMovable(Movable, HasContainer):
             )
 
             return min(amounts), all_amounts
-    
+
     def determine_schedule(self, amount, all_amounts, origins, destinations):
         """ 
         Define a strategy for passing through the origins and destinations
@@ -1358,13 +1358,17 @@ class ContainerDependentMovable(Movable, HasContainer):
                 continue
             elif all_amounts["destination." + destination.id] <= amount - to_place:
                 to_place += all_amounts["destination." + destination.id]
-                vrachtbrief[destination.id] = all_amounts["destination." + destination.id]
-                destination.container.reserve_put(all_amounts["destination." + destination.id])
+                vrachtbrief[destination.id] = all_amounts[
+                    "destination." + destination.id
+                ]
+                destination.container.reserve_put(
+                    all_amounts["destination." + destination.id]
+                )
             else:
                 destination.container.reserve_put(amount - to_place)
                 vrachtbrief[destination.id] = amount - to_place
                 break
-        
+
         return vrachtbrief
 
 
