@@ -1329,6 +1329,43 @@ class ContainerDependentMovable(Movable, HasContainer):
             )
 
             return min(amounts), all_amounts
+    
+    def determine_schedule(self, amount, all_amounts, origins, destinations):
+        """ 
+        Define a strategy for passing through the origins and destinations
+        Implemented is FIFO: First origins will start and first destinations will start.
+        """
+        vrachtbrief = {}
+
+        to_retrieve = 0
+        to_place = 0
+
+        # reserve the amount in origin an destination
+        for origin in origins:
+            if all_amounts["origin." + origin.id] == 0:
+                continue
+            elif all_amounts["origin." + origin.id] <= amount - to_retrieve:
+                to_retrieve += all_amounts["origin." + origin.id]
+                vrachtbrief[origin.id] = all_amounts["origin." + origin.id]
+                origin.container.reserve_get(all_amounts["origin." + origin.id])
+            else:
+                origin.container.reserve_get(amount - to_retrieve)
+                vrachtbrief[origin.id] = amount - to_retrieve
+                break
+
+        for destination in destinations:
+            if all_amounts["destination." + destination.id] == 0:
+                continue
+            elif all_amounts["destination." + destination.id] <= amount - to_place:
+                to_place += all_amounts["destination." + destination.id]
+                vrachtbrief[destination.id] = all_amounts["destination." + destination.id]
+                destination.container.reserve_put(all_amounts["destination." + destination.id])
+            else:
+                destination.container.reserve_put(amount - to_place)
+                vrachtbrief[destination.id] = amount - to_place
+                break
+        
+        return vrachtbrief
 
 
 class Routeable(Movable):

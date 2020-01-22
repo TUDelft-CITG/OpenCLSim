@@ -300,35 +300,7 @@ def single_run_process(
     # If the transported amount is larger than zero, start activity
     if 0 < amount:
         resource_requests = {}
-        vrachtbrief = {}
-
-        to_retrieve = 0
-        to_place = 0
-
-        # reserve the amount in origin an destination
-        for orig in origin:
-            if all_amounts["origin." + orig.id] == 0:
-                continue
-            elif all_amounts["origin." + orig.id] <= amount - to_retrieve:
-                to_retrieve += all_amounts["origin." + orig.id]
-                vrachtbrief[orig.id] = all_amounts["origin." + orig.id]
-                orig.container.reserve_get(all_amounts["origin." + orig.id])
-            else:
-                orig.container.reserve_get(amount - to_retrieve)
-                vrachtbrief[orig.id] = amount - to_retrieve
-                break
-
-        for dest in destination:
-            if all_amounts["destination." + dest.id] == 0:
-                continue
-            elif all_amounts["destination." + dest.id] <= amount - to_place:
-                to_place += all_amounts["destination." + dest.id]
-                vrachtbrief[dest.id] = all_amounts["destination." + dest.id]
-                dest.container.reserve_put(all_amounts["destination." + dest.id])
-            else:
-                dest.container.reserve_put(amount - to_place)
-                vrachtbrief[dest.id] = amount - to_place
-                break
+        vrachtbrief = mover.determine_schedule(amount, all_amounts, origin, destination)
 
         if verbose:
             print("Using " + mover.name + " to process " + str(amount))
