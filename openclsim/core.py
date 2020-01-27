@@ -1337,6 +1337,16 @@ class ContainerDependentMovable(Movable, HasContainer):
         """
         vrachtbrief = {"Type": [], "ID": [], "Priority": [], "Amount": []}
 
+        def update_vrachtbrief(vrachtbrief, typestring, id, priority, amount):
+            """ Update the vrachtbrief """
+
+            vrachtbrief["Type"].append(typestring)
+            vrachtbrief["ID"].append(id)
+            vrachtbrief["Priority"].append(priority)
+            vrachtbrief["Amount"].append(amount)
+
+            return vrachtbrief
+
         to_retrieve = 0
         to_place = 0
 
@@ -1347,19 +1357,15 @@ class ContainerDependentMovable(Movable, HasContainer):
             elif all_amounts["origin." + origin.id] <= amount - to_retrieve:
                 to_retrieve += all_amounts["origin." + origin.id]
                 origin.container.reserve_get(all_amounts["origin." + origin.id])
-
-                vrachtbrief["Type"].append("Origin")
-                vrachtbrief["ID"].append(origin)
-                vrachtbrief["Priority"].append(1)
-                vrachtbrief["Amount"].append(all_amounts["origin." + origin.id])
+                vrachtbrief = update_vrachtbrief(
+                    vrachtbrief, "Origin", origin, 1, all_amounts["origin." + origin.id]
+                )
 
             else:
                 origin.container.reserve_get(amount - to_retrieve)
-
-                vrachtbrief["Type"].append("Origin")
-                vrachtbrief["ID"].append(origin)
-                vrachtbrief["Priority"].append(1)
-                vrachtbrief["Amount"].append(amount - to_retrieve)
+                vrachtbrief = update_vrachtbrief(
+                    vrachtbrief, "Origin", origin, 1, amount - to_retrieve
+                )
                 break
 
         for destination in destinations:
@@ -1370,21 +1376,19 @@ class ContainerDependentMovable(Movable, HasContainer):
                 destination.container.reserve_put(
                     all_amounts["destination." + destination.id]
                 )
-
-                vrachtbrief["Type"].append("Destination")
-                vrachtbrief["ID"].append(destination)
-                vrachtbrief["Priority"].append(1)
-                vrachtbrief["Amount"].append(
-                    all_amounts["destination." + destination.id]
+                vrachtbrief = update_vrachtbrief(
+                    vrachtbrief,
+                    "Destination",
+                    destination,
+                    1,
+                    all_amounts["destination." + destination.id],
                 )
 
             else:
                 destination.container.reserve_put(amount - to_place)
-
-                vrachtbrief["Type"].append("Destination")
-                vrachtbrief["ID"].append(destination)
-                vrachtbrief["Priority"].append(1)
-                vrachtbrief["Amount"].append(amount - to_place)
+                vrachtbrief = update_vrachtbrief(
+                    vrachtbrief, "Destination", destination, 1, amount - to_place
+                )
                 break
 
         return pd.DataFrame.from_dict(vrachtbrief).sort_values("Priority")
