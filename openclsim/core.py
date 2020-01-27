@@ -1335,7 +1335,7 @@ class ContainerDependentMovable(Movable, HasContainer):
         Define a strategy for passing through the origins and destinations
         Implemented is FIFO: First origins will start and first destinations will start.
         """
-        vrachtbrief = {}
+        vrachtbrief = {"Type": [], "ID": [], "Priority": [], "Amount": []}
 
         to_retrieve = 0
         to_place = 0
@@ -1346,11 +1346,20 @@ class ContainerDependentMovable(Movable, HasContainer):
                 continue
             elif all_amounts["origin." + origin.id] <= amount - to_retrieve:
                 to_retrieve += all_amounts["origin." + origin.id]
-                vrachtbrief[origin.id] = all_amounts["origin." + origin.id]
                 origin.container.reserve_get(all_amounts["origin." + origin.id])
+
+                vrachtbrief["Type"].append("Origin")
+                vrachtbrief["ID"].append(origin)
+                vrachtbrief["Priority"].append(1)
+                vrachtbrief["Amount"].append(all_amounts["origin." + origin.id])
+
             else:
                 origin.container.reserve_get(amount - to_retrieve)
-                vrachtbrief[origin.id] = amount - to_retrieve
+
+                vrachtbrief["Type"].append("Origin")
+                vrachtbrief["ID"].append(origin)
+                vrachtbrief["Priority"].append(1)
+                vrachtbrief["Amount"].append(amount - to_retrieve)
                 break
 
         for destination in destinations:
@@ -1358,18 +1367,27 @@ class ContainerDependentMovable(Movable, HasContainer):
                 continue
             elif all_amounts["destination." + destination.id] <= amount - to_place:
                 to_place += all_amounts["destination." + destination.id]
-                vrachtbrief[destination.id] = all_amounts[
-                    "destination." + destination.id
-                ]
                 destination.container.reserve_put(
                     all_amounts["destination." + destination.id]
                 )
+
+                vrachtbrief["Type"].append("Destination")
+                vrachtbrief["ID"].append(destination)
+                vrachtbrief["Priority"].append(1)
+                vrachtbrief["Amount"].append(
+                    all_amounts["destination." + destination.id]
+                )
+
             else:
                 destination.container.reserve_put(amount - to_place)
-                vrachtbrief[destination.id] = amount - to_place
+
+                vrachtbrief["Type"].append("Destination")
+                vrachtbrief["ID"].append(destination)
+                vrachtbrief["Priority"].append(1)
+                vrachtbrief["Amount"].append(amount - to_place)
                 break
 
-        return vrachtbrief
+        return pd.DataFrame.from_dict(vrachtbrief).sort_values("Priority")
 
 
 class Routeable(Movable):

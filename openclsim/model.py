@@ -302,6 +302,9 @@ def single_run_process(
         resource_requests = {}
         vrachtbrief = mover.determine_schedule(amount, all_amounts, origin, destination)
 
+        origins = vrachtbrief[vrachtbrief["Type"] == "Origin"]
+        destinations = vrachtbrief[vrachtbrief["Type"] == "Destination"]
+
         if verbose:
             print("Using " + mover.name + " to process " + str(amount))
         activity_log.log_entry(
@@ -311,94 +314,96 @@ def single_run_process(
         # request the mover's resource
         yield from _request_resource(resource_requests, mover.resource)
 
-        for orig in origin:
-            if orig.id in vrachtbrief.keys():
+        for i in origins.index:
+            origin = origins.loc[i, "ID"]
+            amount = origins.loc[i, "Amount"]
 
-                # move the mover to the origin (if necessary)
-                if not mover.is_at(orig):
-                    yield from _move_mover(
-                        mover,
-                        orig,
-                        ActivityID=activity_log.id,
-                        engine_order=engine_order,
-                        verbose=verbose,
-                    )
-
-                yield from _request_resources_if_transfer_possible(
-                    env,
-                    resource_requests,
-                    orig,
-                    loader,
+            # move the mover to the origin (if necessary)
+            if not mover.is_at(origin):
+                yield from _move_mover(
                     mover,
-                    vrachtbrief[orig.id],
-                    mover.resource,
-                    activity_log.id,
+                    origin,
+                    ActivityID=activity_log.id,
                     engine_order=engine_order,
                     verbose=verbose,
                 )
 
-                # load the mover
-                yield from _shift_amount(
-                    env,
-                    loader,
+            yield from _request_resources_if_transfer_possible(
+                env,
+                resource_requests,
+                origin,
+                loader,
+                mover,
+                amount,
+                mover.resource,
+                activity_log.id,
+                engine_order=engine_order,
+                verbose=verbose,
+            )
+
+            # load the mover
+            yield from _shift_amount(
+                env,
+                loader,
+                mover,
+                mover.container.level + amount,
+                origin,
+                ActivityID=activity_log.id,
+                verbose=verbose,
+            )
+
+            # release the loader and origin resources (but always keep the mover requested)
+            _release_resource(
+                resource_requests, loader.resource, kept_resource=mover.resource
+            )
+            _release_resource(
+                resource_requests, origin.resource, kept_resource=mover.resource
+            )
+
+        for i in destinations.index:
+            destination = destinations.loc[i, "ID"]
+            amount = destinations.loc[i, "Amount"]
+
+            # move the mover to the destination
+            if not mover.is_at(destination):
+                yield from _move_mover(
                     mover,
-                    mover.container.level + vrachtbrief[orig.id],
-                    orig,
+                    destination,
                     ActivityID=activity_log.id,
-                    verbose=verbose,
-                )
-
-                # release the loader and origin resources (but always keep the mover requested)
-                _release_resource(
-                    resource_requests, loader.resource, kept_resource=mover.resource
-                )
-                _release_resource(
-                    resource_requests, orig.resource, kept_resource=mover.resource
-                )
-
-        for dest in destination:
-            if dest.id in vrachtbrief.keys():
-
-                # move the mover to the destination
-                if not mover.is_at(dest):
-                    yield from _move_mover(
-                        mover,
-                        dest,
-                        ActivityID=activity_log.id,
-                        engine_order=engine_order,
-                        verbose=verbose,
-                    )
-
-                yield from _request_resources_if_transfer_possible(
-                    env,
-                    resource_requests,
-                    mover,
-                    unloader,
-                    dest,
-                    vrachtbrief[dest.id],
-                    mover.resource,
-                    activity_log.id,
                     engine_order=engine_order,
                     verbose=verbose,
                 )
 
-                # unload the mover
-                yield from _shift_amount(
-                    env,
-                    unloader,
-                    mover,
-                    mover.container.level - vrachtbrief[dest.id],
-                    dest,
-                    ActivityID=activity_log.id,
-                    verbose=verbose,
-                )
+            yield from _request_resources_if_transfer_possible(
+                env,
+                resource_requests,
+                mover,
+                unloader,
+                destination,
+                amount,
+                mover.resource,
+                activity_log.id,
+                engine_order=engine_order,
+                verbose=verbose,
+            )
 
-                # release the unloader, destination and mover requests
-                _release_resource(resource_requests, unloader.resource)
-                if dest.resource in resource_requests:
-                    _release_resource(resource_requests, dest.resource)
-                if mover.resource in resource_requests:
-                    _release_resource(resource_requests, mover.resource)
+            # unload the mover
+            yield from _shift_amount(
+                env,
+                unloader,
+                mover,
+                mover.container.level - amount,
+                destination,
+                ActivityID=activity_log.id,
+                verbose=verbose,
+            )
+
+            # release the unloader, destination and mover requests
+            _release_resource(resource_requests, unloader.resource)
+            if destination.resource in resource_requests:
+                _release_resource(resource_requests, destination.resource)
+            if mover.resource in resource_requests:
+                _release_resource(resource_requests, mover.resource)
 
         activity_log.log_entry(
             "transporting stop", env.now, amount, mover.geometry, activity_log.id
