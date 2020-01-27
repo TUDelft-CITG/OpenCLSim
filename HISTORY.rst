@@ -2,6 +2,18 @@
 History
 =======
 
+1.2.0 (2020-01-27)
+------------------
+
+* Major updates to the Movable class
+* You can now enter multiple origins and destinations in one activity
+* Optimisation of the schedule is possible by enhanding the Movable
+
+1.1.1 (2019-12-11)
+------------------
+
+* Minor bug fixes
+
 1.1.0 (2019-08-30)
 ------------------
 

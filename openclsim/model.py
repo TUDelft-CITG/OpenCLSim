@@ -1,4 +1,5 @@
 from functools import partial
+import itertools
 import openclsim.core as core
 import datetime
 import simpy
@@ -58,6 +59,9 @@ class Activity(core.Identifiable, core.Log):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
+        self.origin = origin if type(origin) == list else [origin]
+        self.destination = destination if type(destination) == list else [destination]
+
         self.start_event = (
             start_event
             if start_event is None or isinstance(start_event, simpy.Event)
@@ -67,27 +71,22 @@ class Activity(core.Identifiable, core.Log):
         if type(stop_event) == list:
             stop_event = self.env.any_of(events=stop_event)
 
-        if not start_event:
-            self.stop_event = (
-                stop_event
-                if stop_event is not None
-                else self.env.any_of(
-                    events=[
-                        origin.container.empty_event,
-                        destination.container.full_event,
-                    ]
-                )
-            )
+        if stop_event is not None:
+            self.stop_event = stop_event
 
-        else:
-            self.stop_event = (
-                stop_event
-                if stop_event is not None
-                else [
-                    origin.container.get_empty_event,
-                    destination.container.get_full_event,
-                ]
+        elif start_event is None:
+            stop_event = []
+            stop_event.extend(orig.container.empty_event for orig in self.origin)
+            stop_event.extend(dest.container.full_event for dest in self.destination)
+            self.stop_event = self.env.any_of(stop_event)
+
+        elif start_event:
+            stop_event = []
+            stop_event.extend(orig.container.get_empty_event for orig in self.origin)
+            stop_event.extend(
+                dest.container.get_full_event for dest in self.destination
             )
+            self.stop_event = stop_event
 
         self.stop_reservation_waiting_event = (
             self.stop_event()
@@ -95,21 +94,18 @@ class Activity(core.Identifiable, core.Log):
             else self.stop_event
         )
 
-        self.origin = origin
-        self.destination = destination
         self.loader = loader
         self.mover = mover
         self.unloader = unloader
-
         self.print = show
 
         single_run_proc = partial(
             single_run_process,
-            origin=origin,
-            destination=destination,
-            loader=loader,
-            mover=mover,
-            unloader=unloader,
+            origin=self.origin,
+            destination=self.destination,
+            loader=self.loader,
+            mover=self.mover,
+            unloader=self.unloader,
             stop_reservation_waiting_event=self.stop_reservation_waiting_event,
             verbose=self.print,
         )
@@ -289,18 +285,9 @@ def single_run_process(
     if not hasattr(activity_log, "unloader"):
         activity_log.unloader = unloader
 
-    # Determine the basic amount that should be transported
-    amount = min(
-        mover.container.capacity * filling - mover.container.level,
-        origin.container.expected_level,
-        destination.container.capacity - destination.container.expected_level,
+    amount, all_amounts = mover.determine_amount(
+        origin, destination, loader, unloader, filling
     )
-
-    # If the mover has a function to optimize its load, check if the amount should be changed
-    if hasattr(mover, "check_optimal_filling"):
-        amount = min(
-            amount, mover.check_optimal_filling(loader, unloader, origin, destination)
-        )
 
     # Check if activity can start
     if hasattr(stop_reservation_waiting_event, "__call__"):
@@ -311,12 +298,12 @@ def single_run_process(
         )
 
     # If the transported amount is larger than zero, start activity
-    if amount > 0:
+    if 0 < amount:
         resource_requests = {}
+        vrachtbrief = mover.determine_schedule(amount, all_amounts, origin, destination)
 
-        # reserve the amount in origin an destination
-        origin.container.reserve_get(amount)
-        destination.container.reserve_put(amount)
+        origins = vrachtbrief[vrachtbrief["Type"] == "Origin"]
+        destinations = vrachtbrief[vrachtbrief["Type"] == "Destination"]
 
         if verbose:
             print("Using " + mover.name + " to process " + str(amount))
@@ -327,131 +314,147 @@ def single_run_process(
         # request the mover's resource
         yield from _request_resource(resource_requests, mover.resource)
 
-        # move the mover to the origin (if necessary)
-        if not mover.is_at(origin):
-            yield from _move_mover(
+        for i in origins.index:
+            origin = origins.loc[i, "ID"]
+            amount = float(origins.loc[i, "Amount"])
+
+            # move the mover to the origin (if necessary)
+            if not mover.is_at(origin):
+                yield from _move_mover(
+                    mover,
+                    origin,
+                    ActivityID=activity_log.id,
+                    engine_order=engine_order,
+                    verbose=verbose,
+                )
+
+            yield from _request_resources_if_transfer_possible(
+                env,
+                resource_requests,
+                origin,
+                loader,
                 mover,
+                amount,
+                mover.resource,
+                activity_log.id,
+                engine_order=engine_order,
+                verbose=verbose,
+            )
+
+            # load the mover
+            yield from _shift_amount(
+                env,
+                loader,
+                mover,
+                mover.container.level + amount,
                 origin,
                 ActivityID=activity_log.id,
+                verbose=verbose,
+            )
+
+            # release the loader and origin resources (but always keep the mover requested)
+            _release_resource(
+                resource_requests, loader.resource, kept_resource=mover.resource
+            )
+            _release_resource(
+                resource_requests, origin.resource, kept_resource=mover.resource
+            )
+
+        for i in destinations.index:
+            destination = destinations.loc[i, "ID"]
+            amount = float(destinations.loc[i, "Amount"])
+
+            # move the mover to the destination
+            if not mover.is_at(destination):
+                yield from _move_mover(
+                    mover,
+                    destination,
+                    ActivityID=activity_log.id,
+                    engine_order=engine_order,
+                    verbose=verbose,
+                )
+
+            yield from _request_resources_if_transfer_possible(
+                env,
+                resource_requests,
+                mover,
+                unloader,
+                destination,
+                amount,
+                mover.resource,
+                activity_log.id,
                 engine_order=engine_order,
                 verbose=verbose,
             )
 
-        yield from _request_resources_if_transfer_possible(
-            env,
-            resource_requests,
-            origin,
-            loader,
-            mover,
-            amount,
-            mover.resource,
-            activity_log.id,
-            engine_order=engine_order,
-            verbose=verbose,
-        )
-
-        # load the mover
-        yield from _shift_amount(
-            env,
-            loader,
-            mover,
-            mover.container.level + amount,
-            origin,
-            ActivityID=activity_log.id,
-            verbose=verbose,
-        )
-
-        # release the loader and origin resources (but always keep the mover requested)
-        _release_resource(
-            resource_requests, loader.resource, kept_resource=mover.resource
-        )
-        _release_resource(
-            resource_requests, origin.resource, kept_resource=mover.resource
-        )
-
-        # move the mover to the destination
-        if not mover.is_at(destination):
-            yield from _move_mover(
+            # unload the mover
+            yield from _shift_amount(
+                env,
+                unloader,
                 mover,
+                mover.container.level - amount,
                 destination,
                 ActivityID=activity_log.id,
-                engine_order=engine_order,
                 verbose=verbose,
             )
 
-        yield from _request_resources_if_transfer_possible(
-            env,
-            resource_requests,
-            mover,
-            unloader,
-            destination,
-            amount,
-            mover.resource,
-            activity_log.id,
-            engine_order=engine_order,
-            verbose=verbose,
-        )
-
-        # unload the mover
-        yield from _shift_amount(
-            env,
-            unloader,
-            mover,
-            mover.container.level - amount,
-            destination,
-            ActivityID=activity_log.id,
-            verbose=verbose,
-        )
-
-        # release the unloader, destination and mover requests
-        _release_resource(resource_requests, unloader.resource)
-        if destination.resource in resource_requests:
-            _release_resource(resource_requests, destination.resource)
-        if mover.resource in resource_requests:
-            _release_resource(resource_requests, mover.resource)
+            # release the unloader, destination and mover requests
+            _release_resource(resource_requests, unloader.resource)
+            if destination.resource in resource_requests:
+                _release_resource(resource_requests, destination.resource)
+            if mover.resource in resource_requests:
+                _release_resource(resource_requests, mover.resource)
 
         activity_log.log_entry(
             "transporting stop", env.now, amount, mover.geometry, activity_log.id
         )
+
     else:
-        if origin.container.expected_level == 0:
+        origin_requested = 0
+        destination_requested = 0
+
+        for key in all_amounts.keys():
+            if "origin." in key:
+                origin_requested += all_amounts[key]
+            else:
+                destination_requested += all_amounts[key]
+
+        if origin_requested == 0:
+            events = [orig.container.reserve_get_available for orig in origin]
             activity_log.log_entry(
                 "waiting origin reservation start",
                 env.now,
-                origin.container.expected_level,
-                origin.geometry,
+                mover.container.level,
+                mover.geometry,
                 activity_log.id,
             )
             yield _or_optional_event(
-                env,
-                origin.container.reserve_get_available,
-                stop_reservation_waiting_event,
+                env, env.any_of(events), stop_reservation_waiting_event
             )
             activity_log.log_entry(
                 "waiting origin reservation stop",
                 env.now,
-                origin.container.expected_level,
-                origin.geometry,
+                mover.container.level,
+                mover.geometry,
                 activity_log.id,
             )
-        elif destination.container.expected_level == destination.container.capacity:
+        elif destination_requested == 0:
+            events = [dest.container.reserve_put_available for dest in destination]
             activity_log.log_entry(
                 "waiting destination reservation start",
                 env.now,
-                destination.container.expected_level,
-                destination.geometry,
+                mover.container.level,
+                mover.geometry,
                 activity_log.id,
             )
             yield _or_optional_event(
-                env,
-                destination.container.reserve_put_available,
-                stop_reservation_waiting_event,
+                env, env.any_of(events), stop_reservation_waiting_event
             )
             activity_log.log_entry(
                 "waiting destination reservation stop",
                 env.now,
-                destination.container.expected_level,
-                destination.geometry,
+                mover.container.level,
+                mover.geometry,
                 activity_log.id,
             )
         elif mover.container.level == mover.container.capacity:
@@ -462,9 +465,7 @@ def single_run_process(
                 mover.geometry,
                 activity_log.id,
             )
-
             yield env.timeout(3600)
-
             activity_log.log_entry(
                 "waiting mover to finish stop",
                 env.now,
@@ -474,15 +475,6 @@ def single_run_process(
             )
 
         else:
-            print(origin.log)
-            print(origin.name, origin.container.level)
-            print(
-                mover.name,
-                mover.container.level,
-                mover.container.capacity,
-                mover.container.expected_level,
-            )
-            print(destination.name, destination.container.level)
             raise RuntimeError("Attempting to move content with a full ship")
 
 
@@ -778,8 +770,17 @@ class Simulation(core.Identifiable, core.Log):
         if activity_type == "single_run":
             kwargs = self.get_mover_properties_kwargs(activity)
             kwargs["mover"] = self.equipment[activity["mover"]]
-            kwargs["origin"] = self.sites[activity["origin"]]
-            kwargs["destination"] = self.sites[activity["destination"]]
+
+            if type(self.sites[activity["origin"]]) == list:
+                kwargs["origin"] = self.sites[activity["origin"]]
+            else:
+                kwargs["origin"] = [self.sites[activity["origin"]]]
+
+            if type(self.sites[activity["destination"]]) == list:
+                kwargs["destination"] = self.sites[activity["destination"]]
+            else:
+                kwargs["destination"] = [self.sites[activity["destination"]]]
+
             kwargs["loader"] = self.equipment[activity["loader"]]
             kwargs["unloader"] = self.equipment[activity["unloader"]]
             if stop_reservation_waiting_event is not None:

@@ -6,6 +6,7 @@
 import json
 import logging
 import uuid
+import itertools
 
 # you need these dependencies (you can get these from anaconda)
 # package(s) related to the simulation
@@ -1248,6 +1249,7 @@ class Movable(SimpyObject, Locatable):
         return distance / (self.current_speed * engine_order)
 
     def energy_use(self, distance, speed):
+        """ Determine the energy use """
         if isinstance(self, EnergyUse):
             # message depends on filling degree: if container is empty --> sailing empt
             if not isinstance(self, HasContainer) or self.container.level == 0:
@@ -1278,6 +1280,112 @@ class ContainerDependentMovable(Movable, HasContainer):
     def current_speed(self):
         return self.compute_v(self.container.level / self.container.capacity)
 
+    def determine_amount(self, origins, destinations, loader, unloader, filling=1):
+        """ Determine the maximum amount that can be carried """
+
+        # Determine the basic amount that should be transported
+        all_amounts = {}
+        all_amounts.update(
+            {
+                "origin." + origin.id: origin.container.expected_level
+                for origin in origins
+            }
+        )
+        all_amounts.update(
+            {
+                "destination."
+                + destination.id: destination.container.capacity
+                - destination.container.expected_level
+                for destination in destinations
+            }
+        )
+
+        origin_requested = 0
+        destination_requested = 0
+
+        for key in all_amounts.keys():
+            if "origin." in key:
+                origin_requested += all_amounts[key]
+            else:
+                destination_requested += all_amounts[key]
+
+        amount = min(
+            self.container.capacity * filling - self.container.level,
+            origin_requested,
+            destination_requested,
+        )
+
+        # If the mover has a function to optimize its load, check if the amount should be changed
+        if not hasattr(self, "check_optimal_filling"):
+            return amount, all_amounts
+
+        else:
+            amounts = [amount]
+            amounts.extend(
+                [
+                    self.check_optimal_filling(loader, unloader, origin, destination)
+                    for origin, destination in itertools.product(origins, destinations)
+                ]
+            )
+
+            return min(amounts), all_amounts
+
+    def determine_schedule(self, amount, all_amounts, origins, destinations):
+        """ 
+        Define a strategy for passing through the origins and destinations
+        Implemented is FIFO: First origins will start and first destinations will start.
+        """
+        self.vrachtbrief = {"Type": [], "ID": [], "Priority": [], "Amount": []}
+
+        def update_vrachtbrief(typestring, id, priority, amount):
+            """ Update the vrachtbrief """
+
+            self.vrachtbrief["Type"].append(typestring)
+            self.vrachtbrief["ID"].append(id)
+            self.vrachtbrief["Priority"].append(priority)
+            self.vrachtbrief["Amount"].append(amount)
+
+        to_retrieve = 0
+        to_place = 0
+
+        # reserve the amount in origin an destination
+        for origin in origins:
+            if all_amounts["origin." + origin.id] == 0:
+                continue
+            elif all_amounts["origin." + origin.id] <= amount - to_retrieve:
+                to_retrieve += all_amounts["origin." + origin.id]
+                origin.container.reserve_get(all_amounts["origin." + origin.id])
+                update_vrachtbrief(
+                    "Origin", origin, 1, all_amounts["origin." + origin.id]
+                )
+
+            else:
+                origin.container.reserve_get(amount - to_retrieve)
+                update_vrachtbrief("Origin", origin, 1, amount - to_retrieve)
+                break
+
+        for destination in destinations:
+            if all_amounts["destination." + destination.id] == 0:
+                continue
+            elif all_amounts["destination." + destination.id] <= amount - to_place:
+                to_place += all_amounts["destination." + destination.id]
+                destination.container.reserve_put(
+                    all_amounts["destination." + destination.id]
+                )
+                update_vrachtbrief(
+                    "Destination",
+                    destination,
+                    1,
+                    all_amounts["destination." + destination.id],
+                )
+
+            else:
+                destination.container.reserve_put(amount - to_place)
+                update_vrachtbrief("Destination", destination, 1, amount - to_place)
+                break
+
+        return pd.DataFrame.from_dict(self.vrachtbrief).sort_values("Priority")
+
 
 class Routeable(Movable):
     """
@@ -1298,9 +1406,8 @@ class Routeable(Movable):
         geom = nx.get_node_attributes(self.env.FG, "geometry")
 
         for node in geom.keys():
-            if (
-                np.isclose(origin.x,geom[node].x,rtol = 1e-8)
-                and np.isclose(origin.y,geom[node].y,rtol = 1e-8)
+            if np.isclose(origin.x, geom[node].x, rtol=1e-8) and np.isclose(
+                origin.y, geom[node].y, rtol=1e-8
             ):
                 origin = node
                 break
@@ -1388,16 +1495,15 @@ class Routeable(Movable):
             )
 
 
-class ContainerDependentRouteable(Routeable, HasContainer):
+class ContainerDependentRouteable(ContainerDependentMovable, Routeable):
     """ContainerDependentRouteable class
 
     Used for objects that move with a speed dependent on the container level
     compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
 
-    def __init__(self, compute_v, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.compute_v = compute_v
 
     @property
     def current_speed(self):
