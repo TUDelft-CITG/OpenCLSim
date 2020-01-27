@@ -316,7 +316,7 @@ def single_run_process(
 
         for i in origins.index:
             origin = origins.loc[i, "ID"]
-            amount = origins.loc[i, "Amount"]
+            amount = float(origins.loc[i, "Amount"])
 
             # move the mover to the origin (if necessary)
             if not mover.is_at(origin):
@@ -362,7 +362,7 @@ def single_run_process(
 
         for i in destinations.index:
             destination = destinations.loc[i, "ID"]
-            amount = destinations.loc[i, "Amount"]
+            amount = float(destinations.loc[i, "Amount"])
 
             # move the mover to the destination
             if not mover.is_at(destination):
