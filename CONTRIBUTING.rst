@@ -38,7 +38,7 @@ and "help wanted" is open to whoever wants to implement it.
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-OpenClim could always use more documentation, whether as part of the
+OpenCLSim could always use more documentation, whether as part of the
 official OpenCLSim docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
@@ -57,14 +57,14 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `OpenClSim` for local development.
+Ready to contribute? Here's how to set up `OpenCLSim` for local development.
 
-1. Fork the `OpenClSim` repository on GitHub.
+1. Fork the `OpenCLSim` repository on GitHub.
 
 
 2. Clone your fork locally::
 
-    $ git clone git@github.com:your_name_here/OpenClSim.git
+    $ git clone git@github.com:your_name_here/OpenCLSim.git
 
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
@@ -93,7 +93,7 @@ Ready to contribute? Here's how to set up `OpenClSim` for local development.
    To get flake8 and tox, just pip install them into your virtualenv.
 
 
-6. The style of OpenClSim is according to Black. Format your code using 
+6. The style of OpenCLSim is according to Black. Format your code using 
    Black witht the following lines of code::
 
     $ black openclsim
