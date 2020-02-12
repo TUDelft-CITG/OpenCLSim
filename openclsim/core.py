@@ -808,9 +808,9 @@ class HasWorkabilityCriteria:
             i = ranges[:, 0].searchsorted(t)
 
             if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
-                waiting.append(pd.Timedelta(0).total_seconds())
+                waiting.append((pd.Timedelta(0).total_seconds(), criterion))
             elif i + 1 < len(ranges):
-                waiting.append(pd.Timedelta(ranges[i, 0] - t).total_seconds())
+                waiting.append((pd.Timedelta(ranges[i, 0] - t).total_seconds(), criterion))
             else:
                 print("\nSimulation cannot continue.")
                 print("Simulation time exceeded the available metocean data.")
@@ -818,18 +818,21 @@ class HasWorkabilityCriteria:
                 self.env.exit()
 
         if waiting:
+            max_waiting = max(waiting,key=itemgetter(1))
+            max_waiting_value = max_waiting[0]
+            max_waiting_event = max_waiting[1]
             self.log_entry(
-                "waiting for weather start",
+                f"waiting for weather {max_waiting_event} start",
                 self.env.now,
-                waiting,
+                max_waiting_value,
                 self.geometry,
                 self.ActivityID,
             )
-            yield self.env.timeout(np.max(waiting))
+            yield self.env.timeout(max_waiting_value)
             self.log_entry(
-                "waiting for weather stop",
+                f"waiting for weather {max_waiting_event} stop",
                 self.env.now,
-                waiting,
+                max_waiting_value,
                 self.geometry,
                 self.ActivityID,
             )
