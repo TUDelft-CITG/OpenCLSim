@@ -19,10 +19,12 @@ import shapely.geometry
 
 # additional packages
 import math
-import datetime, time
+import datetime
+import time
 import copy
 import numpy as np
 import pandas as pd
+from operator import itemgetter
 
 logger = logging.getLogger(__name__)
 
@@ -292,7 +294,8 @@ class HasCosts:
     def cost(self):
 
         cost = (
-            (self.log["Timestamp"][-1] - self.log["Timestamp"][0]).total_seconds()
+            (self.log["Timestamp"][-1] -
+             self.log["Timestamp"][0]).total_seconds()
             / 3600
             / 24
             * self.dayrate
@@ -353,12 +356,14 @@ class HasSpillCondition(SimpyObject):
 
         if type(conditions) == list:
             for condition in conditions:
-                limits.append(simpy.Container(self.env, capacity=condition.spill_limit))
+                limits.append(simpy.Container(
+                    self.env, capacity=condition.spill_limit))
                 starts.append(time.mktime(condition.start.timetuple()))
                 ends.append(time.mktime(condition.end.timetuple()))
 
         else:
-            limits.append(simpy.Container(self.env, capacity=conditions.spill_limit))
+            limits.append(simpy.Container(
+                self.env, capacity=conditions.spill_limit))
             starts.append(time.mktime(conditions.start.timetuple()))
             ends.append(time.mktime(conditions.end.timetuple()))
 
@@ -810,7 +815,8 @@ class HasWorkabilityCriteria:
             if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
                 waiting.append((pd.Timedelta(0).total_seconds(), criterion))
             elif i + 1 < len(ranges):
-                waiting.append((pd.Timedelta(ranges[i, 0] - t).total_seconds(), criterion))
+                waiting.append(
+                    (pd.Timedelta(ranges[i, 0] - t).total_seconds(), criterion))
             else:
                 print("\nSimulation cannot continue.")
                 print("Simulation time exceeded the available metocean data.")
@@ -818,7 +824,7 @@ class HasWorkabilityCriteria:
                 self.env.exit()
 
         if waiting:
-            max_waiting = max(waiting,key=itemgetter(1))
+            max_waiting = max(waiting, key=itemgetter(1))
             max_waiting_value = max_waiting[0]
             max_waiting_event = max_waiting[1]
             self.log_entry(
@@ -904,8 +910,10 @@ class HasDepthRestriction:
             assert min_filling <= max_filling
 
         self.filling = int(filling) if filling is not None else None
-        self.min_filling = int(min_filling) if min_filling is not None else int(0)
-        self.max_filling = int(max_filling) if max_filling is not None else int(100)
+        self.min_filling = int(
+            min_filling) if min_filling is not None else int(0)
+        self.max_filling = int(
+            max_filling) if max_filling is not None else int(100)
 
         self.depth_data = {}
 
@@ -1134,21 +1142,24 @@ class HasDepthRestriction:
 
                     orig = shapely.geometry.asShape(origin.geometry)
                     dest = shapely.geometry.asShape(destination.geometry)
-                    _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+                    _, _, distance = self.wgs84.inv(
+                        orig.x, orig.y, dest.x, dest.y)
                     sailing_full = distance / self.compute_v(0)
                     sailing_full = distance / self.compute_v(filling)
 
                     duration = sailing_full + loading + sailing_full
 
                     # Determine waiting time
-                    t = datetime.datetime.fromtimestamp(self.env.now + duration)
+                    t = datetime.datetime.fromtimestamp(
+                        self.env.now + duration)
                     t = pd.Timestamp(t).to_datetime64()
                     i = ranges[:, 0].searchsorted(t)
 
                     if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
                         waiting = pd.Timedelta(0).total_seconds()
                     elif i != len(ranges):
-                        waiting = pd.Timedelta(ranges[i, 0] - t).total_seconds()
+                        waiting = pd.Timedelta(
+                            ranges[i, 0] - t).total_seconds()
                     else:
                         print("\nSimulation cannot continue.")
                         print("Simulation time exceeded the available metocean data.")
@@ -1210,7 +1221,8 @@ class Movable(SimpyObject, Locatable):
         self.geometry = shapely.geometry.asShape(destination.geometry)
 
         # Debug logs
-        logger.debug("  duration: " + "%4.2f" % (sailing_duration / 3600) + " hrs")
+        logger.debug("  duration: " + "%4.2f" %
+                     (sailing_duration / 3600) + " hrs")
 
         # Log the stop event
         self.log_sailing(event="stop")
@@ -1326,7 +1338,8 @@ class ContainerDependentMovable(Movable, HasContainer):
             amounts = [amount]
             amounts.extend(
                 [
-                    self.check_optimal_filling(loader, unloader, origin, destination)
+                    self.check_optimal_filling(
+                        loader, unloader, origin, destination)
                     for origin, destination in itertools.product(origins, destinations)
                 ]
             )
@@ -1357,7 +1370,8 @@ class ContainerDependentMovable(Movable, HasContainer):
                 continue
             elif all_amounts["origin." + origin.id] <= amount - to_retrieve:
                 to_retrieve += all_amounts["origin." + origin.id]
-                origin.container.reserve_get(all_amounts["origin." + origin.id])
+                origin.container.reserve_get(
+                    all_amounts["origin." + origin.id])
                 update_vrachtbrief(
                     "Origin", origin, 1, all_amounts["origin." + origin.id]
                 )
@@ -1384,7 +1398,8 @@ class ContainerDependentMovable(Movable, HasContainer):
 
             else:
                 destination.container.reserve_put(amount - to_place)
-                update_vrachtbrief("Destination", destination, 1, amount - to_place)
+                update_vrachtbrief(
+                    "Destination", destination, 1, amount - to_place)
                 break
 
         return pd.DataFrame.from_dict(self.vrachtbrief).sort_values("Priority")
@@ -1433,7 +1448,8 @@ class Routeable(Movable):
                     return nx.dijkstra_path(self.env.FG, origin, destination)
 
             # If no route is returned
-            raise AssertionError("The destination cannot be found in the graph")
+            raise AssertionError(
+                "The destination cannot be found in the graph")
 
     def determine_speed(self, node_from, node_to):
         """ Determine the sailing speed based on edge properties """
@@ -1617,7 +1633,8 @@ class LoadingFunction:
             return amount / self.loading_rate + self.load_manoeuvring * 60
         else:
             return (
-                self.loading_rate(self.container.level, self.container.level + amount)
+                self.loading_rate(self.container.level,
+                                  self.container.level + amount)
                 + self.load_manoeuvring * 60
             )
 
@@ -1647,7 +1664,8 @@ class UnloadingFunction:
             return amount / self.unloading_rate + self.unload_manoeuvring * 60
         else:
             return (
-                self.unloading_rate(self.container.level, self.container.level - amount)
+                self.unloading_rate(self.container.level,
+                                    self.container.level - amount)
                 + self.unload_manoeuvring * 60
             )
 
@@ -1664,7 +1682,8 @@ class LoadingSubcycle:
         self.loading_subcycle = loading_subcycle
 
         if type(self.loading_subcycle) != pd.core.frame.DataFrame:
-            raise AssertionError("The subcycle table has to be a Pandas DataFrame")
+            raise AssertionError(
+                "The subcycle table has to be a Pandas DataFrame")
         else:
             if "EventName" not in list(
                 self.loading_subcycle.columns
@@ -1686,7 +1705,8 @@ class UnloadingSubcycle:
         self.unloading_subcycle = unloading_subcycle
 
         if type(self.unloading_subcycle) != pd.core.frame.DataFrame:
-            raise AssertionError("The subcycle table has to be a Pandas DataFrame")
+            raise AssertionError(
+                "The subcycle table has to be a Pandas DataFrame")
         else:
             if "EventName" not in list(
                 self.unloading_subcycle.columns
@@ -1700,7 +1720,7 @@ class Processor(SimpyObject):
     """Processor class
 
     Adds the loading and unloading components and checks for possible downtime. 
-    
+
     If the processor class is used to allow "loading" or "unloading" the mixins "LoadingFunction" and "UnloadingFunction" should be added as well. 
     If no functions are used a subcycle should be used, which is possible with the mixins "LoadingSubcycle" and "UnloadingSubcycle".
     """
@@ -1736,11 +1756,13 @@ class Processor(SimpyObject):
 
         # Before starting to process, check the following requirements
         # Make sure that both objects have storage
-        assert isinstance(ship, HasContainer) and isinstance(site, HasContainer)
+        assert isinstance(ship, HasContainer) and isinstance(
+            site, HasContainer)
         # Make sure that both objects allow processing
         assert isinstance(ship, HasResource) and isinstance(site, HasResource)
         # Make sure that the processor (self), container and site can log the events
-        assert isinstance(self, Log) and isinstance(ship, Log) and isinstance(site, Log)
+        assert isinstance(self, Log) and isinstance(
+            ship, Log) and isinstance(site, Log)
         # Make sure that the processor, origin and destination are all at the same location
         assert self.is_at(site)
         assert ship.is_at(site)
@@ -1867,7 +1889,8 @@ class Processor(SimpyObject):
                 activityID=self.ActivityID,
             )
 
-        logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
+        logger.debug("  process:        " + "%4.2f" %
+                     (duration / 3600) + " hrs")
 
     def check_possible_downtime(
         self, origin, destination, duration, ship, site, desired_level, amount
