@@ -822,7 +822,7 @@ class HasWorkabilityCriteria:
                 self.env.exit()
 
         if waiting:
-            max_waiting = max(waiting, key=itemgetter(1))
+            max_waiting = max(waiting, key=itemgetter(0))
             max_waiting_value = max_waiting[0]
             max_waiting_event = max_waiting[1]
             self.log_entry(
