@@ -794,27 +794,26 @@ class HasWorkabilityCriteria:
                 ranges
             )
 
-    def check_weather_restriction(self, location, event):
+    def check_weather_restriction(self, location, event_name):
         waiting = []
 
         if location.name not in self.work_restrictions.keys():
             self.calc_work_restrictions(location)
-        elif event not in self.work_restrictions[location.name].keys():
+        elif event_name not in self.work_restrictions[location.name].keys():
             self.calc_work_restrictions(location)
 
-        for criterion in sorted(self.work_restrictions[location.name].keys()):
-            ranges = self.work_restrictions[location.name][criterion]
+        for event_name in sorted(self.work_restrictions[location.name].keys()):
+            ranges = self.work_restrictions[location.name][event_name]
 
             t = datetime.datetime.fromtimestamp(self.env.now)
             t = pd.Timestamp(t).to_datetime64()
             i = ranges[:, 0].searchsorted(t)
 
             if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
-                waiting.append((pd.Timedelta(0).total_seconds(), criterion))
+                waiting.append((pd.Timedelta(0).total_seconds(), event_name))
             elif i + 1 < len(ranges):
                 waiting.append(
-                    (pd.Timedelta(ranges[i, 0] - t).total_seconds(), criterion)
-                )
+                    (pd.Timedelta(ranges[i, 0] - t).total_seconds(), event_name))
             else:
                 print("\nSimulation cannot continue.")
                 print("Simulation time exceeded the available metocean data.")
