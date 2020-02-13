@@ -794,12 +794,12 @@ class HasWorkabilityCriteria:
                 ranges
             )
 
-    def check_weather_restriction(self, location, event_name):
+    def check_weather_restriction(self, location, event):
         waiting = []
 
         if location.name not in self.work_restrictions.keys():
             self.calc_work_restrictions(location)
-        elif event_name not in self.work_restrictions[location.name].keys():
+        elif event not in self.work_restrictions[location.name].keys():
             self.calc_work_restrictions(location)
 
         for event_name in sorted(self.work_restrictions[location.name].keys()):
