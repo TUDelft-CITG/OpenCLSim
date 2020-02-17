@@ -1767,14 +1767,15 @@ class Processor(SimpyObject):
             subcycle = self.unloading_subcycle
             message = "unloading"
 
-        # Log the process
-        self.log_entry(
-            log=f"{message} process start",
-            t=self.env.now,
-            value=amount,
-            geometry_log=self.geometry,
-            activityID=self.ActivityID,
-        )
+        # Log the process for all parts
+        for location in [origin, destination]:
+            self.log_entry(
+                log=f"{message} process start",
+                t=location.env.now,
+                value=amount,
+                geometry_log=location.geometry,
+                activityID=self.ActivityID,
+            )
 
         # Shift amounts in containers
         start_time = self.env.now
@@ -1857,11 +1858,7 @@ class Processor(SimpyObject):
                 yield self.env.timeout(duration)
 
                 self.log_entry(
-                    f"{activity} stop",
-                    self.env.now,
-                    amount,
-                    self.geometry,
-                    self.ActivityID,
+                    f"{activity} stop", self.env.now, 0, self.geometry, self.ActivityID
                 )
 
         # Add spill the location where processing is taking place
@@ -1873,14 +1870,15 @@ class Processor(SimpyObject):
         # Compute the energy use
         self.computeEnergy(duration, origin, destination)
 
-        # Log the process
-        self.log_entry(
-            log=f"{message} process stop",
-            t=self.env.now,
-            value=amount,
-            geometry_log=self.geometry,
-            activityID=self.ActivityID,
-        )
+        # Log the process for all parts
+        for location in [origin, destination]:
+            self.log_entry(
+                log=f"{message} process stop",
+                t=location.env.now,
+                value=amount,
+                geometry_log=location.geometry,
+                activityID=self.ActivityID,
+            )
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
 
