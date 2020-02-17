@@ -813,7 +813,8 @@ class HasWorkabilityCriteria:
                 waiting.append((pd.Timedelta(0).total_seconds(), event_name))
             elif i + 1 < len(ranges):
                 waiting.append(
-                    (pd.Timedelta(ranges[i, 0] - t).total_seconds(), event_name))
+                    (pd.Timedelta(ranges[i, 0] - t).total_seconds(), event_name)
+                )
             else:
                 print("\nSimulation cannot continue.")
                 print("Simulation time exceeded the available metocean data.")
@@ -1749,40 +1750,38 @@ class Processor(SimpyObject):
         assert ship.is_at(site)
 
         current_level = ship.container.level
+
+        # Define whether it is loading or unloading by the processor
         if current_level < desired_level:
             amount = desired_level - current_level
             origin = site
             destination = ship
             rate = self.loading
             subcycle = self.loading_subcycle
+            message = "loading"
         else:
             amount = current_level - desired_level
             origin = ship
             destination = site
             rate = self.unloading
             subcycle = self.unloading_subcycle
+            message = "unloading"
 
-        if rate:
-            duration = rate(origin, destination, amount)
+        # Log the process
+        self.log_entry(
+            log=f"{message} process start",
+            t=self.env.now,
+            value=amount,
+            geometry_log=self.geometry,
+            activityID=self.ActivityID,
+        )
 
-            yield from self.check_possible_downtime(
-                origin, destination, duration, ship, site, desired_level, amount
-            )
-
-        elif type(subcycle) == pd.core.frame.DataFrame:
-            duration = 0
-
-            for _ in range(int(amount)):
-                for i in subcycle.index:
-                    duration += subcycle.iloc[i]["Duration"] * 60
-                    yield from self.check_possible_downtime(
-                        origin, destination, duration, ship, site, desired_level, 1
-                    )
-
-        # Shift volumes in containers
+        # Shift amounts in containers
         start_time = self.env.now
         yield origin.container.get(amount)
         end_time = self.env.now
+
+        # If the amount is not available in the origin, log waiting
         if start_time != end_time:
             self.log_entry(
                 log="waiting origin content start",
@@ -1799,58 +1798,7 @@ class Processor(SimpyObject):
                 activityID=self.ActivityID,
             )
 
-        # Checkout the time
-        origin.log_entry(
-            "unloading start",
-            self.env.now,
-            origin.container.level,
-            self.geometry,
-            self.ActivityID,
-        )
-        destination.log_entry(
-            "loading start",
-            self.env.now,
-            destination.container.level,
-            self.geometry,
-            self.ActivityID,
-        )
-
-        if self != origin and self != destination:
-            self.log_entry(
-                "loading start", self.env.now, 0, self.geometry, self.ActivityID
-            )
-
-        yield self.env.timeout(duration)
-
-        # Add spill the location where processing is taking place
-        self.addSpill(origin, destination, amount, duration)
-
-        # Shift soil from container volumes
-        self.shiftSoil(origin, destination, amount)
-
-        # Compute the energy use
-        self.computeEnergy(duration, origin, destination)
-
-        origin.log_entry(
-            "unloading stop",
-            self.env.now,
-            origin.container.level + amount,
-            self.geometry,
-            self.ActivityID,
-        )
-        destination.log_entry(
-            "loading stop",
-            self.env.now,
-            destination.container.level + amount,
-            self.geometry,
-            self.ActivityID,
-        )
-
-        if self != origin and self != destination:
-            self.log_entry(
-                "loading stop", self.env.now, amount, self.geometry, self.ActivityID
-            )
-
+        # If the amount is cannot be put in the destination, log waiting
         start_time = self.env.now
         yield destination.container.put(amount)
         end_time = self.env.now
@@ -1869,6 +1817,70 @@ class Processor(SimpyObject):
                 geometry_log=self.geometry,
                 activityID=self.ActivityID,
             )
+
+        # Single processing event
+        if rate:
+            duration = rate(origin, destination, amount)
+
+            # Check possible downtime
+            yield from self.check_possible_downtime(
+                origin, destination, duration, ship, site, desired_level, amount
+            )
+
+            # Checkout single event
+            self.log_entry(
+                f"{message} start", self.env.now, 0, self.geometry, self.ActivityID
+            )
+
+            yield self.env.timeout(duration)
+
+            self.log_entry(
+                f"{message} stop", self.env.now, amount, self.geometry, self.ActivityID
+            )
+
+        # Subcycle with processing events
+        elif type(subcycle) == pd.core.frame.DataFrame:
+            for _, i in itertools.product(range(int(amount)), subcycle.index):
+                duration = subcycle.iloc[i]["Duration"] * 60
+                activity = subcycle.iloc[i]["Event"]
+
+                # Check possible downtime
+                yield from self.check_possible_downtime(
+                    origin, destination, duration, ship, site, desired_level, 1
+                )
+
+                # Checkout subcyle event
+                self.log_entry(
+                    f"{activity} start", self.env.now, 0, self.geometry, self.ActivityID
+                )
+
+                yield self.env.timeout(duration)
+
+                self.log_entry(
+                    f"{activity} stop",
+                    self.env.now,
+                    amount,
+                    self.geometry,
+                    self.ActivityID,
+                )
+
+        # Add spill the location where processing is taking place
+        self.addSpill(origin, destination, amount, duration)
+
+        # Shift soil from container volumes
+        self.shiftSoil(origin, destination, amount)
+
+        # Compute the energy use
+        self.computeEnergy(duration, origin, destination)
+
+        # Log the process
+        self.log_entry(
+            log=f"{message} process stop",
+            t=self.env.now,
+            value=amount,
+            geometry_log=self.geometry,
+            activityID=self.ActivityID,
+        )
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
 
