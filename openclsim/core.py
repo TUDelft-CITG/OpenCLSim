@@ -1744,7 +1744,9 @@ class Processor(SimpyObject):
         # Make sure that both objects allow processing
         assert isinstance(mover, HasResource) and isinstance(site, HasResource)
         # Make sure that the processor (self), container and site can log the events
-        assert isinstance(self, Log) and isinstance(mover, Log) and isinstance(site, Log)
+        assert (
+            isinstance(self, Log) and isinstance(mover, Log) and isinstance(site, Log)
+        )
         # Make sure that the processor, origin and destination are all at the same location
         assert self.is_at(site)
         assert mover.is_at(site)
@@ -2062,15 +2064,14 @@ class Processor(SimpyObject):
                     )
 
     def checkTide(self, mover, site, desired_level, duration):
-        if hasattr(ship, "calc_depth_restrictions") and isinstance(site, HasWeather):
+        if hasattr(mover, "calc_depth_restrictions") and isinstance(site, HasWeather):
             max_level = max(mover.container.level, desired_level)
             fill_degree = max_level / mover.container.capacity
             yield from mover.check_depth_restriction(site, fill_degree, duration)
 
     def checkWeather(self, processor, site, duration):
-        if (
-            isinstance(processor, HasWorkabilityCriteria)
-            and isinstance(site, HasWeather)
+        if isinstance(processor, HasWorkabilityCriteria) and isinstance(
+            site, HasWeather
         ):
             yield from processor.check_weather_restriction(site, duration)
 

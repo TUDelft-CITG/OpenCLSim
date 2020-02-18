@@ -504,7 +504,9 @@ def _release_resource(requested_resources, resource, kept_resource=None):
         del requested_resources[resource]
 
 
-def _shift_amount(env, processor, mover, desired_level, site, ActivityID, verbose=False):
+def _shift_amount(
+    env, processor, mover, desired_level, site, ActivityID, verbose=False
+):
     """Calls the processor.process method, giving debug print statements when verbose is True."""
     amount = np.abs(mover.container.level - desired_level)
 
@@ -518,7 +520,9 @@ def _shift_amount(env, processor, mover, desired_level, site, ActivityID, verbos
     if verbose:
         print("Processed {}:".format(amount))
         print("  by:          " + processor.name)
-        print("  mover        " + mover.name + " contains: " + str(mover.container.level))
+        print(
+            "  mover        " + mover.name + " contains: " + str(mover.container.level)
+        )
         print("  site:        " + site.name + " contains: " + str(site.container.level))
 
 
