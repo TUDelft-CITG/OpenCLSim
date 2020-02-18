@@ -300,9 +300,10 @@ def test_spill_requirement(env, LocationReq, Location, Processor, Soil):
         "geometry": location,  # The coordinates of the "to location"
         "capacity": 1_000,  # The capacity of the "to location"
         "level": 0,
+        "conditions": [condition_1],
     }  # The actual volume of the "to location"
 
-    to_site = Location(**data_to_site)
+    to_site = LocationReq(**data_to_site)
 
     # make the processor with source terms
     data_processor = {
@@ -318,7 +319,7 @@ def test_spill_requirement(env, LocationReq, Location, Processor, Soil):
     # Log fuel use of the processor in step 1
     env.process(processor.process(from_site, 0, to_site))
     env.run()
-    assert processor.log["Message"][0] == "waiting for spill start"
+    assert processor.log["Message"][2] == "waiting for spill start"
 
-    waiting = processor.log["Timestamp"][1] - processor.log["Timestamp"][0]
+    waiting = processor.log["Timestamp"][3] - processor.log["Timestamp"][2]
     np.testing.assert_almost_equal(waiting.total_seconds(), 14 * 24 * 3600)

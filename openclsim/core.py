@@ -939,7 +939,7 @@ class HasDepthRestriction:
                 seconds=processor.unloading(
                     self,
                     location,
-                    self.container.level - filling_degree * self.container.capacity,
+                    self.container.level + filling_degree * self.container.capacity,
                 )
             )
 
@@ -1039,6 +1039,16 @@ class HasDepthRestriction:
             ranges = self.depth_data[location.name][int(fill_degree * 100) / 100][
                 "Ranges"
             ]
+
+        print("***")
+        print("***")
+        print(ranges)
+        print("")
+        print(datetime.datetime.fromtimestamp(self.env.now))
+        print(fill_degree)
+        print("")
+        print("***")
+        print("***")
 
         if len(ranges) == 0:
             self.log_entry(
@@ -1935,7 +1945,11 @@ class Processor(SimpyObject):
 
             # Check tide
             yield from self.checkTide(
-                mover=mover, site=site, desired_level=desired_level, duration=duration
+                mover=mover,
+                site=site,
+                desired_level=desired_level,
+                amount=amount,
+                duration=duration,
             )
 
             # Check spill
@@ -2076,9 +2090,9 @@ class Processor(SimpyObject):
                         self.ActivityID,
                     )
 
-    def checkTide(self, mover, site, desired_level, duration):
+    def checkTide(self, mover, site, desired_level, amount, duration):
         if hasattr(mover, "calc_depth_restrictions") and isinstance(site, HasWeather):
-            max_level = max(mover.container.level, desired_level)
+            max_level = max(mover.container.level + amount, desired_level)
             fill_degree = max_level / mover.container.capacity
             yield from mover.check_depth_restriction(site, fill_degree, duration)
 
