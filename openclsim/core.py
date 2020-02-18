@@ -1734,34 +1734,34 @@ class Processor(SimpyObject):
             self.unloading_subcycle = None
 
     # noinspection PyUnresolvedReferences
-    def process(self, ship, desired_level, site):
+    def process(self, mover, desired_level, site):
         """Moves content from ship to the site or from the site to the ship to ensure that the ship's container reaches
         the desired level. Yields the time it takes to process."""
 
         # Before starting to process, check the following requirements
         # Make sure that both objects have storage
-        assert isinstance(ship, HasContainer) and isinstance(site, HasContainer)
+        assert isinstance(mover, HasContainer) and isinstance(site, HasContainer)
         # Make sure that both objects allow processing
-        assert isinstance(ship, HasResource) and isinstance(site, HasResource)
+        assert isinstance(mover, HasResource) and isinstance(site, HasResource)
         # Make sure that the processor (self), container and site can log the events
-        assert isinstance(self, Log) and isinstance(ship, Log) and isinstance(site, Log)
+        assert isinstance(self, Log) and isinstance(mover, Log) and isinstance(site, Log)
         # Make sure that the processor, origin and destination are all at the same location
         assert self.is_at(site)
-        assert ship.is_at(site)
+        assert mover.is_at(site)
 
         # Define whether it is loading or unloading by the processor
-        current_level = ship.container.level
+        current_level = mover.container.level
 
         if current_level < desired_level:
             amount = desired_level - current_level
             origin = site
-            destination = ship
+            destination = mover
             rate = self.loading
             subcycle = self.loading_subcycle
             message = "loading"
         else:
             amount = current_level - desired_level
-            origin = ship
+            origin = mover
             destination = site
             rate = self.unloading
             subcycle = self.unloading_subcycle
@@ -1774,7 +1774,7 @@ class Processor(SimpyObject):
                 t=location.env.now,
                 value=amount,
                 geometry_log=location.geometry,
-                activityID=self.ActivityID,
+                ActivityID=self.ActivityID,
             )
 
         # Single processing event
@@ -1788,7 +1788,7 @@ class Processor(SimpyObject):
 
             # Check possible downtime
             yield from self.check_possible_downtime(
-                origin, destination, duration, desired_level, amount, message
+                mover, site, duration, desired_level, amount, message
             )
 
             # Checkout single event
@@ -1804,10 +1804,15 @@ class Processor(SimpyObject):
 
         # Subcycle with processing events
         elif type(subcycle) == pd.core.frame.DataFrame:
-            for _, i in itertools.product(range(int(amount)), subcycle.index):
+            previous_cycle = None
+            for cycle, i in itertools.product(range(int(amount)), subcycle.index):
 
-                # Check whether the amount can me moved from the origin to the destination
-                yield from self.check_possible_shift(origin, destination, 1)
+                # Check if a new subcycle has started
+                if cycle != previous_cycle:
+                    previous_cycle = cycle
+
+                    # Check whether the amount can me moved from the origin to the destination
+                    yield from self.check_possible_shift(origin, destination, 1)
 
                 # Define the properties
                 duration = subcycle.iloc[i]["Duration"] * 60
@@ -1815,7 +1820,7 @@ class Processor(SimpyObject):
 
                 # Check possible downtime
                 yield from self.check_possible_downtime(
-                    origin, destination, duration, desired_level, 1, activity
+                    mover, site, duration, desired_level, 1, activity
                 )
 
                 # Checkout subcyle event
@@ -1845,7 +1850,7 @@ class Processor(SimpyObject):
                 t=location.env.now,
                 value=amount,
                 geometry_log=location.geometry,
-                activityID=self.ActivityID,
+                ActivityID=self.ActivityID,
             )
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
@@ -1870,14 +1875,14 @@ class Processor(SimpyObject):
                 t=start_time,
                 value=amount,
                 geometry_log=self.geometry,
-                activityID=self.ActivityID,
+                ActivityID=self.ActivityID,
             )
             self.log_entry(
                 log="waiting origin content stop",
                 t=end_time,
                 value=amount,
                 geometry_log=self.geometry,
-                activityID=self.ActivityID,
+                ActivityID=self.ActivityID,
             )
 
         # If the amount is cannot be put in the destination, log waiting
@@ -1890,18 +1895,18 @@ class Processor(SimpyObject):
                 t=start_time,
                 value=amount,
                 geometry_log=self.geometry,
-                activityID=self.ActivityID,
+                ActivityID=self.ActivityID,
             )
             self.log_entry(
                 log="waiting destination content stop",
                 t=end_time,
                 value=amount,
                 geometry_log=self.geometry,
-                activityID=self.ActivityID,
+                ActivityID=self.ActivityID,
             )
 
     def check_possible_downtime(
-        self, origin, destination, duration, desired_level, amount, process
+        self, mover, site, duration, desired_level, amount, process
     ):
         # Activity can only start if environmental conditions allow it
         time = 0
@@ -1915,11 +1920,11 @@ class Processor(SimpyObject):
 
             # Check tide
             yield from self.checkTide(
-                ship=ship, site=site, desired_level=desired_level, duration=duration
+                mover=mover, site=site, desired_level=desired_level, duration=duration
             )
 
             # Check spill
-            yield from self.checkSpill(origin, destination, amount)
+            yield from self.checkSpill(mover, site, amount)
 
     def computeEnergy(self, duration, origin, destination):
         """
@@ -1984,7 +1989,7 @@ class Processor(SimpyObject):
                     message, self.env.now, energy, destination.geometry, self.ActivityID
                 )
 
-    def checkSpill(self, origin, destination, amount):
+    def checkSpill(self, mover, site, amount):
         """
         duration: duration of the activity in seconds
         origin: origin of the moved volume (the computed amount)
@@ -1998,46 +2003,17 @@ class Processor(SimpyObject):
         Result of this function is possible waiting, spill is added later on and does not depend on possible requirements
         """
 
-        # If self == origin --> destination is a placement location
-        if self == origin:
+        # If self == mover --> site is a placement location
+        if self == mover:
             if (
-                isinstance(destination, HasSpillCondition)
+                isinstance(site, HasSpillCondition)
                 and isinstance(self, HasSoil)
                 and isinstance(self, HasPlume)
             ):
                 density, fines = self.get_properties(amount)
                 spill = self.sigma_d * density * fines * amount
 
-                waiting = destination.check_conditions(spill)
-
-                if 0 < waiting:
-                    self.log_entry(
-                        "waiting for spill start",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
-                    )
-                    yield self.env.timeout(waiting - self.env.now)
-                    self.log_entry(
-                        "waiting for spill stop",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
-                    )
-
-        # If self == destination --> origin is a retrieval location
-        elif self == destination:
-            if (
-                isinstance(origin, HasSpillCondition)
-                and isinstance(origin, HasSoil)
-                and isinstance(self, HasPlume)
-            ):
-                density, fines = origin.get_properties(amount)
-                spill = self.sigma_d * density * fines * amount
-
-                waiting = origin.check_conditions(spill)
+                waiting = site.check_conditions(spill)
 
                 if 0 < waiting:
                     self.log_entry(
@@ -2059,14 +2035,14 @@ class Processor(SimpyObject):
         # If self != origin and self != destination --> processing
         else:
             if (
-                isinstance(destination, HasSpillCondition)
-                and isinstance(origin, HasSoil)
+                isinstance(site, HasSpillCondition)
+                and isinstance(mover, HasSoil)
                 and isinstance(self, HasPlume)
             ):
-                density, fines = origin.get_properties(amount)
+                density, fines = mover.get_properties(amount)
                 spill = self.sigma_d * density * fines * amount
 
-                waiting = destination.check_conditions(spill)
+                waiting = site.check_conditions(spill)
 
                 if 0 < waiting:
                     self.log_entry(
@@ -2085,52 +2061,18 @@ class Processor(SimpyObject):
                         self.ActivityID,
                     )
 
-            elif (
-                isinstance(origin, HasSpillCondition)
-                and isinstance(origin, HasSoil)
-                and isinstance(self, HasPlume)
-            ):
-                density, fines = origin.get_properties(amount)
-                spill = self.sigma_d * density * fines * amount
-
-                waiting = origin.check_conditions(spill)
-
-                if 0 < waiting:
-                    self.log_entry(
-                        "waiting for spill start",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
-                    )
-                    yield self.env.timeout(waiting - self.env.now)
-                    self.log_entry(
-                        "waiting for spill stop",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
-                    )
-
-    def checkTide(self, ship, site, desired_level, duration):
+    def checkTide(self, mover, site, desired_level, duration):
         if hasattr(ship, "calc_depth_restrictions") and isinstance(site, HasWeather):
-            max_level = max(ship.container.level, desired_level)
-            fill_degree = max_level / ship.container.capacity
-            yield from ship.check_depth_restriction(site, fill_degree, duration)
+            max_level = max(mover.container.level, desired_level)
+            fill_degree = max_level / mover.container.capacity
+            yield from mover.check_depth_restriction(site, fill_degree, duration)
 
-    def checkWeather(self, processor, site, amount):
+    def checkWeather(self, processor, site, duration):
         if (
-            isinstance(origin, HasWorkabilityCriteria)
-            and isinstance(origin, Movable)
-            and isinstance(destination, HasWeather)
+            isinstance(processor, HasWorkabilityCriteria)
+            and isinstance(site, HasWeather)
         ):
-            yield from origin.check_weather_restriction(destination, amount)
-        elif (
-            isinstance(destination, HasWorkabilityCriteria)
-            and isinstance(destination, Movable)
-            and isinstance(origin, HasWeather)
-        ):
-            yield from destination.check_weather_restriction(origin, amount)
+            yield from processor.check_weather_restriction(site, duration)
 
     def addSpill(self, origin, destination, amount, duration):
         """
