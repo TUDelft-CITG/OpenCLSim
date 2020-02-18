@@ -319,7 +319,7 @@ def test_spill_requirement(env, LocationReq, Location, Processor, Soil):
     # Log fuel use of the processor in step 1
     env.process(processor.process(from_site, 0, to_site))
     env.run()
-    assert processor.log["Message"][2] == "waiting for spill start"
+    assert processor.log["Message"][0] == "waiting for spill start"
 
-    waiting = processor.log["Timestamp"][3] - processor.log["Timestamp"][2]
+    waiting = processor.log["Timestamp"][1] - processor.log["Timestamp"][0]
     np.testing.assert_almost_equal(waiting.total_seconds(), 14 * 24 * 3600)
