@@ -1621,7 +1621,9 @@ class LoadingFunction:
             return amount / self.loading_rate + self.load_manoeuvring * 60
         else:
             return (
-                self.loading_rate(self.container.level, self.container.level + amount)
+                self.loading_rate(
+                    destination.container.level, destination.container.level + amount
+                )
                 + self.load_manoeuvring * 60
             )
 
@@ -1651,7 +1653,9 @@ class UnloadingFunction:
             return amount / self.unloading_rate + self.unload_manoeuvring * 60
         else:
             return (
-                self.unloading_rate(self.container.level, self.container.level - amount)
+                self.unloading_rate(
+                    origin.container.level + amount, origin.container.level
+                )
                 + self.unload_manoeuvring * 60
             )
 
@@ -1754,6 +1758,7 @@ class Processor(SimpyObject):
         # Define whether it is loading or unloading by the processor
         current_level = mover.container.level
 
+        # Loading the mover
         if current_level < desired_level:
             amount = desired_level - current_level
             origin = site
@@ -1761,6 +1766,8 @@ class Processor(SimpyObject):
             rate = self.loading
             subcycle = self.loading_subcycle
             message = "loading"
+
+        # Unloading the mover
         else:
             amount = current_level - desired_level
             origin = mover
@@ -1800,6 +1807,9 @@ class Processor(SimpyObject):
 
             yield self.env.timeout(duration)
 
+            # Put the amount in the destination
+            destination.container.put(amount)
+
             self.log_entry(
                 f"{message} stop", self.env.now, amount, self.geometry, self.ActivityID
             )
@@ -1831,6 +1841,9 @@ class Processor(SimpyObject):
                 )
 
                 yield self.env.timeout(duration)
+
+                # Put the amount in the destination
+                destination.container.put(amount)
 
                 self.log_entry(
                     f"{activity} stop", self.env.now, 0, self.geometry, self.ActivityID
@@ -1887,25 +1900,25 @@ class Processor(SimpyObject):
                 ActivityID=self.ActivityID,
             )
 
-        # If the amount is cannot be put in the destination, log waiting
-        start_time = self.env.now
-        yield destination.container.put(amount)
-        end_time = self.env.now
-        if start_time != end_time:
-            self.log_entry(
-                log="waiting destination content start",
-                t=start_time,
-                value=amount,
-                geometry_log=self.geometry,
-                ActivityID=self.ActivityID,
-            )
-            self.log_entry(
-                log="waiting destination content stop",
-                t=end_time,
-                value=amount,
-                geometry_log=self.geometry,
-                ActivityID=self.ActivityID,
-            )
+        # # If the amount is cannot be put in the destination, log waiting
+        # start_time = self.env.now
+        # yield destination.container.put(amount)
+        # end_time = self.env.now
+        # if start_time != end_time:
+        #     self.log_entry(
+        #         log="waiting destination content start",
+        #         t=start_time,
+        #         value=amount,
+        #         geometry_log=self.geometry,
+        #         ActivityID=self.ActivityID,
+        #     )
+        #     self.log_entry(
+        #         log="waiting destination content stop",
+        #         t=end_time,
+        #         value=amount,
+        #         geometry_log=self.geometry,
+        #         ActivityID=self.ActivityID,
+        #     )
 
     def check_possible_downtime(
         self, mover, site, duration, desired_level, amount, process
