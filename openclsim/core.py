@@ -1749,9 +1749,9 @@ class Processor(SimpyObject):
         assert self.is_at(site)
         assert ship.is_at(site)
 
+        # Define whether it is loading or unloading by the processor
         current_level = ship.container.level
 
-        # Define whether it is loading or unloading by the processor
         if current_level < desired_level:
             amount = desired_level - current_level
             origin = site
@@ -1776,6 +1776,87 @@ class Processor(SimpyObject):
                 geometry_log=location.geometry,
                 activityID=self.ActivityID,
             )
+
+        # Single processing event
+        if rate:
+
+            # Check whether the amount can me moved from the origin to the destination
+            yield from self.check_possible_shift(origin, destination, amount)
+
+            # Define the duration of the event
+            duration = rate(origin, destination, amount)
+
+            # Check possible downtime
+            yield from self.check_possible_downtime(
+                origin, destination, duration, desired_level, amount, message
+            )
+
+            # Checkout single event
+            self.log_entry(
+                f"{message} start", self.env.now, 0, self.geometry, self.ActivityID
+            )
+
+            yield self.env.timeout(duration)
+
+            self.log_entry(
+                f"{message} stop", self.env.now, amount, self.geometry, self.ActivityID
+            )
+
+        # Subcycle with processing events
+        elif type(subcycle) == pd.core.frame.DataFrame:
+            for _, i in itertools.product(range(int(amount)), subcycle.index):
+
+                # Check whether the amount can me moved from the origin to the destination
+                yield from self.check_possible_shift(origin, destination, 1)
+
+                # Define the properties
+                duration = subcycle.iloc[i]["Duration"] * 60
+                activity = subcycle.iloc[i]["Event"]
+
+                # Check possible downtime
+                yield from self.check_possible_downtime(
+                    origin, destination, duration, desired_level, 1, activity
+                )
+
+                # Checkout subcyle event
+                self.log_entry(
+                    f"{activity} start", self.env.now, 0, self.geometry, self.ActivityID
+                )
+
+                yield self.env.timeout(duration)
+
+                self.log_entry(
+                    f"{activity} stop", self.env.now, 0, self.geometry, self.ActivityID
+                )
+
+        # Add spill the location where processing is taking place
+        self.addSpill(origin, destination, amount, duration)
+
+        # Shift soil from container volumes
+        self.shiftSoil(origin, destination, amount)
+
+        # Compute the energy use
+        self.computeEnergy(duration, origin, destination)
+
+        # Log the process for all parts
+        for location in [origin, destination]:
+            self.log_entry(
+                log=f"{message} process stop",
+                t=location.env.now,
+                value=amount,
+                geometry_log=location.geometry,
+                activityID=self.ActivityID,
+            )
+
+        logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
+
+    def check_possible_shift(self, origin, destination, amount):
+        """ Check if all the material is available
+        
+        If the amount is not available in the origin or in the destination
+        yield a put or get. Time will move forward until the amount can be 
+        retrieved from the origin or placed into the destination.
+        """
 
         # Shift amounts in containers
         start_time = self.env.now
@@ -1819,71 +1900,8 @@ class Processor(SimpyObject):
                 activityID=self.ActivityID,
             )
 
-        # Single processing event
-        if rate:
-            duration = rate(origin, destination, amount)
-
-            # Check possible downtime
-            yield from self.check_possible_downtime(
-                origin, destination, duration, ship, site, desired_level, amount
-            )
-
-            # Checkout single event
-            self.log_entry(
-                f"{message} start", self.env.now, 0, self.geometry, self.ActivityID
-            )
-
-            yield self.env.timeout(duration)
-
-            self.log_entry(
-                f"{message} stop", self.env.now, amount, self.geometry, self.ActivityID
-            )
-
-        # Subcycle with processing events
-        elif type(subcycle) == pd.core.frame.DataFrame:
-            for _, i in itertools.product(range(int(amount)), subcycle.index):
-                duration = subcycle.iloc[i]["Duration"] * 60
-                activity = subcycle.iloc[i]["Event"]
-
-                # Check possible downtime
-                yield from self.check_possible_downtime(
-                    origin, destination, duration, ship, site, desired_level, 1
-                )
-
-                # Checkout subcyle event
-                self.log_entry(
-                    f"{activity} start", self.env.now, 0, self.geometry, self.ActivityID
-                )
-
-                yield self.env.timeout(duration)
-
-                self.log_entry(
-                    f"{activity} stop", self.env.now, 0, self.geometry, self.ActivityID
-                )
-
-        # Add spill the location where processing is taking place
-        self.addSpill(origin, destination, amount, duration)
-
-        # Shift soil from container volumes
-        self.shiftSoil(origin, destination, amount)
-
-        # Compute the energy use
-        self.computeEnergy(duration, origin, destination)
-
-        # Log the process for all parts
-        for location in [origin, destination]:
-            self.log_entry(
-                log=f"{message} process stop",
-                t=location.env.now,
-                value=amount,
-                geometry_log=location.geometry,
-                activityID=self.ActivityID,
-            )
-
-        logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
-
     def check_possible_downtime(
-        self, origin, destination, duration, ship, site, desired_level, amount
+        self, origin, destination, duration, desired_level, amount, process
     ):
         # Activity can only start if environmental conditions allow it
         time = 0
@@ -1893,7 +1911,7 @@ class Processor(SimpyObject):
             time = self.env.now
 
             # Check weather
-            yield from self.checkWeather(origin, destination, duration)
+            yield from self.checkWeather(processor=self, site=site, duration=duration)
 
             # Check tide
             yield from self.checkTide(
@@ -2100,7 +2118,7 @@ class Processor(SimpyObject):
             fill_degree = max_level / ship.container.capacity
             yield from ship.check_depth_restriction(site, fill_degree, duration)
 
-    def checkWeather(self, origin, destination, amount):
+    def checkWeather(self, processor, site, amount):
         if (
             isinstance(origin, HasWorkabilityCriteria)
             and isinstance(origin, Movable)
