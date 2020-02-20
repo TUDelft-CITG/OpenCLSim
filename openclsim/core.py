@@ -1807,6 +1807,15 @@ class Processor(SimpyObject):
             # Put the amount in the destination
             yield from self.check_possible_shift(origin, destination, amount, "put")
 
+            # Add spill the location where processing is taking place
+            self.addSpill(origin, destination, amount, duration)
+
+            # Shift soil from container volumes
+            self.shiftSoil(origin, destination, amount)
+
+            # Compute the energy use
+            self.computeEnergy(duration, origin, destination)
+
             self.log_entry(
                 f"{message} stop", self.env.now, amount, self.geometry, self.ActivityID
             )
@@ -1849,18 +1858,18 @@ class Processor(SimpyObject):
                 if put:
                     yield from self.check_possible_shift(origin, destination, 1, "put")
 
+                # Add spill the location where processing is taking place
+                self.addSpill(origin, destination, amount, duration)
+
+                # Shift soil from container volumes
+                self.shiftSoil(origin, destination, amount)
+
+                # Compute the energy use
+                self.computeEnergy(duration, origin, destination)
+
                 self.log_entry(
                     f"{activity} stop", self.env.now, 0, self.geometry, self.ActivityID
                 )
-
-        # Add spill the location where processing is taking place
-        self.addSpill(origin, destination, amount, duration)
-
-        # Shift soil from container volumes
-        self.shiftSoil(origin, destination, amount)
-
-        # Compute the energy use
-        self.computeEnergy(duration, origin, destination)
 
         # Log the process for all parts
         for location in [origin, destination]:
@@ -2040,6 +2049,7 @@ class Processor(SimpyObject):
                 isinstance(site, HasSpillCondition)
                 and isinstance(self, HasSoil)
                 and isinstance(self, HasPlume)
+                and 0 < self.container.level
             ):
                 density, fines = self.get_properties(amount)
                 spill = self.sigma_d * density * fines * amount
