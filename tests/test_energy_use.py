@@ -155,14 +155,14 @@ def test_processor(
     env.process(processor.process(source, 400, dest))
     env.run()
 
-    np.testing.assert_almost_equal(processor.log["Value"][-1], (env.now - start) * 4)
+    np.testing.assert_almost_equal(processor.log["Value"][-2], (env.now - start) * 4)
 
     # Log fuel use of the processor in step 2
     start = env.now
     env.process(processor.process(dest, 300, source))
     env.run()
 
-    np.testing.assert_almost_equal(processor.log["Value"][-1], (env.now - start) * 4)
+    np.testing.assert_almost_equal(processor.log["Value"][-2], (env.now - start) * 4)
 
 
 # Test energy use of a TransportProcessingResource
@@ -235,7 +235,7 @@ def test_TransportProcessingResource(
 
     # Duration should be amount / 2
     # Energy use should be duration * 4
-    np.testing.assert_almost_equal(hopper.log["Value"][-2], (env.now - start) * 4)
+    np.testing.assert_almost_equal(hopper.log["Value"][-3], (env.now - start) * 4)
 
     # Simulation continues with moving from A to B
     start = env.now
@@ -253,7 +253,7 @@ def test_TransportProcessingResource(
     env.process(hopper.process(hopper, 0, dest))
     env.run()
 
-    np.testing.assert_almost_equal(hopper.log["Value"][-2], (env.now - start) * 3)
+    np.testing.assert_almost_equal(hopper.log["Value"][-3], (env.now - start) * 3)
 
 
 # Test energy use of a Processor and ContainerDependentMovable
@@ -343,7 +343,7 @@ def test_Processor_ContainerDependentMovable(
     env.process(processor_1.process(containervessel, 500, source))
     env.run()
 
-    np.testing.assert_almost_equal(processor_1.log["Value"][-1], (env.now - start) * 4)
+    np.testing.assert_almost_equal(processor_1.log["Value"][-2], (env.now - start) * 4)
 
     # Simulation continues with moving from A to B
     start = env.now
@@ -359,4 +359,4 @@ def test_Processor_ContainerDependentMovable(
     env.process(processor_2.process(containervessel, 0, dest))
     env.run()
 
-    np.testing.assert_almost_equal(processor_2.log["Value"][-1], (env.now - start) * 3)
+    np.testing.assert_almost_equal(processor_2.log["Value"][-2], (env.now - start) * 3)
