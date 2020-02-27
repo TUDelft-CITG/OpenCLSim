@@ -761,44 +761,36 @@ class HasWorkabilityCriteria:
         self.work_restrictions = {}
 
     def calc_work_restrictions(self, location):
-        self.work_restrictions[location.name] = {}
-
         # Loop through series to find windows
         for criterion in self.criteria:
-            index = location.metocean_data[criterion.condition].index
-            values = location.metocean_data[criterion.condition].values
-            in_range = False
-            ranges = []
-
-            for i, value in enumerate(values):
-                if value <= criterion.maximum:
-                    if i == 0:
-                        begin = index[i]
-                    elif not in_range:
-                        begin = index[i]
-
-                    in_range = True
-                elif in_range:
-                    in_range = False
-                    end = index[i]
-
-                    if (end - begin) >= criterion.window_length:
-                        ranges.append(
-                            (
-                                begin.to_datetime64(),
-                                (end - criterion.window_length).to_datetime64(),
-                            )
-                        )
-
-            self.work_restrictions[location.name][criterion.event_name] = {
-                criterion.condition: np.array(ranges)
-            }
+            condition = location.metocean_data[criterion.condition]
+            ix_condition = condition <= criterion.maximum
+            ix_starts = ~ix_condition.values[:-1] & ix_condition.values[1:]
+            ix_ends = ix_condition.values[:-1] & ~ix_condition.values[1:]
+            if ix_condition[0]:
+                ix_starts[0] = True
+            if ix_starts.sum() > ix_ends.sum():
+                ix_ends[-1] = True
+            t_starts = condition.index[:-1][ix_starts]
+            t_ends = condition.index[:-1][ix_ends]
+            dt_windows = t_ends - t_starts
+            ix_windows = dt_windows >= criterion.window_length * 3
+            ranges = np.concatenate(
+                (
+                    t_starts[ix_windows].values.reshape((-1, 1)),
+                    (t_ends[ix_windows] - criterion.window_length).values.reshape(
+                        (-1, 1)
+                    ),
+                ),
+                axis=1,
+            )
+            self.work_restrictions.setdefault(location.name, {}).setdefault(
+                criterion.event_name, {}
+            )[criterion.condition] = ranges
 
     def check_weather_restriction(self, location, event_name):
 
         if location.name not in self.work_restrictions.keys():
-            self.calc_work_restrictions(location)
-        elif event_name not in self.work_restrictions[location.name].keys():
             self.calc_work_restrictions(location)
 
         if event_name in [criterion.event_name for criterion in self.criteria]:
@@ -1885,7 +1877,7 @@ class Processor(SimpyObject):
 
     def check_possible_shift(self, origin, destination, amount, activity):
         """ Check if all the material is available
-        
+
         If the amount is not available in the origin or in the destination
         yield a put or get. Time will move forward until the amount can be 
         retrieved from the origin or placed into the destination.
