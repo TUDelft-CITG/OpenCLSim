@@ -26,6 +26,8 @@ import numpy as np
 import pandas as pd
 from operator import itemgetter
 
+from .utils import subcycle_repetitions
+
 logger = logging.getLogger(__name__)
 
 
@@ -1654,11 +1656,12 @@ class LoadingSubcycle:
     loading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
     """
 
-    def __init__(self, loading_subcycle, *args, **kwargs):
+    def __init__(self, loading_subcycle, loading_subcycle_frequency, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
         self.loading_subcycle = loading_subcycle
+        self.loading_subcycle_frequency = loading_subcycle_frequency
 
         if type(self.loading_subcycle) != pd.core.frame.DataFrame:
             raise AssertionError("The subcycle table has to be a Pandas DataFrame")
@@ -1676,11 +1679,14 @@ class UnloadingSubcycle:
     unloading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
     """
 
-    def __init__(self, unloading_subcycle, *args, **kwargs):
+    def __init__(
+        self, unloading_subcycle, unloading_subcycle_frequency, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
         self.unloading_subcycle = unloading_subcycle
+        self.unloading_subcycle_frequency = unloading_subcycle_frequency
 
         if type(self.unloading_subcycle) != pd.core.frame.DataFrame:
             raise AssertionError("The subcycle table has to be a Pandas DataFrame")
@@ -1754,6 +1760,7 @@ class Processor(SimpyObject):
             destination = mover
             rate = self.loading
             subcycle = self.loading_subcycle
+            subcycle_frequency = self.loading_subcycle_frequency
             message = "loading"
 
         # Unloading the mover
@@ -1763,6 +1770,7 @@ class Processor(SimpyObject):
             destination = site
             rate = self.unloading
             subcycle = self.unloading_subcycle
+            subcycle_frequency = self.unloading_subcycle_frequency
             message = "unloading"
 
         # Log the process for all parts
@@ -1815,7 +1823,9 @@ class Processor(SimpyObject):
         # Subcycle with processing events
         elif type(subcycle) == pd.core.frame.DataFrame:
             previous_cycle = None
-            for cycle, i in itertools.product(range(int(amount)), subcycle.index):
+            # calculate the number of subcycle repetitions :: sr
+            sr = subcycle_repetitions(subcycle_frequency, amount)
+            for cycle, i in itertools.product(range(int(sr)), subcycle.index):
 
                 # Check if a new subcycle has started
                 if cycle != previous_cycle:
@@ -1828,7 +1838,14 @@ class Processor(SimpyObject):
 
                 # Check whether the amount can me moved from the origin to the destination
                 if get:
-                    yield from self.check_possible_shift(origin, destination, 1, "get")
+                    if sr == 1:
+                        yield from self.check_possible_shift(
+                            origin, destination, amount, "get"
+                        )
+                    else:
+                        yield from self.check_possible_shift(
+                            origin, destination, 1, "get"
+                        )
 
                 # Define the properties
                 duration = subcycle.iloc[i]["Duration"] * 60
@@ -1848,7 +1865,14 @@ class Processor(SimpyObject):
 
                 # Put the amount in the destination
                 if put:
-                    yield from self.check_possible_shift(origin, destination, 1, "put")
+                    if sr == 1:
+                        yield from self.check_possible_shift(
+                            origin, destination, amount, "put"
+                        )
+                    else:
+                        yield from self.check_possible_shift(
+                            origin, destination, 1, "put"
+                        )
 
                 # Add spill the location where processing is taking place
                 self.addSpill(origin, destination, amount, duration)
