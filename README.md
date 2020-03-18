@@ -8,7 +8,7 @@
 
 **Open** source **C**omplex **L**ogistics **Sim**ulation - Rule driven scheduling of cyclic activities for in-depth comparison of alternative operating strategies.
 
-Documentation can be found [here](https://openclsim.readthedocs.io).
+Documentation is found [here](https://openclsim.readthedocs.io).
 
 ## Installation
 
