@@ -696,6 +696,18 @@ class HasSoil:
 class HasWeather:
     """HasWeather class
 
+    Abstract class, which provides a superclass for solutions 
+    adding weather conditions to a project site
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+
+
+class HasWeatherDataFrame(HasWeather):
+    """HasWeatherDataFrame class
+
     Used to add weather conditions to a project site
     name: name of .csv file in folder
 
@@ -751,6 +763,42 @@ class HasWeather:
 
 
 class HasWorkabilityCriteria:
+    """Abstract HasWorkabilityCriteria class
+
+    Used to add workability criteria
+    """
+
+    def __init__(self, criteria, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.criteria = criteria
+
+    def check_weather_restriction(self, location, event):
+        """Checks whether the execution of the event has to be delayed.
+        If so a timeout event has to be issued, the corresponding logging has to be added 
+        which will set the new starting time of the event to the time, when the execution
+        actually can be performed."""
+
+    def delay_processing(self, waiting):
+        """Waiting must be a delay expressed in seconds"""
+        self.log_entry(
+            "waiting for weather start",
+            self.env.now,
+            waiting,
+            self.geometry,
+            self.ActivityID,
+        )
+        yield self.env.timeout(np.max(waiting))
+        self.log_entry(
+            "waiting for weather stop",
+            self.env.now,
+            waiting,
+            self.geometry,
+            self.ActivityID,
+        )
+
+
+class HasWorkabilityCriteriaDataframe(HasWorkabilityCriteria):
     """HasWorkabilityCriteria class
 
     Used to add workability criteria
@@ -812,25 +860,8 @@ class HasWorkabilityCriteria:
                 else:
                     print("\nSimulation cannot continue.")
                     print("Simulation time exceeded the available metocean data.")
-
-                    self.env.exit()
-
-                if 0 < np.max(waiting):
-                    self.log_entry(
-                        f"waiting for weather {event_name} start",
-                        self.env.now,
-                        int(np.max(waiting)),
-                        self.geometry,
-                        self.ActivityID,
-                    )
-                    yield self.env.timeout(int(np.max(waiting)))
-                    self.log_entry(
-                        f"waiting for weather {event_name} stop",
-                        self.env.now,
-                        int(np.max(waiting)),
-                        self.geometry,
-                        self.ActivityID,
-                    )
+        if waiting:
+            self.delay_processing(max(waiting))
 
 
 class WorkabilityCriterion:
