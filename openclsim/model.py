@@ -356,9 +356,12 @@ def single_run_process(
             _release_resource(
                 resource_requests, loader.resource, kept_resource=mover.resource
             )
-            _release_resource(
-                resource_requests, origin.resource, kept_resource=mover.resource
-            )
+            
+            # If the loader is not the origin, release the origin as well
+            if origin.resource in resource_requests.keys():
+                _release_resource(
+                    resource_requests, origin.resource, kept_resource=mover.resource
+                )
 
         for i in destinations.index:
             destination = destinations.loc[i, "ID"]
