@@ -1418,17 +1418,16 @@ class Routeable(Movable):
             if destination.name in list(self.env.FG.nodes):
                 return nx.dijkstra_path(self.env.FG, origin, destination.name)
 
-        else:
-            for node in geom.keys():
-                if (
-                    destination.geometry.x == geom[node].x
-                    and destination.geometry.y == geom[node].y
-                ):
-                    destination = node
-                    return nx.dijkstra_path(self.env.FG, origin, destination)
+        for node in geom.keys():
+            if (
+                destination.geometry.x == geom[node].x
+                and destination.geometry.y == geom[node].y
+            ):
+                destination = node
+                return nx.dijkstra_path(self.env.FG, origin, destination)
 
-            # If no route is returned
-            raise AssertionError("The destination cannot be found in the graph")
+        # If no route is returned
+        raise AssertionError("The destination cannot be found in the graph")
 
     def determine_speed(self, node_from, node_to):
         """ Determine the sailing speed based on edge properties """
