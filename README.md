@@ -1,6 +1,6 @@
 [ ![Documentation](https://img.shields.io/badge/sphinx-documentation-informational.svg)](https://openclsim.readthedocs.io)
 [ ![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](https://github.com/TUDelft-CITG/OpenCLSim/blob/master/LICENSE.txt)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3251545.svg)](https://doi.org/10.5281/zenodo.3251545)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3730616.svg)](https://doi.org/10.5281/zenodo.3730616)
 
 [![CircleCI](https://circleci.com/gh/TUDelft-CITG/OpenCLSim.svg?style=svg&circle-token=fc95d870dc21fdf11e1ebc02f9defcd99212197a)](https://circleci.com/gh/TUDelft-CITG/OpenCLSim)
 
