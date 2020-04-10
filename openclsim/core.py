@@ -200,7 +200,11 @@ class EventsContainer(simpy.Container):
 
     def put_callback(self, event):
         for amount in sorted(self._get_available_events):
-            if self.level >= amount:
+            if isinstance(self, ReservationContainer):
+                if self.expected_level >= amount:
+                    self._get_available_events[amount].succeed()
+                    del self._get_available_events[amount]
+            elif self.level >= amount:
                 self._get_available_events[amount].succeed()
                 del self._get_available_events[amount]
             else:
@@ -213,7 +217,11 @@ class EventsContainer(simpy.Container):
 
     def get_callback(self, event):
         for amount in sorted(self._put_available_events):
-            if self.capacity - self.level >= amount:
+            if isinstance(self, ReservationContainer):
+                if self.capacity - self.expected_level >= amount:
+                    self._put_available_events[amount].succeed()
+                    del self._put_available_events[amount]
+            elif self.capacity - self.level >= amount:
                 self._put_available_events[amount].succeed()
                 del self._put_available_events[amount]
             else:
