@@ -356,7 +356,7 @@ def single_run_process(
             _release_resource(
                 resource_requests, loader.resource, kept_resource=mover.resource
             )
-            
+
             # If the loader is not the origin, release the origin as well
             if origin.resource in resource_requests.keys():
                 _release_resource(
@@ -414,12 +414,14 @@ def single_run_process(
 
     else:
         origin_requested = 0
+        origin_left = 0
         destination_requested = 0
+        destination_left = 0
 
         for key in all_amounts.keys():
-            if "origin." in key:
+            if "origin" in key:
                 origin_requested += all_amounts[key]
-            else:
+            elif "destination" in key:
                 destination_requested += all_amounts[key]
 
         if origin_requested == 0:
