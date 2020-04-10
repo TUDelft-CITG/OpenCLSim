@@ -219,8 +219,8 @@ class EventsContainer(simpy.Container):
         for amount in sorted(self._put_available_events):
             if isinstance(self, ReservationContainer):
                 if self.capacity - self.expected_level >= amount:
-                    self._get_available_events[amount].succeed()
-                    del self._get_available_events[amount]
+                    self._put_available_events[amount].succeed()
+                    del self._put_available_events[amount]
             elif self.capacity - self.level >= amount:
                 self._put_available_events[amount].succeed()
                 del self._put_available_events[amount]
