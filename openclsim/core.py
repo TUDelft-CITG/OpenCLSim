@@ -204,7 +204,11 @@ class EventsContainer(simpy.Container):
 
     def put_callback(self, event):
         for amount in sorted(self._get_available_events):
-            if self.level >= amount:
+            if isinstance(self, ReservationContainer):
+                if self.expected_level >= amount:
+                    self._get_available_events[amount].succeed()
+                    del self._get_available_events[amount]
+            elif self.level >= amount:
                 self._get_available_events[amount].succeed()
                 del self._get_available_events[amount]
             else:
@@ -217,7 +221,11 @@ class EventsContainer(simpy.Container):
 
     def get_callback(self, event):
         for amount in sorted(self._put_available_events):
-            if self.capacity - self.level >= amount:
+            if isinstance(self, ReservationContainer):
+                if self.capacity - self.expected_level >= amount:
+                    self._put_available_events[amount].succeed()
+                    del self._put_available_events[amount]
+            elif self.capacity - self.level >= amount:
                 self._put_available_events[amount].succeed()
                 del self._put_available_events[amount]
             else:
@@ -1449,17 +1457,16 @@ class Routeable(Movable):
             if destination.name in list(self.env.FG.nodes):
                 return nx.dijkstra_path(self.env.FG, origin, destination.name)
 
-        else:
-            for node in geom.keys():
-                if (
-                    destination.geometry.x == geom[node].x
-                    and destination.geometry.y == geom[node].y
-                ):
-                    destination = node
-                    return nx.dijkstra_path(self.env.FG, origin, destination)
+        for node in geom.keys():
+            if (
+                destination.geometry.x == geom[node].x
+                and destination.geometry.y == geom[node].y
+            ):
+                destination = node
+                return nx.dijkstra_path(self.env.FG, origin, destination)
 
-            # If no route is returned
-            raise AssertionError("The destination cannot be found in the graph")
+        # If no route is returned
+        raise AssertionError("The destination cannot be found in the graph")
 
     def determine_speed(self, node_from, node_to):
         """ Determine the sailing speed based on edge properties """

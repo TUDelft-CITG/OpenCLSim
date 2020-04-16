@@ -191,10 +191,11 @@ def test_reversed_dependencies():
     listed in the reversed order. This causes Simulation to attempt to instantiate them in the reversed order, which
     will fail for the activities containing an is_done condition since the process these activities refer to has not
     been instantiated yet."""
-    run_and_compare_completion_time(
-        config_file="tests/configs/layered_dike_example_reversed.json",
-        expected_result_file="tests/results/layered_dike_example_result.json",
-    )
+    with pytest.raises(AssertionError) as err:
+        run_and_compare_completion_time(
+            config_file="tests/configs/layered_dike_example_reversed.json",
+            expected_result_file="tests/results/layered_dike_example_result.json",
+        )
 
 
 def test_circular_dependency():

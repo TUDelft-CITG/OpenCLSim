@@ -68,6 +68,6 @@ setup(
     test_suite="tests",
     tests_require=tests_require,
     url="https://github.com/TUDelft-CITG/openclsim",
-    version="1.2.0",
+    version="1.2.2",
     zip_safe=False,
 )
