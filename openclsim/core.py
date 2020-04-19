@@ -702,7 +702,7 @@ class HasSoil:
         return properties.density, properties.fines
 
 
-class HasAbstractWeather:
+class HasAbstractWeather(ABC):
     """HasAbstractWeather class
 
     Abstract class, which provides a superclass for solutions 
