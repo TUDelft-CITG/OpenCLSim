@@ -25,6 +25,7 @@ import copy
 import numpy as np
 import pandas as pd
 from operator import itemgetter
+from abc import ABC
 
 from .utils import subcycle_repetitions
 
@@ -701,8 +702,8 @@ class HasSoil:
         return properties.density, properties.fines
 
 
-class HasWeather:
-    """HasWeather class
+class HasAbstractWeather:
+    """HasAbstractWeather class
 
     Abstract class, which provides a superclass for solutions 
     adding weather conditions to a project site
@@ -713,8 +714,8 @@ class HasWeather:
         """Initialization"""
 
 
-class HasWeatherDataFrame(HasWeather):
-    """HasWeatherDataFrame class
+class HasWeather(HasAbstractWeather):
+    """HasWeather class
 
     Used to add weather conditions to a project site
     name: name of .csv file in folder
@@ -770,7 +771,7 @@ class HasWeatherDataFrame(HasWeather):
             )
 
 
-class HasWorkabilityCriteria:
+class HasAbstractWorkabilityCriteria(ABC):
     """Abstract HasWorkabilityCriteria class
 
     Used to add workability criteria
@@ -806,7 +807,7 @@ class HasWorkabilityCriteria:
         )
 
 
-class HasWorkabilityCriteriaDataframe(HasWorkabilityCriteria):
+class HasWorkabilityCriteria(HasAbstractWorkabilityCriteria):
     """HasWorkabilityCriteria class
 
     Used to add workability criteria
@@ -1126,18 +1127,18 @@ class HasDepthRestriction:
     def check_optimal_filling(self, loader, unloader, origin, destination):
         # Calculate depth restrictions
         if not self.depth_data:
-            if isinstance(origin, HasWeather):
+            if isinstance(origin, HasAbstractWeather):
                 self.calc_depth_restrictions(origin, loader)
-            if isinstance(destination, HasWeather):
+            if isinstance(destination, HasAbstractWeather):
                 self.calc_depth_restrictions(destination, unloader)
 
         elif (
             origin.name not in self.depth_data.keys()
             or destination.name not in self.depth_data.keys()
         ):
-            if isinstance(origin, HasWeather):
+            if isinstance(origin, HasAbstractWeather):
                 self.calc_depth_restrictions(origin, loader)
-            if isinstance(destination, HasWeather):
+            if isinstance(destination, HasAbstractWeather):
                 self.calc_depth_restrictions(destination, unloader)
 
         # If a filling degee has been specified
@@ -2157,14 +2158,16 @@ class Processor(SimpyObject):
                     )
 
     def checkTide(self, mover, site, desired_level, amount, duration):
-        if hasattr(mover, "calc_depth_restrictions") and isinstance(site, HasWeather):
+        if hasattr(mover, "calc_depth_restrictions") and isinstance(
+            site, HasAbstractWeather
+        ):
             max_level = max(mover.container.level + amount, desired_level)
             fill_degree = max_level / mover.container.capacity
             yield from mover.check_depth_restriction(site, fill_degree, duration)
 
     def checkWeather(self, processor, site, event_name):
-        if isinstance(processor, HasWorkabilityCriteria) and isinstance(
-            site, HasWeather
+        if isinstance(processor, HasAbstractWorkabilityCriteria) and isinstance(
+            site, HasAbstractWeather
         ):
             yield from processor.check_weather_restriction(site, event_name)
 
