@@ -970,7 +970,7 @@ class HasDepthRestriction:
                 seconds=processor.unloading(
                     self,
                     location,
-                    self.container.level - filling_degree * self.container.capacity,
+                    self.container.level + filling_degree * self.container.capacity,
                 )
             )
 
