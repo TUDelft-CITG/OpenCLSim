@@ -235,7 +235,7 @@ def test_TransportProcessingResource(
 
     # Duration should be amount / 2
     # Energy use should be duration * 4
-    np.testing.assert_almost_equal(hopper.log["Value"][-2], (env.now - start) * 4)
+    np.testing.assert_almost_equal(hopper.log["Value"][-3], (env.now - start) * 4)
 
     # Simulation continues with moving from A to B
     start = env.now
@@ -253,7 +253,7 @@ def test_TransportProcessingResource(
     env.process(hopper.process(hopper, 0, dest))
     env.run()
 
-    np.testing.assert_almost_equal(hopper.log["Value"][-2], (env.now - start) * 3)
+    np.testing.assert_almost_equal(hopper.log["Value"][-3], (env.now - start) * 3)
 
 
 # Test energy use of a Processor and ContainerDependentMovable
