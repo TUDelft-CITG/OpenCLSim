@@ -1768,8 +1768,10 @@ class Processor(SimpyObject):
         # Inherit the subcycles
         if not hasattr(self, "loading_subcycle"):
             self.loading_subcycle = None
+            self.loading_subcycle_frequency = None
         if not hasattr(self, "unloading_subcycle"):
             self.unloading_subcycle = None
+            self.unloading_subcycle_frequency = None
 
     # noinspection PyUnresolvedReferences
     def process(self, mover, desired_level, site):
