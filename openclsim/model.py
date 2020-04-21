@@ -121,6 +121,87 @@ class Activity(core.Identifiable, core.Log):
         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
 
 
+class MoveActivity(core.Identifiable, core.Log):
+    """The MoveActivity Class forms a specific class for a single move activity within a simulation.
+    It deals with a single origin container, destination container and a single combination of equipment
+    to move substances from the origin to the destination. It will initiate and suspend processes
+    according to a number of specified conditions. To run an activity after it has been initialized call env.run()
+    on the Simpy environment with which it was initialized.
+
+    To check when a transportation of substances can take place, the Activity class uses three different condition
+    arguments: start_condition, stop_condition and condition. These condition arguments should all be given a condition
+    object which has a satisfied method returning a boolean value. True if the condition is satisfied, False otherwise.
+
+    destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
+    mover: moves to 'origin' if it is not already there, is loaded, then moves to 'destination' and is unloaded
+           should inherit from Movable, HasContainer, HasResource, Identifiable and Log
+           after the simulation is complete, its log will contain entries for each time it started moving,
+           stopped moving, started loading / unloading and stopped loading / unloading
+    start_event: the activity will start as soon as this event is triggered
+                 by default will be to start immediately
+    stop_event: the activity will stop (terminate) as soon as this event is triggered
+                by default will be an event triggered when the destination container becomes full or the source
+                container becomes empty
+    """
+
+    def __init__(
+        self,
+        mover,
+        destination,
+        start_event=None,
+        stop_event=None,
+        show=False,
+        *args,
+        **kwargs
+    ):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+
+        self.destination = destination
+        self.start_event = start_event
+        (
+            start_event
+            if start_event is None or isinstance(start_event, simpy.Event)
+            else self.env.all_of(events=start_event)
+        )
+
+        if type(stop_event) == list:
+            stop_event = self.env.any_of(events=stop_event)
+
+        if stop_event is not None:
+            self.stop_event = self.env.any_of(stop_event)
+        else:
+            stop_event = []
+            self.stop_event = self.env.any_of(stop_event)
+
+        self.stop_reservation_waiting_event = (
+            self.stop_event()
+            if hasattr(self.stop_event, "__call__")
+            else self.stop_event
+        )
+
+        self.mover = mover
+        self.print = show
+
+        main_proc = partial(
+            move_process,
+            destination=self.destination,
+            mover=self.mover,
+            # stop_reservation_waiting_event=self.stop_reservation_waiting_event,
+            # verbose=self.print,
+        )
+        # main_proc = partial(
+        #    conditional_process,
+        #    stop_event=self.stop_event,
+        #    sub_processes=[main_proc],
+        # )
+        if start_event is not None:
+            main_proc = partial(
+                delayed_process, start_event=self.start_event, sub_processes=[main_proc]
+            )
+        self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
+
+
 def delayed_process(activity_log, env, start_event, sub_processes):
     """"Returns a generator which can be added as a process to a simpy.Environment. In the process the given
     sub_processes will be executed after the given start_event occurs.
@@ -356,9 +437,12 @@ def single_run_process(
             _release_resource(
                 resource_requests, loader.resource, kept_resource=mover.resource
             )
-            _release_resource(
-                resource_requests, origin.resource, kept_resource=mover.resource
-            )
+
+            # If the loader is not the origin, release the origin as well
+            if origin.resource in resource_requests.keys():
+                _release_resource(
+                    resource_requests, origin.resource, kept_resource=mover.resource
+                )
 
         for i in destinations.index:
             destination = destinations.loc[i, "ID"]
@@ -411,12 +495,14 @@ def single_run_process(
 
     else:
         origin_requested = 0
+        origin_left = 0
         destination_requested = 0
+        destination_left = 0
 
         for key in all_amounts.keys():
-            if "origin." in key:
+            if "origin" in key:
                 origin_requested += all_amounts[key]
-            else:
+            elif "destination" in key:
                 destination_requested += all_amounts[key]
 
         if origin_requested == 0:
@@ -504,21 +590,25 @@ def _release_resource(requested_resources, resource, kept_resource=None):
         del requested_resources[resource]
 
 
-def _shift_amount(env, processor, ship, desired_level, site, ActivityID, verbose=False):
+def _shift_amount(
+    env, processor, mover, desired_level, site, ActivityID, verbose=False
+):
     """Calls the processor.process method, giving debug print statements when verbose is True."""
-    amount = np.abs(ship.container.level - desired_level)
+    amount = np.abs(mover.container.level - desired_level)
 
-    # Set ActivityID to processor and ship
+    # Set ActivityID to processor and mover
     processor.ActivityID = ActivityID
-    ship.ActivityID = ActivityID
+    mover.ActivityID = ActivityID
 
     # Check if loading or unloading
-    yield from processor.process(ship, desired_level, site)
+    yield from processor.process(mover, desired_level, site)
 
     if verbose:
         print("Processed {}:".format(amount))
         print("  by:          " + processor.name)
-        print("  ship:        " + ship.name + " contains: " + str(ship.container.level))
+        print(
+            "  mover        " + mover.name + " contains: " + str(mover.container.level)
+        )
         print("  site:        " + site.name + " contains: " + str(site.container.level))
 
 

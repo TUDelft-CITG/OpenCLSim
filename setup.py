@@ -14,7 +14,7 @@ from pkg_resources import require, VersionConflict
 from setuptools import setup, find_packages
 
 try:
-    require('setuptools>=38.3')
+    require("setuptools>=38.3")
 except VersionConflict:
     print("Error: version of setuptools is too old (<38.3)!")
     sys.exit(1)
@@ -39,16 +39,9 @@ requires = [
     "Dill",
 ]
 
-setup_requirements = [
-    "pytest-runner",
-]
+setup_requirements = ["pytest-runner"]
 
-tests_require = [
-    "pytest==3.10.1",
-    "pytest-cov",
-    "pytest-timeout",
-    "pytest-datadir"
-]
+tests_require = ["pytest==3.10.1", "pytest-cov", "pytest-timeout", "pytest-datadir"]
 
 with open("README.md", "r") as des:
     long_description = des.read()
@@ -57,17 +50,13 @@ setup(
     author="Mark van Koningsveld",
     author_email="m.vankoningsveld@tudelft.nl",
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
-        'Natural Language :: English',
-        'Programming Language :: Python :: 3',
+        "Development Status :: 2 - Pre-Alpha",
+        "Intended Audience :: Developers",
+        "Natural Language :: English",
+        "Programming Language :: Python :: 3",
     ],
     description="The OpenCLSim package aims to facilitate rule based planning of cyclic activities and in depth comparison of different system concepts.",
-    entry_points={
-        'console_scripts': [
-            'openclsim=openclsim.cli:cli',
-        ],
-    },
+    entry_points={"console_scripts": ["openclsim=openclsim.cli:cli"]},
     install_requires=requires,
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -79,6 +68,6 @@ setup(
     test_suite="tests",
     tests_require=tests_require,
     url="https://github.com/TUDelft-CITG/openclsim",
-    version="1.2.0",
+    version="1.2.2",
     zip_safe=False,
 )

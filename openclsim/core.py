@@ -19,10 +19,15 @@ import shapely.geometry
 
 # additional packages
 import math
-import datetime, time
+import datetime
+import time
 import copy
 import numpy as np
 import pandas as pd
+from operator import itemgetter
+from abc import ABC
+
+from .utils import subcycle_repetitions
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +205,11 @@ class EventsContainer(simpy.Container):
 
     def put_callback(self, event):
         for amount in sorted(self._get_available_events):
-            if self.level >= amount:
+            if isinstance(self, ReservationContainer):
+                if self.expected_level >= amount:
+                    self._get_available_events[amount].succeed()
+                    del self._get_available_events[amount]
+            elif self.level >= amount:
                 self._get_available_events[amount].succeed()
                 del self._get_available_events[amount]
             else:
@@ -213,7 +222,11 @@ class EventsContainer(simpy.Container):
 
     def get_callback(self, event):
         for amount in sorted(self._put_available_events):
-            if self.capacity - self.level >= amount:
+            if isinstance(self, ReservationContainer):
+                if self.capacity - self.expected_level >= amount:
+                    self._put_available_events[amount].succeed()
+                    del self._put_available_events[amount]
+            elif self.capacity - self.level >= amount:
                 self._put_available_events[amount].succeed()
                 del self._put_available_events[amount]
             else:
@@ -256,7 +269,7 @@ class EnergyUse(SimpyObject):
         energy_use_loading=None,
         energy_use_unloading=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
@@ -277,7 +290,7 @@ class HasCosts:
         mobilisation=None,
         demobilisation=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
@@ -322,7 +335,7 @@ class HasPlume(SimpyObject):
         f_sett=0.5,
         f_trap=0.01,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
@@ -689,7 +702,19 @@ class HasSoil:
         return properties.density, properties.fines
 
 
-class HasWeather:
+class HasAbstractWeather(ABC):
+    """HasAbstractWeather class
+
+    Abstract class, which provides a superclass for solutions 
+    adding weather conditions to a project site
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+
+
+class HasWeather(HasAbstractWeather):
     """HasWeather class
 
     Used to add weather conditions to a project site
@@ -712,7 +737,7 @@ class HasWeather:
         waveperiod_column="Tp [s]",
         waterlevel_column="Tide [m]",
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
@@ -746,7 +771,43 @@ class HasWeather:
             )
 
 
-class HasWorkabilityCriteria:
+class HasAbstractWorkabilityCriteria(ABC):
+    """Abstract HasWorkabilityCriteria class
+
+    Used to add workability criteria
+    """
+
+    def __init__(self, criteria, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.criteria = criteria
+
+    def check_weather_restriction(self, location, event):
+        """Checks whether the execution of the event has to be delayed.
+        If so a timeout event has to be issued, the corresponding logging has to be added 
+        which will set the new starting time of the event to the time, when the execution
+        actually can be performed."""
+
+    def delay_processing(self, waiting):
+        """Waiting must be a delay expressed in seconds"""
+        self.log_entry(
+            "waiting for weather start",
+            self.env.now,
+            waiting,
+            self.geometry,
+            self.ActivityID,
+        )
+        yield self.env.timeout(np.max(waiting))
+        self.log_entry(
+            "waiting for weather stop",
+            self.env.now,
+            waiting,
+            self.geometry,
+            self.ActivityID,
+        )
+
+
+class HasWorkabilityCriteria(HasAbstractWorkabilityCriteria):
     """HasWorkabilityCriteria class
 
     Used to add workability criteria
@@ -759,80 +820,57 @@ class HasWorkabilityCriteria:
         self.work_restrictions = {}
 
     def calc_work_restrictions(self, location):
-        self.work_restrictions[location.name] = {}
-
         # Loop through series to find windows
         for criterion in self.criteria:
-            index = location.metocean_data[criterion.condition].index
-            values = location.metocean_data[criterion.condition].values
-            in_range = False
-            ranges = []
-
-            for i, value in enumerate(values):
-                if value <= criterion.maximum:
-                    if i == 0:
-                        begin = index[i]
-                    elif not in_range:
-                        begin = index[i]
-
-                    in_range = True
-                elif in_range:
-                    in_range = False
-                    end = index[i]
-
-                    if (end - begin) >= criterion.window_length:
-                        ranges.append(
-                            (
-                                begin.to_datetime64(),
-                                (end - criterion.window_length).to_datetime64(),
-                            )
-                        )
-
-            self.work_restrictions[location.name][criterion.event_name] = np.array(
-                ranges
+            condition = location.metocean_data[criterion.condition]
+            ix_condition = condition <= criterion.maximum
+            ix_starts = ~ix_condition.values[:-1] & ix_condition.values[1:]
+            ix_ends = ix_condition.values[:-1] & ~ix_condition.values[1:]
+            if ix_condition[0]:
+                ix_starts[0] = True
+            if ix_starts.sum() > ix_ends.sum():
+                ix_ends[-1] = True
+            t_starts = condition.index[:-1][ix_starts]
+            t_ends = condition.index[:-1][ix_ends]
+            dt_windows = t_ends - t_starts
+            ix_windows = dt_windows >= criterion.window_length * 3
+            ranges = np.concatenate(
+                (
+                    t_starts[ix_windows].values.reshape((-1, 1)),
+                    (t_ends[ix_windows] - criterion.window_length).values.reshape(
+                        (-1, 1)
+                    ),
+                ),
+                axis=1,
             )
+            self.work_restrictions.setdefault(location.name, {}).setdefault(
+                criterion.event_name, {}
+            )[criterion.condition] = ranges
 
-    def check_weather_restriction(self, location, event):
-        waiting = []
+    def check_weather_restriction(self, location, event_name):
 
         if location.name not in self.work_restrictions.keys():
             self.calc_work_restrictions(location)
-        elif event not in self.work_restrictions[location.name].keys():
-            self.calc_work_restrictions(location)
 
-        for criterion in sorted(self.work_restrictions[location.name].keys()):
-            ranges = self.work_restrictions[location.name][criterion]
+        if event_name in [criterion.event_name for criterion in self.criteria]:
+            waiting = []
 
-            t = datetime.datetime.fromtimestamp(self.env.now)
-            t = pd.Timestamp(t).to_datetime64()
-            i = ranges[:, 0].searchsorted(t)
+            for condition in self.work_restrictions[location.name][event_name]:
+                ranges = self.work_restrictions[location.name][event_name][condition]
 
-            if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
-                waiting.append(pd.Timedelta(0).total_seconds())
-            elif i + 1 < len(ranges):
-                waiting.append(pd.Timedelta(ranges[i, 0] - t).total_seconds())
-            else:
-                print("\nSimulation cannot continue.")
-                print("Simulation time exceeded the available metocean data.")
+                t = datetime.datetime.fromtimestamp(self.env.now)
+                t = pd.Timestamp(t).to_datetime64()
+                i = ranges[:, 0].searchsorted(t)
 
-                self.env.exit()
-
+                if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
+                    waiting.append(pd.Timedelta(0).total_seconds())
+                elif i + 1 < len(ranges):
+                    waiting.append(pd.Timedelta(ranges[i, 0] - t).total_seconds())
+                else:
+                    print("\nSimulation cannot continue.")
+                    print("Simulation time exceeded the available metocean data.")
         if waiting:
-            self.log_entry(
-                "waiting for weather start",
-                self.env.now,
-                waiting,
-                self.geometry,
-                self.ActivityID,
-            )
-            yield self.env.timeout(np.max(waiting))
-            self.log_entry(
-                "waiting for weather stop",
-                self.env.now,
-                waiting,
-                self.geometry,
-                self.ActivityID,
-            )
+            self.delay_processing(max(waiting))
 
 
 class WorkabilityCriterion:
@@ -853,7 +891,7 @@ class WorkabilityCriterion:
         maximum=math.inf,
         window_length=datetime.timedelta(minutes=60),
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
@@ -886,7 +924,7 @@ class HasDepthRestriction:
         min_filling=None,
         max_filling=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
@@ -932,7 +970,7 @@ class HasDepthRestriction:
                 seconds=processor.unloading(
                     self,
                     location,
-                    self.container.level - filling_degree * self.container.capacity,
+                    self.container.level + filling_degree * self.container.capacity,
                 )
             )
 
@@ -1089,18 +1127,18 @@ class HasDepthRestriction:
     def check_optimal_filling(self, loader, unloader, origin, destination):
         # Calculate depth restrictions
         if not self.depth_data:
-            if isinstance(origin, HasWeather):
+            if isinstance(origin, HasAbstractWeather):
                 self.calc_depth_restrictions(origin, loader)
-            if isinstance(destination, HasWeather):
+            if isinstance(destination, HasAbstractWeather):
                 self.calc_depth_restrictions(destination, unloader)
 
         elif (
             origin.name not in self.depth_data.keys()
             or destination.name not in self.depth_data.keys()
         ):
-            if isinstance(origin, HasWeather):
+            if isinstance(origin, HasAbstractWeather):
                 self.calc_depth_restrictions(origin, loader)
-            if isinstance(destination, HasWeather):
+            if isinstance(destination, HasAbstractWeather):
                 self.calc_depth_restrictions(destination, unloader)
 
         # If a filling degee has been specified
@@ -1420,17 +1458,16 @@ class Routeable(Movable):
             if destination.name in list(self.env.FG.nodes):
                 return nx.dijkstra_path(self.env.FG, origin, destination.name)
 
-        else:
-            for node in geom.keys():
-                if (
-                    destination.geometry.x == geom[node].x
-                    and destination.geometry.y == geom[node].y
-                ):
-                    destination = node
-                    return nx.dijkstra_path(self.env.FG, origin, destination)
+        for node in geom.keys():
+            if (
+                destination.geometry.x == geom[node].x
+                and destination.geometry.y == geom[node].y
+            ):
+                destination = node
+                return nx.dijkstra_path(self.env.FG, origin, destination)
 
-            # If no route is returned
-            raise AssertionError("The destination cannot be found in the graph")
+        # If no route is returned
+        raise AssertionError("The destination cannot be found in the graph")
 
     def determine_speed(self, node_from, node_to):
         """ Determine the sailing speed based on edge properties """
@@ -1614,7 +1651,9 @@ class LoadingFunction:
             return amount / self.loading_rate + self.load_manoeuvring * 60
         else:
             return (
-                self.loading_rate(self.container.level, self.container.level + amount)
+                self.loading_rate(
+                    destination.container.level, destination.container.level + amount
+                )
                 + self.load_manoeuvring * 60
             )
 
@@ -1644,7 +1683,9 @@ class UnloadingFunction:
             return amount / self.unloading_rate + self.unload_manoeuvring * 60
         else:
             return (
-                self.unloading_rate(self.container.level, self.container.level - amount)
+                self.unloading_rate(
+                    origin.container.level + amount, origin.container.level
+                )
                 + self.unload_manoeuvring * 60
             )
 
@@ -1654,11 +1695,12 @@ class LoadingSubcycle:
     loading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
     """
 
-    def __init__(self, loading_subcycle, *args, **kwargs):
+    def __init__(self, loading_subcycle, loading_subcycle_frequency, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
         self.loading_subcycle = loading_subcycle
+        self.loading_subcycle_frequency = loading_subcycle_frequency
 
         if type(self.loading_subcycle) != pd.core.frame.DataFrame:
             raise AssertionError("The subcycle table has to be a Pandas DataFrame")
@@ -1676,11 +1718,14 @@ class UnloadingSubcycle:
     unloading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
     """
 
-    def __init__(self, unloading_subcycle, *args, **kwargs):
+    def __init__(
+        self, unloading_subcycle, unloading_subcycle_frequency, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
         self.unloading_subcycle = unloading_subcycle
+        self.unloading_subcycle_frequency = unloading_subcycle_frequency
 
         if type(self.unloading_subcycle) != pd.core.frame.DataFrame:
             raise AssertionError("The subcycle table has to be a Pandas DataFrame")
@@ -1697,7 +1742,7 @@ class Processor(SimpyObject):
     """Processor class
 
     Adds the loading and unloading components and checks for possible downtime. 
-    
+
     If the processor class is used to allow "loading" or "unloading" the mixins "LoadingFunction" and "UnloadingFunction" should be added as well. 
     If no functions are used a subcycle should be used, which is possible with the mixins "LoadingSubcycle" and "UnloadingSubcycle".
     """
@@ -1723,151 +1768,236 @@ class Processor(SimpyObject):
         # Inherit the subcycles
         if not hasattr(self, "loading_subcycle"):
             self.loading_subcycle = None
+            self.loading_subcycle_frequency = None
         if not hasattr(self, "unloading_subcycle"):
             self.unloading_subcycle = None
+            self.unloading_subcycle_frequency = None
 
     # noinspection PyUnresolvedReferences
-    def process(self, ship, desired_level, site):
+    def process(self, mover, desired_level, site):
         """Moves content from ship to the site or from the site to the ship to ensure that the ship's container reaches
         the desired level. Yields the time it takes to process."""
 
         # Before starting to process, check the following requirements
         # Make sure that both objects have storage
-        assert isinstance(ship, HasContainer) and isinstance(site, HasContainer)
+        assert isinstance(mover, HasContainer) and isinstance(site, HasContainer)
         # Make sure that both objects allow processing
-        assert isinstance(ship, HasResource) and isinstance(site, HasResource)
+        assert isinstance(mover, HasResource) and isinstance(site, HasResource)
         # Make sure that the processor (self), container and site can log the events
-        assert isinstance(self, Log) and isinstance(ship, Log) and isinstance(site, Log)
+        assert (
+            isinstance(self, Log) and isinstance(mover, Log) and isinstance(site, Log)
+        )
         # Make sure that the processor, origin and destination are all at the same location
         assert self.is_at(site)
-        assert ship.is_at(site)
+        assert mover.is_at(site)
 
-        current_level = ship.container.level
+        # Define whether it is loading or unloading by the processor
+        current_level = mover.container.level
+
+        # Loading the mover
         if current_level < desired_level:
             amount = desired_level - current_level
             origin = site
-            destination = ship
+            destination = mover
             rate = self.loading
             subcycle = self.loading_subcycle
+            subcycle_frequency = self.loading_subcycle_frequency
+            message = "loading"
+
+        # Unloading the mover
         else:
             amount = current_level - desired_level
-            origin = ship
+            origin = mover
             destination = site
             rate = self.unloading
             subcycle = self.unloading_subcycle
+            subcycle_frequency = self.unloading_subcycle_frequency
+            message = "unloading"
 
+        # Log the process for all parts
+        for location in [origin, destination]:
+            location.log_entry(
+                log=f"{message} process start",
+                t=location.env.now,
+                value=amount,
+                geometry_log=location.geometry,
+                ActivityID=self.ActivityID,
+            )
+
+        # Single processing event
         if rate:
+
+            # Check whether the amount can me moved from the origin to the destination
+            yield from self.check_possible_shift(origin, destination, amount, "get")
+
+            # Define the duration of the event
             duration = rate(origin, destination, amount)
 
+            # Check possible downtime
             yield from self.check_possible_downtime(
-                origin, destination, duration, ship, site, desired_level, amount
+                mover, site, duration, desired_level, amount, message
             )
 
+            # Checkout single event
+            self.log_entry(
+                f"{message} start", self.env.now, 0, self.geometry, self.ActivityID
+            )
+
+            yield self.env.timeout(duration)
+
+            # Put the amount in the destination
+            yield from self.check_possible_shift(origin, destination, amount, "put")
+
+            # Add spill the location where processing is taking place
+            self.addSpill(origin, destination, amount, duration)
+
+            # Shift soil from container volumes
+            self.shiftSoil(origin, destination, amount)
+
+            # Compute the energy use
+            self.computeEnergy(duration, origin, destination)
+
+            self.log_entry(
+                f"{message} stop", self.env.now, amount, self.geometry, self.ActivityID
+            )
+
+        # Subcycle with processing events
         elif type(subcycle) == pd.core.frame.DataFrame:
-            duration = 0
+            previous_cycle = None
+            # calculate the number of subcycle repetitions :: sr
+            sr = subcycle_repetitions(subcycle_frequency, amount)
+            for cycle, i in itertools.product(range(int(sr)), subcycle.index):
 
-            for _ in range(int(amount)):
-                for i in subcycle.index:
-                    duration += subcycle.iloc[i]["Duration"] * 60
-                    yield from self.check_possible_downtime(
-                        origin, destination, duration, ship, site, desired_level, 1
-                    )
+                # Check if a new subcycle has started
+                if cycle != previous_cycle:
+                    previous_cycle = cycle
+                    get = True
+                    put = True
+                else:
+                    get = False
+                    put = False
 
-        # Shift volumes in containers
-        start_time = self.env.now
-        yield origin.container.get(amount)
-        end_time = self.env.now
-        if start_time != end_time:
-            self.log_entry(
-                log="waiting origin content start",
-                t=start_time,
+                # Check whether the amount can me moved from the origin to the destination
+                if get:
+                    if sr == 1:
+                        yield from self.check_possible_shift(
+                            origin, destination, amount, "get"
+                        )
+                    else:
+                        yield from self.check_possible_shift(
+                            origin, destination, 1, "get"
+                        )
+
+                # Define the properties
+                duration = subcycle.iloc[i]["Duration"] * 60
+                activity = subcycle.iloc[i]["EventName"]
+
+                # Check possible downtime
+                yield from self.check_possible_downtime(
+                    mover, site, duration, desired_level, 1, activity
+                )
+
+                # Checkout subcyle event
+                self.log_entry(
+                    f"{activity} start", self.env.now, 0, self.geometry, self.ActivityID
+                )
+
+                yield self.env.timeout(duration)
+
+                # Put the amount in the destination
+                if put:
+                    if sr == 1:
+                        yield from self.check_possible_shift(
+                            origin, destination, amount, "put"
+                        )
+                    else:
+                        yield from self.check_possible_shift(
+                            origin, destination, 1, "put"
+                        )
+
+                # Add spill the location where processing is taking place
+                self.addSpill(origin, destination, amount, duration)
+
+                # Shift soil from container volumes
+                self.shiftSoil(origin, destination, amount)
+
+                # Compute the energy use
+                self.computeEnergy(duration, origin, destination)
+
+                self.log_entry(
+                    f"{activity} stop", self.env.now, 0, self.geometry, self.ActivityID
+                )
+
+        # Log the process for all parts
+        for location in [origin, destination]:
+            location.log_entry(
+                log=f"{message} process stop",
+                t=location.env.now,
                 value=amount,
-                geometry_log=self.geometry,
-                activityID=self.ActivityID,
-            )
-            self.log_entry(
-                log="waiting origin content stop",
-                t=end_time,
-                value=amount,
-                geometry_log=self.geometry,
-                activityID=self.ActivityID,
-            )
-
-        # Checkout the time
-        origin.log_entry(
-            "unloading start",
-            self.env.now,
-            origin.container.level,
-            self.geometry,
-            self.ActivityID,
-        )
-        destination.log_entry(
-            "loading start",
-            self.env.now,
-            destination.container.level,
-            self.geometry,
-            self.ActivityID,
-        )
-
-        if self != origin and self != destination:
-            self.log_entry(
-                "loading start", self.env.now, 0, self.geometry, self.ActivityID
-            )
-
-        yield self.env.timeout(duration)
-
-        # Add spill the location where processing is taking place
-        self.addSpill(origin, destination, amount, duration)
-
-        # Shift soil from container volumes
-        self.shiftSoil(origin, destination, amount)
-
-        # Compute the energy use
-        self.computeEnergy(duration, origin, destination)
-
-        origin.log_entry(
-            "unloading stop",
-            self.env.now,
-            origin.container.level + amount,
-            self.geometry,
-            self.ActivityID,
-        )
-        destination.log_entry(
-            "loading stop",
-            self.env.now,
-            destination.container.level + amount,
-            self.geometry,
-            self.ActivityID,
-        )
-
-        if self != origin and self != destination:
-            self.log_entry(
-                "loading stop", self.env.now, amount, self.geometry, self.ActivityID
-            )
-
-        start_time = self.env.now
-        yield destination.container.put(amount)
-        end_time = self.env.now
-        if start_time != end_time:
-            self.log_entry(
-                log="waiting destination content start",
-                t=start_time,
-                value=amount,
-                geometry_log=self.geometry,
-                activityID=self.ActivityID,
-            )
-            self.log_entry(
-                log="waiting destination content stop",
-                t=end_time,
-                value=amount,
-                geometry_log=self.geometry,
-                activityID=self.ActivityID,
+                geometry_log=location.geometry,
+                ActivityID=self.ActivityID,
             )
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
 
+    def check_possible_shift(self, origin, destination, amount, activity):
+        """ Check if all the material is available
+
+        If the amount is not available in the origin or in the destination
+        yield a put or get. Time will move forward until the amount can be 
+        retrieved from the origin or placed into the destination.
+        """
+
+        if activity == "get":
+
+            # Shift amounts in containers
+            start_time = self.env.now
+            yield origin.container.get(amount)
+            end_time = self.env.now
+
+            # If the amount is not available in the origin, log waiting
+            if start_time != end_time:
+                self.log_entry(
+                    log="waiting origin content start",
+                    t=start_time,
+                    value=amount,
+                    geometry_log=self.geometry,
+                    ActivityID=self.ActivityID,
+                )
+                self.log_entry(
+                    log="waiting origin content stop",
+                    t=end_time,
+                    value=amount,
+                    geometry_log=self.geometry,
+                    ActivityID=self.ActivityID,
+                )
+
+        elif activity == "put":
+
+            # Shift amounts in containers
+            start_time = self.env.now
+            yield destination.container.put(amount)
+            end_time = self.env.now
+
+            # If the amount is cannot be put in the destination, log waiting
+            if start_time != end_time:
+                self.log_entry(
+                    log="waiting destination content start",
+                    t=start_time,
+                    value=amount,
+                    geometry_log=self.geometry,
+                    ActivityID=self.ActivityID,
+                )
+                self.log_entry(
+                    log="waiting destination content stop",
+                    t=end_time,
+                    value=amount,
+                    geometry_log=self.geometry,
+                    ActivityID=self.ActivityID,
+                )
+
     def check_possible_downtime(
-        self, origin, destination, duration, ship, site, desired_level, amount
+        self, mover, site, duration, desired_level, amount, event_name
     ):
         # Activity can only start if environmental conditions allow it
         time = 0
@@ -1877,15 +2007,21 @@ class Processor(SimpyObject):
             time = self.env.now
 
             # Check weather
-            yield from self.checkWeather(origin, destination, duration)
+            yield from self.checkWeather(
+                processor=self, site=site, event_name=event_name
+            )
 
             # Check tide
             yield from self.checkTide(
-                ship=ship, site=site, desired_level=desired_level, duration=duration
+                mover=mover,
+                site=site,
+                desired_level=desired_level,
+                amount=amount,
+                duration=duration,
             )
 
             # Check spill
-            yield from self.checkSpill(origin, destination, amount)
+            yield from self.checkSpill(mover, site, amount)
 
     def computeEnergy(self, duration, origin, destination):
         """
@@ -1950,7 +2086,7 @@ class Processor(SimpyObject):
                     message, self.env.now, energy, destination.geometry, self.ActivityID
                 )
 
-    def checkSpill(self, origin, destination, amount):
+    def checkSpill(self, mover, site, amount):
         """
         duration: duration of the activity in seconds
         origin: origin of the moved volume (the computed amount)
@@ -1964,46 +2100,18 @@ class Processor(SimpyObject):
         Result of this function is possible waiting, spill is added later on and does not depend on possible requirements
         """
 
-        # If self == origin --> destination is a placement location
-        if self == origin:
+        # If self == mover --> site is a placement location
+        if self == mover:
             if (
-                isinstance(destination, HasSpillCondition)
+                isinstance(site, HasSpillCondition)
                 and isinstance(self, HasSoil)
                 and isinstance(self, HasPlume)
+                and 0 < self.container.level
             ):
                 density, fines = self.get_properties(amount)
                 spill = self.sigma_d * density * fines * amount
 
-                waiting = destination.check_conditions(spill)
-
-                if 0 < waiting:
-                    self.log_entry(
-                        "waiting for spill start",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
-                    )
-                    yield self.env.timeout(waiting - self.env.now)
-                    self.log_entry(
-                        "waiting for spill stop",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
-                    )
-
-        # If self == destination --> origin is a retrieval location
-        elif self == destination:
-            if (
-                isinstance(origin, HasSpillCondition)
-                and isinstance(origin, HasSoil)
-                and isinstance(self, HasPlume)
-            ):
-                density, fines = origin.get_properties(amount)
-                spill = self.sigma_d * density * fines * amount
-
-                waiting = origin.check_conditions(spill)
+                waiting = site.check_conditions(spill)
 
                 if 0 < waiting:
                     self.log_entry(
@@ -2025,14 +2133,14 @@ class Processor(SimpyObject):
         # If self != origin and self != destination --> processing
         else:
             if (
-                isinstance(destination, HasSpillCondition)
-                and isinstance(origin, HasSoil)
+                isinstance(site, HasSpillCondition)
+                and isinstance(mover, HasSoil)
                 and isinstance(self, HasPlume)
             ):
-                density, fines = origin.get_properties(amount)
+                density, fines = mover.get_properties(amount)
                 spill = self.sigma_d * density * fines * amount
 
-                waiting = destination.check_conditions(spill)
+                waiting = site.check_conditions(spill)
 
                 if 0 < waiting:
                     self.log_entry(
@@ -2051,52 +2159,19 @@ class Processor(SimpyObject):
                         self.ActivityID,
                     )
 
-            elif (
-                isinstance(origin, HasSpillCondition)
-                and isinstance(origin, HasSoil)
-                and isinstance(self, HasPlume)
-            ):
-                density, fines = origin.get_properties(amount)
-                spill = self.sigma_d * density * fines * amount
-
-                waiting = origin.check_conditions(spill)
-
-                if 0 < waiting:
-                    self.log_entry(
-                        "waiting for spill start",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
-                    )
-                    yield self.env.timeout(waiting - self.env.now)
-                    self.log_entry(
-                        "waiting for spill stop",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
-                    )
-
-    def checkTide(self, ship, site, desired_level, duration):
-        if hasattr(ship, "calc_depth_restrictions") and isinstance(site, HasWeather):
-            max_level = max(ship.container.level, desired_level)
-            fill_degree = max_level / ship.container.capacity
-            yield from ship.check_depth_restriction(site, fill_degree, duration)
-
-    def checkWeather(self, origin, destination, amount):
-        if (
-            isinstance(origin, HasWorkabilityCriteria)
-            and isinstance(origin, Movable)
-            and isinstance(destination, HasWeather)
+    def checkTide(self, mover, site, desired_level, amount, duration):
+        if hasattr(mover, "calc_depth_restrictions") and isinstance(
+            site, HasAbstractWeather
         ):
-            yield from origin.check_weather_restriction(destination, amount)
-        elif (
-            isinstance(destination, HasWorkabilityCriteria)
-            and isinstance(destination, Movable)
-            and isinstance(origin, HasWeather)
+            max_level = max(mover.container.level + amount, desired_level)
+            fill_degree = max_level / mover.container.capacity
+            yield from mover.check_depth_restriction(site, fill_degree, duration)
+
+    def checkWeather(self, processor, site, event_name):
+        if isinstance(processor, HasAbstractWorkabilityCriteria) and isinstance(
+            site, HasAbstractWeather
         ):
-            yield from destination.check_weather_restriction(origin, amount)
+            yield from processor.check_weather_restriction(site, event_name)
 
     def addSpill(self, origin, destination, amount, duration):
         """
