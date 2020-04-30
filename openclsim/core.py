@@ -58,13 +58,14 @@ class DebugArgs:
 
 
 class Identifiable:
-    """Something that has a name and id
+    """
+    Something that has a name and id
 
     Parameters
     ----------
     name
         a name
-    id : UUID
+    ID : UUID
         a unique id generated with uuid"""
 
     def __init__(self, name: str, ID: str = None, *args, **kwargs):
@@ -244,21 +245,22 @@ class EventsContainer(simpy.Container):
 
 
 class HasContainer(SimpyObject):
-    """Container class
+    """
+    Container class
 
     Parameters
     ----------
-    capacity
-        amount the container can hold
-    level
-        amount the container holds initially
+    capacity : volume
+        amount the container can hold.
+    level : volume
+        amount the container holds initially.
 
     Attributes
     ----------
     container
         a simpy object that can hold stuff"""
 
-    def __init__(self, capacity: float, level=0, *args, **kwargs):
+    def __init__(self, capacity: float, level: float = 0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         container_class = type(
@@ -1692,13 +1694,15 @@ class LoadingFunction:
 
     Parameters
     ----------
-    loading_rate
+    loading_rate : volume / second
         the rate at which units are loaded per second
-    load_manoeuvring
+    load_manoeuvring : minutes
         the time it takes to manoeuvring in minutes
     """
 
-    def __init__(self, loading_rate, load_manoeuvring=0, *args, **kwargs):
+    def __init__(
+        self, loading_rate: float, load_manoeuvring: float = 0, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.loading_rate = loading_rate
@@ -1729,13 +1733,15 @@ class UnloadingFunction:
 
     Parameters
     ----------
-    unloading_rate
+    unloading_rate : volume / second
         the rate at which units are loaded per second
-    unload_manoeuvring
+    unload_manoeuvring : minutes
         the time it takes to manoeuvring in minutes
     """
 
-    def __init__(self, unloading_rate, unload_manoeuvring=0, *args, **kwargs):
+    def __init__(
+        self, unloading_rate: float, unload_manoeuvring: float = 0, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.unloading_rate = unloading_rate
