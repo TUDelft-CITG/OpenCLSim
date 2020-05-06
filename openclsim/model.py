@@ -54,7 +54,7 @@ class Activity(core.Identifiable, core.Log):
         stop_event=None,
         show=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
@@ -152,7 +152,7 @@ class MoveActivity(core.Identifiable, core.Log):
         stop_event=None,
         show=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
@@ -255,9 +255,218 @@ def conditional_process(activity_log, env, stop_event, sub_processes):
 
     while not stop_event.processed:
         for sub_process in sub_processes:
+            print("conditional")
             yield from sub_process(activity_log=activity_log, env=env)
 
     activity_log.log_entry("stopped", env.now, -1, None, activity_log.id)
+
+
+def simple_process(activity_log, env, name, duration):
+    """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
+    sub_processes will be executed until the given stop_event occurs. If the stop_event occurs during the execution
+    of the sub_processes, the conditional process will first complete all sub_processes (which are executed sequentially
+    in the order in which they are given), before finishing its own process.
+
+    activity_log: the core.Log object in which log_entries about the activities progress will be added.
+    env: the simpy.Environment in which the process will be run
+    stop_event: a simpy.Event object, when this event occurs, the conditional process will finish executing its current
+                run of its sub_processes and then finish
+    sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
+                   return a generator which could be added as a process to a simpy.Environment
+                   the sub_processes will be executed sequentially, in the order in which they are given as long
+                   as the stop_event has not occurred.
+    """
+
+    activity_log.log_entry(f"started {name}", env.now, duration, None, activity_log.id)
+    yield env.timeout(duration)
+    activity_log.log_entry(f"stopped {name}", env.now, duration, None, activity_log.id)
+
+
+def _request_resource_if_available(
+    env,
+    resource_requests,
+    site,
+    processor,
+    amount,
+    kept_resource,
+    ActivityID,
+    engine_order=1.0,
+    verbose=False,
+):
+    all_available = False
+    while not all_available and amount > 0:
+        # yield until enough content and space available in origin and destination
+        yield env.all_of(
+            events=[site.container.get_available(amount),]
+        )
+
+        yield from _request_resource(resource_requests, processor.resource)
+        if site.container.level < amount:
+            # someone removed / added content while we were requesting the processor, so abort and wait for available
+            # space/content again
+            _release_resource(
+                resource_requests, processor.resource, kept_resource=kept_resource
+            )
+            continue
+
+        if not processor.is_at(site):
+            # todo have the processor move simultaneously with the mover by starting a different process for it?
+            yield from _move_mover(
+                processor,
+                site,
+                ActivityID=ActivityID,
+                engine_order=engine_order,
+                verbose=verbose,
+            )
+            if site.container.level < amount:
+                # someone messed us up again, so return to waiting for space/content
+                _release_resource(
+                    resource_requests, processor.resource, kept_resource=kept_resource
+                )
+                continue
+
+        yield from _request_resource(resource_requests, site.resource)
+        if site.container.level < amount:
+            _release_resource(
+                resource_requests, processor.resource, kept_resource=kept_resource
+            )
+            _release_resource(
+                resource_requests, site.resource, kept_resource=kept_resource
+            )
+            continue
+        all_available = True
+
+
+def shift_amount_process(
+    activity_log,
+    env,
+    processor,
+    origin,
+    destination,
+    amount,
+    engine_order=1.0,
+    stop_reservation_waiting_event=None,
+):
+    """Origin and Destination are of type HasContainer """
+    print(origin)
+    print(destination)
+    print(processor)
+    if not isinstance(origin, core.HasContainer) or not isinstance(
+        destination, core.HasContainer
+    ):
+        raise Exception("Invalide use of method shift_amount")
+
+    verbose = True
+    filling = 1.0
+    resource_requests = {}
+    # Required for logging from json
+    if not hasattr(activity_log, "processor"):
+        activity_log.processor = processor
+    if not hasattr(activity_log, "mover"):
+        activity_log.mover = origin
+    amount, all_amounts = processor.determine_processor_amount([origin], destination)
+    # print(f"amount: {amount}   amounts:{all_amounts}")
+    # Check if activity can start
+    if hasattr(stop_reservation_waiting_event, "__call__"):
+        stop_reservation_waiting_event = stop_reservation_waiting_event()
+    elif type(stop_reservation_waiting_event) == list:
+        stop_reservation_waiting_event = env.any_of(
+            events=[event() for event in stop_reservation_waiting_event]
+        )
+
+    # If the transported amount is larger than zero, start activity
+    print(f"amount {amount}")
+    if 0 != amount:
+        # vrachtbrief = mover.determine_schedule(amount, all_amounts, site, site)
+
+        # origins = vrachtbrief[vrachtbrief["Type"] == "Origin"]
+        # destinations = vrachtbrief[vrachtbrief["Type"] == "Destination"]
+        yield from _request_resource(resource_requests, destination.resource)
+        # for i in origins.index:
+        #    origin = origins.loc[i, "ID"]
+        #    amount = float(origins.loc[i, "Amount"])
+
+        print("_request_resources_if_transfer_possible")
+        yield from _request_resource_if_available(
+            env,
+            resource_requests,
+            origin,
+            processor,
+            amount,
+            destination.resource,
+            activity_log.id,
+            engine_order,
+            verbose=False,
+        )
+
+        # unload the mover
+        print("_shift_amount")
+        yield from _shift_amount(
+            env,
+            processor,
+            origin,
+            origin.container.level + amount,
+            destination,
+            ActivityID=activity_log.id,
+            verbose=verbose,
+        )
+
+        # release the unloader, destination and mover requests
+        print("_release_resource")
+        _release_resource(resource_requests, destination.resource)
+        if origin.resource in resource_requests:
+            _release_resource(resource_requests, origin.resource)
+        print("done")
+    else:
+        origin_requested = 0
+        origin_left = 0
+        destination_requested = 0
+
+        for key in all_amounts.keys():
+            if "origin" in key:
+                origin_requested += all_amounts[key]
+            else:
+                destination_requested = all_amounts[key]
+
+        if origin_requested == 0:
+            events = [origin.container.reserve_get_available]
+            activity_log.log_entry(
+                "waiting origin reservation start",
+                env.now,
+                origin.container.level,
+                origin.geometry,
+                activity_log.id,
+            )
+            yield _or_optional_event(
+                env, env.any_of(events), stop_reservation_waiting_event
+            )
+            activity_log.log_entry(
+                "waiting origin reservation stop",
+                env.now,
+                origin.container.level,
+                origin.geometry,
+                activity_log.id,
+            )
+        elif destination.container.level == destination.container.capacity:
+            activity_log.log_entry(
+                "waiting destination to finish start",
+                env.now,
+                destination.container.capacity,
+                destination.geometry,
+                activity_log.id,
+            )
+            yield env.timeout(3600)
+            activity_log.log_entry(
+                "waiting destination to finish stop",
+                env.now,
+                destination.container.capacity,
+                destination.geometry,
+                activity_log.id,
+            )
+
+        else:
+            raise RuntimeError("Attempting to move content with a full ship")
+    print(resource_requests)
 
 
 def sequential_process(activity_log, env, sub_processes):
@@ -591,25 +800,26 @@ def _release_resource(requested_resources, resource, kept_resource=None):
 
 
 def _shift_amount(
-    env, processor, mover, desired_level, site, ActivityID, verbose=False
+    env, processor, origin, desired_level, destination, ActivityID, verbose=False
 ):
     """Calls the processor.process method, giving debug print statements when verbose is True."""
-    amount = np.abs(mover.container.level - desired_level)
+    amount = np.abs(origin.container.level - desired_level)
 
     # Set ActivityID to processor and mover
     processor.ActivityID = ActivityID
-    mover.ActivityID = ActivityID
-
+    origin.ActivityID = ActivityID
+    print('processor start process')
     # Check if loading or unloading
-    yield from processor.process(mover, desired_level, site)
-
+    yield from processor.process(origin, amount, destination, duration=10)
+    print('processor end process')
+    
     if verbose:
         print("Processed {}:".format(amount))
         print("  by:          " + processor.name)
         print(
-            "  mover        " + mover.name + " contains: " + str(mover.container.level)
+            "  origin        " + origin.name + " contains: " + str(origin.container.level)
         )
-        print("  site:        " + site.name + " contains: " + str(site.container.level))
+        print("  destination:        " + destination.name + " contains: " + str(destination.container.level))
 
 
 def _request_resources_if_transfer_possible(
@@ -900,6 +1110,35 @@ class Simulation(core.Identifiable, core.Log):
             return partial(
                 delayed_process, start_event=start_event, sub_processes=sub_processes
             )
+        if activity_type == "simple":
+            duration = activity["duration"]
+            name = activity["id"]
+            return partial(simple_process, name=name, duration=duration)
+        if activity_type == "shift_amount":
+            amount = activity["amount"]
+            processor = activity["processor"]
+            if processor in self.equipment:
+                processor = self.equipment[processor]
+            elif processor in self.sites:
+                processor = self.sites[processor]
+            else:
+                raise Exception(f"undefined processor {processor}")
+            mover = self.equipment[activity["mover"]]
+            mover_properties = self.get_mover_properties_kwargs(activity)
+            site = self.sites[activity["site"]]
+            site2 = self.sites[activity["site2"]]
+            kwargs = {"mover": mover, "site": site, "amount": amount}
+            if "engine_order" in mover_properties:
+                kwargs["engine_order"] = mover_properties["engine_order"]
+            # processor, mover, engine_order, amount, site
+            return partial(
+                shift_amount_process,
+                processor=processor,
+                mover=mover,
+                site=site,
+                site2=site2,
+                amount=amount,
+            )
 
         raise ValueError("Unrecognized activity type: " + activity_type)
 
@@ -930,7 +1169,7 @@ class Simulation(core.Identifiable, core.Log):
             raise ValueError(
                 'No object with id "{}" present in configuration'.format(operand_key)
             )
-
+        print(operand)
         return operand
 
     def get_sub_condition_events(self, condition):

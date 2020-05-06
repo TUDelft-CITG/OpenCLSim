@@ -1751,13 +1751,13 @@ class Processor(SimpyObject):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
-        message = "{} has no (un)loading(_subcycle) attribute".format(self)
-        assert (
-            hasattr(self, "loading")
-            or hasattr(self, "unloading")
-            or hasattr(self, "loading_subcycle")
-            or hasattr(self, "unloading_subcycle")
-        ), message
+        # message = "{} has no (un)loading(_subcycle) attribute".format(self)
+        # assert (
+        #     hasattr(self, "loading")
+        #     or hasattr(self, "unloading")
+        #     or hasattr(self, "loading_subcycle")
+        #     or hasattr(self, "unloading_subcycle")
+        # ), message
 
         # Inherit the (un)loading functions
         if not hasattr(self, "loading"):
@@ -1772,48 +1772,94 @@ class Processor(SimpyObject):
         if not hasattr(self, "unloading_subcycle"):
             self.unloading_subcycle = None
             self.unloading_subcycle_frequency = None
+            
+    def determine_processor_amount(self, origins, destination, loader=None, unloader=None, filling=1):
+        """ Determine the maximum amount that can be carried """
+
+        # Determine the basic amount that should be transported
+        all_amounts = {}
+        all_amounts.update(
+            {
+                "origin." + origin.id: origin.container.level
+                for origin in origins
+            }
+        )
+        all_amounts["destination."+ destination.id]= destination.container.capacity- destination.container.level
+
+        origin_requested = 0
+        destination_requested = 0
+
+        for key in all_amounts.keys():
+            if "origin." in key:
+                origin_requested += all_amounts[key]
+            else:
+                destination_requested += all_amounts[key]
+
+        amount = min(
+            origin_requested,
+            destination_requested,
+        )
+
+        # If the mover has a function to optimize its load, check if the amount should be changed
+        if not hasattr(destination, "check_optimal_filling"):
+            return amount, all_amounts
+
+        else:
+            amounts = [amount]
+            amounts.extend(
+                [
+                    destination.check_optimal_filling(loader, unloader, origin, destination)
+                    for origin in origins
+                ]
+            )
+
+            return min(amounts), all_amounts
 
     # noinspection PyUnresolvedReferences
-    def process(self, mover, desired_level, site):
+    def process(self, origin, amount, destination, rate = None, duration = None):
         """Moves content from ship to the site or from the site to the ship to ensure that the ship's container reaches
         the desired level. Yields the time it takes to process."""
 
         # Before starting to process, check the following requirements
         # Make sure that both objects have storage
-        assert isinstance(mover, HasContainer) and isinstance(site, HasContainer)
+        assert isinstance(origin, HasContainer) and isinstance(destination, HasContainer)
         # Make sure that both objects allow processing
-        assert isinstance(mover, HasResource) and isinstance(site, HasResource)
+        assert isinstance(origin, HasResource) and isinstance(destination, HasResource)
         # Make sure that the processor (self), container and site can log the events
         assert (
-            isinstance(self, Log) and isinstance(mover, Log) and isinstance(site, Log)
+            isinstance(self, Log) and isinstance(origin, Log) and isinstance(destination, Log)
         )
         # Make sure that the processor, origin and destination are all at the same location
-        assert self.is_at(site)
-        assert mover.is_at(site)
+        assert self.is_at(origin)
+        assert destination.is_at(origin)
 
         # Define whether it is loading or unloading by the processor
-        current_level = mover.container.level
+        # no longer necessary
+        # determine the base level of the origin
+        current_level = origin.container.level
 
         # Loading the mover
-        if current_level < desired_level:
-            amount = desired_level - current_level
-            origin = site
-            destination = mover
-            rate = self.loading
-            subcycle = self.loading_subcycle
-            subcycle_frequency = self.loading_subcycle_frequency
-            message = "loading"
+        # if current_level < desired_level:
+        #     amount = desired_level - current_level
+        #     origin = site
+        #     destination = mover
+        #     rate = self.loading
+        #     subcycle = self.loading_subcycle
+        #     subcycle_frequency = self.loading_subcycle_frequency
+        #     message = "loading"
 
-        # Unloading the mover
-        else:
-            amount = current_level - desired_level
-            origin = mover
-            destination = site
-            rate = self.unloading
-            subcycle = self.unloading_subcycle
-            subcycle_frequency = self.unloading_subcycle_frequency
-            message = "unloading"
+        # # Unloading the mover
+        # else:
+        #     amount = current_level - desired_level
+        #     origin = mover
+        #     destination = site
+        #     rate = self.unloading
+        #     subcycle = self.unloading_subcycle
+        #     subcycle_frequency = self.unloading_subcycle_frequency
+        #     message = "unloading"
 
+        message = f"transfer to {destination}"
+        print(message)
         # Log the process for all parts
         for location in [origin, destination]:
             location.log_entry(
@@ -1835,7 +1881,7 @@ class Processor(SimpyObject):
 
             # Check possible downtime
             yield from self.check_possible_downtime(
-                mover, site, duration, desired_level, amount, message
+                origin, destination, duration, current_level+amount, amount, message
             )
 
             # Checkout single event
@@ -1862,71 +1908,40 @@ class Processor(SimpyObject):
             )
 
         # Subcycle with processing events
-        elif type(subcycle) == pd.core.frame.DataFrame:
-            previous_cycle = None
-            # calculate the number of subcycle repetitions :: sr
-            sr = subcycle_repetitions(subcycle_frequency, amount)
-            for cycle, i in itertools.product(range(int(sr)), subcycle.index):
+        else: 
+            yield from self.check_possible_shift(
+                          origin, destination, amount, "get"
+                      )
+          
+            # Check possible downtime
+            yield from self.check_possible_downtime(
+                 origin, destination, duration, current_level+amount, 1, message
+            )
 
-                # Check if a new subcycle has started
-                if cycle != previous_cycle:
-                    previous_cycle = cycle
-                    get = True
-                    put = True
-                else:
-                    get = False
-                    put = False
+            # Checkout subcyle event
+            self.log_entry(
+                 f"{message} start", self.env.now, 0, self.geometry, self.ActivityID
+            )
 
-                # Check whether the amount can me moved from the origin to the destination
-                if get:
-                    if sr == 1:
-                        yield from self.check_possible_shift(
-                            origin, destination, amount, "get"
-                        )
-                    else:
-                        yield from self.check_possible_shift(
-                            origin, destination, 1, "get"
-                        )
+            yield self.env.timeout(duration)
 
-                # Define the properties
-                duration = subcycle.iloc[i]["Duration"] * 60
-                activity = subcycle.iloc[i]["EventName"]
+            # Put the amount in the destination
+            yield from self.check_possible_shift(
+                 origin, destination, amount, "put"    
+            )
 
-                # Check possible downtime
-                yield from self.check_possible_downtime(
-                    mover, site, duration, desired_level, 1, activity
-                )
+            # Add spill the location where processing is taking place
+            self.addSpill(origin, destination, amount, duration)
 
-                # Checkout subcyle event
-                self.log_entry(
-                    f"{activity} start", self.env.now, 0, self.geometry, self.ActivityID
-                )
+            # Shift soil from container volumes
+            self.shiftSoil(origin, destination, amount)
 
-                yield self.env.timeout(duration)
+            # Compute the energy use
+            self.computeEnergy(duration, origin, destination)
 
-                # Put the amount in the destination
-                if put:
-                    if sr == 1:
-                        yield from self.check_possible_shift(
-                            origin, destination, amount, "put"
-                        )
-                    else:
-                        yield from self.check_possible_shift(
-                            origin, destination, 1, "put"
-                        )
-
-                # Add spill the location where processing is taking place
-                self.addSpill(origin, destination, amount, duration)
-
-                # Shift soil from container volumes
-                self.shiftSoil(origin, destination, amount)
-
-                # Compute the energy use
-                self.computeEnergy(duration, origin, destination)
-
-                self.log_entry(
-                    f"{activity} stop", self.env.now, 0, self.geometry, self.ActivityID
-                )
+            self.log_entry(
+                f"{message} stop", self.env.now, 0, self.geometry, self.ActivityID
+            )
 
         # Log the process for all parts
         for location in [origin, destination]:
