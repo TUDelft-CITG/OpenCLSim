@@ -120,8 +120,69 @@ class Activity(core.Identifiable, core.Log):
             )
         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
 
+class GenericActivity(core.Identifiable, core.Log):
+    """The GenericActivity Class forms a generic class which sets up all required mechanisms to control 
+    an activity by providing start and end events. Since it is generic, a parameter of the initialization
+    is the main process, which is provided by an inheriting class
+    main_proc  : the main process to be executed
+    start_event: the activity will start as soon as this event is triggered
+                 by default will be to start immediately
+    stop_event: the activity will stop (terminate) as soon as this event is triggered
+                by default will be an event triggered when the destination container becomes full or the source
+                container becomes empty
+    """
 
-class MoveActivity(core.Identifiable, core.Log):
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+
+    def register_process(
+        self,
+        main_proc,
+        start_event=None,
+        stop_event=None,
+        show=False,
+    ):
+        self.start_event = start_event
+        (
+            start_event
+            if start_event is None or isinstance(start_event, simpy.Event)
+            else self.env.all_of(events=start_event)
+        )
+
+        if type(stop_event) == list:
+            stop_event = self.env.any_of(events=stop_event)
+
+        if stop_event is not None:
+            self.stop_event = self.env.any_of(stop_event)
+        else:
+            stop_event = []
+            self.stop_event = self.env.any_of(stop_event)
+
+        self.stop_reservation_waiting_event = (
+            self.stop_event()
+            if hasattr(self.stop_event, "__call__")
+            else self.stop_event
+        )
+
+        
+        # main_proc = partial(
+        #    conditional_process,
+        #    stop_event=self.stop_event,
+        #    sub_processes=[main_proc],
+        # )
+        if start_event is not None:
+            main_proc = partial(
+                delayed_process, start_event=self.start_event, sub_processes=[main_proc]
+            )
+        self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
+
+
+class MoveActivity(GenericActivity):
     """The MoveActivity Class forms a specific class for a single move activity within a simulation.
     It deals with a single origin container, destination container and a single combination of equipment
     to move substances from the origin to the destination. It will initiate and suspend processes
@@ -156,29 +217,7 @@ class MoveActivity(core.Identifiable, core.Log):
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
-
         self.destination = destination
-        self.start_event = start_event
-        (
-            start_event
-            if start_event is None or isinstance(start_event, simpy.Event)
-            else self.env.all_of(events=start_event)
-        )
-
-        if type(stop_event) == list:
-            stop_event = self.env.any_of(events=stop_event)
-
-        if stop_event is not None:
-            self.stop_event = self.env.any_of(stop_event)
-        else:
-            stop_event = []
-            self.stop_event = self.env.any_of(stop_event)
-
-        self.stop_reservation_waiting_event = (
-            self.stop_event()
-            if hasattr(self.stop_event, "__call__")
-            else self.stop_event
-        )
 
         self.mover = mover
         self.print = show
@@ -190,17 +229,55 @@ class MoveActivity(core.Identifiable, core.Log):
             # stop_reservation_waiting_event=self.stop_reservation_waiting_event,
             # verbose=self.print,
         )
-        # main_proc = partial(
-        #    conditional_process,
-        #    stop_event=self.stop_event,
-        #    sub_processes=[main_proc],
-        # )
-        if start_event is not None:
-            main_proc = partial(
-                delayed_process, start_event=self.start_event, sub_processes=[main_proc]
-            )
-        self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
+        self.register_process(main_proc = main_proc, start_event = start_event, stop_event=stop_event, show=show)
+        
 
+class BasicActivity(GenericActivity):
+    """The MoveActivity Class forms a specific class for a single move activity within a simulation.
+    It deals with a single origin container, destination container and a single combination of equipment
+    to move substances from the origin to the destination. It will initiate and suspend processes
+    according to a number of specified conditions. To run an activity after it has been initialized call env.run()
+    on the Simpy environment with which it was initialized.
+
+    To check when a transportation of substances can take place, the Activity class uses three different condition
+    arguments: start_condition, stop_condition and condition. These condition arguments should all be given a condition
+    object which has a satisfied method returning a boolean value. True if the condition is satisfied, False otherwise.
+
+    destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
+    mover: moves to 'origin' if it is not already there, is loaded, then moves to 'destination' and is unloaded
+           should inherit from Movable, HasContainer, HasResource, Identifiable and Log
+           after the simulation is complete, its log will contain entries for each time it started moving,
+           stopped moving, started loading / unloading and stopped loading / unloading
+    start_event: the activity will start as soon as this event is triggered
+                 by default will be to start immediately
+    stop_event: the activity will stop (terminate) as soon as this event is triggered
+                by default will be an event triggered when the destination container becomes full or the source
+                container becomes empty
+    """
+
+    def __init__(
+        self,
+        #name22,
+        duration,
+        start_event=None,
+        stop_event=None,
+        show=False,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        
+        self.print = show
+        #self.name = name22
+        self.duration = duration
+
+        main_proc = partial(
+            basic_process,
+            duration = self.duration,
+        )
+        self.register_process(main_proc = main_proc, start_event = start_event, stop_event=stop_event, show=show)
+        
 
 def delayed_process(activity_log, env, start_event, sub_processes):
     """"Returns a generator which can be added as a process to a simpy.Environment. In the process the given
@@ -261,7 +338,7 @@ def conditional_process(activity_log, env, stop_event, sub_processes):
     activity_log.log_entry("stopped", env.now, -1, None, activity_log.id)
 
 
-def simple_process(activity_log, env, name, duration):
+def basic_process(activity_log, env, duration):
     """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
     sub_processes will be executed until the given stop_event occurs. If the stop_event occurs during the execution
     of the sub_processes, the conditional process will first complete all sub_processes (which are executed sequentially
@@ -277,9 +354,9 @@ def simple_process(activity_log, env, name, duration):
                    as the stop_event has not occurred.
     """
 
-    activity_log.log_entry(f"started {name}", env.now, duration, None, activity_log.id)
+    activity_log.log_entry(f"started {activity_log.name}", env.now, duration, None, activity_log.id)
     yield env.timeout(duration)
-    activity_log.log_entry(f"stopped {name}", env.now, duration, None, activity_log.id)
+    activity_log.log_entry(f"stopped {activity_log.name}", env.now, duration, None, activity_log.id)
 
 
 def _request_resource_if_available(
@@ -1113,7 +1190,7 @@ class Simulation(core.Identifiable, core.Log):
         if activity_type == "simple":
             duration = activity["duration"]
             name = activity["id"]
-            return partial(simple_process, name=name, duration=duration)
+            return partial(basic_process, name=name, duration=duration)
         if activity_type == "shift_amount":
             amount = activity["amount"]
             processor = activity["processor"]
