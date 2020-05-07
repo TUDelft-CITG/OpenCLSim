@@ -146,8 +146,10 @@ class GenericActivity(core.Identifiable, core.Log):
         start_event=None,
         stop_event=None,
         show=False,
+        postpone_start=False,
     ):
         self.start_event = start_event
+        self.postpone_start = postpone_start
         (
             start_event
             if start_event is None or isinstance(start_event, simpy.Event)
@@ -179,7 +181,9 @@ class GenericActivity(core.Identifiable, core.Log):
             main_proc = partial(
                 delayed_process, start_event=self.start_event, sub_processes=[main_proc]
             )
-        self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
+        self.main_proc =  main_proc
+        if not postpone_start:
+            self.main_process = self.env.process(self.main_proc(activity_log=self, env=self.env))
 
 
 class MoveActivity(GenericActivity):
@@ -209,6 +213,7 @@ class MoveActivity(GenericActivity):
         self,
         mover,
         destination,
+        postpone_start=False,
         start_event=None,
         stop_event=None,
         show=False,
@@ -220,6 +225,7 @@ class MoveActivity(GenericActivity):
         self.destination = destination
 
         self.mover = mover
+        self.postpone_start = postpone_start
         self.print = show
 
         main_proc = partial(
@@ -229,7 +235,11 @@ class MoveActivity(GenericActivity):
             # stop_reservation_waiting_event=self.stop_reservation_waiting_event,
             # verbose=self.print,
         )
-        self.register_process(main_proc = main_proc, start_event = start_event, stop_event=stop_event, show=show)
+        self.register_process(main_proc = main_proc, 
+                              start_event = start_event, 
+                              stop_event=stop_event, 
+                              show=show, 
+                              postpone_start=postpone_start)
         
 
 class BasicActivity(GenericActivity):
@@ -257,8 +267,8 @@ class BasicActivity(GenericActivity):
 
     def __init__(
         self,
-        #name22,
         duration,
+        postpone_start=False,
         start_event=None,
         stop_event=None,
         show=False,
@@ -269,14 +279,126 @@ class BasicActivity(GenericActivity):
         """Initialization"""
         
         self.print = show
-        #self.name = name22
         self.duration = duration
+        self.postpone_start = postpone_start
 
         main_proc = partial(
             basic_process,
             duration = self.duration,
         )
-        self.register_process(main_proc = main_proc, start_event = start_event, stop_event=stop_event, show=show)
+        self.register_process(main_proc = main_proc, 
+                              start_event = start_event, 
+                              stop_event=stop_event, 
+                              show=show, 
+                              postpone_start=postpone_start)
+
+class SequentialActivity(GenericActivity):
+    """The SequenceActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+    
+    To check when a transportation of substances can take place, the Activity class uses three different condition
+    arguments: start_condition, stop_condition and condition. These condition arguments should all be given a condition
+    object which has a satisfied method returning a boolean value. True if the condition is satisfied, False otherwise.
+
+    destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
+    mover: moves to 'origin' if it is not already there, is loaded, then moves to 'destination' and is unloaded
+           should inherit from Movable, HasContainer, HasResource, Identifiable and Log
+           after the simulation is complete, its log will contain entries for each time it started moving,
+           stopped moving, started loading / unloading and stopped loading / unloading
+    start_event: the activity will start as soon as this event is triggered
+                 by default will be to start immediately
+    stop_event: the activity will stop (terminate) as soon as this event is triggered
+                by default will be an event triggered when the destination container becomes full or the source
+                container becomes empty
+    """
+
+    def __init__(
+        self,
+        sub_processes,
+        postpone_start=False,
+        start_event=None,
+        stop_event=None,
+        show=False,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        
+        self.print = show
+        self.sub_processes = sub_processes
+        self.postpone_start = postpone_start
+        print(self.postpone_start)
+
+        main_proc = partial(
+            sequential_process,
+            sub_processes = self.sub_processes,
+        )
+        self.register_process(main_proc = main_proc, 
+                              start_event = start_event, 
+                              stop_event=stop_event, 
+                              show=show, 
+                              postpone_start=postpone_start)
+
+class ShiftAmountActivity(GenericActivity):
+    """The ShiftAmountActivity Class forms a specific class for shifting material from an origin to a destination.
+    It deals with a single origin container, destination container and a single processor
+    to move substances from the origin to the destination. It will initiate and suspend processes
+    according to a number of specified conditions. To run an activity after it has been initialized call env.run()
+    on the Simpy environment with which it was initialized.
+
+    To check when a transportation of substances can take place, the Activity class uses three different condition
+    arguments: start_condition, stop_condition and condition. These condition arguments should all be given a condition
+    object which has a satisfied method returning a boolean value. True if the condition is satisfied, False otherwise.
+
+    destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
+    mover: moves to 'origin' if it is not already there, is loaded, then moves to 'destination' and is unloaded
+           should inherit from Movable, HasContainer, HasResource, Identifiable and Log
+           after the simulation is complete, its log will contain entries for each time it started moving,
+           stopped moving, started loading / unloading and stopped loading / unloading
+    start_event: the activity will start as soon as this event is triggered
+                 by default will be to start immediately
+    stop_event: the activity will stop (terminate) as soon as this event is triggered
+                by default will be an event triggered when the destination container becomes full or the source
+                container becomes empty
+    """
+
+    def __init__(
+        self,
+        processor,
+        origin,
+        destination,
+        amount,
+        postpone_start=False,
+        start_event=None,
+        stop_event=None,
+        show=False,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.origin = origin
+        self.destination = destination
+
+        self.processor = processor
+        self.amount = amount
+        self.postpone_start = postpone_start
+        self.print = show
+
+        main_proc = partial(
+            shift_amount_process,
+            processor =self.processor,
+            origin = self.origin,
+            destination=self.destination,
+            amount = self.amount,
+            # stop_reservation_waiting_event=self.stop_reservation_waiting_event,
+            # verbose=self.print,
+        )
+        self.register_process(main_proc = main_proc, 
+                              start_event = start_event, 
+                              stop_event=stop_event, 
+                              show=show, 
+                              postpone_start=postpone_start)
         
 
 def delayed_process(activity_log, env, start_event, sub_processes):
@@ -425,9 +547,9 @@ def shift_amount_process(
     stop_reservation_waiting_event=None,
 ):
     """Origin and Destination are of type HasContainer """
-    print(origin)
-    print(destination)
-    print(processor)
+    #print(origin)
+    #print(destination)
+    #print(processor)
     if not isinstance(origin, core.HasContainer) or not isinstance(
         destination, core.HasContainer
     ):
@@ -444,15 +566,8 @@ def shift_amount_process(
     amount, all_amounts = processor.determine_processor_amount([origin], destination)
     # print(f"amount: {amount}   amounts:{all_amounts}")
     # Check if activity can start
-    if hasattr(stop_reservation_waiting_event, "__call__"):
-        stop_reservation_waiting_event = stop_reservation_waiting_event()
-    elif type(stop_reservation_waiting_event) == list:
-        stop_reservation_waiting_event = env.any_of(
-            events=[event() for event in stop_reservation_waiting_event]
-        )
-
     # If the transported amount is larger than zero, start activity
-    print(f"amount {amount}")
+    #print(f"amount {amount}")
     if 0 != amount:
         # vrachtbrief = mover.determine_schedule(amount, all_amounts, site, site)
 
@@ -463,7 +578,7 @@ def shift_amount_process(
         #    origin = origins.loc[i, "ID"]
         #    amount = float(origins.loc[i, "Amount"])
 
-        print("_request_resources_if_transfer_possible")
+        #print("_request_resources_if_transfer_possible")
         yield from _request_resource_if_available(
             env,
             resource_requests,
@@ -475,9 +590,9 @@ def shift_amount_process(
             engine_order,
             verbose=False,
         )
-
+        activity_log.log_entry(f"started {activity_log.name}", env.now, amount, None, activity_log.id)
         # unload the mover
-        print("_shift_amount")
+        #print("_shift_amount")
         yield from _shift_amount(
             env,
             processor,
@@ -487,13 +602,14 @@ def shift_amount_process(
             ActivityID=activity_log.id,
             verbose=verbose,
         )
-
+        activity_log.log_entry(f"stopped {activity_log.name}", env.now, amount, None, activity_log.id)
+        
         # release the unloader, destination and mover requests
-        print("_release_resource")
+        #print("_release_resource")
         _release_resource(resource_requests, destination.resource)
         if origin.resource in resource_requests:
             _release_resource(resource_requests, origin.resource)
-        print("done")
+        #print("done")
     else:
         origin_requested = 0
         origin_left = 0
@@ -543,7 +659,7 @@ def shift_amount_process(
 
         else:
             raise RuntimeError("Attempting to move content with a full ship")
-    print(resource_requests)
+    #print(resource_requests)
 
 
 def sequential_process(activity_log, env, sub_processes):
@@ -558,7 +674,27 @@ def sequential_process(activity_log, env, sub_processes):
     """
     activity_log.log_entry("sequential start", env.now, -1, None, activity_log.id)
     for sub_process in sub_processes:
-        yield from sub_process(activity_log=activity_log, env=env)
+        print(sub_process)
+        print(sub_process.postpone_start)
+        
+        if not sub_process.postpone_start:
+            #raise Exception(f"SequentialActivity requires all sub processes to have a postponed start. {sub_process.name} does not have attribute postpone_start.")
+            print((f"SequentialActivity requires all sub processes to have a postponed start. {sub_process.name} does not have attribute postpone_start."))
+        activity_log.log_entry(
+                f"starting sub process {sub_process.name}",
+                env.now,
+                -1,
+                None,
+                activity_log.id,
+            )
+        yield from sub_process.main_proc(activity_log=sub_process, env=env)
+        activity_log.log_entry(
+                f"stopped sub process {sub_process.name}",
+                env.now,
+                -1,
+                None,
+                activity_log.id,
+            )
     activity_log.log_entry("sequential stop", env.now, -1, None, activity_log.id)
 
 
@@ -885,10 +1021,10 @@ def _shift_amount(
     # Set ActivityID to processor and mover
     processor.ActivityID = ActivityID
     origin.ActivityID = ActivityID
-    print('processor start process')
+    #print('processor start process')
     # Check if loading or unloading
     yield from processor.process(origin, amount, destination, duration=10)
-    print('processor end process')
+    #print('processor end process')
     
     if verbose:
         print("Processed {}:".format(amount))

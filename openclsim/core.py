@@ -1858,7 +1858,7 @@ class Processor(SimpyObject):
         #     subcycle_frequency = self.unloading_subcycle_frequency
         #     message = "unloading"
 
-        message = f"transfer to {destination}"
+        message = f"transfer to {destination.name}"
         print(message)
         # Log the process for all parts
         for location in [origin, destination]:
@@ -1871,6 +1871,7 @@ class Processor(SimpyObject):
             )
 
         # Single processing event
+        # AW: I think these comments are not ok anymore
         if rate:
 
             # Check whether the amount can me moved from the origin to the destination
@@ -1886,7 +1887,7 @@ class Processor(SimpyObject):
 
             # Checkout single event
             self.log_entry(
-                f"{message} start", self.env.now, 0, self.geometry, self.ActivityID
+                f"{message} start", self.env.now, amount, self.geometry, self.ActivityID
             )
 
             yield self.env.timeout(duration)
@@ -1908,6 +1909,7 @@ class Processor(SimpyObject):
             )
 
         # Subcycle with processing events
+        # AW: I think these comments are not ok anymore
         else: 
             yield from self.check_possible_shift(
                           origin, destination, amount, "get"
@@ -1920,7 +1922,7 @@ class Processor(SimpyObject):
 
             # Checkout subcyle event
             self.log_entry(
-                 f"{message} start", self.env.now, 0, self.geometry, self.ActivityID
+                 f"{message} start", self.env.now, amount, self.geometry, self.ActivityID
             )
 
             yield self.env.timeout(duration)
@@ -1940,7 +1942,7 @@ class Processor(SimpyObject):
             self.computeEnergy(duration, origin, destination)
 
             self.log_entry(
-                f"{message} stop", self.env.now, 0, self.geometry, self.ActivityID
+                f"{message} stop", self.env.now, amount, self.geometry, self.ActivityID
             )
 
         # Log the process for all parts
