@@ -38,7 +38,7 @@ data_from_site = {
     "ID": "6dbbbdf4-4589-11e9-a501-b469212bff5d",  # For logging purposes
     "geometry": location_from_site,  # The coordinates of the project site
     "capacity": 10,  # The capacity of the site
-    "level": 2,
+    "level": 8,
 }  # The actual volume of the site
 
 # Information on the dumping site - the "to site" - the "dump locatie"
@@ -87,7 +87,7 @@ data_hopper = {
     "geometry": location_from_site,  # It starts at the "from site"
     "loading_rate": 1,  # Loading rate
     "unloading_rate": 1,  # Unloading rate
-    "capacity": 5,  # Capacity of the hopper - "Beunvolume"
+    "capacity": 4,  # Capacity of the hopper - "Beunvolume"
     "compute_v": compute_v_provider(5, 4.5),  # Variable speed
     "weekrate": 7,
 }

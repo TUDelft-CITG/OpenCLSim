@@ -1772,19 +1772,20 @@ class Processor(SimpyObject):
         if not hasattr(self, "unloading_subcycle"):
             self.unloading_subcycle = None
             self.unloading_subcycle_frequency = None
-            
-    def determine_processor_amount(self, origins, destination, loader=None, unloader=None, filling=1):
+
+    def determine_processor_amount(
+        self, origins, destination, amount=None, loader=None, unloader=None, filling=1
+    ):
         """ Determine the maximum amount that can be carried """
 
         # Determine the basic amount that should be transported
         all_amounts = {}
         all_amounts.update(
-            {
-                "origin." + origin.id: origin.container.level
-                for origin in origins
-            }
+            {"origin." + origin.id: origin.container.level for origin in origins}
         )
-        all_amounts["destination."+ destination.id]= destination.container.capacity- destination.container.level
+        all_amounts["destination." + destination.id] = (
+            destination.container.capacity - destination.container.level
+        )
 
         origin_requested = 0
         destination_requested = 0
@@ -1795,20 +1796,21 @@ class Processor(SimpyObject):
             else:
                 destination_requested += all_amounts[key]
 
-        amount = min(
-            origin_requested,
-            destination_requested,
-        )
-
+        amount_ = min(origin_requested, destination_requested,)
+        if amount != None:
+            amount_ = min(amount_, amount)
+            
         # If the mover has a function to optimize its load, check if the amount should be changed
         if not hasattr(destination, "check_optimal_filling"):
-            return amount, all_amounts
+            return amount_, all_amounts
 
         else:
-            amounts = [amount]
+            amounts = [amount_]
             amounts.extend(
                 [
-                    destination.check_optimal_filling(loader, unloader, origin, destination)
+                    destination.check_optimal_filling(
+                        loader, unloader, origin, destination
+                    )
                     for origin in origins
                 ]
             )
@@ -1816,18 +1818,22 @@ class Processor(SimpyObject):
             return min(amounts), all_amounts
 
     # noinspection PyUnresolvedReferences
-    def process(self, origin, amount, destination, rate = None, duration = None):
+    def process(self, origin, amount, destination, rate=None, duration=None):
         """Moves content from ship to the site or from the site to the ship to ensure that the ship's container reaches
         the desired level. Yields the time it takes to process."""
 
         # Before starting to process, check the following requirements
         # Make sure that both objects have storage
-        assert isinstance(origin, HasContainer) and isinstance(destination, HasContainer)
+        assert isinstance(origin, HasContainer) and isinstance(
+            destination, HasContainer
+        )
         # Make sure that both objects allow processing
         assert isinstance(origin, HasResource) and isinstance(destination, HasResource)
         # Make sure that the processor (self), container and site can log the events
         assert (
-            isinstance(self, Log) and isinstance(origin, Log) and isinstance(destination, Log)
+            isinstance(self, Log)
+            and isinstance(origin, Log)
+            and isinstance(destination, Log)
         )
         # Make sure that the processor, origin and destination are all at the same location
         assert self.is_at(origin)
@@ -1882,7 +1888,7 @@ class Processor(SimpyObject):
 
             # Check possible downtime
             yield from self.check_possible_downtime(
-                origin, destination, duration, current_level+amount, amount, message
+                origin, destination, duration, current_level + amount, amount, message
             )
 
             # Checkout single event
@@ -1910,27 +1916,23 @@ class Processor(SimpyObject):
 
         # Subcycle with processing events
         # AW: I think these comments are not ok anymore
-        else: 
-            yield from self.check_possible_shift(
-                          origin, destination, amount, "get"
-                      )
-          
+        else:
+            yield from self.check_possible_shift(origin, destination, amount, "get")
+
             # Check possible downtime
             yield from self.check_possible_downtime(
-                 origin, destination, duration, current_level+amount, 1, message
+                origin, destination, duration, current_level + amount, 1, message
             )
 
             # Checkout subcyle event
             self.log_entry(
-                 f"{message} start", self.env.now, amount, self.geometry, self.ActivityID
+                f"{message} start", self.env.now, amount, self.geometry, self.ActivityID
             )
 
             yield self.env.timeout(duration)
 
             # Put the amount in the destination
-            yield from self.check_possible_shift(
-                 origin, destination, amount, "put"    
-            )
+            yield from self.check_possible_shift(origin, destination, amount, "put")
 
             # Add spill the location where processing is taking place
             self.addSpill(origin, destination, amount, duration)
