@@ -38,7 +38,7 @@ data_from_site = {
     "ID": "6dbbbdf4-4589-11e9-a501-b469212bff5d",  # For logging purposes
     "geometry": location_from_site,  # The coordinates of the project site
     "capacity": 10,  # The capacity of the site
-    "level": 8,
+    "level": 3,
 }  # The actual volume of the site
 
 # Information on the dumping site - the "to site" - the "dump locatie"

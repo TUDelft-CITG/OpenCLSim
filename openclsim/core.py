@@ -248,6 +248,112 @@ class HasContainer(SimpyObject):
         )
         self.container = container_class(self.env, capacity, init=level)
 
+class EventsStore(simpy.FilterStore):
+    def __init__(self,initial_objects=[], *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+        self._get_available_events = {}
+        self._put_available_events = {}
+    
+        #initialize store
+        for item in initial_objects:
+            self.put(item)
+
+    @property
+    def level(self):
+        return len(self.items)
+
+    def get_available(self, amount):
+        if self.level >= amount:
+            return self._env.event().succeed()
+        if amount in self._get_available_events:
+            return self._get_available_events[amount]
+        new_event = self._env.event()
+        self._get_available_events[amount] = new_event
+        return new_event
+
+    def put_available(self, amount):
+        if self.capacity - self.level >= amount:
+            return self._env.event().succeed()
+        if amount in self._put_available_events:
+            return self._put_available_events[amount]
+        new_event = self._env.event()
+        self._put_available_events[amount] = new_event
+        return new_event
+
+    def get_empty_event(self, start_event=False):
+        if not start_event:
+            return self.empty_event
+        elif start_event.processed:
+            return self.empty_event
+        else:
+            return self._env.event()
+
+    def get_full_event(self, start_event=False):
+        if not start_event:
+            return self.full_event
+        elif start_event.processed:
+            return self.full_event
+        else:
+            return self._env.event()
+
+    @property
+    def empty_event(self):
+        return self.put_available(self.capacity)
+
+    @property
+    def full_event(self):
+        return self.get_available(self.capacity)
+
+    def put(self, item):
+        put_event = super().put(item)
+        put_event.callbacks.append(self.put_callback)
+        return put_event
+
+    def put_callback(self, event):
+        for amount in sorted(self._get_available_events):
+            if isinstance(self, ReservationContainer):
+                if self.expected_level >= amount:
+                    self._get_available_events[amount].succeed()
+                    del self._get_available_events[amount]
+            elif self.level >= amount:
+                self._get_available_events[amount].succeed()
+                del self._get_available_events[amount]
+            else:
+                return
+
+    def get(self, amount):
+        get_event = super().get(amount)
+        get_event.callbacks.append(self.get_callback)
+        return get_event
+
+    def get_callback(self, event):
+        for amount in sorted(self._put_available_events):
+            if isinstance(self, ReservationContainer):
+                if self.capacity - self.expected_level >= amount:
+                    self._put_available_events[amount].succeed()
+                    del self._put_available_events[amount]
+            elif self.capacity - self.level >= amount:
+                self._put_available_events[amount].succeed()
+                del self._put_available_events[amount]
+            else:
+                return
+
+class HasStore(HasContainer):
+    """Store class
+
+    capacity: amount the container can hold
+    level: amount the container holds initially
+    container: a simpy object that can hold stuff"""
+
+    def __init__(self, capacity, initial_objects,  *args, **kwargs):
+        super().__init__(capacity = capacity, level = 0, *args, **kwargs)
+        """Initialization"""
+        #store_class = type("NewStore", (EventsStore),{})
+        #    "CombinedContainer", (EventsContainer, ReservationContainer), {}
+        #)
+        self.container = EventsStore(self.env, capacity, initial_objects)
+
 
 class EnergyUse(SimpyObject):
     """EnergyUse class
@@ -1799,7 +1905,7 @@ class Processor(SimpyObject):
         amount_ = min(origin_requested, destination_requested,)
         if amount != None:
             amount_ = min(amount_, amount)
-            
+
         # If the mover has a function to optimize its load, check if the amount should be changed
         if not hasattr(destination, "check_optimal_filling"):
             return amount_, all_amounts
