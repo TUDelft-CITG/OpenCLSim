@@ -153,13 +153,13 @@ def test_basic_processor(env, geometry_a):
     env.process(processor.process(source, 400, dest))
     env.run()
     np.testing.assert_almost_equal(env.now, env.epoch + 300)
-    assert source.container.level == 400
-    assert dest.container.level == 600
+    assert source.container.get_level() == 400
+    assert dest.container.get_level() == 600
 
     env.process(processor.process(dest, 300, source))
     start = env.now
     env.run()
     time_spent = env.now - start
     np.testing.assert_almost_equal(time_spent, 150)
-    assert source.container.level == 700
-    assert dest.container.level == 300
+    assert source.container.get_level() == 700
+    assert dest.container.get_level() == 300

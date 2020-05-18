@@ -241,7 +241,7 @@ def site_kml(
             style.labelstyle.scale = 1
             style.iconstyle.color = "ff00ffff"  # Yellow
             style.iconstyle.scale = scale * (
-                site.log["Value"][log_index] / site.container.capacity
+                site.log["Value"][log_index] / site.container.get_capacity()
             )
             style.iconstyle.icon.href = icon
 
@@ -267,7 +267,7 @@ def site_kml(
         style.labelstyle.scale = 1
         style.iconstyle.color = "ff00ffff"  # Yellow
         style.iconstyle.scale = scale * (
-            site.log["Value"][log_index + 1] / site.container.capacity
+            site.log["Value"][log_index + 1] / site.container.get_capacity()
         )
         style.iconstyle.icon.href = icon
 

@@ -11,6 +11,7 @@ import numpy as np
 import openclsim.core as core
 import openclsim.model as model
 import openclsim.plot as plot
+from vo_colos.utils.object_registry import SiteRegistry
 
 simulation_start = 0
 
@@ -23,7 +24,7 @@ Site = type(
         core.Identifiable,  # Give it a name
         core.Log,  # Allow logging of all discrete events
         core.Locatable,  # Add coordinates to extract distance information and visualize
-        core.HasContainer,  # Add information on the material available at the site
+        core.HasMultiContainer,  # Add information on the material available at the site
         core.HasResource,
     ),  # Add information on serving equipment
     {},
@@ -37,8 +38,9 @@ data_from_site = {
     "name": "Winlocatie",  # The name of the site
     "ID": "6dbbbdf4-4589-11e9-a501-b469212bff5b",  # For logging purposes
     "geometry": location_from_site,  # The coordinates of the project site
-    "capacity": 10,  # The capacity of the site
-    "level": 5.0,
+    "store_capacity":4,
+    "initials": [{"id":"MP", "level":5, "capacity": 10},
+                 {"id":"TP", "level":5, "capacity": 10}]
 }  # The actual volume of the site
 
 # Information on the dumping site - the "to site" - the "dump locatie"
@@ -49,8 +51,9 @@ data_to_site = {
     "name": "Dumplocatie",  # The name of the site
     "ID": "6dbbbdf5-4589-11e9-82b2-b469212bff5b",  # For logging purposes
     "geometry": location_to_site,  # The coordinates of the project site
-    "capacity": 10,  # The capacity of the site
-    "level": 0,
+    "store_capacity":4,
+    "initials": [{"id":"MP", "level":0, "capacity": 10},
+                 {"id":"TP", "level":0, "capacity": 10}]
 }  # The actual volume of the site (empty of course)
 
 # The two objects used for the simulation
@@ -66,16 +69,18 @@ TransportProcessingResource = type(
     (
         core.Identifiable,  # Give it a name
         core.Log,  # Allow logging of all discrete events
-        core.ContainerDependentMovable,  # A moving container, so capacity and location
+        core.MultiContainerDependentMovable,  # A moving container, so capacity and location
         core.Processor,  # Allow for loading and unloading
         core.HasResource,  # Add information on serving equipment
         core.HasCosts,  # Add information on costs
         core.LoadingFunction,  # Add a loading function
         core.UnloadingFunction,  # Add an unloading function
+        SiteRegistry,
     ),
-    {},
+    {"key":"MultiStoreHopper"},
 )
 
+print(SiteRegistry.inspect("MultiStoreHopper"))
 # For more realistic simulation you might want to have speed dependent on the volume carried by the vessel
 def compute_v_provider(v_empty, v_full):
     return lambda x: 10
@@ -89,7 +94,9 @@ data_hopper = {
     "geometry": location_from_site,  # It starts at the "from site"
     "loading_rate": 1,  # Loading rate
     "unloading_rate": 1,  # Unloading rate
-    "capacity": 2,  # Capacity of the hopper - "Beunvolume"
+    "store_capacity":4,
+    "initials": [{"id":"MP", "level":0, "capacity": 2},
+                 {"id":"TP", "level":0, "capacity": 2}], # Capacity of the hopper - "Beunvolume"
     "compute_v": compute_v_provider(5, 4.5),  # Variable speed
     "weekrate": 7,
 }
@@ -112,7 +119,8 @@ shift_amount_activity_data = {
     "processor": hopper,
     "origin": from_site,
     "destination": hopper,
-    "amount": 2,
+    "amount": 3,
+    "id_": "MP",
 }
 
 activity = model.ShiftAmountActivity(**shift_amount_activity_data)
@@ -132,4 +140,6 @@ my_env.run()
 
 log_df = pd.DataFrame(hopper.log)
 data = log_df[["Message", "Timestamp", "Value", "ActivityID"]]
+
+cont = from_site.container
 cont = hopper.container

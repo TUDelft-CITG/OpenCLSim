@@ -7,6 +7,7 @@ import json
 import logging
 import uuid
 import itertools
+from pprint import pprint
 
 # you need these dependencies (you can get these from anaconda)
 # package(s) related to the simulation
@@ -89,16 +90,27 @@ class Locatable:
         return distance < tolerance
 
 
-class ReservationContainer(simpy.Container):
-    def __init__(self, *args, **kwargs):
+class ReservationContainer(simpy.FilterStore):
+    def __init__(self, store_capacity=1, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.expected_level = self.level
+        # self.expected_level = init
         self._content_available = None
         self._space_available = None
 
-    def reserve_put(self, amount):
-        if self.expected_level + amount > self.capacity:
+    def initialize(self, capacity, init=0):
+        self.put(capacity, init)
+
+    def initialize_container(self, initials):
+        for item in initials:
+            print(item)
+            assert "id" in item
+            assert "capacity" in item
+            assert "level" in item
+            super().put(item)
+
+    def reserve_put(self, amount, id_="default"):
+        if self.get_expected_level(id_) + amount > self.get_capacity(Id_):
             raise RuntimeError("Attempting to reserve unavailable space")
 
         self.expected_level += amount
@@ -110,8 +122,8 @@ class ReservationContainer(simpy.Container):
         ):
             self._content_available.succeed()
 
-    def reserve_get(self, amount):
-        if self.expected_level < amount:
+    def reserve_get(self, amount, id_):
+        if self.get_expected_level(id_) < amount:
             raise RuntimeError("Attempting to reserve unavailable content")
 
         self.expected_level -= amount
@@ -125,7 +137,8 @@ class ReservationContainer(simpy.Container):
 
     @property
     def reserve_put_available(self):
-        if self.expected_level < self.capacity:
+        id_ = "default"
+        if self.expected_level < self.get_capacity(id_):
             return self._env.event().succeed()
 
         if self._space_available is not None and not self._space_available.triggered:
@@ -136,7 +149,8 @@ class ReservationContainer(simpy.Container):
 
     @property
     def reserve_get_available(self):
-        if self.expected_level > 0:
+        id_ = "default"
+        if self.get_expected_level(id_) > 0:
             return self._env.event().succeed()
 
         if (
@@ -149,32 +163,68 @@ class ReservationContainer(simpy.Container):
         return self._content_available
 
 
-class EventsContainer(simpy.Container):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
+class EventsContainer(simpy.FilterStore):
+    def __init__(self, env, store_capacity=1, *args, **kwargs):
+        super().__init__(env, capacity=store_capacity)
         self._get_available_events = {}
         self._put_available_events = {}
+        print("init")
 
-    def get_available(self, amount):
-        if self.level >= amount:
+    def initialize(self, capacity, init=0):
+        self.put(capacity, init)
+
+    def initialize_container(self, initials):
+        for item in initials:
+            print(item)
+            assert "id" in item
+            assert "capacity" in item
+            assert "level" in item
+            super().put(item)
+
+    def get_available(self, amount, id_="default"):
+        print("start get_available")
+        if self.get_level(id_) >= amount:
             return self._env.event().succeed()
-        if amount in self._get_available_events:
-            return self._get_available_events[amount]
+        if id_ in self._get_available_events:
+            if amount in self._get_available_events[id_]:
+                return self._get_available_events[id_][amount]
         new_event = self._env.event()
-        self._get_available_events[amount] = new_event
+        self._get_available_events[id_] = {}
+        self._get_available_events[id_][amount] = new_event
         return new_event
 
-    def put_available(self, amount):
-        if self.capacity - self.level >= amount:
+    def get_capacity(self, id_="default"):
+        print(f"start get_capacity id_ {id_}")
+        print(self.items)
+        if self.items == None:
+            return 0
+        res = [item["capacity"] for item in self.items if item["id"] == id_]
+        if isinstance(res, list) and len(res) > 0:
+            return res[0]
+        return 0
+
+    def get_level(self, id_="default"):
+        print(f"start get_level with id_ {id_}")
+        print(self.items)
+        if self.items == None:
+            return 0
+        res = [item["level"] for item in self.items if item["id"] == id_]
+        if isinstance(res, list) and len(res) > 0:
+            return res[0]
+        return 0
+
+    def put_available(self, amount, id_="default"):
+        if self.get_capacity(id_) - self.get_level(id_) >= amount:
             return self._env.event().succeed()
-        if amount in self._put_available_events:
-            return self._put_available_events[amount]
+        if id_ in self._put_available_events:
+            if amount in self._put_available_events:
+                return self._put_available_events[amount]
         new_event = self._env.event()
-        self._put_available_events[amount] = new_event
+        self._put_available_events[id_] = {}
+        self._put_available_events[id_][amount] = new_event
         return new_event
 
-    def get_empty_event(self, start_event=False):
+    def get_empty_event(self, start_event=False, id_="default"):
         if not start_event:
             return self.empty_event
         elif start_event.processed:
@@ -182,7 +232,7 @@ class EventsContainer(simpy.Container):
         else:
             return self._env.event()
 
-    def get_full_event(self, start_event=False):
+    def get_full_event(self, start_event=False, id_="default"):
         if not start_event:
             return self.full_event
         elif start_event.processed:
@@ -192,45 +242,78 @@ class EventsContainer(simpy.Container):
 
     @property
     def empty_event(self):
-        return self.put_available(self.capacity)
+        return self.put_available(self.get_capacity())
+
+    def empty_event(self, id_="default"):
+        return self.put_available(self.get_capacity(id_))
 
     @property
     def full_event(self):
-        return self.get_available(self.capacity)
+        return self.get_available(self.get_capacity())
 
-    def put(self, amount):
-        put_event = super().put(amount)
+    def full_event(self, id_="default"):
+        return self.get_available(self.get_capacity(id_))
+
+    def put(self, amount, capacity=0, id_="default"):
+        if len(self.items) > 0:
+            status = super().get(lambda status: status["id"] == id_)
+            pprint(status)
+            # if status.ok:
+            if status.ok:
+                status = status.value
+                if "capacity" in status:
+                    capacity = status["capacity"]
+            else:
+                raise Exception(
+                    f"Failed to derive the previous version of container {id_}"
+                )
+        put_event = super().put({"id": id_, "level": amount, "capacity": capacity})
         put_event.callbacks.append(self.put_callback)
         return put_event
 
-    def put_callback(self, event):
+    def put_callback(self, event, id_="default"):
         for amount in sorted(self._get_available_events):
             if isinstance(self, ReservationContainer):
                 if self.expected_level >= amount:
                     self._get_available_events[amount].succeed()
                     del self._get_available_events[amount]
-            elif self.level >= amount:
-                self._get_available_events[amount].succeed()
-                del self._get_available_events[amount]
+            elif self.get_level(id_) >= amount:
+                if id_ in self._get_available_events:
+                    self._get_available_events[id_][amount].succeed()
+                    del self._get_available_events[id_][amount]
             else:
                 return
 
-    def get(self, amount):
-        get_event = super().get(amount)
+    def get(self, amount, id_="default"):
+        print(f"start get {amount}")
+        store_status = super().get(lambda state: state["id"] == id_).value
+        print(f"store_status {store_status}")
+        # print(f"store_status value {store_status.value}")
+        store_status["level"] = store_status["level"] - amount
+        get_event = super().put(store_status)
         get_event.callbacks.append(self.get_callback)
+        print(f"end get {amount}")
         return get_event
 
-    def get_callback(self, event):
+    def get_callback(self, event, id_="default"):
+        print("start get_callback")
         for amount in sorted(self._put_available_events):
             if isinstance(self, ReservationContainer):
-                if self.capacity - self.expected_level >= amount:
+                if self._container_capacity - self.expected_level >= amount:
                     self._put_available_events[amount].succeed()
                     del self._put_available_events[amount]
-            elif self.capacity - self.level >= amount:
-                self._put_available_events[amount].succeed()
-                del self._put_available_events[amount]
+            elif self.get_capacity(id_) - self.get_level(id_) >= amount:
+                if id_ in self._put_available_events:
+                    self._put_available_events[id_][amount].succeed()
+                    del self._put_available_events[id_][amount]
             else:
                 return
+
+    @property
+    def container_list(self):
+        container_ids = []
+        if len(self.items) > 0:
+            container_ids = [item["id"] for item in self.items]
 
 
 class HasContainer(SimpyObject):
@@ -240,119 +323,28 @@ class HasContainer(SimpyObject):
     level: amount the container holds initially
     container: a simpy object that can hold stuff"""
 
-    def __init__(self, capacity, level=0, *args, **kwargs):
+    def __init__(self, store_capacity=1, capacity=0, level=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         container_class = type(
             "CombinedContainer", (EventsContainer, ReservationContainer), {}
         )
-        self.container = container_class(self.env, capacity, init=level)
+        # container_class = EventsContainer
+        self.container = container_class(self.env, store_capacity=store_capacity)
+        if capacity > 0:
+            self.container.initialize(capacity, init=level)
 
-class EventsStore(simpy.FilterStore):
-    def __init__(self,initial_objects=[], *args, **kwargs):
-        super().__init__(*args, **kwargs)
-    
-        self._get_available_events = {}
-        self._put_available_events = {}
-    
-        #initialize store
-        for item in initial_objects:
-            self.put(item)
 
-    @property
-    def level(self):
-        return len(self.items)
-
-    def get_available(self, amount):
-        if self.level >= amount:
-            return self._env.event().succeed()
-        if amount in self._get_available_events:
-            return self._get_available_events[amount]
-        new_event = self._env.event()
-        self._get_available_events[amount] = new_event
-        return new_event
-
-    def put_available(self, amount):
-        if self.capacity - self.level >= amount:
-            return self._env.event().succeed()
-        if amount in self._put_available_events:
-            return self._put_available_events[amount]
-        new_event = self._env.event()
-        self._put_available_events[amount] = new_event
-        return new_event
-
-    def get_empty_event(self, start_event=False):
-        if not start_event:
-            return self.empty_event
-        elif start_event.processed:
-            return self.empty_event
-        else:
-            return self._env.event()
-
-    def get_full_event(self, start_event=False):
-        if not start_event:
-            return self.full_event
-        elif start_event.processed:
-            return self.full_event
-        else:
-            return self._env.event()
-
-    @property
-    def empty_event(self):
-        return self.put_available(self.capacity)
-
-    @property
-    def full_event(self):
-        return self.get_available(self.capacity)
-
-    def put(self, item):
-        put_event = super().put(item)
-        put_event.callbacks.append(self.put_callback)
-        return put_event
-
-    def put_callback(self, event):
-        for amount in sorted(self._get_available_events):
-            if isinstance(self, ReservationContainer):
-                if self.expected_level >= amount:
-                    self._get_available_events[amount].succeed()
-                    del self._get_available_events[amount]
-            elif self.level >= amount:
-                self._get_available_events[amount].succeed()
-                del self._get_available_events[amount]
-            else:
-                return
-
-    def get(self, amount):
-        get_event = super().get(amount)
-        get_event.callbacks.append(self.get_callback)
-        return get_event
-
-    def get_callback(self, event):
-        for amount in sorted(self._put_available_events):
-            if isinstance(self, ReservationContainer):
-                if self.capacity - self.expected_level >= amount:
-                    self._put_available_events[amount].succeed()
-                    del self._put_available_events[amount]
-            elif self.capacity - self.level >= amount:
-                self._put_available_events[amount].succeed()
-                del self._put_available_events[amount]
-            else:
-                return
-
-class HasStore(HasContainer):
-    """Store class
+class HasMultiContainer(HasContainer):
+    """Container class
 
     capacity: amount the container can hold
     level: amount the container holds initially
     container: a simpy object that can hold stuff"""
 
-    def __init__(self, capacity, initial_objects,  *args, **kwargs):
-        super().__init__(capacity = capacity, level = 0, *args, **kwargs)
-        """Initialization"""
-        #store_class = type("NewStore", (EventsStore),{})
-        #    "CombinedContainer", (EventsContainer, ReservationContainer), {}
-        #)
-        self.container = EventsStore(self.env, capacity, initial_objects)
+    def __init__(self, initials, store_capacity=10, *args, **kwargs):
+        super().__init__(store_capacity=store_capacity, *args, **kwargs)
+        self.container.initialize_container(initials)
 
 
 class EnergyUse(SimpyObject):
@@ -496,8 +488,8 @@ class HasSpillCondition(SimpyObject):
                 and self.env.now <= self.SpillConditions["Criterion end"][i]
             ):
                 tolerance = (
-                    self.SpillConditions["Spill limit"][i].capacity
-                    - self.SpillConditions["Spill limit"][i].level
+                    self.SpillConditions["Spill limit"][i].get_capacity()
+                    - self.SpillConditions["Spill limit"][i].get_level()
                 )
 
                 if tolerance < spill:
@@ -509,8 +501,8 @@ class HasSpillCondition(SimpyObject):
                         == self.SpillConditions["Criterion start"][i + 1]
                     ):
                         tolerance = (
-                            self.SpillConditions["Spill limit"][i + 1].capacity
-                            - self.SpillConditions["Spill limit"][i + 1].level
+                            self.SpillConditions["Spill limit"][i + 1].get_capacity()
+                            - self.SpillConditions["Spill limit"][i + 1].get_level()
                         )
                         waiting = self.SpillConditions["Criterion end"][i + 1]
 
@@ -705,7 +697,7 @@ class HasSoil:
         """Remove soil from self."""
 
         # If soil is a mover, the mover should be initialized with an empty soil dict after emptying
-        if isinstance(self, Movable) and 0 == self.container.level:
+        if isinstance(self, Movable) and 0 == self.container.get_level():
             removed_soil = list(self.soil.items())[0]
 
             self.soil = {}
@@ -1076,7 +1068,8 @@ class HasDepthRestriction:
                 seconds=processor.unloading(
                     self,
                     location,
-                    self.container.level + filling_degree * self.container.capacity,
+                    self.container.get_level()
+                    + filling_degree * self.container.get_capacity(),
                 )
             )
 
@@ -1111,7 +1104,7 @@ class HasDepthRestriction:
                         )
 
             self.depth_data[location.name][filling_degree] = {
-                "Volume": filling_degree * self.container.capacity,
+                "Volume": filling_degree * self.container.get_capacity(),
                 "Draught": draught,
                 "Ranges": np.array(ranges),
             }
@@ -1149,7 +1142,7 @@ class HasDepthRestriction:
                     )
 
         self.depth_data[location.name][fill_degree] = {
-            "Volume": fill_degree * self.container.capacity,
+            "Volume": fill_degree * self.container.get_capacity(),
             "Draught": draught,
             "Ranges": np.array(ranges),
         }
@@ -1249,10 +1242,10 @@ class HasDepthRestriction:
 
         # If a filling degee has been specified
         if self.filling is not None:
-            return self.filling * self.container.capacity / 100
+            return self.filling * self.container.get_capacity() / 100
 
         elif destination.name not in self.depth_data.keys():
-            return self.container.capacity
+            return self.container.get_capacity()
 
         # If not, try to optimize the load with regard to the tidal window
         else:
@@ -1270,7 +1263,8 @@ class HasDepthRestriction:
                     loading = loader.loading(
                         origin,
                         destination,
-                        filling * self.container.capacity - self.container.level,
+                        filling * self.container.get_capacity()
+                        - self.container.get_level(),
                     )
 
                     orig = shapely.geometry.asShape(origin.geometry)
@@ -1297,11 +1291,11 @@ class HasDepthRestriction:
                         self.env.exit()
 
                     # In case waiting is always required
-                    loads.append(filling * self.container.capacity)
+                    loads.append(filling * self.container.get_capacity())
                     waits.append(waiting)
 
                     if waiting < destination.timestep.total_seconds():
-                        amounts.append(filling * self.container.capacity)
+                        amounts.append(filling * self.container.get_capacity())
 
             # Check if there is a better filling degree
             if amounts:
@@ -1317,7 +1311,9 @@ class HasDepthRestriction:
 
     @property
     def current_draught(self):
-        return self.compute_draught(self.container.level / self.container.capacity)
+        return self.compute_draught(
+            self.container.get_level() / self.container.get_capacity()
+        )
 
 
 class Movable(SimpyObject, Locatable):
@@ -1364,11 +1360,11 @@ class Movable(SimpyObject, Locatable):
         """ Log the start or stop of the sailing event """
 
         if isinstance(self, HasContainer):
-            status = "filled" if self.container.level > 0 else "empty"
+            status = "filled" if self.container.get_level() > 0 else "empty"
             self.log_entry(
                 "sailing {} {}".format(status, event),
                 self.env.now,
-                self.container.level,
+                self.container.get_level(),
                 self.geometry,
                 self.ActivityID,
             )
@@ -1396,12 +1392,12 @@ class Movable(SimpyObject, Locatable):
         """ Determine the energy use """
         if isinstance(self, EnergyUse):
             # message depends on filling degree: if container is empty --> sailing empt
-            if not isinstance(self, HasContainer) or self.container.level == 0:
+            if not isinstance(self, HasContainer) or self.container.get_level() == 0:
                 message = "Energy use sailing empty"
                 filling = 0.0
             else:
                 message = "Energy use sailing filled"
-                filling = self.container.level / self.container.capacity
+                filling = self.container.get_level() / self.container.get_capacity()
 
             energy = self.energy_use_sailing(distance, speed, filling)
             self.log_entry(
@@ -1422,7 +1418,9 @@ class ContainerDependentMovable(Movable, HasContainer):
 
     @property
     def current_speed(self):
-        return self.compute_v(self.container.level / self.container.capacity)
+        return self.compute_v(
+            self.container.get_level() / self.container.get_capacity()
+        )
 
     def determine_amount(self, origins, destinations, loader, unloader, filling=1):
         """ Determine the maximum amount that can be carried """
@@ -1438,7 +1436,7 @@ class ContainerDependentMovable(Movable, HasContainer):
         all_amounts.update(
             {
                 "destination."
-                + destination.id: destination.container.capacity
+                + destination.id: destination.container.get_capacity()
                 - destination.container.expected_level
                 for destination in destinations
             }
@@ -1454,7 +1452,7 @@ class ContainerDependentMovable(Movable, HasContainer):
                 destination_requested += all_amounts[key]
 
         amount = min(
-            self.container.capacity * filling - self.container.level,
+            self.container.get_capacity() * filling - self.container.get_level(),
             origin_requested,
             destination_requested,
         )
@@ -1529,6 +1527,29 @@ class ContainerDependentMovable(Movable, HasContainer):
                 break
 
         return pd.DataFrame.from_dict(self.vrachtbrief).sort_values("Priority")
+
+
+class MultiContainerDependentMovable(Movable, HasMultiContainer):
+    """ContainerDependentMovable class
+
+    Used for objects that move with a speed dependent on the container level
+    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
+
+    def __init__(self, compute_v, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.compute_v = compute_v
+        self.conainter_ids = self.container.container_list
+
+    @property
+    def current_speed(self):
+        sum_level = 0
+        sum_capacity = 0
+        for id_ in self.container_ids:
+            sum_level = self.container.get_level(id_)
+            sum_capacity = self.container.get_capacity(id_)
+        fill_degree = sum_level / sum_capacity
+        return self.compute_v(fill_degree)
 
 
 class Routeable(Movable):
@@ -1650,18 +1671,20 @@ class ContainerDependentRouteable(ContainerDependentMovable, Routeable):
 
     @property
     def current_speed(self):
-        return self.compute_v(self.container.level / self.container.capacity)
+        return self.compute_v(
+            self.container.get_level() / self.container.get_capacity()
+        )
 
     def energy_use(self, distance, speed):
         if isinstance(self, EnergyUse):
-            filling = self.container.level / self.container.capacity
+            filling = self.container.get_level() / self.container.get_capacity()
             return self.energy_use_sailing(distance, speed, filling)
         else:
             return 0
 
     def log_energy_use(self, energy):
         if 0 < energy:
-            status = "filled" if self.container.level > 0 else "empty"
+            status = "filled" if self.container.get_level() > 0 else "empty"
 
             self.log_entry(
                 "Energy use sailing {}".format(status),
@@ -1747,7 +1770,7 @@ class LoadingFunction:
         self.loading_rate = loading_rate
         self.load_manoeuvring = load_manoeuvring
 
-    def loading(self, origin, destination, amount):
+    def loading(self, origin, destination, amount, id_="default"):
         """
         Determine the duration based on an amount that is given as input with processing.
         The origin an destination are also part of the input, because other functions might be dependent on the location.
@@ -1758,7 +1781,8 @@ class LoadingFunction:
         else:
             return (
                 self.loading_rate(
-                    destination.container.level, destination.container.level + amount
+                    destination.container.get_level(id_),
+                    destination.container.get_level(id_) + amount,
                 )
                 + self.load_manoeuvring * 60
             )
@@ -1779,7 +1803,7 @@ class UnloadingFunction:
         self.unloading_rate = unloading_rate
         self.unload_manoeuvring = unload_manoeuvring
 
-    def unloading(self, origin, destination, amount):
+    def unloading(self, origin, destination, amount, id_="default"):
         """
         Determine the duration based on an amount that is given as input with processing.
         The origin an destination are also part of the input, because other functions might be dependent on the location.
@@ -1790,7 +1814,8 @@ class UnloadingFunction:
         else:
             return (
                 self.unloading_rate(
-                    origin.container.level + amount, origin.container.level
+                    origin.container.get_level(id_) + amount,
+                    origin.container.get_level(id_),
                 )
                 + self.unload_manoeuvring * 60
             )
@@ -1880,18 +1905,31 @@ class Processor(SimpyObject):
             self.unloading_subcycle_frequency = None
 
     def determine_processor_amount(
-        self, origins, destination, amount=None, loader=None, unloader=None, filling=1
+        self,
+        origins,
+        destination,
+        amount=None,
+        id_="default",
+        loader=None,
+        unloader=None,
+        filling=1,
     ):
         """ Determine the maximum amount that can be carried """
 
         # Determine the basic amount that should be transported
         all_amounts = {}
         all_amounts.update(
-            {"origin." + origin.id: origin.container.level for origin in origins}
+            {
+                "origin." + origin.id: origin.container.get_level(id_)
+                for origin in origins
+            }
         )
-        all_amounts["destination." + destination.id] = (
-            destination.container.capacity - destination.container.level
+        all_amounts[
+            "destination." + destination.id
+        ] = destination.container.get_capacity(id_) - destination.container.get_level(
+            id_
         )
+        print(all_amounts)
 
         origin_requested = 0
         destination_requested = 0
@@ -1924,7 +1962,9 @@ class Processor(SimpyObject):
             return min(amounts), all_amounts
 
     # noinspection PyUnresolvedReferences
-    def process(self, origin, amount, destination, rate=None, duration=None):
+    def process(
+        self, origin, amount, destination, id_="default", rate=None, duration=None
+    ):
         """Moves content from ship to the site or from the site to the ship to ensure that the ship's container reaches
         the desired level. Yields the time it takes to process."""
 
@@ -1948,7 +1988,7 @@ class Processor(SimpyObject):
         # Define whether it is loading or unloading by the processor
         # no longer necessary
         # determine the base level of the origin
-        current_level = origin.container.level
+        current_level = origin.container.get_level(id_)
 
         # Loading the mover
         # if current_level < desired_level:
@@ -1985,13 +2025,15 @@ class Processor(SimpyObject):
         # Single processing event
         # AW: I think these comments are not ok anymore
         if rate:
-
+            print("processor process with rate")
             # Check whether the amount can me moved from the origin to the destination
-            yield from self.check_possible_shift(origin, destination, amount, "get")
+            yield from self.check_possible_shift(
+                origin, destination, amount, "get", id_
+            )
 
             # Define the duration of the event
             duration = rate(origin, destination, amount)
-
+            print("processing expected duration {duration}")
             # Check possible downtime
             yield from self.check_possible_downtime(
                 origin, destination, duration, current_level + amount, amount, message
@@ -2005,7 +2047,9 @@ class Processor(SimpyObject):
             yield self.env.timeout(duration)
 
             # Put the amount in the destination
-            yield from self.check_possible_shift(origin, destination, amount, "put")
+            yield from self.check_possible_shift(
+                origin, destination, amount, "put", id_
+            )
 
             # Add spill the location where processing is taking place
             self.addSpill(origin, destination, amount, duration)
@@ -2023,12 +2067,17 @@ class Processor(SimpyObject):
         # Subcycle with processing events
         # AW: I think these comments are not ok anymore
         else:
-            yield from self.check_possible_shift(origin, destination, amount, "get")
+            print("processor process without rate")
+            yield from self.check_possible_shift(
+                origin, destination, amount, "get", id_
+            )
 
+            print("after get")
             # Check possible downtime
             yield from self.check_possible_downtime(
                 origin, destination, duration, current_level + amount, 1, message
             )
+            print("after check_down time")
 
             # Checkout subcyle event
             self.log_entry(
@@ -2038,7 +2087,10 @@ class Processor(SimpyObject):
             yield self.env.timeout(duration)
 
             # Put the amount in the destination
-            yield from self.check_possible_shift(origin, destination, amount, "put")
+            yield from self.check_possible_shift(
+                origin, destination, amount, "put", id_
+            )
+            print("after put")
 
             # Add spill the location where processing is taking place
             self.addSpill(origin, destination, amount, duration)
@@ -2065,7 +2117,9 @@ class Processor(SimpyObject):
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
 
-    def check_possible_shift(self, origin, destination, amount, activity):
+    def check_possible_shift(
+        self, origin, destination, amount, activity, id_="default"
+    ):
         """ Check if all the material is available
 
         If the amount is not available in the origin or in the destination
@@ -2077,7 +2131,9 @@ class Processor(SimpyObject):
 
             # Shift amounts in containers
             start_time = self.env.now
-            yield origin.container.get(amount)
+            print(f"origin store before get: {origin.container.items}")
+            yield origin.container.get(amount, id_)
+            print(f"origin store after get: {origin.container.items}")
             end_time = self.env.now
 
             # If the amount is not available in the origin, log waiting
@@ -2101,7 +2157,9 @@ class Processor(SimpyObject):
 
             # Shift amounts in containers
             start_time = self.env.now
-            yield destination.container.put(amount)
+            print(f"destination store before put: {destination.container.items}")
+            yield destination.container.put(amount, id_=id_)
+            print(f"destination store after put: {destination.container.items}")
             end_time = self.env.now
 
             # If the amount is cannot be put in the destination, log waiting
@@ -2146,7 +2204,7 @@ class Processor(SimpyObject):
             )
 
             # Check spill
-            yield from self.checkSpill(mover, site, amount)
+            yield from self.checkSpill(mover, site, amount, id_)
 
     def computeEnergy(self, duration, origin, destination):
         """
@@ -2231,7 +2289,7 @@ class Processor(SimpyObject):
                 isinstance(site, HasSpillCondition)
                 and isinstance(self, HasSoil)
                 and isinstance(self, HasPlume)
-                and 0 < self.container.level
+                and 0 < self.container.get_level()
             ):
                 density, fines = self.get_properties(amount)
                 spill = self.sigma_d * density * fines * amount
@@ -2288,8 +2346,8 @@ class Processor(SimpyObject):
         if hasattr(mover, "calc_depth_restrictions") and isinstance(
             site, HasAbstractWeather
         ):
-            max_level = max(mover.container.level + amount, desired_level)
-            fill_degree = max_level / mover.container.capacity
+            max_level = max(mover.container.get_level() + amount, desired_level)
+            fill_degree = max_level / mover.container.get_capacity()
             yield from mover.check_depth_restriction(site, fill_degree, duration)
 
     def checkWeather(self, processor, site, event_name):
@@ -2383,10 +2441,10 @@ class DictEncoder(json.JSONEncoder):
             if isinstance(val, simpy.Environment):
                 continue
             if isinstance(val, EventsContainer) or isinstance(val, simpy.Container):
-                result["capacity"] = val.capacity
-                result["level"] = val.level
+                result["capacity"] = val.get_capacity()
+                result["level"] = val.get_level()
             elif isinstance(val, simpy.Resource):
-                result["nr_resources"] = val.capacity
+                result["nr_resources"] = val.get_capacity()
             else:
                 result[key] = val
 

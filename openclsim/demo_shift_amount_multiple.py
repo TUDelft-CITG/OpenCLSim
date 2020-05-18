@@ -38,7 +38,7 @@ data_from_site = {
     "ID": "6dbbbdf4-4589-11e9-a501-b469212bff5b",  # For logging purposes
     "geometry": location_from_site,  # The coordinates of the project site
     "capacity": 10,  # The capacity of the site
-    "level": 5.0,
+    "level": 5,
 }  # The actual volume of the site
 
 # Information on the dumping site - the "to site" - the "dump locatie"
@@ -56,9 +56,7 @@ data_to_site = {
 # The two objects used for the simulation
 from_site = Site(**data_from_site)
 to_site = Site(**data_to_site)
-# from_site.container.get_level()
-# to_site.get_level()
-cont = from_site.container
+
 
 # The generic class for an object that can move and transport (a TSHD for example)
 TransportProcessingResource = type(
@@ -96,7 +94,6 @@ data_hopper = {
 
 
 hopper = TransportProcessingResource(**data_hopper)
-# hopper.get_level()
 #%%
 
 # activity = model.GenericActivity(
@@ -104,32 +101,41 @@ hopper = TransportProcessingResource(**data_hopper)
 #     name="Soil movement",  # We are moving soil
 #     ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
 #     )
+stop_event = []
+stop_event.append(from_site.container.get_empty_event)
+stop_event.append(to_site.container.get_full_event)
 
-shift_amount_activity_data = {
-    "env": my_env,  # The simpy environment defined in the first cel
-    "name": "Transfer MP",  # We are moving soil
-    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
-    "processor": hopper,
-    "origin": from_site,
-    "destination": hopper,
-    "amount": 2,
-}
+stop_reservation_waiting_event = (
+    stop_event()
+    if hasattr(stop_event, "__call__")
+    else stop_event
+)
+        
+shift_amount_activity_data = { "env":my_env,  # The simpy environment defined in the first cel
+    "name":"Transfer MP",  # We are moving soil
+    "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+    "processor":hopper,
+    "origin":from_site,
+    "destination":hopper,
+    "amount":2,
+    "stop_reservation_waiting_event":stop_reservation_waiting_event,
+    }
 
-activity = model.ShiftAmountActivity(**shift_amount_activity_data)
+activity = model.ShiftAmountActivity(**shift_amount_activity_data )
 
-# shift_amount_activity_data2 = { "env":my_env,  # The simpy environment defined in the first cel
-#     "name":"Transfer MP",  # We are moving soil
-#     "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
-#     "processor":hopper,
-#     "origin":hopper,
-#     "destination":to_site,
-#     "amount":2,
-#     }
+shift_amount_activity_data2 = { "env":my_env,  # The simpy environment defined in the first cel
+    "name":"Transfer MP",  # We are moving soil
+    "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+    "processor":hopper,
+    "origin":hopper,
+    "destination":to_site,
+    "amount":2,
+    }
 
-# activity2 = model.ShiftAmountActivity(**shift_amount_activity_data2 )
+activity2 = model.ShiftAmountActivity(**shift_amount_activity_data2 )
 
 my_env.run()
 
 log_df = pd.DataFrame(hopper.log)
-data = log_df[["Message", "Timestamp", "Value", "ActivityID"]]
-cont = hopper.container
+data =log_df[['Message', 'Timestamp', 'Value', 'ActivityID']]
+

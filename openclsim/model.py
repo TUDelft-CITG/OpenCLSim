@@ -370,6 +370,7 @@ class ShiftAmountActivity(GenericActivity):
         origin,
         destination,
         amount,
+        id_="default",
         postpone_start=False,
         start_event=None,
         stop_event=None,
@@ -384,6 +385,7 @@ class ShiftAmountActivity(GenericActivity):
 
         self.processor = processor
         self.amount = amount
+        self.id_ = id_
         self.postpone_start = postpone_start
         self.print = show
 
@@ -393,6 +395,7 @@ class ShiftAmountActivity(GenericActivity):
             origin=self.origin,
             destination=self.destination,
             amount=self.amount,
+            id_=self.id_,
             # stop_reservation_waiting_event=self.stop_reservation_waiting_event,
             # verbose=self.print,
         )
@@ -497,6 +500,7 @@ def _request_resource_if_available(
     amount,
     kept_resource,
     ActivityID,
+    id_="default",
     engine_order=1.0,
     verbose=False,
 ):
@@ -504,12 +508,12 @@ def _request_resource_if_available(
     while not all_available and amount > 0:
         # yield until enough content and space available in origin and destination
         yield env.all_of(
-            events=[site.container.get_available(amount),]
+            events=[site.container.get_available(amount, id_),]
         )
 
         yield from _request_resource(resource_requests, processor.resource)
         print(f"processor request : {resource_requests}")
-        if site.container.level < amount:
+        if site.container.get_level(id_) < amount:
             # someone removed / added content while we were requesting the processor, so abort and wait for available
             # space/content again
             _release_resource(
@@ -526,7 +530,7 @@ def _request_resource_if_available(
                 engine_order=engine_order,
                 verbose=verbose,
             )
-            if site.container.level < amount:
+            if site.container.get_level(id_) < amount:
                 # someone messed us up again, so return to waiting for space/content
                 _release_resource(
                     resource_requests, processor.resource, kept_resource=kept_resource
@@ -535,7 +539,7 @@ def _request_resource_if_available(
 
         yield from _request_resource(resource_requests, site.resource)
         print(f"site request : {resource_requests}")
-        if site.container.level < amount:
+        if site.container.get_level(id_) < amount:
             _release_resource(
                 resource_requests, processor.resource, kept_resource=kept_resource
             )
@@ -554,13 +558,14 @@ def shift_amount_process(
     origin,
     destination,
     amount=None,
+    id_="default",
     engine_order=1.0,
     stop_reservation_waiting_event=None,
 ):
     """Origin and Destination are of type HasContainer """
-    # print(origin)
-    # print(destination)
-    # print(processor)
+    print(origin)
+    print(destination)
+    print(processor)
     if not isinstance(origin, core.HasContainer) or not isinstance(
         destination, core.HasContainer
     ):
@@ -577,12 +582,12 @@ def shift_amount_process(
     if not hasattr(activity_log, "mover"):
         activity_log.mover = origin
     amount, all_amounts = processor.determine_processor_amount(
-        [origin], destination, amount
+        [origin], destination, amount, id_
     )
-    # print(f"amount: {amount}   amounts:{all_amounts}")
+    print(f"amount: {amount}   amounts:{all_amounts}")
     # Check if activity can start
     # If the transported amount is larger than zero, start activity
-    # print(f"amount {amount}")
+    print(f"amount {amount}")
     if 0 != amount:
         # vrachtbrief = mover.determine_schedule(amount, all_amounts, site, site)
 
@@ -603,6 +608,7 @@ def shift_amount_process(
             amount,
             None,  # for now release all
             activity_log.id,
+            id_,
             engine_order,
             verbose=False,
         )
@@ -611,14 +617,15 @@ def shift_amount_process(
             f"started {activity_log.name}", env.now, amount, None, activity_log.id
         )
         # unload the mover
-        # print("_shift_amount")
+        print("_shift_amount")
         yield from _shift_amount(
             env,
             processor,
             origin,
-            origin.container.level + amount,
+            origin.container.get_level(id_) + amount,
             destination,
             ActivityID=activity_log.id,
+            id_=id_,
             verbose=verbose,
         )
         activity_log.log_entry(
@@ -650,7 +657,7 @@ def shift_amount_process(
             activity_log.log_entry(
                 "waiting origin reservation start",
                 env.now,
-                origin.container.level,
+                origin.container.get_level(id_),
                 origin.geometry,
                 activity_log.id,
             )
@@ -660,15 +667,17 @@ def shift_amount_process(
             activity_log.log_entry(
                 "waiting origin reservation stop",
                 env.now,
-                origin.container.level,
+                origin.container.get_level(id_),
                 origin.geometry,
                 activity_log.id,
             )
-        elif destination.container.level == destination.container.capacity:
+        elif destination.container.get_level(id_) == destination.container.get_capacity(
+            id_
+        ):
             activity_log.log_entry(
                 "waiting destination to finish start",
                 env.now,
-                destination.container.capacity,
+                destination.container.get_capacity(id_),
                 destination.geometry,
                 activity_log.id,
             )
@@ -676,7 +685,7 @@ def shift_amount_process(
             activity_log.log_entry(
                 "waiting destination to finish stop",
                 env.now,
-                destination.container.capacity,
+                destination.container.get_capacity(id_),
                 destination.geometry,
                 activity_log.id,
             )
@@ -877,7 +886,7 @@ def single_run_process(
                 env,
                 loader,
                 mover,
-                mover.container.level + amount,
+                mover.container.get_level(id_) + amount,
                 origin,
                 ActivityID=activity_log.id,
                 verbose=verbose,
@@ -926,7 +935,7 @@ def single_run_process(
                 env,
                 unloader,
                 mover,
-                mover.container.level - amount,
+                mover.container.get_level(id_) - amount,
                 destination,
                 ActivityID=activity_log.id,
                 verbose=verbose,
@@ -960,7 +969,7 @@ def single_run_process(
             activity_log.log_entry(
                 "waiting origin reservation start",
                 env.now,
-                mover.container.level,
+                mover.container.get_level(id_),
                 mover.geometry,
                 activity_log.id,
             )
@@ -970,7 +979,7 @@ def single_run_process(
             activity_log.log_entry(
                 "waiting origin reservation stop",
                 env.now,
-                mover.container.level,
+                mover.container.get_level(id_),
                 mover.geometry,
                 activity_log.id,
             )
@@ -979,7 +988,7 @@ def single_run_process(
             activity_log.log_entry(
                 "waiting destination reservation start",
                 env.now,
-                mover.container.level,
+                mover.container.get_level(id_),
                 mover.geometry,
                 activity_log.id,
             )
@@ -989,15 +998,15 @@ def single_run_process(
             activity_log.log_entry(
                 "waiting destination reservation stop",
                 env.now,
-                mover.container.level,
+                mover.container.get_level(id_),
                 mover.geometry,
                 activity_log.id,
             )
-        elif mover.container.level == mover.container.capacity:
+        elif mover.container.get_level(id_) == mover.container.get_capacity(id_):
             activity_log.log_entry(
                 "waiting mover to finish start",
                 env.now,
-                mover.container.capacity,
+                mover.container.get_capacity(id_),
                 mover.geometry,
                 activity_log.id,
             )
@@ -1005,7 +1014,7 @@ def single_run_process(
             activity_log.log_entry(
                 "waiting mover to finish stop",
                 env.now,
-                mover.container.capacity,
+                mover.container.get_capacity(id_),
                 mover.geometry,
                 activity_log.id,
             )
@@ -1041,34 +1050,34 @@ def _release_resource(requested_resources, resource, kept_resource=None):
 
 
 def _shift_amount(
-    env, processor, origin, desired_level, destination, ActivityID, verbose=False
+    env,
+    processor,
+    origin,
+    desired_level,
+    destination,
+    ActivityID,
+    id_="default",
+    verbose=False,
 ):
+    print("start _shift_amount")
     """Calls the processor.process method, giving debug print statements when verbose is True."""
-    amount = np.abs(origin.container.level - desired_level)
-
+    amount = np.abs(origin.container.get_level(id_) - desired_level)
+    print(f"amount {amount}")
     # Set ActivityID to processor and mover
     processor.ActivityID = ActivityID
     origin.ActivityID = ActivityID
-    # print('processor start process')
+    print("processor start process")
     # Check if loading or unloading
-    yield from processor.process(origin, amount, destination, duration=10)
-    # print('processor end process')
+    yield from processor.process(origin, amount, destination, id_=id_, duration=10)
+    print("processor end process")
 
     if verbose:
-        print("Processed {}:".format(amount))
-        print("  by:          " + processor.name)
-        print(
-            "  origin        "
-            + origin.name
-            + " contains: "
-            + str(origin.container.level)
-        )
-        print(
-            "  destination:        "
-            + destination.name
-            + " contains: "
-            + str(destination.container.level)
-        )
+        org_level = origin.container.get_level(id_)
+        dest_level = destination.container.get_level(id_)
+        print(f"Processed {amount} of {id_}:")
+        print(f"  by:          {processor.name}")
+        print(f"  origin        {origin.name}  contains: {org_level} of {id_}")
+        print(f"  destination:  {destination.name} contains: {dest_level} of {id_}")
 
 
 def _request_resources_if_transfer_possible(
@@ -1080,6 +1089,7 @@ def _request_resources_if_transfer_possible(
     amount,
     kept_resource,
     ActivityID,
+    id_="default",
     engine_order=1.0,
     verbose=False,
 ):
@@ -1100,15 +1110,17 @@ def _request_resources_if_transfer_possible(
         # yield until enough content and space available in origin and destination
         yield env.all_of(
             events=[
-                origin.container.get_available(amount),
-                destination.container.put_available(amount),
+                origin.container.get_available(amount, id_),
+                destination.container.put_available(amount, id_),
             ]
         )
 
         yield from _request_resource(resource_requests, processor.resource)
         if (
-            origin.container.level < amount
-            or destination.container.capacity - destination.container.level < amount
+            origin.container.get_level(id_) < amount
+            or destination.container.get_capacity(id_)
+            - destination.container.get_level(id_)
+            < amount
         ):
             # someone removed / added content while we were requesting the processor, so abort and wait for available
             # space/content again
@@ -1127,8 +1139,10 @@ def _request_resources_if_transfer_possible(
                 verbose=verbose,
             )
             if (
-                origin.container.level < amount
-                or destination.container.capacity - destination.container.level < amount
+                origin.container.get_level(id_) < amount
+                or destination.container.get_capacity(id_)
+                - destination.container.get_level(id_)
+                < amount
             ):
                 # someone messed us up again, so return to waiting for space/content
                 _release_resource(
@@ -1138,8 +1152,10 @@ def _request_resources_if_transfer_possible(
 
         yield from _request_resource(resource_requests, origin.resource)
         if (
-            origin.container.level < amount
-            or destination.container.capacity - destination.container.level < amount
+            origin.container.get_level(id_) < amount
+            or destination.container.get_capacity(id_)
+            - destination.container.get_level(id_)
+            < amount
         ):
             _release_resource(
                 resource_requests, processor.resource, kept_resource=kept_resource
@@ -1151,8 +1167,10 @@ def _request_resources_if_transfer_possible(
 
         yield from _request_resource(resource_requests, destination.resource)
         if (
-            origin.container.level < amount
-            or destination.container.capacity - destination.container.level < amount
+            origin.container.get_level(id_) < amount
+            or destination.container.get_capacity(id_)
+            - destination.container.get_level(id_)
+            < amount
         ):
             _release_resource(
                 resource_requests, processor.resource, kept_resource=kept_resource
@@ -1178,7 +1196,10 @@ def _move_mover(mover, origin, ActivityID, engine_order=1.0, verbose=False):
     if verbose:
         print("Moved:")
         print(
-            "  object:      " + mover.name + " contains: " + str(mover.container.level)
+            "  object:      "
+            + mover.name
+            + " contains: "
+            + str(mover.container.get_level(id_))
         )
         print(
             "  from:        "
