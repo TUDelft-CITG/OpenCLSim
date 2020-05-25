@@ -90,79 +90,6 @@ class Locatable:
         return distance < tolerance
 
 
-class ReservationContainer(simpy.FilterStore):
-    def __init__(self, store_capacity=1, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # self.expected_level = init
-        self._content_available = None
-        self._space_available = None
-
-    def initialize(self, capacity, init=0):
-        self.put(capacity, init)
-
-    def initialize_container(self, initials):
-        for item in initials:
-            print(item)
-            assert "id" in item
-            assert "capacity" in item
-            assert "level" in item
-            super().put(item)
-
-    def reserve_put(self, amount, id_="default"):
-        if self.get_expected_level(id_) + amount > self.get_capacity(Id_):
-            raise RuntimeError("Attempting to reserve unavailable space")
-
-        self.expected_level += amount
-
-        if (
-            self._content_available is not None
-            and not self._content_available.triggered
-            and amount > 0
-        ):
-            self._content_available.succeed()
-
-    def reserve_get(self, amount, id_):
-        if self.get_expected_level(id_) < amount:
-            raise RuntimeError("Attempting to reserve unavailable content")
-
-        self.expected_level -= amount
-
-        if (
-            self._space_available is not None
-            and not self._space_available.triggered
-            and amount > 0
-        ):
-            self._space_available.succeed()
-
-    @property
-    def reserve_put_available(self):
-        id_ = "default"
-        if self.expected_level < self.get_capacity(id_):
-            return self._env.event().succeed()
-
-        if self._space_available is not None and not self._space_available.triggered:
-            return self._space_available
-
-        self._space_available = self._env.event()
-        return self._space_available
-
-    @property
-    def reserve_get_available(self):
-        id_ = "default"
-        if self.get_expected_level(id_) > 0:
-            return self._env.event().succeed()
-
-        if (
-            self._content_available is not None
-            and not self._content_available.triggered
-        ):
-            return self._content_available
-
-        self._content_available = self._env.event()
-        return self._content_available
-
-
 class EventsContainer(simpy.FilterStore):
     def __init__(self, env, store_capacity=1, *args, **kwargs):
         super().__init__(env, capacity=store_capacity)
@@ -170,8 +97,8 @@ class EventsContainer(simpy.FilterStore):
         self._put_available_events = {}
         print("init")
 
-    def initialize(self, capacity, init=0):
-        self.put(capacity, init)
+    def initialize(self, init=0, capacity=0):
+        self.put(init, capacity)
 
     def initialize_container(self, initials):
         for item in initials:
@@ -242,24 +169,19 @@ class EventsContainer(simpy.FilterStore):
 
     @property
     def empty_event(self):
+        id_ = "default"
         return self.put_available(self.get_capacity())
-
-    def empty_event(self, id_="default"):
-        return self.put_available(self.get_capacity(id_))
 
     @property
     def full_event(self):
         return self.get_available(self.get_capacity())
-
-    def full_event(self, id_="default"):
-        return self.get_available(self.get_capacity(id_))
 
     def put(self, amount, capacity=0, id_="default"):
         if len(self.items) > 0:
             status = super().get(lambda status: status["id"] == id_)
             pprint(status)
             # if status.ok:
-            if status.ok:
+            if status.triggered:
                 status = status.value
                 if "capacity" in status:
                     capacity = status["capacity"]
@@ -267,6 +189,7 @@ class EventsContainer(simpy.FilterStore):
                 raise Exception(
                     f"Failed to derive the previous version of container {id_}"
                 )
+        # this is a fall back in case the container is used with default
         put_event = super().put({"id": id_, "level": amount, "capacity": capacity})
         put_event.callbacks.append(self.put_callback)
         return put_event
@@ -274,7 +197,7 @@ class EventsContainer(simpy.FilterStore):
     def put_callback(self, event, id_="default"):
         for amount in sorted(self._get_available_events):
             if isinstance(self, ReservationContainer):
-                if self.expected_level >= amount:
+                if self.get_expected_level(id_) >= amount:
                     self._get_available_events[amount].succeed()
                     del self._get_available_events[amount]
             elif self.get_level(id_) >= amount:
@@ -299,7 +222,7 @@ class EventsContainer(simpy.FilterStore):
         print("start get_callback")
         for amount in sorted(self._put_available_events):
             if isinstance(self, ReservationContainer):
-                if self._container_capacity - self.expected_level >= amount:
+                if self.get_capacity(id_) - self.get_expected_level(id_) >= amount:
                     self._put_available_events[amount].succeed()
                     del self._put_available_events[amount]
             elif self.get_capacity(id_) - self.get_level(id_) >= amount:
@@ -316,6 +239,78 @@ class EventsContainer(simpy.FilterStore):
             container_ids = [item["id"] for item in self.items]
 
 
+class ReservationContainer(EventsContainer):
+    def __init__(self, env, store_capacity=1, *args, **kwargs):
+        super().__init__(env, capacity=store_capacity, *args, **kwargs)
+        # super().__init__(*args, **kwargs)
+
+        # self.expected_level = init
+        self._content_available = {}
+        self._space_available = {}
+
+    def get_expected_level(self, id_="default__reservation"):
+        if self.items == None:
+            return 0
+        res = [item["level"] for item in self.items if item["id"] == id_]
+        if isinstance(res, list) and len(res) > 0:
+            return res[0]
+        return 0
+
+    def reserve_put(self, amount, id_="default__reservation"):
+        if self.get_expected_level(id_) + amount > self.get_capacity(Id_):
+            raise RuntimeError("Attempting to reserve unavailable space")
+
+        # self.expected_level += amount
+        self.put(self.get_expected_level(id_) + amount, id_=id_)
+
+        if id_ in self._content_available:
+            if (
+                self._content_available[id_] is not None
+                and not self._content_available[id_].triggered
+                and amount > 0
+            ):
+                self._content_available[id_].succeed()
+
+    def reserve_get(self, amount, id_="default__reservation"):
+        if self.get_expected_level(id_) < amount:
+            raise RuntimeError("Attempting to reserve unavailable content")
+
+        # self.expected_level -= amount
+        self.get(amount, id_=id_)
+
+        if id_ in self._space_available:
+            if (
+                self._space_available[id_] is not None
+                and not self._space_available[id_].triggered
+                and amount > 0
+            ):
+                self._space_available[id_].succeed()
+
+    def reserve_put_available(self, id_="default__reservation"):
+        if self.get_expected_level(id_) < self.get_capacity(id_):
+            return self._env.event().succeed()
+
+        if self._space_available is not None and not self._space_available.triggered:
+            return self._space_available
+
+        self._space_available = self._env.event()
+        return self._space_available
+
+    def reserve_get_available(self, id_="default__reservation"):
+        if self.get_expected_level(id_) > 0:
+            return self._env.event().succeed()
+
+        if (
+            id_ in self._content_available
+            and self._content_available[id_] is not None
+            and not self._content_available[id_].triggered
+        ):
+            return self._content_available[id_]
+
+        self._content_available[id_] = self._env.event()
+        return self._content_available[id_]
+
+
 class HasContainer(SimpyObject):
     """Container class
 
@@ -326,13 +321,17 @@ class HasContainer(SimpyObject):
     def __init__(self, store_capacity=1, capacity=0, level=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        container_class = type(
-            "CombinedContainer", (EventsContainer, ReservationContainer), {}
-        )
-        # container_class = EventsContainer
+        # container_class = type(
+        #    "CombinedContainer", (EventsContainer, ReservationContainer), {}
+        # )
+        container_class = ReservationContainer
         self.container = container_class(self.env, store_capacity=store_capacity)
         if capacity > 0:
-            self.container.initialize(capacity, init=level)
+            print(f"level: {level}")
+            self.container.initialize(capacity=capacity, init=level)
+            print("init reservation")
+            # self.container.initialize_reservation(capacity=capacity, init=level)
+            print("completed init")
 
 
 class HasMultiContainer(HasContainer):
@@ -1422,6 +1421,9 @@ class ContainerDependentMovable(Movable, HasContainer):
             self.container.get_level() / self.container.get_capacity()
         )
 
+    """AW: I think this method should be removed and only reside in a processor: shifting an amount requires an origin, a destination 
+    and a processor, actually doing the transfer. """
+
     def determine_amount(self, origins, destinations, loader, unloader, filling=1):
         """ Determine the maximum amount that can be carried """
 
@@ -1429,7 +1431,7 @@ class ContainerDependentMovable(Movable, HasContainer):
         all_amounts = {}
         all_amounts.update(
             {
-                "origin." + origin.id: origin.container.expected_level
+                "origin." + origin.id: origin.container.get_expected_level(id_)
                 for origin in origins
             }
         )
@@ -1437,7 +1439,7 @@ class ContainerDependentMovable(Movable, HasContainer):
             {
                 "destination."
                 + destination.id: destination.container.get_capacity()
-                - destination.container.expected_level
+                - destination.container.get_expected_level(id_)
                 for destination in destinations
             }
         )

@@ -28,7 +28,6 @@ simulation_start = 0
 my_env = simpy.Environment(initial_time=simulation_start)
 
 
-
 # The generic site class
 Site = type(
     "Site",
@@ -149,7 +148,7 @@ res2 = __try_to_init_activity(my_env, activity2, activity_log_class)
 
 my_env.run(until=100)
 
-log = res1['activity_log']
+log = res1["activity_log"]
 # %%
 # Create activity
 activity = model.Activity(
