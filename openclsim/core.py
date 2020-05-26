@@ -7,7 +7,7 @@ import json
 import logging
 import uuid
 import itertools
-from pprint import pprint
+from enum import Enum
 
 # you need these dependencies (you can get these from anaconda)
 # package(s) related to the simulation
@@ -115,6 +115,203 @@ class EventsContainer(simpy.FilterStore):
         if id_ in self._get_available_events:
             if amount in self._get_available_events[id_]:
                 return self._get_available_events[id_][amount]
+        # else case: id_ is not in self._get_available_events
+        new_event = self._env.event()
+        self._get_available_events[id_] = {}
+        self._get_available_events[id_][amount] = new_event
+        return new_event
+
+    def get_capacity(self, id_="default"):
+        print(f"start get_capacity id_ {id_}")
+        print(self.items)
+        if self.items == None:
+            return 0
+        res = [item["capacity"] for item in self.items if item["id"] == id_]
+        if isinstance(res, list) and len(res) > 0:
+            return res[0]
+        return 0
+
+    def get_level(self, id_="default"):
+        print(f"start get_level with id_ {id_}")
+        print(self.items)
+        if self.items == None:
+            return 0
+        res = [item["level"] for item in self.items if item["id"] == id_]
+        if isinstance(res, list) and len(res) > 0:
+            return res[0]
+        return 0
+
+    def put_available(self, amount, id_="default"):
+        if self.get_capacity(id_) - self.get_level(id_) >= amount:
+            return self._env.event().succeed()
+        if id_ in self._put_available_events:
+            if amount in self._put_available_events:
+                return self._put_available_events[amount]
+        new_event = self._env.event()
+        self._put_available_events[id_] = {}
+        self._put_available_events[id_][amount] = new_event
+        return new_event
+
+    def get_empty_event(self, start_event=False, id_="default"):
+        if not start_event:
+            return self.empty_event
+        elif start_event.processed:
+            return self.empty_event
+        else:
+            return self._env.event()
+
+    def get_full_event(self, start_event=False, id_="default"):
+        if not start_event:
+            return self.full_event
+        elif start_event.processed:
+            return self.full_event
+        else:
+            return self._env.event()
+
+    @property
+    def empty_event(self):
+        id_ = "default"
+        return self.put_available(self.get_capacity())
+
+    @property
+    def full_event(self):
+        return self.get_available(self.get_capacity())
+
+    def put(self, amount, capacity=0, id_="default"):
+        if len(self.items) > 0:
+            status = super().get(lambda status: status["id"] == id_)
+            pprint(status)
+            # if status.ok:
+            if status.triggered:
+                status = status.value
+                if "capacity" in status:
+                    capacity = status["capacity"]
+            else:
+                raise Exception(
+                    f"Failed to derive the previous version of container {id_}"
+                )
+        # this is a fall back in case the container is used with default
+        put_event = super().put({"id": id_, "level": amount, "capacity": capacity})
+        put_event.callbacks.append(self.put_callback)
+        return put_event
+
+    def put_callback(self, event, id_="default"):
+        for amount in sorted(self._get_available_events):
+            if isinstance(self, ReservationContainer):
+                if self.get_expected_level(id_) >= amount:
+                    self._get_available_events[amount].succeed()
+                    del self._get_available_events[amount]
+            elif self.get_level(id_) >= amount:
+                if id_ in self._get_available_events:
+                    self._get_available_events[id_][amount].succeed()
+                    del self._get_available_events[id_][amount]
+            else:
+                return
+
+    def get(self, amount, id_="default"):
+        print(f"start get {amount}")
+        store_status = super().get(lambda state: state["id"] == id_).value
+        print(f"store_status {store_status}")
+        # print(f"store_status value {store_status.value}")
+        store_status["level"] = store_status["level"] - amount
+        get_event = super().put(store_status)
+        get_event.callbacks.append(self.get_callback)
+        print(f"end get {amount}")
+        return get_event
+
+    def get_callback(self, event, id_="default"):
+        print("start get_callback")
+        for amount in sorted(self._put_available_events):
+            if isinstance(self, ReservationContainer):
+                if self.get_capacity(id_) - self.get_expected_level(id_) >= amount:
+                    self._put_available_events[amount].succeed()
+                    del self._put_available_events[amount]
+            elif self.get_capacity(id_) - self.get_level(id_) >= amount:
+                if id_ in self._put_available_events:
+                    self._put_available_events[id_][amount].succeed()
+                    del self._put_available_events[id_][amount]
+            else:
+                return
+
+    @property
+    def container_list(self):
+        container_ids = []
+        if len(self.items) > 0:
+            container_ids = [item["id"] for item in self.items]
+        return container_ids
+
+
+class EventsObjects(SimpyObject):
+    def __init__(
+        self,
+        env,
+        objet_level,
+        object_capacity=1,
+        object_type="default_type",
+        object_id=None,
+        state="default_state",
+        *args,
+        **kwargs,
+    ):
+        super().__init__(env)
+        assert object_capacity > 0
+        assert ((object_id != None) and (object_capacity == 1)) or (object_id == None)
+        self.object_id = object_id
+        self.object_capacity = object_capacity
+        self.object_level = object_level
+        self.object_type = object_type
+        self.object_state = object_state  # state can be any identifier, like e.g. the different locations an object has to go through
+
+    def is_equal(
+        self, state="default_state", object_type="default_type", object_id=None
+    ):
+        return (
+            self.state == state
+            and self.object_type == object_type
+            and self.object_id == object_id
+        )
+
+    def get_level(self):
+        return self.object_level
+
+    def get_capacity(self):
+        return self.object_capacity
+
+
+class EventsStore(simpy.FilterStore):
+    def __init__(self, env, store_capacity=1000, *args, **kwargs):
+        super().__init__(env, capacity=store_capacity)
+        self._get_available_events = {}
+        self._put_available_events = {}
+        print("init")
+
+    def initialize_container(self, initials):
+        for item in initials:
+            assert isinstance(item, EventsObject)
+            super().put(item)
+
+    def peek(self, amount, selection_function, *args):
+        container_objects = []
+        if len(self.items) > 0:
+            container_objects = [
+                item for item in self.items if selection_function(item, *args)
+            ]
+        return container_objects
+
+    def get_available(
+        self, amount, state="default_state", object_type="default_type", object_id=None
+    ):
+        print("start get_available")
+        object_ = (
+            super().get(lambda obj: obj.is_equal(state, object_type, object_id)).value
+        )
+
+        if self.get_level(id_) >= amount:
+            return self._env.event().succeed()
+        if id_ in self._get_available_events:
+            if amount in self._get_available_events[id_]:
+                return self._get_available_events[id_][amount]
+        # else case: id_ is not in self._get_available_events
         new_event = self._env.event()
         self._get_available_events[id_] = {}
         self._get_available_events[id_][amount] = new_event
@@ -888,19 +1085,21 @@ class HasAbstractWorkabilityCriteria(ABC):
     def delay_processing(self, waiting):
         """Waiting must be a delay expressed in seconds"""
         self.log_entry(
-            "waiting for weather start",
+            "delay activity",
             self.env.now,
             waiting,
             self.geometry,
             self.ActivityID,
+            LogState.START,
         )
         yield self.env.timeout(np.max(waiting))
         self.log_entry(
-            "waiting for weather stop",
+            "delay processing",
             self.env.now,
             waiting,
             self.geometry,
             self.ActivityID,
+            LogState.STOP,
         )
 
 
@@ -1176,6 +1375,7 @@ class HasDepthRestriction:
                 -1,
                 self.geometry,
                 self.ActivityID,
+                LogState.START,
             )
             waiting = 0
 
@@ -1194,19 +1394,21 @@ class HasDepthRestriction:
 
         if waiting != 0:
             self.log_entry(
-                "waiting for tide start",
+                "waiting for tide",
                 self.env.now,
                 waiting,
                 self.geometry,
                 self.ActivityID,
+                LogState.START,
             )
             yield self.env.timeout(waiting)
             self.log_entry(
-                "waiting for tide stop",
+                "waiting for tide",
                 self.env.now,
                 waiting,
                 self.geometry,
                 self.ActivityID,
+                LogState.STOP,
             )
 
     def calc_required_depth(self, draught, wave_height):
@@ -1355,17 +1557,18 @@ class Movable(SimpyObject, Locatable):
     def current_speed(self):
         return self.v
 
-    def log_sailing(self, event):
+    def log_sailing(self, log_state):
         """ Log the start or stop of the sailing event """
 
         if isinstance(self, HasContainer):
             status = "filled" if self.container.get_level() > 0 else "empty"
             self.log_entry(
-                "sailing {} {}".format(status, event),
+                "sailing {}".format(status),
                 self.env.now,
                 self.container.get_level(),
                 self.geometry,
                 self.ActivityID,
+                log_state,
             )
         else:
             self.log_entry(
@@ -1374,6 +1577,7 @@ class Movable(SimpyObject, Locatable):
                 -1,
                 self.geometry,
                 self.ActivityID,
+                log_state,
             )
 
     def sailing_duration(self, origin, destination, engine_order, verbose=True):
@@ -1532,7 +1736,7 @@ class ContainerDependentMovable(Movable, HasContainer):
 
 
 class MultiContainerDependentMovable(Movable, HasMultiContainer):
-    """ContainerDependentMovable class
+    """MultiContainerDependentMovable class
 
     Used for objects that move with a speed dependent on the container level
     compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
@@ -1708,6 +1912,18 @@ class HasResource(SimpyObject):
         self.resource = simpy.Resource(self.env, capacity=nr_resources)
 
 
+class LogState(Enum):
+    """LogState
+    
+    enumeration of all possible states of a Log object.
+    Access the name using .name and the integer value using .value"""
+
+    START = 1
+    STOP = 2
+    WAIT = 3
+    UNKNOWN = -1
+
+
 class Log(SimpyObject):
     """Log class
 
@@ -1725,23 +1941,28 @@ class Log(SimpyObject):
             "Value": [],
             "Geometry": [],
             "ActivityID": [],
+            "ActivityState": [],
         }
 
-    def log_entry(self, log, t, value, geometry_log, ActivityID):
+    def log_entry(
+        self, log, t, value, geometry_log, ActivityID, ActivityState=LogState.UNKNOWN
+    ):
         """Log"""
         self.log["Message"].append(log)
         self.log["Timestamp"].append(datetime.datetime.fromtimestamp(t))
         self.log["Value"].append(value)
         self.log["Geometry"].append(geometry_log)
         self.log["ActivityID"].append(ActivityID)
+        self.log["ActivityState"].append(ActivityState.name)
 
     def get_log_as_json(self):
         json = []
-        for msg, t, value, geometry_log in zip(
+        for msg, t, value, geometry_log, act_state in zip(
             self.log["Message"],
             self.log["Timestamp"],
             self.log["Value"],
             self.log["Geometry"],
+            self.log["ActivityState"],
         ):
             json.append(
                 dict(
@@ -1750,7 +1971,10 @@ class Log(SimpyObject):
                     if geometry_log is not None
                     else "None",
                     properties=dict(
-                        message=msg, time=time.mktime(t.timetuple()), value=value
+                        message=msg,
+                        time=time.mktime(t.timetuple()),
+                        value=value,
+                        state=act_state,
                     ),
                 )
             )
@@ -2017,11 +2241,12 @@ class Processor(SimpyObject):
         # Log the process for all parts
         for location in [origin, destination]:
             location.log_entry(
-                log=f"{message} process start",
+                log=message,
                 t=location.env.now,
                 value=amount,
                 geometry_log=location.geometry,
                 ActivityID=self.ActivityID,
+                ActivityState=LogState.START
             )
 
         # Single processing event
@@ -2043,7 +2268,7 @@ class Processor(SimpyObject):
 
             # Checkout single event
             self.log_entry(
-                f"{message} start", self.env.now, amount, self.geometry, self.ActivityID
+                message, self.env.now, amount, self.geometry, self.ActivityID, LogState.START
             )
 
             yield self.env.timeout(duration)
@@ -2063,7 +2288,7 @@ class Processor(SimpyObject):
             self.computeEnergy(duration, origin, destination)
 
             self.log_entry(
-                f"{message} stop", self.env.now, amount, self.geometry, self.ActivityID
+                message, self.env.now, amount, self.geometry, self.ActivityID, LogState.STOP
             )
 
         # Subcycle with processing events
@@ -2083,7 +2308,7 @@ class Processor(SimpyObject):
 
             # Checkout subcyle event
             self.log_entry(
-                f"{message} start", self.env.now, amount, self.geometry, self.ActivityID
+                message, self.env.now, amount, self.geometry, self.ActivityID, LogState.START
             )
 
             yield self.env.timeout(duration)
@@ -2104,17 +2329,18 @@ class Processor(SimpyObject):
             self.computeEnergy(duration, origin, destination)
 
             self.log_entry(
-                f"{message} stop", self.env.now, amount, self.geometry, self.ActivityID
+                message, self.env.now, amount, self.geometry, self.ActivityID, LogState.STOP
             )
 
         # Log the process for all parts
         for location in [origin, destination]:
             location.log_entry(
-                log=f"{message} process stop",
+                log=message,
                 t=location.env.now,
                 value=amount,
                 geometry_log=location.geometry,
                 ActivityID=self.ActivityID,
+                ActivityState=LogState.STOP
             )
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
@@ -2141,18 +2367,20 @@ class Processor(SimpyObject):
             # If the amount is not available in the origin, log waiting
             if start_time != end_time:
                 self.log_entry(
-                    log="waiting origin content start",
+                    log="waiting origin content",
                     t=start_time,
                     value=amount,
                     geometry_log=self.geometry,
                     ActivityID=self.ActivityID,
+                    ActivityState=LogState.START,
                 )
                 self.log_entry(
-                    log="waiting origin content stop",
+                    log="waiting origin content",
                     t=end_time,
                     value=amount,
                     geometry_log=self.geometry,
                     ActivityID=self.ActivityID,
+                    ActivityState=LogState.STOP,
                 )
 
         elif activity == "put":
@@ -2167,18 +2395,20 @@ class Processor(SimpyObject):
             # If the amount is cannot be put in the destination, log waiting
             if start_time != end_time:
                 self.log_entry(
-                    log="waiting destination content start",
+                    log="waiting destination content",
                     t=start_time,
                     value=amount,
                     geometry_log=self.geometry,
                     ActivityID=self.ActivityID,
+                    ActivityState=LogState.START
                 )
                 self.log_entry(
-                    log="waiting destination content stop",
+                    log="waiting destination content",
                     t=end_time,
                     value=amount,
                     geometry_log=self.geometry,
                     ActivityID=self.ActivityID,
+                    ActivityState=LogState.STOP,
                 )
 
     def check_possible_downtime(
@@ -2300,19 +2530,21 @@ class Processor(SimpyObject):
 
                 if 0 < waiting:
                     self.log_entry(
-                        "waiting for spill start",
+                        "waiting for spill",
                         self.env.now,
                         0,
                         self.geometry,
                         self.ActivityID,
+                        LogState.START,
                     )
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry(
-                        "waiting for spill stop",
+                        "waiting for spill",
                         self.env.now,
                         0,
                         self.geometry,
                         self.ActivityID,
+                        LogState.STOP,
                     )
 
         # If self != origin and self != destination --> processing
@@ -2329,19 +2561,21 @@ class Processor(SimpyObject):
 
                 if 0 < waiting:
                     self.log_entry(
-                        "waiting for spill start",
+                        "waiting for spill",
                         self.env.now,
                         0,
                         self.geometry,
                         self.ActivityID,
+                        LogState.START,
                     )
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry(
-                        "waiting for spill stop",
+                        "waiting for spill",
                         self.env.now,
                         0,
                         self.geometry,
                         self.ActivityID,
+                        LogState.STOP,
                     )
 
     def checkTide(self, mover, site, desired_level, amount, duration):

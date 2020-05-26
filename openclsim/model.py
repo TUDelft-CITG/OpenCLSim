@@ -134,21 +134,23 @@ class GenericActivity(core.Identifiable, core.Log):
     """
 
     def __init__(
-        self, *args, **kwargs,
+        self,
+        postpone_start=False,
+        requested_resources=[],
+        keep_resources=[],
+        *args,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
+        self.postpone_start = postpone_start
+        self.requested_resources = requested_resources
+        self.keep_resources = keep_resources
 
     def register_process(
-        self,
-        main_proc,
-        start_event=None,
-        stop_event=None,
-        show=False,
-        postpone_start=False,
+        self, main_proc, start_event=None, stop_event=None, show=False,
     ):
         self.start_event = start_event
-        self.postpone_start = postpone_start
         (
             start_event
             if start_event is None or isinstance(start_event, simpy.Event)
@@ -180,7 +182,7 @@ class GenericActivity(core.Identifiable, core.Log):
                 delayed_process, start_event=self.start_event, sub_processes=[main_proc]
             )
         self.main_proc = main_proc
-        if not postpone_start:
+        if not self.postpone_start:
             self.main_process = self.env.process(
                 self.main_proc(activity_log=self, env=self.env)
             )
@@ -225,7 +227,7 @@ class MoveActivity(GenericActivity):
         self.destination = destination
 
         self.mover = mover
-        self.postpone_start = postpone_start
+        # self.postpone_start = postpone_start
         self.print = show
 
         main_proc = partial(
@@ -240,7 +242,7 @@ class MoveActivity(GenericActivity):
             start_event=start_event,
             stop_event=stop_event,
             show=show,
-            postpone_start=postpone_start,
+            # postpone_start=self.postpone_start,
         )
 
 
@@ -270,7 +272,7 @@ class BasicActivity(GenericActivity):
     def __init__(
         self,
         duration,
-        postpone_start=False,
+        # postpone_start=False,
         start_event=None,
         stop_event=None,
         show=False,
@@ -282,7 +284,7 @@ class BasicActivity(GenericActivity):
 
         self.print = show
         self.duration = duration
-        self.postpone_start = postpone_start
+        # self.postpone_start = postpone_start
 
         main_proc = partial(basic_process, duration=self.duration,)
         self.register_process(
@@ -290,7 +292,7 @@ class BasicActivity(GenericActivity):
             start_event=start_event,
             stop_event=stop_event,
             show=show,
-            postpone_start=postpone_start,
+            # postpone_start=self.postpone_start,
         )
 
 
@@ -316,7 +318,7 @@ class SequentialActivity(GenericActivity):
     def __init__(
         self,
         sub_processes,
-        postpone_start=False,
+        # postpone_start=False,
         start_event=None,
         stop_event=None,
         show=False,
@@ -328,7 +330,7 @@ class SequentialActivity(GenericActivity):
 
         self.print = show
         self.sub_processes = sub_processes
-        self.postpone_start = postpone_start
+        # self.postpone_start = postpone_start
         print(self.postpone_start)
 
         main_proc = partial(sequential_process, sub_processes=self.sub_processes,)
@@ -337,7 +339,7 @@ class SequentialActivity(GenericActivity):
             start_event=start_event,
             stop_event=stop_event,
             show=show,
-            postpone_start=postpone_start,
+            # postpone_start=self.postpone_start,
         )
 
 
@@ -371,7 +373,7 @@ class ShiftAmountActivity(GenericActivity):
         destination,
         amount,
         id_="default",
-        postpone_start=False,
+        # postpone_start=False,
         start_event=None,
         stop_event=None,
         show=False,
@@ -404,7 +406,7 @@ class ShiftAmountActivity(GenericActivity):
             start_event=start_event,
             stop_event=stop_event,
             show=show,
-            postpone_start=postpone_start,
+            # postpone_start=postpone_start,
         )
 
 
@@ -425,7 +427,7 @@ def delayed_process(activity_log, env, start_event, sub_processes):
 
     yield start_event
     activity_log.log_entry(
-        "delayed activity started", env.now, -1, None, activity_log.id
+        "delayed activity", env.now, -1, None, activity_log.id, core.LogState.START
     )
 
     for sub_process in sub_processes:
@@ -464,7 +466,9 @@ def conditional_process(activity_log, env, stop_event, sub_processes):
             print("conditional")
             yield from sub_process(activity_log=activity_log, env=env)
 
-    activity_log.log_entry("stopped", env.now, -1, None, activity_log.id)
+    activity_log.log_entry(
+        "conditional processing", env.now, -1, None, activity_log.id, core.LogState.STOP
+    )
 
 
 def basic_process(activity_log, env, duration):
@@ -484,11 +488,11 @@ def basic_process(activity_log, env, duration):
     """
 
     activity_log.log_entry(
-        f"started {activity_log.name}", env.now, duration, None, activity_log.id
+        activity_log.name, env.now, duration, None, activity_log.id, core.LogState.START
     )
     yield env.timeout(duration)
     activity_log.log_entry(
-        f"stopped {activity_log.name}", env.now, duration, None, activity_log.id
+        activity_log.name, env.now, duration, None, activity_log.id, core.LogState.STOP
     )
 
 
@@ -614,7 +618,12 @@ def shift_amount_process(
         )
         print(f"after req resource if available : {resource_requests}")
         activity_log.log_entry(
-            f"started {activity_log.name}", env.now, amount, None, activity_log.id
+            activity_log.name,
+            env.now,
+            amount,
+            None,
+            activity_log.id,
+            core.LogState.START,
         )
         # unload the mover
         print("_shift_amount")
@@ -629,7 +638,12 @@ def shift_amount_process(
             verbose=verbose,
         )
         activity_log.log_entry(
-            f"stopped {activity_log.name}", env.now, amount, None, activity_log.id
+            activity_log.name,
+            env.now,
+            amount,
+            None,
+            activity_log.id,
+            core.LogState.STOP,
         )
         print(f"after shift amount : {resource_requests}")
 
@@ -655,39 +669,43 @@ def shift_amount_process(
         if origin_requested == 0:
             events = [origin.container.reserve_get_available]
             activity_log.log_entry(
-                "waiting origin reservation start",
+                "waiting origin reservation",
                 env.now,
                 origin.container.get_level(id_),
                 origin.geometry,
                 activity_log.id,
+                core.LogState.START,
             )
             yield _or_optional_event(
                 env, env.any_of(events), stop_reservation_waiting_event
             )
             activity_log.log_entry(
-                "waiting origin reservation stop",
+                "waiting origin reservation",
                 env.now,
                 origin.container.get_level(id_),
                 origin.geometry,
                 activity_log.id,
+                core.LogState.STOP,
             )
         elif destination.container.get_level(id_) == destination.container.get_capacity(
             id_
         ):
             activity_log.log_entry(
-                "waiting destination to finish start",
+                "waiting destination to finish",
                 env.now,
                 destination.container.get_capacity(id_),
                 destination.geometry,
                 activity_log.id,
+                core.LogState.START,
             )
             yield env.timeout(3600)
             activity_log.log_entry(
-                "waiting destination to finish stop",
+                "waiting destination to finish",
                 env.now,
                 destination.container.get_capacity(id_),
                 destination.geometry,
                 activity_log.id,
+                core.LogState.STOP,
             )
 
         else:
@@ -705,7 +723,9 @@ def sequential_process(activity_log, env, sub_processes):
                    return a generator which could be added as a process to a simpy.Environment
                    the sub_processes will be executed sequentially, in the order in which they are given
     """
-    activity_log.log_entry("sequential start", env.now, -1, None, activity_log.id)
+    activity_log.log_entry(
+        "sequential", env.now, -1, None, activity_log.id, core.LogState.START
+    )
     for sub_process in sub_processes:
         print(sub_process)
         print(sub_process.postpone_start)
@@ -718,21 +738,25 @@ def sequential_process(activity_log, env, sub_processes):
                 )
             )
         activity_log.log_entry(
-            f"starting sub process {sub_process.name}",
+            f"sub process {sub_process.name}",
             env.now,
             -1,
             None,
             activity_log.id,
+            core.LogState.START,
         )
         yield from sub_process.main_proc(activity_log=sub_process, env=env)
         activity_log.log_entry(
-            f"stopped sub process {sub_process.name}",
+            f"sub process {sub_process.name}",
             env.now,
             -1,
             None,
             activity_log.id,
+            core.LogState.STOP,
         )
-    activity_log.log_entry("sequential stop", env.now, -1, None, activity_log.id)
+    activity_log.log_entry(
+        "sequential", env.now, -1, None, activity_log.id.core.LogState.STOP
+    )
 
 
 def move_process(activity_log, env, mover, destination, engine_order=1.0):
@@ -749,11 +773,12 @@ def move_process(activity_log, env, mover, destination, engine_order=1.0):
                   for example, engine_order=0.5 corresponds to sailing at 50% of max speed
     """
     activity_log.log_entry(
-        "started move activity of {} to {}".format(mover.name, destination.name),
+        "move activity of {} to {}".format(mover.name, destination.name),
         env.now,
         -1,
         mover.geometry,
         activity_log.id,
+        core.LogState.START,
     )
 
     with mover.resource.request() as my_mover_turn:
@@ -763,11 +788,12 @@ def move_process(activity_log, env, mover, destination, engine_order=1.0):
         yield from mover.move(destination=destination, engine_order=engine_order)
 
     activity_log.log_entry(
-        "completed move activity of {} to {}".format(mover.name, destination.name),
+        "move activity of {} to {}".format(mover.name, destination.name),
         env.now,
         -1,
         mover.geometry,
         activity_log.id,
+        core.LogState.STOP,
     )
 
 
@@ -849,7 +875,12 @@ def single_run_process(
         if verbose:
             print("Using " + mover.name + " to process " + str(amount))
         activity_log.log_entry(
-            "transporting start", env.now, amount, mover.geometry, activity_log.id
+            "transporting",
+            env.now,
+            amount,
+            mover.geometry,
+            activity_log.id,
+            core.LogState.START,
         )
 
         # request the mover's resource
@@ -950,7 +981,12 @@ def single_run_process(
                 _release_resource(resource_requests, mover.resource)
 
         activity_log.log_entry(
-            "transporting stop", env.now, amount, mover.geometry, activity_log.id
+            "transporting",
+            env.now,
+            amount,
+            mover.geometry,
+            activity_log.id,
+            core.LogState.STOP,
         )
 
     else:
@@ -968,56 +1004,62 @@ def single_run_process(
         if origin_requested == 0:
             events = [orig.container.reserve_get_available for orig in origin]
             activity_log.log_entry(
-                "waiting origin reservation start",
+                "waiting origin reservation",
                 env.now,
                 mover.container.get_level(id_),
                 mover.geometry,
                 activity_log.id,
+                core.LogState.START,
             )
             yield _or_optional_event(
                 env, env.any_of(events), stop_reservation_waiting_event
             )
             activity_log.log_entry(
-                "waiting origin reservation stop",
+                "waiting origin reservation",
                 env.now,
                 mover.container.get_level(id_),
                 mover.geometry,
                 activity_log.id,
+                core.LogState.STOP,
             )
         elif destination_requested == 0:
             events = [dest.container.reserve_put_available for dest in destination]
             activity_log.log_entry(
-                "waiting destination reservation start",
+                "waiting destination reservation",
                 env.now,
                 mover.container.get_level(id_),
                 mover.geometry,
                 activity_log.id,
+                core.LogState.START,
             )
             yield _or_optional_event(
                 env, env.any_of(events), stop_reservation_waiting_event
             )
             activity_log.log_entry(
-                "waiting destination reservation stop",
+                "waiting destination reservation",
                 env.now,
                 mover.container.get_level(id_),
                 mover.geometry,
                 activity_log.id,
+                core.LogState.STOP,
             )
         elif mover.container.get_level(id_) == mover.container.get_capacity(id_):
             activity_log.log_entry(
-                "waiting mover to finish start",
+                "waiting mover to finish",
                 env.now,
                 mover.container.get_capacity(id_),
                 mover.geometry,
                 activity_log.id,
+                core.LogState.START,
             )
             yield env.timeout(3600)
             activity_log.log_entry(
-                "waiting mover to finish stop",
+                "waiting mover to finish",
                 env.now,
                 mover.container.get_capacity(id_),
                 mover.geometry,
                 activity_log.id,
+                core.LogState.STOP,
             )
 
         else:
