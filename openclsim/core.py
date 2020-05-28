@@ -1576,7 +1576,13 @@ class Movable(SimpyObject, Locatable):
         """ Log the start or stop of the sailing event """
 
         if isinstance(self, HasContainer):
-            status = "filled" if self.container.get_level() > 0 else "empty"
+            list_ = self.container.container_list
+            status = (
+                "filled"
+                if len(list_) > 0
+                and sum([self.container.get_level(id_) for id_ in list_]) > 0
+                else "empty"
+            )
             self.log_entry(
                 "sailing {}".format(status),
                 self.env.now,
