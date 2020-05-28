@@ -90,6 +90,7 @@ shift_amount_activity_loading_data = { "env":my_env,  # The simpy environment de
     "origin":from_site,
     "destination":hopper,
     "amount":1,
+    "duration":20,
     "postpone_start":True,
     }
 activity = model.ShiftAmountActivity(**shift_amount_activity_loading_data )
@@ -98,17 +99,17 @@ activity = model.ShiftAmountActivity(**shift_amount_activity_loading_data )
 while_data =  { "env":my_env,  # The simpy environment defined in the first cel
     "name":"while",  # We are moving soil
     "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5g",  # For logging purposes
-    "sub_processes": [activity],
+    "sub_process": activity,
     #"condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
-    "condition_event": hopper.container.get_empty_eventfull_event,
-    #"condition_event": from_site.container.get_empty_event,
+    #"condition_event": hopper.container.get_full_event(),
+    "condition_event": from_site.container.get_empty_event(),
     "postpone_start": False}
 while_activity = model.WhileActivity(**while_data) 
 
 
 my_env.run()
 
-log_df = pd.DataFrame(activity.log)
+log_df = pd.DataFrame(hopper.log)
 data =log_df[['Message', 'ActivityState', 'Timestamp', 'Value', 'ActivityID']]
 
 while_df = pd.DataFrame(while_activity.log)
@@ -119,4 +120,8 @@ data_while = while_df[['Message', 'ActivityState', 'Timestamp', 'Value', 'Activi
 print(f"hopper :{hopper.container.get_level()}")
 print(f"from_site :{from_site.container.get_level()}")
 #c = hopper.container
-#ee = from_site.container.empty_event
+#ee = from_site.container.get_empty_event()
+my_env.timeout(1)
+ee = from_site.container.get_available(from_site.container.get_capacity())
+c = from_site.container
+ee = c.put_available(c.get_capacity())

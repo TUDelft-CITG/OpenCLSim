@@ -93,6 +93,7 @@ class Locatable:
 class EventsContainer(simpy.FilterStore):
     def __init__(self, env, store_capacity=1, *args, **kwargs):
         super().__init__(env, capacity=store_capacity)
+        self._env = env
         self._get_available_events = {}
         self._put_available_events = {}
         print("init")
@@ -142,11 +143,15 @@ class EventsContainer(simpy.FilterStore):
         return 0
 
     def put_available(self, amount, id_="default"):
+        print("start put_available")
         if self.get_capacity(id_) - self.get_level(id_) >= amount:
+            print("succeed")
             return self._env.event().succeed()
         if id_ in self._put_available_events:
+            print("check put_available events")
             if amount in self._put_available_events:
                 return self._put_available_events[amount]
+        print("register new event ")
         new_event = self._env.event()
         self._put_available_events[id_] = {}
         self._put_available_events[id_][amount] = new_event
@@ -154,24 +159,23 @@ class EventsContainer(simpy.FilterStore):
 
     def get_empty_event(self, start_event=False, id_="default"):
         if not start_event:
-            return self.empty_event
+            return self.put_available(self.get_capacity(id_), id_)
         elif start_event.processed:
-            return self.empty_event
+            return self.put_available(self.get_capacity(id_), id_)
         else:
             return self._env.event()
 
     def get_full_event(self, start_event=False, id_="default"):
         if not start_event:
-            return self.full_event
+            return self.get_available(self.get_capacity(id_), id_)
         elif start_event.processed:
-            return self.full_event
+            return self.get_available(self.get_capacity(id_), id_)
         else:
             return self._env.event()
 
     @property
     def empty_event(self):
-        # return self.put_available(self.get_capacity())
-        return self.get_available(0)
+        return self.put_available(self.get_capacity())
 
     @property
     def full_event(self):
@@ -230,7 +234,8 @@ class EventsContainer(simpy.FilterStore):
 
     def get_callback(self, event, id_="default"):
         print("start get_callback")
-        if id_ in self._get_available_events:
+        print(self._put_available_events)
+        if id_ in self._put_available_events:
             for amount in sorted(self._put_available_events[id_]):
                 # if isinstance(self, ReservationContainer):
                 #    if self.get_capacity(id_) - self.get_expected_level(id_) >= amount:
@@ -537,7 +542,6 @@ class HasContainer(SimpyObject):
         if capacity > 0:
             print(f"level: {level}")
             self.container.initialize(capacity=capacity, init=level)
-            print("init reservation")
             # self.container.initialize_reservation(capacity=capacity, init=level)
             print("completed init")
 

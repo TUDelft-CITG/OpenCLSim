@@ -103,31 +103,38 @@ hopper = TransportProcessingResource(**data_hopper)
 #     )
 
 
-shift_amount_activity_data = { "env":my_env,  # The simpy environment defined in the first cel
-    "name":"Transfer MP",  # We are moving soil
-    "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
-    "processor":hopper,
-    "origin":from_site,
-    "destination":hopper,
-    "amount":2,
-    }
-activity = model.ShiftAmountActivity(**shift_amount_activity_data )
+shift_amount_activity_data = {
+    "env": my_env,  # The simpy environment defined in the first cel
+    "name": "Transfer MP",  # We are moving soil
+    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+    "processor": hopper,
+    "origin": from_site,
+    "destination": hopper,
+    "amount": 2,
+    "duration": 10,
+}
+activity = model.ShiftAmountActivity(**shift_amount_activity_data)
 
-move_activity_data = { "env":my_env,  # The simpy environment defined in the first cel
-    "name":"Soil movement",  # We are moving soil
-    "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
-    "mover":hopper, 
-    "destination":to_site,
-    "start_event": activity.main_process}
-activity2 = model.MoveActivity(**move_activity_data )
+move_activity_data = {
+    "env": my_env,  # The simpy environment defined in the first cel
+    "name": "Soil movement",  # We are moving soil
+    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+    "mover": hopper,
+    "destination": to_site,
+    "start_event": activity.main_process,
+}
+activity2 = model.MoveActivity(**move_activity_data)
 
 
 my_env.run()
 
 log_df = pd.DataFrame(hopper.log)
-data =log_df[['Message', 'Timestamp', 'Value', 'ActivityID']]
+data = log_df[["Message", "Timestamp", "Value", "ActivityID"]]
 
 log2_df = pd.DataFrame(activity.log)
-data2 =log2_df[['Message', 'Timestamp', 'Value', 'ActivityID']]
+data2 = log2_df[["Message", "Timestamp", "Value", "ActivityID"]]
 log3_df = pd.DataFrame(activity2.log)
-data3 =log3_df[['Message', 'Timestamp', 'Value', 'ActivityID']]
+data3 = log3_df[["Message", "Timestamp", "Value", "ActivityID"]]
+
+
+# %%

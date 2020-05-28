@@ -113,6 +113,7 @@ shift_amount_activity_data = {
     "origin": from_site,
     "destination": hopper,
     "amount": 2,
+    "duration": 10,
 }
 
 activity = model.ShiftAmountActivity(**shift_amount_activity_data)
@@ -131,5 +132,5 @@ activity = model.ShiftAmountActivity(**shift_amount_activity_data)
 my_env.run()
 
 log_df = pd.DataFrame(hopper.log)
-data = log_df[["Message", 'ActivityState', "Timestamp", "Value", "ActivityID"]]
+data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 cont = hopper.container

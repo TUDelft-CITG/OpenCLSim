@@ -106,36 +106,37 @@ stop_event.append(from_site.container.get_empty_event)
 stop_event.append(to_site.container.get_full_event)
 
 stop_reservation_waiting_event = (
-    stop_event()
-    if hasattr(stop_event, "__call__")
-    else stop_event
+    stop_event() if hasattr(stop_event, "__call__") else stop_event
 )
-        
-shift_amount_activity_data = { "env":my_env,  # The simpy environment defined in the first cel
-    "name":"Transfer MP",  # We are moving soil
-    "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
-    "processor":hopper,
-    "origin":from_site,
-    "destination":hopper,
-    "amount":2,
-    "stop_reservation_waiting_event":stop_reservation_waiting_event,
-    }
 
-activity = model.ShiftAmountActivity(**shift_amount_activity_data )
+shift_amount_activity_data = {
+    "env": my_env,  # The simpy environment defined in the first cel
+    "name": "Transfer MP",  # We are moving soil
+    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+    "processor": hopper,
+    "origin": from_site,
+    "destination": hopper,
+    "amount": 2,
+    "duration": 10,
+    "stop_reservation_waiting_event": stop_reservation_waiting_event,
+}
 
-shift_amount_activity_data2 = { "env":my_env,  # The simpy environment defined in the first cel
-    "name":"Transfer MP",  # We are moving soil
-    "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
-    "processor":hopper,
-    "origin":hopper,
-    "destination":to_site,
-    "amount":2,
-    }
+activity = model.ShiftAmountActivity(**shift_amount_activity_data)
 
-activity2 = model.ShiftAmountActivity(**shift_amount_activity_data2 )
+shift_amount_activity_data2 = {
+    "env": my_env,  # The simpy environment defined in the first cel
+    "name": "Transfer MP",  # We are moving soil
+    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+    "processor": hopper,
+    "origin": hopper,
+    "destination": to_site,
+    "amount": 2,
+    "duration": 10,
+}
+
+activity2 = model.ShiftAmountActivity(**shift_amount_activity_data2)
 
 my_env.run()
 
 log_df = pd.DataFrame(hopper.log)
-data =log_df[['Message', 'Timestamp', 'Value', 'ActivityID']]
-
+data = log_df[["Message", "Timestamp", "Value", "ActivityID"]]

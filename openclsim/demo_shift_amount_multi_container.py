@@ -38,9 +38,11 @@ data_from_site = {
     "name": "Winlocatie",  # The name of the site
     "ID": "6dbbbdf4-4589-11e9-a501-b469212bff5b",  # For logging purposes
     "geometry": location_from_site,  # The coordinates of the project site
-    "store_capacity":4,
-    "initials": [{"id":"MP", "level":5, "capacity": 10},
-                 {"id":"TP", "level":5, "capacity": 10}]
+    "store_capacity": 4,
+    "initials": [
+        {"id": "MP", "level": 5, "capacity": 10},
+        {"id": "TP", "level": 5, "capacity": 10},
+    ],
 }  # The actual volume of the site
 
 # Information on the dumping site - the "to site" - the "dump locatie"
@@ -51,9 +53,11 @@ data_to_site = {
     "name": "Dumplocatie",  # The name of the site
     "ID": "6dbbbdf5-4589-11e9-82b2-b469212bff5b",  # For logging purposes
     "geometry": location_to_site,  # The coordinates of the project site
-    "store_capacity":4,
-    "initials": [{"id":"MP", "level":0, "capacity": 10},
-                 {"id":"TP", "level":0, "capacity": 10}]
+    "store_capacity": 4,
+    "initials": [
+        {"id": "MP", "level": 0, "capacity": 10},
+        {"id": "TP", "level": 0, "capacity": 10},
+    ],
 }  # The actual volume of the site (empty of course)
 
 # The two objects used for the simulation
@@ -77,7 +81,7 @@ TransportProcessingResource = type(
         core.UnloadingFunction,  # Add an unloading function
         SiteRegistry,
     ),
-    {"key":"MultiStoreHopper"},
+    {"key": "MultiStoreHopper"},
 )
 
 print(SiteRegistry.inspect("MultiStoreHopper"))
@@ -94,9 +98,11 @@ data_hopper = {
     "geometry": location_from_site,  # It starts at the "from site"
     "loading_rate": 1,  # Loading rate
     "unloading_rate": 1,  # Unloading rate
-    "store_capacity":4,
-    "initials": [{"id":"MP", "level":0, "capacity": 2},
-                 {"id":"TP", "level":0, "capacity": 2}], # Capacity of the hopper - "Beunvolume"
+    "store_capacity": 4,
+    "initials": [
+        {"id": "MP", "level": 0, "capacity": 2},
+        {"id": "TP", "level": 0, "capacity": 2},
+    ],  # Capacity of the hopper - "Beunvolume"
     "compute_v": compute_v_provider(5, 4.5),  # Variable speed
     "weekrate": 7,
 }
@@ -120,6 +126,7 @@ shift_amount_activity_data = {
     "origin": from_site,
     "destination": hopper,
     "amount": 3,
+    "duration": 10,
     "id_": "MP",
 }
 
@@ -139,7 +146,7 @@ activity = model.ShiftAmountActivity(**shift_amount_activity_data)
 my_env.run()
 
 log_df = pd.DataFrame(hopper.log)
-data = log_df[["Message", 'ActivityState', "Timestamp", "Value", "ActivityID"]]
+data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 
 cont = from_site.container
 cont = hopper.container

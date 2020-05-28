@@ -381,7 +381,7 @@ class WhileActivity(GenericActivity):
     #     activity_log, env, stop_event, sub_processes, requested_resources, keep_resources
     def __init__(
         self,
-        sub_processes,
+        sub_process,
         condition_event,
         # postpone_start=False,
         start_event=None,
@@ -394,7 +394,7 @@ class WhileActivity(GenericActivity):
         """Initialization"""
 
         self.print = show
-        self.sub_processes = sub_processes
+        self.sub_process = sub_process
         self.condition_event = condition_event
         # self.postpone_start = postpone_start
         print(self.postpone_start)
@@ -402,7 +402,7 @@ class WhileActivity(GenericActivity):
         main_proc = partial(
             conditional_process,
             name=self.name,
-            sub_processes=self.sub_processes,
+            sub_process=self.sub_process,
             condition_event=self.condition_event,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
@@ -445,6 +445,7 @@ class ShiftAmountActivity(GenericActivity):
         origin,
         destination,
         amount,
+        duration,
         id_="default",
         # postpone_start=False,
         start_event=None,
@@ -460,6 +461,7 @@ class ShiftAmountActivity(GenericActivity):
 
         self.processor = processor
         self.amount = amount
+        self.duration = duration
         self.id_ = id_
         # self.postpone_start = postpone_start
         self.print = show
@@ -471,6 +473,7 @@ class ShiftAmountActivity(GenericActivity):
             origin=self.origin,
             destination=self.destination,
             amount=self.amount,
+            duration=self.duration,
             id_=self.id_,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
@@ -516,7 +519,7 @@ def conditional_process(
     activity_log,
     env,
     condition_event,
-    sub_processes,
+    sub_process,
     name,
     requested_resources,
     keep_resources,
@@ -557,29 +560,34 @@ def conditional_process(
     )
     ii = 0
     while (not condition_event.processed) and ii < 10:
+        print(sub_process)
+        # for sub_process_ in (proc for proc in [sub_process]):
+        print("conditional ")
+        activity_log.log_entry(
+            f"sub process {sub_process.name}",
+            env.now,
+            -1,
+            None,
+            activity_log.id,
+            core.LogState.START,
+        )
+        yield from sub_process.main_proc(activity_log=activity_log, env=env)
+        activity_log.log_entry(
+            f"sub process {sub_process.name}",
+            env.now,
+            -1,
+            None,
+            activity_log.id,
+            core.LogState.STOP,
+        )
+        # work around for the event evaluation
+        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+        # which will result in triggered but not processed events to be taken care of before further progressing
+        # maybe there is a better way of doing it, but his option works for now.
+        yield env.timeout(0)
         print(
             f"condition event triggered: {condition_event.triggered} {condition_event.processed} round {ii}"
         )
-        print(sub_processes)
-        for sub_process in (proc for proc in sub_processes):
-            print("conditional ")
-            activity_log.log_entry(
-                f"sub process {sub_process.name}",
-                env.now,
-                -1,
-                None,
-                activity_log.id,
-                core.LogState.START,
-            )
-            yield from sub_process.main_proc(activity_log=activity_log, env=env)
-            activity_log.log_entry(
-                f"sub process {sub_process.name}",
-                env.now,
-                -1,
-                None,
-                activity_log.id,
-                core.LogState.STOP,
-            )
         ii = ii + 1
     activity_log.log_entry(
         f"conditional process {name}",
@@ -703,15 +711,19 @@ def shift_amount_process(
     name,
     requested_resources,
     keep_resources,
+    duration,
     amount=None,
     id_="default",
     engine_order=1.0,
     stop_reservation_waiting_event=None,
 ):
     """Origin and Destination are of type HasContainer """
-    print(origin)
-    print(destination)
-    print(processor)
+    # print(origin)
+    # print(destination)
+    # print(processor)
+    assert processor.is_at(origin)
+    assert destination.is_at(origin)
+
     if not isinstance(origin, core.HasContainer) or not isinstance(
         destination, core.HasContainer
     ):
@@ -771,6 +783,7 @@ def shift_amount_process(
             origin.container.get_level(id_) + amount,
             destination,
             ActivityID=activity_log.id,
+            duration=duration,
             id_=id_,
             verbose=verbose,
         )
@@ -788,7 +801,7 @@ def shift_amount_process(
         print(f"released origin : {resource_requests}")
         if processor.resource in resource_requests:
             _release_resource(resource_requests, processor.resource)
-        print(f"released origin : {resource_requests}")
+        print(f"released processor : {resource_requests}")
         # print("done")
     # else:
     #    origin_requested = 0
@@ -845,7 +858,9 @@ def shift_amount_process(
     #    )
 
     else:
-        raise RuntimeError("Attempting to move content with a full ship")
+        raise RuntimeError(
+            f"Attempting to shift content from an empty origin or to a full destination. ({all_amounts})"
+        )
     # print(resource_requests)
 
 
@@ -1248,6 +1263,7 @@ def _shift_amount(
     desired_level,
     destination,
     ActivityID,
+    duration=0,
     id_="default",
     verbose=False,
 ):
@@ -1260,7 +1276,9 @@ def _shift_amount(
     origin.ActivityID = ActivityID
     print("processor start process")
     # Check if loading or unloading
-    yield from processor.process(origin, amount, destination, id_=id_, duration=10)
+    yield from processor.process(
+        origin, amount, destination, id_=id_, duration=duration
+    )
     print("processor end process")
 
     if verbose:
