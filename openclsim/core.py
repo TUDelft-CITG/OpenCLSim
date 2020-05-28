@@ -122,8 +122,8 @@ class EventsContainer(simpy.FilterStore):
         return new_event
 
     def get_capacity(self, id_="default"):
-        print(f"start get_capacity id_ {id_}")
-        print(self.items)
+        # print(f"start get_capacity id_ {id_}")
+        # print(self.items)
         if self.items == None:
             return 0
         res = [item["capacity"] for item in self.items if item["id"] == id_]
@@ -132,8 +132,8 @@ class EventsContainer(simpy.FilterStore):
         return 0
 
     def get_level(self, id_="default"):
-        print(f"start get_level with id_ {id_}")
-        print(self.items)
+        # print(f"start get_level with id_ {id_}")
+        # print(self.items)
         if self.items == None:
             return 0
         res = [item["level"] for item in self.items if item["id"] == id_]
@@ -170,43 +170,52 @@ class EventsContainer(simpy.FilterStore):
 
     @property
     def empty_event(self):
-        id_ = "default"
-        return self.put_available(self.get_capacity())
+        # return self.put_available(self.get_capacity())
+        return self.get_available(0)
 
     @property
     def full_event(self):
         return self.get_available(self.get_capacity())
 
     def put(self, amount, capacity=0, id_="default"):
+        current_amount = 0
         if len(self.items) > 0:
             status = super().get(lambda status: status["id"] == id_)
-            pprint(status)
+            print(status)
             # if status.ok:
             if status.triggered:
                 status = status.value
                 if "capacity" in status:
                     capacity = status["capacity"]
+                if "level" in status:
+                    current_amount = status["level"]
             else:
                 raise Exception(
                     f"Failed to derive the previous version of container {id_}"
                 )
         # this is a fall back in case the container is used with default
-        put_event = super().put({"id": id_, "level": amount, "capacity": capacity})
+        put_event = super().put(
+            {"id": id_, "level": current_amount + amount, "capacity": capacity}
+        )
         put_event.callbacks.append(self.put_callback)
         return put_event
 
     def put_callback(self, event, id_="default"):
-        for amount in sorted(self._get_available_events):
-            if isinstance(self, ReservationContainer):
-                if self.get_expected_level(id_) >= amount:
-                    self._get_available_events[amount].succeed()
-                    del self._get_available_events[amount]
-            elif self.get_level(id_) >= amount:
-                if id_ in self._get_available_events:
-                    self._get_available_events[id_][amount].succeed()
-                    del self._get_available_events[id_][amount]
-            else:
-                return
+        print(self._get_available_events)
+        if id_ in self._get_available_events:
+            for amount in sorted(self._get_available_events[id_]):
+                print(f"amount :{amount}")
+                # if isinstance(self, ReservationContainer):
+                #    if self.get_expected_level(id_) >= amount:
+                #        self._get_available_events[id_][amount].succeed()
+                #        del self._get_available_events[id_][amount]
+                # el
+                if self.get_level(id_) >= amount:
+                    if id_ in self._get_available_events:
+                        self._get_available_events[id_][amount].succeed()
+                        del self._get_available_events[id_][amount]
+                else:
+                    return
 
     def get(self, amount, id_="default"):
         print(f"start get {amount}")
@@ -221,17 +230,19 @@ class EventsContainer(simpy.FilterStore):
 
     def get_callback(self, event, id_="default"):
         print("start get_callback")
-        for amount in sorted(self._put_available_events):
-            if isinstance(self, ReservationContainer):
-                if self.get_capacity(id_) - self.get_expected_level(id_) >= amount:
-                    self._put_available_events[amount].succeed()
-                    del self._put_available_events[amount]
-            elif self.get_capacity(id_) - self.get_level(id_) >= amount:
-                if id_ in self._put_available_events:
-                    self._put_available_events[id_][amount].succeed()
-                    del self._put_available_events[id_][amount]
-            else:
-                return
+        if id_ in self._get_available_events:
+            for amount in sorted(self._put_available_events[id_]):
+                # if isinstance(self, ReservationContainer):
+                #    if self.get_capacity(id_) - self.get_expected_level(id_) >= amount:
+                #        self._put_available_events[amount].succeed()
+                #        del self._put_available_events[amount]
+                # el
+                if self.get_capacity(id_) - self.get_level(id_) >= amount:
+                    if id_ in self._put_available_events:
+                        self._put_available_events[id_][amount].succeed()
+                        del self._put_available_events[id_][amount]
+                else:
+                    return
 
     @property
     def container_list(self):
@@ -318,8 +329,8 @@ class EventsStore(simpy.FilterStore):
         return new_event
 
     def get_capacity(self, id_="default"):
-        print(f"start get_capacity id_ {id_}")
-        print(self.items)
+        # print(f"start get_capacity id_ {id_}")
+        # print(self.items)
         if self.items == None:
             return 0
         res = [item["capacity"] for item in self.items if item["id"] == id_]
@@ -328,8 +339,8 @@ class EventsStore(simpy.FilterStore):
         return 0
 
     def get_level(self, id_="default"):
-        print(f"start get_level with id_ {id_}")
-        print(self.items)
+        # print(f"start get_level with id_ {id_}")
+        # print(self.items)
         if self.items == None:
             return 0
         res = [item["level"] for item in self.items if item["id"] == id_]
@@ -521,7 +532,7 @@ class HasContainer(SimpyObject):
         # container_class = type(
         #    "CombinedContainer", (EventsContainer, ReservationContainer), {}
         # )
-        container_class = ReservationContainer
+        container_class = EventsContainer
         self.container = container_class(self.env, store_capacity=store_capacity)
         if capacity > 0:
             print(f"level: {level}")
@@ -1534,7 +1545,7 @@ class Movable(SimpyObject, Locatable):
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
 
         # Log the start event
-        self.log_sailing(event="start")
+        self.log_sailing(log_state=LogState.START)
 
         # Determine the sailing_duration
         sailing_duration = self.sailing_duration(
@@ -1551,7 +1562,7 @@ class Movable(SimpyObject, Locatable):
         logger.debug("  duration: " + "%4.2f" % (sailing_duration / 3600) + " hrs")
 
         # Log the stop event
-        self.log_sailing(event="stop")
+        self.log_sailing(log_state=LogState.STOP)
 
     @property
     def current_speed(self):
@@ -1751,7 +1762,7 @@ class MultiContainerDependentMovable(Movable, HasMultiContainer):
     def current_speed(self):
         sum_level = 0
         sum_capacity = 0
-        for id_ in self.container_ids:
+        for id_ in self.container.container_list:
             sum_level = self.container.get_level(id_)
             sum_capacity = self.container.get_capacity(id_)
         fill_degree = sum_level / sum_capacity
@@ -2236,7 +2247,7 @@ class Processor(SimpyObject):
         #     subcycle_frequency = self.unloading_subcycle_frequency
         #     message = "unloading"
 
-        message = f"transfer to {destination.name}"
+        message = f"transfer {id_} to {destination.name}"
         print(message)
         # Log the process for all parts
         for location in [origin, destination]:
@@ -2246,7 +2257,7 @@ class Processor(SimpyObject):
                 value=amount,
                 geometry_log=location.geometry,
                 ActivityID=self.ActivityID,
-                ActivityState=LogState.START
+                ActivityState=LogState.START,
             )
 
         # Single processing event
@@ -2268,7 +2279,12 @@ class Processor(SimpyObject):
 
             # Checkout single event
             self.log_entry(
-                message, self.env.now, amount, self.geometry, self.ActivityID, LogState.START
+                message,
+                self.env.now,
+                amount,
+                self.geometry,
+                self.ActivityID,
+                LogState.START,
             )
 
             yield self.env.timeout(duration)
@@ -2288,7 +2304,12 @@ class Processor(SimpyObject):
             self.computeEnergy(duration, origin, destination)
 
             self.log_entry(
-                message, self.env.now, amount, self.geometry, self.ActivityID, LogState.STOP
+                message,
+                self.env.now,
+                amount,
+                self.geometry,
+                self.ActivityID,
+                LogState.STOP,
             )
 
         # Subcycle with processing events
@@ -2308,7 +2329,12 @@ class Processor(SimpyObject):
 
             # Checkout subcyle event
             self.log_entry(
-                message, self.env.now, amount, self.geometry, self.ActivityID, LogState.START
+                message,
+                self.env.now,
+                amount,
+                self.geometry,
+                self.ActivityID,
+                LogState.START,
             )
 
             yield self.env.timeout(duration)
@@ -2329,7 +2355,12 @@ class Processor(SimpyObject):
             self.computeEnergy(duration, origin, destination)
 
             self.log_entry(
-                message, self.env.now, amount, self.geometry, self.ActivityID, LogState.STOP
+                message,
+                self.env.now,
+                amount,
+                self.geometry,
+                self.ActivityID,
+                LogState.STOP,
             )
 
         # Log the process for all parts
@@ -2340,7 +2371,7 @@ class Processor(SimpyObject):
                 value=amount,
                 geometry_log=location.geometry,
                 ActivityID=self.ActivityID,
-                ActivityState=LogState.STOP
+                ActivityState=LogState.STOP,
             )
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
@@ -2400,7 +2431,7 @@ class Processor(SimpyObject):
                     value=amount,
                     geometry_log=self.geometry,
                     ActivityID=self.ActivityID,
-                    ActivityState=LogState.START
+                    ActivityState=LogState.START,
                 )
                 self.log_entry(
                     log="waiting destination content",
@@ -2436,7 +2467,7 @@ class Processor(SimpyObject):
             )
 
             # Check spill
-            yield from self.checkSpill(mover, site, amount, id_)
+            yield from self.checkSpill(mover, site, amount)
 
     def computeEnergy(self, duration, origin, destination):
         """

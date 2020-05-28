@@ -165,10 +165,10 @@ activity = model.SequentialActivity(**sequential_activity_data)
 my_env.run()
 
 log_df = pd.DataFrame(hopper.log)
-data =log_df[['Message', 'Timestamp', 'Value', 'ActivityID']]
+data =log_df[['Message', 'ActivityState', 'Timestamp', 'Value', 'ActivityID']]
 
 basic = []
 for proc in loading:
     df = pd.DataFrame(proc.log)
-    basic.append(df[['Message', 'Timestamp', 'Value', 'ActivityID']])
+    basic.append(df[['Message', 'ActivityState', 'Timestamp', 'Value', 'ActivityID']])
 
