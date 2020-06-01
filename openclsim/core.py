@@ -166,6 +166,7 @@ class EventsContainer(simpy.FilterStore):
             return self._env.event()
 
     def get_full_event(self, start_event=False, id_="default"):
+        print(f"get_full_event : {id_}")
         if not start_event:
             return self.get_available(self.get_capacity(id_), id_)
         elif start_event.processed:
@@ -205,6 +206,10 @@ class EventsContainer(simpy.FilterStore):
         return put_event
 
     def put_callback(self, event, id_="default"):
+        print(f"put_callback - id_ {event.item['id']}")
+        if isinstance(event, simpy.resources.store.StorePut):
+            if "id" in event.item:
+                id_ = event.item["id"]
         print(self._get_available_events)
         if id_ in self._get_available_events:
             for amount in sorted(self._get_available_events[id_]):
@@ -233,6 +238,14 @@ class EventsContainer(simpy.FilterStore):
         return get_event
 
     def get_callback(self, event, id_="default"):
+        print(f"get_callback - id_ {event}")
+        # it is confusing that this is checking for storeput while doing a get
+        # the reason is that subtracting from a container requires to get the complete
+        # content of a container and then add the remaining content of the container
+        # which creates a storeput
+        if isinstance(event, simpy.resources.store.StorePut):
+            if "id" in event.item:
+                id_ = event.item["id"]
         print("start get_callback")
         print(self._put_available_events)
         if id_ in self._put_available_events:

@@ -41,8 +41,11 @@ data_from_site = {
     "name": "Winlocatie",  # The name of the site
     "ID": "6dbbbdf4-4589-11e9-a501-b469212bff5d",  # For logging purposes
     "geometry": location_from_site,  # The coordinates of the project site
-    "capacity": 10,  # The capacity of the site
-    "level":4,
+    "store_capacity": 4,
+    "initials": [
+        {"id": "MP", "level": 2, "capacity": 10},
+        {"id": "TP", "level": 0, "capacity": 2},
+    ],  # Capacity of the hopper - "Beunvolume"
 }  # The actual volume of the site
 from_site = Site(**data_from_site)
 
@@ -75,7 +78,11 @@ data_hopper = {
     "geometry": location_from_site,  # It starts at the "from site"
     "loading_rate": 1,  # Loading rate
     "unloading_rate": 1,  # Unloading rate
-    "capacity": 4,  # Capacity of the hopper - "Beunvolume"
+    "store_capacity": 4,
+    "initials": [
+        {"id": "MP", "level": 0, "capacity": 2},
+        {"id": "TP", "level": 0, "capacity": 2},
+    ],  # Capacity of the hopper - "Beunvolume"
     "compute_v": compute_v_provider(5, 4.5),  # Variable speed
     "weekrate": 7,
 }
@@ -90,6 +97,7 @@ shift_amount_activity_loading_data = { "env":my_env,  # The simpy environment de
     "origin":from_site,
     "destination":hopper,
     "amount":1,
+    "id_":"MP",
     "duration":20,
     "postpone_start":True,
     }
@@ -101,8 +109,8 @@ while_data =  { "env":my_env,  # The simpy environment defined in the first cel
     "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5g",  # For logging purposes
     "sub_process": activity,
     #"condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
-    #"condition_event": hopper.container.get_full_event(),
-    "condition_event": from_site.container.get_empty_event(),
+    #"condition_event": hopper.container.get_full_event(id_="MP"),
+    "condition_event": from_site.container.get_empty_event(id_="MP"),
     "postpone_start": False}
 while_activity = model.WhileActivity(**while_data) 
 
@@ -117,11 +125,12 @@ data_while = while_df[['Message', 'ActivityState', 'Timestamp', 'Value', 'Activi
 
 
 #%%
-print(f"hopper :{hopper.container.get_level()}")
-print(f"from_site :{from_site.container.get_level()}")
+print(f"hopper :{hopper.container.get_level('MP')}")
+print(f"from_site :{from_site.container.get_level('MP')}")
 #c = hopper.container
 #ee = from_site.container.get_empty_event()
 my_env.timeout(1)
-ee = from_site.container.get_available(from_site.container.get_capacity())
-c = from_site.container
+ee = hopper.container.get_available(hopper.container.get_capacity(id_="MP"), id_="MP")
+c = hopper.container
 ee = c.put_available(c.get_capacity())
+hopper.container.put_callback()
