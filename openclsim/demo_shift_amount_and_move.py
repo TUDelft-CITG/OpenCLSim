@@ -117,17 +117,20 @@ shift_amount_activity_data = {
 }
 activity = model.ShiftAmountActivity(**shift_amount_activity_data)
 
+expr = [{"type":"activity", "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b", "state":"done"}]
 move_activity_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "Soil movement",  # We are moving soil
-    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5C",  # For logging purposes
     "registry": registry,
     "mover": hopper,
     "destination": to_site,
-    "start_event": activity.main_process,
+    #"start_event": activity.main_process,
+    "start_event": expr,
 }
 activity2 = model.MoveActivity(**move_activity_data)
 
+activity.parse_expression(expr)
 
 my_env.run()
 

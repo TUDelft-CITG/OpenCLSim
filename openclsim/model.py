@@ -137,6 +137,7 @@ class GenericActivity(core.Identifiable, core.Log):
         self,
         registry,
         postpone_start=False,
+        start_event=None,
         requested_resources=[],
         keep_resources=[],
         *args,
@@ -149,26 +150,31 @@ class GenericActivity(core.Identifiable, core.Log):
         if self.name not in registry["name"]:
             l_ = []
         else:
-            l_ = registry[self.name]
+            l_ = registry["name"][self.name]
         l_.append(self)
-        registry[self.name] = l_
+        registry["name"][self.name] = l_
         if "id" not in registry:
             registry["id"] = {}
         if self.id not in registry["id"]:
             l_ = []
         else:
-            l_ = registry[self.id]
+            l_ = registry["id"][self.id]
         l_.append(self)
-        registry[self.id] = l_
+        registry["id"][self.id] = l_
 
+        self.registry = registry
         self.postpone_start = postpone_start
+        self.start_event = start_event
         self.requested_resources = requested_resources
         self.keep_resources = keep_resources
 
     def register_process(
-        self, main_proc, start_event=None, show=False,
+        self, main_proc, show=False,
     ):
-        self.start_event = start_event
+        start_event = None
+        if self.start_event != None:
+            start_event = self.parse_expression(self.start_event)
+        start_event_instance = start_event
         (
             start_event
             if start_event is None or isinstance(start_event, simpy.Event)
@@ -200,16 +206,104 @@ class GenericActivity(core.Identifiable, core.Log):
         if start_event is not None:
             main_proc = partial(
                 delayed_process,
-                start_event=self.start_event,
+                start_event=start_event_instance,
                 sub_processes=[main_proc],
                 requested_resources=self.requested_resources,
                 keep_resources=self.keep_resources,
             )
         self.main_proc = main_proc
-        if not self.postpone_start:
-            self.main_process = self.env.process(
-                self.main_proc(activity_log=self, env=self.env)
+        # if not self.postpone_start:
+        self.main_process = self.env.process(
+            self.main_proc(activity_log=self, env=self.env)
+        )
+
+    def parse_expression(self, expr):
+        res = []
+        if not isinstance(expr, list):
+            raise Exception(
+                f"expression must be a list, but is {type(expr)}. Therefore it can not be parsed: {expr}"
             )
+        for key_val in expr:
+            if isinstance(key_val, dict):
+                if "and" in key_val:
+                    partial_res = self.parse_expression(key_val["and"])
+                    res.append(
+                        self.env.all_of(events=[event() for event in partial_res])
+                    )
+                elif "or" in key_val:
+                    partial_res = self.parse_expression(key_val["or"])
+                    res.append(
+                        self.env.any_of(events=[event() for event in partial_res])
+                    )
+                elif "type" in key_val:
+                    if key_val["type"] == "container":
+                        id_ = None
+                        if "id_" in key_val:
+                            id_ = key_val["id_"]
+                        state = key_val["state"]
+                        obj = key_val["concept"]
+                        if isinstance(obj, core.HasContainer):
+                            if state == "full":
+                                if id_ != None:
+                                    res.append(obj.container.get_full_event(id_=id_))
+                                else:
+                                    res.append(obj.container.get_full_event())
+                            elif state == "empty":
+                                if id_ != None:
+                                    res.append(obj.container.get_empty_event(id_=id_))
+                                else:
+                                    res.append(obj.container.get_empty_event())
+                            else:
+                                raise Exception(
+                                    f"Unknown state {state} for a container event"
+                                )
+                        else:
+                            raise Exception(
+                                f"Referneced concept in a container expression is not of type HasContainer, but of type {type(obj)}"
+                            )
+                    elif key_val["type"] == "activity":
+                        state = key_val["state"]
+                        if state != "done":
+                            raise Exception(
+                                f"Unknown state {state} in ActivityExpression."
+                            )
+                        activity_ = None
+                        key = "unknown"
+                        if "ID" in key_val:
+                            key = key_val["ID"]
+                            if "id" in self.registry:
+                                if key in self.registry["id"]:
+                                    activity_ = self.registry["id"][key]
+                        elif "name" in key_val:
+                            key = key_val["name"]
+                            if "name" in self.registry:
+                                if key in self.registry["name"]:
+                                    activity_ = self.registry["name"][key]
+                        if activity_ == None:
+                            raise Exception(
+                                f"No activity found in ActivityExpression for id/name {key}"
+                            )
+                        if isinstance(activity_, list):
+                            if len(activity_) == 1:
+                                res.append(activity_[0].main_process)
+                            else:
+                                res.extend(
+                                    [
+                                        activity_item.main_process
+                                        for activity_item in activity_
+                                    ]
+                                )
+                        else:
+                            res.append(activity_[0].main_process)
+                else:
+                    raise Exception(
+                        f"Logical AND can not have an additional key next to it. {expr}"
+                    )
+        if len(res) > 1:
+            return res
+        elif len(res) == 1:
+            return res[0]
+        return res
 
 
 class MoveActivity(GenericActivity):
@@ -236,24 +330,17 @@ class MoveActivity(GenericActivity):
     """
 
     def __init__(
-        self,
-        mover,
-        destination,
-        # postpone_start=False,
-        start_event=None,
-        # stop_event=None,
-        show=False,
-        *args,
-        **kwargs,
+        self, mover, destination, show=False, *args, **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.destination = destination
-
         self.mover = mover
-        # self.postpone_start = postpone_start
         self.print = show
+        if not self.postpone_start:
+            self.start()
 
+    def start(self):
         main_proc = partial(
             move_process,
             name=self.name,
@@ -261,15 +348,9 @@ class MoveActivity(GenericActivity):
             mover=self.mover,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
-            # stop_reservation_waiting_event=self.stop_reservation_waiting_event,
-            # verbose=self.print,
         )
         self.register_process(
-            main_proc=main_proc,
-            start_event=start_event,
-            # stop_event=stop_event,
-            show=show,
-            # postpone_start=self.postpone_start,
+            main_proc=main_proc, show=self.print,
         )
 
 
@@ -297,22 +378,17 @@ class BasicActivity(GenericActivity):
     """
 
     def __init__(
-        self,
-        duration,
-        # postpone_start=False,
-        start_event=None,
-        # stop_event=None,
-        show=False,
-        *args,
-        **kwargs,
+        self, duration, show=False, *args, **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
         self.print = show
         self.duration = duration
-        # self.postpone_start = postpone_start
+        if not self.postpone_start:
+            self.start()
 
+    def start(self):
         main_proc = partial(
             basic_process,
             name=self.name,
@@ -321,11 +397,7 @@ class BasicActivity(GenericActivity):
             keep_resources=self.keep_resources,
         )
         self.register_process(
-            main_proc=main_proc,
-            start_event=start_event,
-            # stop_event=stop_event,
-            show=show,
-            # postpone_start=self.postpone_start,
+            main_proc=main_proc, show=self.print,
         )
 
 
@@ -349,23 +421,17 @@ class SequentialActivity(GenericActivity):
     """
 
     def __init__(
-        self,
-        sub_processes,
-        # postpone_start=False,
-        start_event=None,
-        # stop_event=None,
-        show=False,
-        *args,
-        **kwargs,
+        self, sub_processes, show=False, *args, **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
         self.print = show
         self.sub_processes = sub_processes
-        # self.postpone_start = postpone_start
-        print(self.postpone_start)
+        if not self.postpone_start:
+            self.start()
 
+    def start(self):
         main_proc = partial(
             sequential_process,
             name=self.name,
@@ -374,11 +440,7 @@ class SequentialActivity(GenericActivity):
             keep_resources=self.keep_resources,
         )
         self.register_process(
-            main_proc=main_proc,
-            start_event=start_event,
-            # stop_event=stop_event,
-            show=show,
-            # postpone_start=self.postpone_start,
+            main_proc=main_proc, show=self.print,
         )
 
 
@@ -398,15 +460,7 @@ class WhileActivity(GenericActivity):
 
     #     activity_log, env, stop_event, sub_processes, requested_resources, keep_resources
     def __init__(
-        self,
-        sub_process,
-        condition_event,
-        # postpone_start=False,
-        start_event=None,
-        # stop_event=None,
-        show=False,
-        *args,
-        **kwargs,
+        self, sub_process, condition_event, show=False, *args, **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
@@ -414,23 +468,20 @@ class WhileActivity(GenericActivity):
         self.print = show
         self.sub_process = sub_process
         self.condition_event = condition_event
-        # self.postpone_start = postpone_start
-        print(self.postpone_start)
+        if not self.postpone_start:
+            self.start()
 
+    def start(self):
         main_proc = partial(
             conditional_process,
             name=self.name,
             sub_process=self.sub_process,
-            condition_event=self.condition_event,
+            condition_event=self.parse_expression(self.condition_event),
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
         )
         self.register_process(
-            main_proc=main_proc,
-            start_event=start_event,
-            # stop_event=stop_event,
-            show=show,
-            # postpone_start=self.postpone_start,
+            main_proc=main_proc, show=self.print,
         )
 
 
@@ -465,9 +516,6 @@ class ShiftAmountActivity(GenericActivity):
         amount,
         duration,
         id_="default",
-        # postpone_start=False,
-        start_event=None,
-        # stop_event=None,
         show=False,
         *args,
         **kwargs,
@@ -481,9 +529,11 @@ class ShiftAmountActivity(GenericActivity):
         self.amount = amount
         self.duration = duration
         self.id_ = id_
-        # self.postpone_start = postpone_start
         self.print = show
+        if not self.postpone_start:
+            self.start()
 
+    def start(self):
         main_proc = partial(
             shift_amount_process,
             name=self.name,
@@ -495,15 +545,9 @@ class ShiftAmountActivity(GenericActivity):
             id_=self.id_,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
-            # stop_reservation_waiting_event=self.stop_reservation_waiting_event,
-            # verbose=self.print,
         )
         self.register_process(
-            main_proc=main_proc,
-            start_event=start_event,
-            # stop_event=stop_event,
-            show=show,
-            # postpone_start=postpone_start,
+            main_proc=main_proc, show=self.print,
         )
 
 
@@ -556,7 +600,6 @@ def conditional_process(
                    the sub_processes will be executed sequentially, in the order in which they are given as long
                    as the stop_event has not occurred.
     """
-
     if activity_log.log["Message"]:
         if activity_log.log["Message"][-1] == "delayed activity started" and hasattr(
             condition_event, "__call__"
@@ -899,7 +942,7 @@ def sequential_process(
     )
     for sub_process in sub_processes:
         print(sub_process)
-        print(f"postpone_starte is {sub_process.postpone_start}")
+        print(f"postpone_start is {sub_process.postpone_start}")
         print(f"keep_resources {keep_resources}")
         if not sub_process.postpone_start:
             raise Exception(
@@ -918,6 +961,7 @@ def sequential_process(
             activity_log.id,
             core.LogState.START,
         )
+        sub_process.start()
         yield from sub_process.main_proc(activity_log=sub_process, env=env)
         activity_log.log_entry(
             f"sub process {sub_process.name}",
@@ -1427,7 +1471,7 @@ def _move_mover(mover, origin, ActivityID, engine_order=1.0, verbose=False):
             "  object:      "
             + mover.name
             + " contains: "
-            + str(mover.container.get_level(id_))
+            + str(mover.container.get_level())
         )
         print(
             "  from:        "
