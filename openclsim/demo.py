@@ -26,6 +26,7 @@ import openclsim.savesim as savesim
 simulation_start = 0
 
 my_env = simpy.Environment(initial_time=simulation_start)
+registry = {}
 
 
 # The generic site class

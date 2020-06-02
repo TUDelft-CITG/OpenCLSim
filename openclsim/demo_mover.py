@@ -21,6 +21,7 @@ import openclsim.plot as plot
 simulation_start = 0
 
 my_env = simpy.Environment(initial_time=simulation_start)
+registry = {}
 
 # The generic site class
 Site = type(
@@ -108,17 +109,20 @@ hopper = TransportProcessingResource(**data_hopper)
 #     ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
 #     )
 
-move_activity_data = { "env":my_env,  # The simpy environment defined in the first cel
-    "name":"Soil movement",  # We are moving soil
-    "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
-    "mover":hopper, 
-    "destination":to_site}
+move_activity_data = {
+    "env": my_env,  # The simpy environment defined in the first cel
+    "name": "Soil movement",  # We are moving soil
+    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+    "registry": registry,
+    "mover": hopper,
+    "destination": to_site,
+}
 
-activity = model.MoveActivity(**move_activity_data )
+activity = model.MoveActivity(**move_activity_data)
 
 my_env.run()
 
 activity.log
 log_df = pd.DataFrame(activity.log)
-data =log_df[['Message', 'ActivityState', 'Timestamp', 'Value', 'ActivityID']]
- 
+data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
+

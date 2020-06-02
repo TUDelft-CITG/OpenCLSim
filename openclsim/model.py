@@ -135,6 +135,7 @@ class GenericActivity(core.Identifiable, core.Log):
 
     def __init__(
         self,
+        registry,
         postpone_start=False,
         requested_resources=[],
         keep_resources=[],
@@ -143,6 +144,23 @@ class GenericActivity(core.Identifiable, core.Log):
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
+        if "name" not in registry:
+            registry["name"] = {}
+        if self.name not in registry["name"]:
+            l_ = []
+        else:
+            l_ = registry[self.name]
+        l_.append(self)
+        registry[self.name] = l_
+        if "id" not in registry:
+            registry["id"] = {}
+        if self.id not in registry["id"]:
+            l_ = []
+        else:
+            l_ = registry[self.id]
+        l_.append(self)
+        registry[self.id] = l_
+
         self.postpone_start = postpone_start
         self.requested_resources = requested_resources
         self.keep_resources = keep_resources

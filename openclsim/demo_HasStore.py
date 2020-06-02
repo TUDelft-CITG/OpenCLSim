@@ -148,11 +148,13 @@ hopper = TransportProcessingResource(**data_hopper)
 #     name="Soil movement",  # We are moving soil
 #     ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
 #     )
+registry = {}
 
 move_activity_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "Soil movement",  # We are moving soil
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+    "registry": registry,
     "mover": hopper,
     "destination": to_site,
 }
@@ -164,4 +166,3 @@ my_env.run()
 activity.log
 log_df = pd.DataFrame(activity.log)
 data = log_df[["Message", "Timestamp", "Value", "ActivityID"]]
-

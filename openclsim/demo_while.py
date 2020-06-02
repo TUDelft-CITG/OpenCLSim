@@ -19,6 +19,7 @@ import openclsim.plot as plot
 simulation_start = 0
 
 my_env = simpy.Environment(initial_time=simulation_start)
+registry = {}
 
 # The generic site class
 Site = type(
@@ -46,30 +47,36 @@ data_from_site = {
 }  # The actual volume of the site
 from_site = Site(**data_from_site)
 
-basic_activity_data= {"env"  : my_env,
-                      "name" : "Basic activity",
-                      "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
-                      "duration" : 14,
-                      "postpone_start": True}
+basic_activity_data = {
+    "env": my_env,
+    "name": "Basic activity",
+    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+    "registry": registry,
+    "duration": 14,
+    "postpone_start": True,
+}
 activity = model.BasicActivity(**basic_activity_data)
 
-while_data =  { "env":my_env,  # The simpy environment defined in the first cel
-    "name":"while",  # We are moving soil
-    "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5g",  # For logging purposes
+while_data = {
+    "env": my_env,  # The simpy environment defined in the first cel
+    "name": "while",  # We are moving soil
+    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",  # For logging purposes
+    "registry": registry,
     "sub_process": activity,
-    #"condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
-    #"condition_event": from_site.container.get_full_event(),
+    # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
+    # "condition_event": from_site.container.get_full_event(),
     "condition_event": from_site.container.get_empty_event(),
-    "postpone_start": False}
-while_activity = model.WhileActivity(**while_data) 
+    "postpone_start": False,
+}
+while_activity = model.WhileActivity(**while_data)
 
 
 my_env.run()
 
 log_df = pd.DataFrame(activity.log)
-data =log_df[['Message', 'ActivityState', 'Timestamp', 'Value', 'ActivityID']]
+data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 
 while_df = pd.DataFrame(while_activity.log)
-data_while = while_df[['Message', 'ActivityState', 'Timestamp', 'Value', 'ActivityID']]
+data_while = while_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 
 ee = from_site.container.get_empty_event(id_="default")

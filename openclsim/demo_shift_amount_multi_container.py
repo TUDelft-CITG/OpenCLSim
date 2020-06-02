@@ -16,6 +16,7 @@ from vo_colos.utils.object_registry import SiteRegistry
 simulation_start = 0
 
 my_env = simpy.Environment(initial_time=simulation_start)
+registry = {}
 
 # The generic site class
 Site = type(
@@ -122,6 +123,7 @@ shift_amount_activity_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "Transfer MP",  # We are moving soil
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+    "registry": registry,
     "processor": hopper,
     "origin": from_site,
     "destination": hopper,
@@ -135,6 +137,7 @@ activity = model.ShiftAmountActivity(**shift_amount_activity_data)
 # shift_amount_activity_data2 = { "env":my_env,  # The simpy environment defined in the first cel
 #     "name":"Transfer MP",  # We are moving soil
 #     "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+# "registry": registry,
 #     "processor":hopper,
 #     "origin":hopper,
 #     "destination":to_site,

@@ -19,6 +19,7 @@ import openclsim.plot as plot
 simulation_start = 0
 
 my_env = simpy.Environment(initial_time=simulation_start)
+registry = {}
 
 # The generic site class
 Site = type(
@@ -42,7 +43,7 @@ data_from_site = {
     "ID": "6dbbbdf4-4589-11e9-a501-b469212bff5d",  # For logging purposes
     "geometry": location_from_site,  # The coordinates of the project site
     "capacity": 10,  # The capacity of the site
-    "level":4,
+    "level": 4,
 }  # The actual volume of the site
 from_site = Site(**data_from_site)
 
@@ -83,44 +84,49 @@ data_hopper = {
 
 hopper = TransportProcessingResource(**data_hopper)
 
-shift_amount_activity_loading_data = { "env":my_env,  # The simpy environment defined in the first cel
-    "name":"Transfer MP",  # We are moving soil
-    "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff52",  # For logging purposes
-    "processor":hopper,
-    "origin":from_site,
-    "destination":hopper,
-    "amount":1,
-    "duration":20,
-    "postpone_start":True,
-    }
-activity = model.ShiftAmountActivity(**shift_amount_activity_loading_data )
+shift_amount_activity_loading_data = {
+    "env": my_env,  # The simpy environment defined in the first cel
+    "name": "Transfer MP",  # We are moving soil
+    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff52",  # For logging purposes
+    "registry": registry,
+    "processor": hopper,
+    "origin": from_site,
+    "destination": hopper,
+    "amount": 1,
+    "duration": 20,
+    "postpone_start": True,
+}
+activity = model.ShiftAmountActivity(**shift_amount_activity_loading_data)
 
 
-while_data =  { "env":my_env,  # The simpy environment defined in the first cel
-    "name":"while",  # We are moving soil
-    "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5g",  # For logging purposes
+while_data = {
+    "env": my_env,  # The simpy environment defined in the first cel
+    "name": "while",  # We are moving soil
+    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",  # For logging purposes
+    "registry": registry,
     "sub_process": activity,
-    #"condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
-    #"condition_event": hopper.container.get_full_event(),
+    # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
+    # "condition_event": hopper.container.get_full_event(),
     "condition_event": from_site.container.get_empty_event(),
-    "postpone_start": False}
-while_activity = model.WhileActivity(**while_data) 
+    "postpone_start": False,
+}
+while_activity = model.WhileActivity(**while_data)
 
 
 my_env.run()
 
 log_df = pd.DataFrame(hopper.log)
-data =log_df[['Message', 'ActivityState', 'Timestamp', 'Value', 'ActivityID']]
+data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 
 while_df = pd.DataFrame(while_activity.log)
-data_while = while_df[['Message', 'ActivityState', 'Timestamp', 'Value', 'ActivityID']]
+data_while = while_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 
 
 #%%
 print(f"hopper :{hopper.container.get_level()}")
 print(f"from_site :{from_site.container.get_level()}")
-#c = hopper.container
-#ee = from_site.container.get_empty_event()
+# c = hopper.container
+# ee = from_site.container.get_empty_event()
 my_env.timeout(1)
 ee = from_site.container.get_available(from_site.container.get_capacity())
 c = from_site.container

@@ -15,6 +15,7 @@ import openclsim.plot as plot
 simulation_start = 0
 
 my_env = simpy.Environment(initial_time=simulation_start)
+registry = {}
 
 # The generic site class
 Site = type(
@@ -107,6 +108,7 @@ basic_activity_data1 = {
     "env": my_env,
     "name": "Setup crane",
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff50",  # For logging purposes
+    "registry": registry,
     "duration": 14,
     "postpone_start": True,
 }
@@ -115,6 +117,7 @@ shift_amount_activity_mp_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "Transfer MP",  # We are moving soil
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff52",  # For logging purposes
+    "registry": registry,
     "processor": hopper,
     "origin": from_site,
     "destination": hopper,
@@ -128,6 +131,7 @@ basic_activity_data2 = {
     "env": my_env,
     "name": "Change crane",
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff53",  # For logging purposes
+    "registry": registry,
     "duration": 5,
     "postpone_start": True,
 }
@@ -137,6 +141,7 @@ shift_amount_activity_tp_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "Transfer TP",  # We are moving soil
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff54",  # For logging purposes
+    "registry": registry,
     "processor": hopper,
     "origin": from_site,
     "destination": hopper,
@@ -150,6 +155,7 @@ loading_sequential_activity_data = {
     "env": my_env,
     "name": "Loading process",
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff60",  # For logging purposes
+    "registry": registry,
     "sub_processes": (proc for proc in loading),
     "postpone_start": True,
 }
@@ -160,6 +166,7 @@ move_activity_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "To windpark",  # We are moving soil
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff59",  # For logging purposes
+    "registry": registry,
     "mover": hopper,
     "destination": to_site,
     "postpone_start": True,
@@ -172,6 +179,7 @@ sequential_activity_data = {
     "env": my_env,
     "name": "Single run process",
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff70",  # For logging purposes
+    "registry": registry,
     "sub_processes": (proc for proc in single_run),
 }
 activity = model.SequentialActivity(**sequential_activity_data)
