@@ -36,7 +36,7 @@ location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)  # lon, lat
 data_from_site = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "Winlocatie",  # The name of the site
-    "ID": "6dbbbdf4-4589-11e9-a501-b469212bff5b",  # For logging purposes
+    "ID": "6abbbdf4-4589-11e9-a501-b469212bff5b",  # For logging purposes
     "geometry": location_from_site,  # The coordinates of the project site
     "store_capacity": 4,
     "initials": [
@@ -51,7 +51,7 @@ location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)  # lon, lat
 data_to_site = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "Dumplocatie",  # The name of the site
-    "ID": "6dbbbdf5-4589-11e9-82b2-b469212bff5b",  # For logging purposes
+    "ID": "6abbbdf5-4589-11e9-82b2-b469212bff5b",  # For logging purposes
     "geometry": location_to_site,  # The coordinates of the project site
     "store_capacity": 4,
     "initials": [
@@ -131,7 +131,7 @@ loading.append(model.ShiftAmountActivity(**shift_amount_loading_data))
 
 shift_amount_loading_data2 = {
     "env": my_env,  # The simpy environment defined in the first cel
-    "name": "Transfer MP",  # We are moving soil
+    "name": "Transfer TP",  # We are moving soil
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff6b",  # For logging purposes
     "registry": registry,
     "processor": hopper,
@@ -154,6 +154,7 @@ sequential_activity_data = {
 }
 sequential_activity = model.SequentialActivity(**sequential_activity_data)
 
+
 while_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "loading while",  # We are moving soil
@@ -162,7 +163,9 @@ while_data = {
     "sub_process": sequential_activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
     # "condition_event": my_env.all_of(events=[to_site.container.get_full_event(id_="MP"),to_site.container.get_full_event(id_="TP")]),
-    "condition_event": hopper.container.get_full_event(id_="TP"),
+    "condition_event": [{"or":[{"type":"container", "concept": hopper, "state":"full", "id_":"TP"},
+                               {"type":"container", "concept": from_site, "state":"empty", "id_":"TP"}]
+                         }],
     "postpone_start": True,
 }
 loading_activity = model.WhileActivity(**while_data)
@@ -219,7 +222,9 @@ while_data = {
     "sub_process": sequential_activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
     # "condition_event": my_env.all_of(events=[to_site.container.get_full_event(id_="MP"),to_site.container.get_full_event(id_="TP")]),
-    "condition_event": hopper.container.get_empty_event(id_="TP"),
+    "condition_event": [{"or":[{"type":"container", "concept": to_site, "state":"full", "id_":"TP"},
+                               {"type":"container", "concept": hopper, "state":"empty", "id_":"TP"}]
+                         }],
     "postpone_start": True,
 }
 unloading_activity = model.WhileActivity(**while_data)
@@ -275,7 +280,7 @@ while_data = {
     "sub_process": activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
     # "condition_event": my_env.all_of(events=[to_site.container.get_full_event(id_="MP"),to_site.container.get_full_event(id_="TP")]),
-    "condition_event": to_site.container.get_full_event(id_="TP"),
+    "condition_event": [{"type":"container", "concept": to_site, "state":"full", "id_":"TP"}],
     "postpone_start": False,
 }
 while_activity = model.WhileActivity(**while_data)

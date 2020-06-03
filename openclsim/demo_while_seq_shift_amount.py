@@ -111,47 +111,47 @@ shift_amount_activity_loading_data = {
     "processor": hopper,
     "origin": from_site,
     "destination": hopper,
-    "amount": 4,
+    "amount": 1,
     "duration": 10,
     "postpone_start": True,
 }
 single_run.append(model.ShiftAmountActivity(**shift_amount_activity_loading_data))
 
-move_activity_to_site_data = {
-    "env": my_env,  # The simpy environment defined in the first cel
-    "name": "sailing filled",  # We are moving soil
-    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
-    "registry": registry,
-    "mover": hopper,
-    "destination": to_site,
-    "postpone_start": True,
-}
-single_run.append(model.MoveActivity(**move_activity_to_site_data))
+# move_activity_to_site_data = {
+#     "env": my_env,  # The simpy environment defined in the first cel
+#     "name": "sailing filled",  # We are moving soil
+#     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+#     "registry": registry,
+#     "mover": hopper,
+#     "destination": to_site,
+#     "postpone_start": True,
+# }
+# single_run.append(model.MoveActivity(**move_activity_to_site_data))
 
-shift_amount_activity_unloading_data = {
-    "env": my_env,  # The simpy environment defined in the first cel
-    "name": "Transfer MP",  # We are moving soil
-    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff54",  # For logging purposes
-    "registry": registry,
-    "processor": hopper,
-    "origin": hopper,
-    "destination": to_site,
-    "amount": 4,
-    "duration": 10,
-    "postpone_start": True,
-}
-single_run.append(model.ShiftAmountActivity(**shift_amount_activity_unloading_data))
+# shift_amount_activity_unloading_data = {
+#     "env": my_env,  # The simpy environment defined in the first cel
+#     "name": "Transfer MP",  # We are moving soil
+#     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff54",  # For logging purposes
+#     "registry": registry,
+#     "processor": hopper,
+#     "origin": hopper,
+#     "destination": to_site,
+#     "amount": 4,
+#     "duration": 10,
+#     "postpone_start": True,
+# }
+# single_run.append(model.ShiftAmountActivity(**shift_amount_activity_unloading_data))
 
-move_activity_to_harbor_data = {
-    "env": my_env,  # The simpy environment defined in the first cel
-    "name": "sailing empty",  # We are moving soil
-    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5d",  # For logging purposes
-    "registry": registry,
-    "mover": hopper,
-    "destination": from_site,
-    "postpone_start": True,
-}
-single_run.append(model.MoveActivity(**move_activity_to_harbor_data))
+# move_activity_to_harbor_data = {
+#     "env": my_env,  # The simpy environment defined in the first cel
+#     "name": "sailing empty",  # We are moving soil
+#     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5d",  # For logging purposes
+#     "registry": registry,
+#     "mover": hopper,
+#     "destination": from_site,
+#     "postpone_start": True,
+# }
+# single_run.append(model.MoveActivity(**move_activity_to_harbor_data))
 
 sequential_activity_data = {
     "env": my_env,
@@ -163,7 +163,7 @@ sequential_activity_data = {
 }
 activity = model.SequentialActivity(**sequential_activity_data)
 
-expr = [{"type":"container", "concept": to_site, "state":"full"}]
+expr = [{"type":"container", "concept": hopper, "state":"full"}]
 while_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "while",  # We are moving soil

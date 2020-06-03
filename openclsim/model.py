@@ -212,10 +212,10 @@ class GenericActivity(core.Identifiable, core.Log):
                 keep_resources=self.keep_resources,
             )
         self.main_proc = main_proc
-        # if not self.postpone_start:
-        self.main_process = self.env.process(
-            self.main_proc(activity_log=self, env=self.env)
-        )
+        if not self.postpone_start:
+            self.main_process = self.env.process(
+                self.main_proc(activity_log=self, env=self.env)
+            )
 
     def parse_expression(self, expr):
         res = []
@@ -233,7 +233,8 @@ class GenericActivity(core.Identifiable, core.Log):
                 elif "or" in key_val:
                     partial_res = self.parse_expression(key_val["or"])
                     res.append(
-                        self.env.any_of(events=[event() for event in partial_res])
+                        # self.env.any_of(events=[event() for event in partial_res])
+                        self.env.any_of(events=partial_res)
                     )
                 elif "type" in key_val:
                     if key_val["type"] == "container":
@@ -386,6 +387,7 @@ class BasicActivity(GenericActivity):
         self.print = show
         self.duration = duration
         self.additional_logs = additional_logs
+        print(f"BasicActivity {self.name} - postpone_start {self.postpone_start}")
         if not self.postpone_start:
             self.start()
 
@@ -469,6 +471,10 @@ class WhileActivity(GenericActivity):
 
         self.print = show
         self.sub_process = sub_process
+        if not self.sub_process.postpone_start:
+            raise Exception(
+                f"In While activity {self.name} the sub_process must have postpone_start=True"
+            )
         self.condition_event = condition_event
         if not self.postpone_start:
             self.start()
@@ -686,7 +692,7 @@ def basic_process(
                    the sub_processes will be executed sequentially, in the order in which they are given as long
                    as the stop_event has not occurred.
     """
-
+    print(f"basic process {name} start")
     activity_log.log_entry(
         name, env.now, duration, None, activity_log.id, core.LogState.START
     )
@@ -705,6 +711,7 @@ def basic_process(
             log_item.log_entry(
                 name, env.now, duration, None, activity_log.id, core.LogState.STOP
             )
+    print(f"basic process {name} end")
 
 
 def _request_resource_if_available(
@@ -965,7 +972,14 @@ def sequential_process(
             core.LogState.START,
         )
         sub_process.start()
+        print("sequential before yield from")
         yield from sub_process.main_proc(activity_log=sub_process, env=env)
+        print("sequential after yield from")
+        # work around for the event evaluation
+        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+        # which will result in triggered but not processed events to be taken care of before further progressing
+        # maybe there is a better way of doing it, but his option works for now.
+        yield env.timeout(0)
         activity_log.log_entry(
             f"sub process {sub_process.name}",
             env.now,
