@@ -378,13 +378,14 @@ class BasicActivity(GenericActivity):
     """
 
     def __init__(
-        self, duration, show=False, *args, **kwargs,
+        self, duration, additional_logs=[], show=False, *args, **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
         self.print = show
         self.duration = duration
+        self.additional_logs = additional_logs
         if not self.postpone_start:
             self.start()
 
@@ -393,6 +394,7 @@ class BasicActivity(GenericActivity):
             basic_process,
             name=self.name,
             duration=self.duration,
+            additional_logs=self.additional_logs,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
         )
@@ -632,6 +634,7 @@ def conditional_process(
             activity_log.id,
             core.LogState.START,
         )
+        sub_process.start()
         yield from sub_process.main_proc(activity_log=activity_log, env=env)
         activity_log.log_entry(
             f"sub process {sub_process.name}",
@@ -1007,11 +1010,14 @@ def move_process(
         core.LogState.START,
     )
 
+    print("Mover_move before mover resource request")
     with mover.resource.request() as my_mover_turn:
         yield my_mover_turn
+        print("Mover_move after mover resource request")
 
         mover.ActivityID = activity_log.id
         yield from mover.move(destination=destination, engine_order=engine_order)
+        print("Mover_move after move")
 
     activity_log.log_entry(
         "move activity {} of {} to {}".format(name, mover.name, destination.name),

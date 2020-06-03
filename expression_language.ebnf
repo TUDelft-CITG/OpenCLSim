@@ -1,0 +1,13 @@
+ExpressionLanguage ::= '[' Expression ']'
+Expression ::= AndExpression | OrExpression | AtomicExpression
+AndExpression ::= '{ "and": [' Expression (',' Expression)* ']}'
+OrExpression ::= '{ "or": [' Expression (',' Expression)* ']}'
+AtomicExpression ::= '{' (True | False | ContainerEvent | ActivityEvent) '}'
+True ::= '"type":"true"'
+False ::= '"type":"false"'
+ContainerEvent ::= '"type":"container", "concept":' Object (',"id_":' Name)? ', "state":' ContainerState
+ContainerState ::= '"full"' | '"empty"'
+ActivityEvent ::= '"type":"activity", '('"ID":' ID | '"name":' Name) ', "state":' ActivityState
+ActivityState ::= '"done"'
+ID ::= String
+Name ::= String

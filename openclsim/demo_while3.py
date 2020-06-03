@@ -106,7 +106,8 @@ shift_amount_activity_loading_data = {
 }
 activity = model.ShiftAmountActivity(**shift_amount_activity_loading_data)
 
-
+#expr = [{"type":"container", "concept": from_site, "state":"empty", "id_":"MP"}]
+expr = [{"type":"container", "concept": hopper, "state":"full", "id_":"MP"}]
 while_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "while",  # We are moving soil
@@ -115,7 +116,8 @@ while_data = {
     "sub_process": activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
     # "condition_event": hopper.container.get_full_event(id_="MP"),
-    "condition_event": from_site.container.get_empty_event(id_="MP"),
+    #"condition_event": from_site.container.get_empty_event(id_="MP"),
+    "condition_event": expr,
     "postpone_start": False,
 }
 while_activity = model.WhileActivity(**while_data)

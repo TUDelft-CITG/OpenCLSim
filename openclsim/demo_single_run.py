@@ -119,7 +119,7 @@ single_run.append(model.ShiftAmountActivity(**shift_amount_activity_loading_data
 
 move_activity_to_site_data = {
     "env": my_env,  # The simpy environment defined in the first cel
-    "name": "sailing filler",  # We are moving soil
+    "name": "sailing filled",  # We are moving soil
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
     "registry": registry,
     "mover": hopper,
@@ -130,7 +130,7 @@ single_run.append(model.MoveActivity(**move_activity_to_site_data))
 
 shift_amount_activity_unloading_data = {
     "env": my_env,  # The simpy environment defined in the first cel
-    "name": "Transfer TP",  # We are moving soil
+    "name": "Transfer MP",  # We are moving soil
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff54",  # For logging purposes
     "registry": registry,
     "processor": hopper,
@@ -159,21 +159,23 @@ sequential_activity_data = {
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff60",  # For logging purposes
     "registry": registry,
     "sub_processes": single_run,
-    "postpone_start": True,
+    "postpone_start": False,
 }
 activity = model.SequentialActivity(**sequential_activity_data)
 
-while_data = {
-    "env": my_env,  # The simpy environment defined in the first cel
-    "name": "while",  # We are moving soil
-    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",  # For logging purposes
-    "registry": registry,
-    "sub_process": activity,
-    # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
-    "condition_event": to_site.container.full_event,
-    "postpone_start": False,
-}
-while_activity = model.WhileActivity(**while_data)
+# expr = [{"type":"container", "concept": to_site, "state":"full"}]
+# while_data = {
+#     "env": my_env,  # The simpy environment defined in the first cel
+#     "name": "while",  # We are moving soil
+#     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",  # For logging purposes
+#     "registry": registry,
+#     "sub_process": activity,
+#     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
+#     #"condition_event": to_site.container.full_event,
+#     "condition_event": expr,
+#     "postpone_start": False,
+# }
+# while_activity = model.WhileActivity(**while_data)
 
 my_env.run()
 
@@ -181,9 +183,13 @@ log_df = pd.DataFrame(hopper.log)
 data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 data = data.drop_duplicates()
 
-while_df = pd.DataFrame(while_activity.log)
-data_while = while_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
-data_while = data_while.drop_duplicates()
+# while_df = pd.DataFrame(while_activity.log)
+# data_while = while_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
+# data_while = data_while.drop_duplicates()
+
+seq_log_df = pd.DataFrame(activity.log)
+data_seq = seq_log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
+data_seq = data_seq.drop_duplicates()
 
 basic = []
 for proc in single_run:
