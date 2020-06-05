@@ -24,7 +24,7 @@ Site = type(
         core.Identifiable,  # Give it a name
         core.Log,  # Allow logging of all discrete events
         core.Locatable,  # Add coordinates to extract distance information and visualize
-        core.HasContainer,  # Add information on the material available at the site
+         core.HasContainer,  # Add information on the material available at the site
         core.HasResource,
     ),  # Add information on serving equipment
     {},
@@ -135,12 +135,12 @@ activity.parse_expression(expr)
 my_env.run()
 
 log_df = pd.DataFrame(hopper.log)
-data = log_df[["Message", "Timestamp", "Value", "ActivityID"]]
+data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 
 log2_df = pd.DataFrame(activity.log)
-data2 = log2_df[["Message", "Timestamp", "Value", "ActivityID"]]
+data2 = log2_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 log3_df = pd.DataFrame(activity2.log)
-data3 = log3_df[["Message", "Timestamp", "Value", "ActivityID"]]
+data3 = log3_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 
 
 # %%

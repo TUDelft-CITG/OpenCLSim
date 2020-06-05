@@ -1954,7 +1954,8 @@ class LogState(Enum):
 
     START = 1
     STOP = 2
-    WAIT = 3
+    WAIT_START = 3
+    WAIT_STOP = 4
     UNKNOWN = -1
 
 

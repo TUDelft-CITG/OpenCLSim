@@ -138,7 +138,7 @@ class GenericActivity(core.Identifiable, core.Log):
         registry,
         postpone_start=False,
         start_event=None,
-        requested_resources=[],
+        requested_resources={},
         keep_resources=[],
         *args,
         **kwargs,
@@ -167,19 +167,26 @@ class GenericActivity(core.Identifiable, core.Log):
         self.start_event = start_event
         self.requested_resources = requested_resources
         self.keep_resources = keep_resources
+        self.done_event = self.env.event()
 
     def register_process(
-        self, main_proc, show=False,
+        self, main_proc, show=False, additional_logs=[],
     ):
+        # replace the done event
+        self.done_event = self.env.event()
+
         start_event = None
         if self.start_event != None:
+            print(f"start event expression {self.start_event}")
             start_event = self.parse_expression(self.start_event)
+            print(f"start event {start_event}")
         start_event_instance = start_event
         (
             start_event
             if start_event is None or isinstance(start_event, simpy.Event)
             else self.env.all_of(events=start_event)
         )
+        print(f"start event instance {start_event_instance}")
 
         # if type(stop_event) == list:
         #    stop_event = self.env.any_of(events=stop_event)
@@ -203,11 +210,12 @@ class GenericActivity(core.Identifiable, core.Log):
         #    requested_resources=self.requested_resources,
         #    keep_resources=self.keep_resources,
         # )
-        if start_event is not None:
+        if start_event_instance is not None:
             main_proc = partial(
                 delayed_process,
                 start_event=start_event_instance,
                 sub_processes=[main_proc],
+                additional_logs=additional_logs,
                 requested_resources=self.requested_resources,
                 keep_resources=self.keep_resources,
             )
@@ -227,15 +235,24 @@ class GenericActivity(core.Identifiable, core.Log):
             if isinstance(key_val, dict):
                 if "and" in key_val:
                     partial_res = self.parse_expression(key_val["and"])
+                    self.env.timeout(0)
                     res.append(
-                        self.env.all_of(events=[event() for event in partial_res])
+                        # self.env.all_of(events=[event() for event in partial_res])
+                        self.env.all_of(events=partial_res)
                     )
+                    self.env.timeout(0)
                 elif "or" in key_val:
                     partial_res = self.parse_expression(key_val["or"])
+                    self.env.timeout(0)
+                    for item in partial_res:
+                        print(
+                            f"evaluate event {item} as triggered {item.triggered} and processed {item.processed}"
+                        )
                     res.append(
                         # self.env.any_of(events=[event() for event in partial_res])
                         self.env.any_of(events=partial_res)
                     )
+                    self.env.timeout(0)
                 elif "type" in key_val:
                     if key_val["type"] == "container":
                         id_ = None
@@ -286,16 +303,16 @@ class GenericActivity(core.Identifiable, core.Log):
                             )
                         if isinstance(activity_, list):
                             if len(activity_) == 1:
-                                res.append(activity_[0].main_process)
+                                res.append(activity_[0].get_done_event())
                             else:
                                 res.extend(
                                     [
-                                        activity_item.main_process
+                                        activity_item.get_done_event()
                                         for activity_item in activity_
                                     ]
                                 )
                         else:
-                            res.append(activity_[0].main_process)
+                            res.append(activity_[0].get_done_event())
                 else:
                     raise Exception(
                         f"Logical AND can not have an additional key next to it. {expr}"
@@ -305,6 +322,22 @@ class GenericActivity(core.Identifiable, core.Log):
         elif len(res) == 1:
             return res[0]
         return res
+
+    def get_done_event(self):
+        if self.postpone_start:
+            return self.done_event
+        elif hasattr(self, "main_process"):
+            return self.main_process
+        else:
+            return self.done_event
+
+    def call_main_proc(self, activity_log, env):
+        res = self.main_proc(activity_log=activity_log, env=env)
+        return res
+
+    def end(self):
+        print("Activity end()")
+        self.done_event.succeed()
 
 
 class MoveActivity(GenericActivity):
@@ -387,7 +420,7 @@ class BasicActivity(GenericActivity):
         self.print = show
         self.duration = duration
         self.additional_logs = additional_logs
-        print(f"BasicActivity {self.name} - postpone_start {self.postpone_start}")
+        # print(f"BasicActivity {self.name} - postpone_start {self.postpone_start}")
         if not self.postpone_start:
             self.start()
 
@@ -401,7 +434,7 @@ class BasicActivity(GenericActivity):
             keep_resources=self.keep_resources,
         )
         self.register_process(
-            main_proc=main_proc, show=self.print,
+            main_proc=main_proc, show=self.print, additional_logs=self.additional_logs
         )
 
 
@@ -470,6 +503,7 @@ class WhileActivity(GenericActivity):
         """Initialization"""
 
         self.print = show
+        print(f"while Activity keep_resources {self.keep_resources}")
         self.sub_process = sub_process
         if not self.sub_process.postpone_start:
             raise Exception(
@@ -542,6 +576,8 @@ class ShiftAmountActivity(GenericActivity):
             self.start()
 
     def start(self):
+        print(f"SHift amount Activity keep_resources {self.keep_resources}")
+
         main_proc = partial(
             shift_amount_process,
             name=self.name,
@@ -560,7 +596,13 @@ class ShiftAmountActivity(GenericActivity):
 
 
 def delayed_process(
-    activity_log, env, start_event, sub_processes, requested_resources, keep_resources
+    activity_log,
+    env,
+    start_event,
+    sub_processes,
+    requested_resources,
+    keep_resources,
+    additional_logs=[],
 ):
     """"Returns a generator which can be added as a process to a simpy.Environment. In the process the given
     sub_processes will be executed after the given start_event occurs.
@@ -575,13 +617,42 @@ def delayed_process(
     """
     if hasattr(start_event, "__call__"):
         start_event = start_event()
-
-    yield start_event
     activity_log.log_entry(
-        "delayed activity", env.now, -1, None, activity_log.id, core.LogState.START
+        activity_log.name, env.now, -1, None, activity_log.id, core.LogState.WAIT_START,
     )
-
+    if isinstance(additional_logs, list) and len(additional_logs) > 0:
+        for log in additional_logs:
+            for sub_process in sub_processes:
+                log.log_entry(
+                    activity_log.name,
+                    env.now,
+                    -1,
+                    None,
+                    activity_log.id,
+                    core.LogState.WAIT_START,
+                )
+    print(f"delayed process : {start_event}")
+    yield start_event
+    print(f"delayed process : after yield {start_event.processed}")
+    activity_log.log_entry(
+        activity_log.name, env.now, -1, None, activity_log.id, core.LogState.WAIT_STOP
+    )
+    if isinstance(additional_logs, list) and len(additional_logs) > 0:
+        for log in additional_logs:
+            for sub_process in sub_processes:
+                log.log_entry(
+                    activity_log.name,
+                    env.now,
+                    -1,
+                    None,
+                    activity_log.id,
+                    core.LogState.WAIT_STOP,
+                )
+    # for sub_process in sub_processes:
+    #    sub_process.start()
+    #    yield from sub_process.call_main_proc(activity_log=activity_log, env=env)
     for sub_process in sub_processes:
+        print(f"delayed process start subprocess {sub_process}")
         yield from sub_process(activity_log=activity_log, env=env)
 
 
@@ -641,7 +712,8 @@ def conditional_process(
             core.LogState.START,
         )
         sub_process.start()
-        yield from sub_process.main_proc(activity_log=activity_log, env=env)
+        yield from sub_process.call_main_proc(activity_log=activity_log, env=env)
+        sub_process.end()
         activity_log.log_entry(
             f"sub process {sub_process.name}",
             env.now,
@@ -658,6 +730,8 @@ def conditional_process(
         print(
             f"condition event triggered: {condition_event.triggered} {condition_event.processed} round {ii}"
         )
+        print(f"while loop requested_resources {requested_resources}")
+        print(f"while loop keep_resources {keep_resources}")
         ii = ii + 1
     activity_log.log_entry(
         f"conditional process {name}",
@@ -692,7 +766,7 @@ def basic_process(
                    the sub_processes will be executed sequentially, in the order in which they are given as long
                    as the stop_event has not occurred.
     """
-    print(f"basic process {name} start")
+    # print(f"basic process {name} start")
     activity_log.log_entry(
         name, env.now, duration, None, activity_log.id, core.LogState.START
     )
@@ -711,7 +785,7 @@ def basic_process(
             log_item.log_entry(
                 name, env.now, duration, None, activity_log.id, core.LogState.STOP
             )
-    print(f"basic process {name} end")
+    # print(f"basic process {name} end")
 
 
 def _request_resource_if_available(
@@ -780,10 +854,10 @@ def shift_amount_process(
     origin,
     destination,
     name,
-    requested_resources,
-    keep_resources,
     duration,
     amount=None,
+    requested_resources={},
+    keep_resources=[],
     id_="default",
     engine_order=1.0,
     stop_reservation_waiting_event=None,
@@ -802,7 +876,7 @@ def shift_amount_process(
 
     verbose = True
     filling = 1.0
-    resource_requests = {}
+    resource_requests = requested_resources
     print(f"start : {resource_requests}")
 
     # Required for logging from json
@@ -824,6 +898,8 @@ def shift_amount_process(
         # destinations = vrachtbrief[vrachtbrief["Type"] == "Destination"]
         yield from _request_resource(resource_requests, destination.resource)
         print(f"destination request : {resource_requests}")
+        print(f"shift amount process keep_resources {keep_resources}")
+
         # for i in origins.index:
         #    origin = origins.loc[i, "ID"]
         #    amount = float(origins.loc[i, "Amount"])
@@ -865,13 +941,14 @@ def shift_amount_process(
 
         # release the unloader, destination and mover requests
         # print("_release_resource")
-        _release_resource(resource_requests, destination.resource)
+        print(f"keep resources {keep_resources}")
+        _release_resource(resource_requests, destination.resource, keep_resources)
         print(f"release destination : {resource_requests}")
         if origin.resource in resource_requests:
-            _release_resource(resource_requests, origin.resource)
+            _release_resource(resource_requests, origin.resource, keep_resources)
         print(f"released origin : {resource_requests}")
         if processor.resource in resource_requests:
-            _release_resource(resource_requests, processor.resource)
+            _release_resource(resource_requests, processor.resource, keep_resources)
         print(f"released processor : {resource_requests}")
         # print("done")
     # else:
@@ -932,7 +1009,7 @@ def shift_amount_process(
         raise RuntimeError(
             f"Attempting to shift content from an empty origin or to a full destination. ({all_amounts})"
         )
-    # print(resource_requests)
+    print(resource_requests)
 
 
 def sequential_process(
@@ -952,7 +1029,7 @@ def sequential_process(
     )
     for sub_process in sub_processes:
         print(sub_process)
-        print(f"postpone_start is {sub_process.postpone_start}")
+        # print(f"postpone_start is {sub_process.postpone_start}")
         print(f"keep_resources {keep_resources}")
         if not sub_process.postpone_start:
             raise Exception(
@@ -972,9 +1049,10 @@ def sequential_process(
             core.LogState.START,
         )
         sub_process.start()
-        print("sequential before yield from")
-        yield from sub_process.main_proc(activity_log=sub_process, env=env)
-        print("sequential after yield from")
+        # print("sequential before yield from")
+        yield from sub_process.call_main_proc(activity_log=sub_process, env=env)
+        sub_process.end()
+        # print("sequential after yield from")
         # work around for the event evaluation
         # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
         # which will result in triggered but not processed events to be taken care of before further progressing
@@ -1333,9 +1411,14 @@ def _request_resource(requested_resources, resource):
 def _release_resource(requested_resources, resource, kept_resource=None):
     """Releases the given resource, provided it does not equal the kept_resource parameter.
     Deletes the released resource from the requested_resources dictionary."""
-    if resource != kept_resource:
-        resource.release(requested_resources[resource])
-        del requested_resources[resource]
+    if kept_resource != None:
+        if isinstance(kept_resource, list):
+            if resource in [item.resource for item in kept_resource]:
+                return
+        elif resource == kept_resource.resource or resource == kept_resource:
+            return
+    resource.release(requested_resources[resource])
+    del requested_resources[resource]
 
 
 def _shift_amount(

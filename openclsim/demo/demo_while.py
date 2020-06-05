@@ -57,7 +57,8 @@ basic_activity_data = {
 }
 activity = model.BasicActivity(**basic_activity_data)
 
-expr = [{"type":"container", "concept": from_site, "state":"empty"}]
+#expr = [{"type":"container", "concept": from_site, "state":"empty"}]
+expr = [{"type":"activity", "name": "while", "state":"done"}]
 registry
 
 while_data = {
@@ -75,7 +76,7 @@ while_data = {
 while_activity = model.WhileActivity(**while_data)
 
 
-my_env.run()
+my_env.run(until=100)
 
 log_df = pd.DataFrame(activity.log)
 data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
