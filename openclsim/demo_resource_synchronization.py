@@ -120,7 +120,7 @@ shift_amount_activity_loading_data1 = {
     "amount": 1,
     "duration": 20,
     "postpone_start": True,
-    #"keep_resources":[from_site],
+    "keep_resources":[from_site],
     "requested_resources": requested_resources1,
 }
 activity1 = model.ShiftAmountActivity(**shift_amount_activity_loading_data1)
