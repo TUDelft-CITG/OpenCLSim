@@ -120,7 +120,7 @@ shift_amount_activity_loading_data1 = {
     "amount": 1,
     "duration": 20,
     "postpone_start": True,
-    "keep_resources":[from_site],
+    "keep_resources": [from_site],
     "requested_resources": requested_resources1,
 }
 activity1 = model.ShiftAmountActivity(**shift_amount_activity_loading_data1)
@@ -142,9 +142,14 @@ while_data1 = {
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",  # For logging purposes
     "registry": registry,
     "sub_process": seq_activity1,
-    "condition_event": [{"or":[{"type":"container", "concept": hopper1, "state":"full"},
-               {"type":"container", "concept": from_site, "state":"empty"}]
-         }],
+    "condition_event": [
+        {
+            "or": [
+                {"type": "container", "concept": hopper1, "state": "full"},
+                {"type": "container", "concept": from_site, "state": "empty"},
+            ]
+        }
+    ],
     "postpone_start": False,
     "requested_resources": requested_resources1,
 }
@@ -174,16 +179,21 @@ sequential_activity_data2 = {
 }
 seq_activity2 = model.SequentialActivity(**sequential_activity_data2)
 
-expr = [{"type":"container", "concept": from_site, "state":"empty"}]
+expr = [{"type": "container", "concept": from_site, "state": "empty"}]
 while_data2 = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "while2",  # We are moving soil
     "ID": "5dbbbdf7-4589-11e9-bf3b-b469212bff5g",  # For logging purposes
     "registry": registry,
     "sub_process": seq_activity2,
-    "condition_event": [{"or":[{"type":"container", "concept": hopper2, "state":"full"},
-               {"type":"container", "concept": from_site, "state":"empty"}]
-         }],
+    "condition_event": [
+        {
+            "or": [
+                {"type": "container", "concept": hopper2, "state": "full"},
+                {"type": "container", "concept": from_site, "state": "empty"},
+            ]
+        }
+    ],
     "postpone_start": False,
 }
 while_activity2 = model.WhileActivity(**while_data2)

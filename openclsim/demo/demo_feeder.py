@@ -148,7 +148,7 @@ def vessel_process(vessel):
         "postpone_start": True,
     }
     single_run.append(model.MoveActivity(**move_activity_to_harbor_data))
-    
+
     shift_amount_loading_data = {
         "env": my_env,  # The simpy environment defined in the first cel
         "name": "Load MP",  # We are moving soil
@@ -163,7 +163,7 @@ def vessel_process(vessel):
         "postpone_start": True,
     }
     single_run.append(model.ShiftAmountActivity(**shift_amount_loading_data))
-    
+
     move_activity_to_site_data = {
         "env": my_env,  # The simpy environment defined in the first cel
         "name": "sailing filled",  # We are moving soil
@@ -174,7 +174,7 @@ def vessel_process(vessel):
         "postpone_start": True,
     }
     single_run.append(model.MoveActivity(**move_activity_to_site_data))
-    
+
     shift_amount_unloading_data = {
         "env": my_env,  # The simpy environment defined in the first cel
         "name": "Transfer MP",  # We are moving soil
@@ -187,10 +187,10 @@ def vessel_process(vessel):
         "duration": 120,
         "id_": "MP",
         "postpone_start": True,
-        "start_event": [{"type":"activity", "name": "Sail transit" , "state":"done"}],
+        "start_event": [{"type": "activity", "name": "Sail transit", "state": "done"}],
     }
     single_run.append(model.ShiftAmountActivity(**shift_amount_unloading_data))
-    
+
     sequential_activity_data3 = {
         "env": my_env,
         "name": "Single run process",
@@ -200,7 +200,7 @@ def vessel_process(vessel):
         "postpone_start": True,
     }
     activity = model.SequentialActivity(**sequential_activity_data3)
-    
+
     while_data = {
         "env": my_env,  # The simpy environment defined in the first cel
         "name": "single run while",  # We are moving soil
@@ -209,7 +209,9 @@ def vessel_process(vessel):
         "sub_process": activity,
         # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
         # "condition_event": my_env.all_of(events=[to_site.container.get_full_event(id_="MP"),to_site.container.get_full_event(id_="TP")]),
-        "condition_event": [{"type":"container", "concept": from_site, "state":"empty", "id_":"MP"}],
+        "condition_event": [
+            {"type": "container", "concept": from_site, "state": "empty", "id_": "MP"}
+        ],
         "postpone_start": False,
     }
     while_activity = model.WhileActivity(**while_data)
@@ -232,25 +234,29 @@ move_activity_to_site_data = {
 installer_run.append(model.MoveActivity(**move_activity_to_site_data))
 
 installer_run2 = []
-basic_activity_data= {"env"  : my_env,
-                      "name" : "Sail transit",
-                      "registry": registry,
-                      "ID":str(uuid.uuid4()),  # For logging purposes
-                      "duration" : 30,
-                      "additional_logs": [installer],
-                      "postpone_start": True,
-                      }
+basic_activity_data = {
+    "env": my_env,
+    "name": "Sail transit",
+    "registry": registry,
+    "ID": str(uuid.uuid4()),  # For logging purposes
+    "duration": 30,
+    "additional_logs": [installer],
+    "postpone_start": True,
+}
 installer_run2.append(model.BasicActivity(**basic_activity_data))
 
-basic_activity_data33= {"env"  : my_env,
-                      "name" : "Prepare installation",
-                      "registry": registry,
-                      "ID":str(uuid.uuid4()),  # For logging purposes
-                      "duration" : 60,
-                      "additional_logs": [installer],
-                      "postpone_start": True,
-                      "start_event": [{"type":"activity", "name": "Single run process" , "state":"done"}],
-                      }
+basic_activity_data33 = {
+    "env": my_env,
+    "name": "Prepare installation",
+    "registry": registry,
+    "ID": str(uuid.uuid4()),  # For logging purposes
+    "duration": 60,
+    "additional_logs": [installer],
+    "postpone_start": True,
+    "start_event": [
+        {"type": "activity", "name": "Single run process", "state": "done"}
+    ],
+}
 installer_run2.append(model.BasicActivity(**basic_activity_data33))
 
 shift_amount_unloading_data2 = {
@@ -286,7 +292,9 @@ while_data = {
     "sub_process": activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
     # "condition_event": my_env.all_of(events=[to_site.container.get_full_event(id_="MP"),to_site.container.get_full_event(id_="TP")]),
-    "condition_event": [{"type":"container", "concept": to_site, "state":"full", "id_":"MP"}],
+    "condition_event": [
+        {"type": "container", "concept": to_site, "state": "full", "id_": "MP"}
+    ],
     "postpone_start": True,
 }
 installer_run.append(model.WhileActivity(**while_data))
@@ -309,18 +317,19 @@ my_env.run()
 log_df = pd.DataFrame(vessel.log)
 data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 data = data.drop_duplicates()
-#data = data[data['ActivityState']=='START']
+# data = data[data['ActivityState']=='START']
 
 log_df = pd.DataFrame(installer.log)
 data2 = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 data2 = data2.drop_duplicates()
-#data2 = data2[data2['ActivityState']=='START']
+# data2 = data2[data2['ActivityState']=='START']
 
 
 #%%
 vessel_proc.main_process
-ee = vessel_proc.parse_expression([{'type': 'activity', 'name': 'Transfer MP', 'state': 'done'}])
-key_val = {'type': 'activity', 'name': 'Transfer MP', 'state': 'done'}
+ee = vessel_proc.parse_expression(
+    [{"type": "activity", "name": "Transfer MP", "state": "done"}]
+)
+key_val = {"type": "activity", "name": "Transfer MP", "state": "done"}
 "name" in key_val
 ee = my_env.event()
-

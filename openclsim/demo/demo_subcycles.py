@@ -163,9 +163,19 @@ while_data = {
     "sub_process": sequential_activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
     # "condition_event": my_env.all_of(events=[to_site.container.get_full_event(id_="MP"),to_site.container.get_full_event(id_="TP")]),
-    "condition_event": [{"or":[{"type":"container", "concept": hopper, "state":"full", "id_":"TP"},
-                               {"type":"container", "concept": from_site, "state":"empty", "id_":"TP"}]
-                         }],
+    "condition_event": [
+        {
+            "or": [
+                {"type": "container", "concept": hopper, "state": "full", "id_": "TP"},
+                {
+                    "type": "container",
+                    "concept": from_site,
+                    "state": "empty",
+                    "id_": "TP",
+                },
+            ]
+        }
+    ],
     "postpone_start": True,
 }
 loading_activity = model.WhileActivity(**while_data)
@@ -222,9 +232,14 @@ while_data = {
     "sub_process": sequential_activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
     # "condition_event": my_env.all_of(events=[to_site.container.get_full_event(id_="MP"),to_site.container.get_full_event(id_="TP")]),
-    "condition_event": [{"or":[{"type":"container", "concept": to_site, "state":"full", "id_":"TP"},
-                               {"type":"container", "concept": hopper, "state":"empty", "id_":"TP"}]
-                         }],
+    "condition_event": [
+        {
+            "or": [
+                {"type": "container", "concept": to_site, "state": "full", "id_": "TP"},
+                {"type": "container", "concept": hopper, "state": "empty", "id_": "TP"},
+            ]
+        }
+    ],
     "postpone_start": True,
 }
 unloading_activity = model.WhileActivity(**while_data)
@@ -280,7 +295,9 @@ while_data = {
     "sub_process": activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
     # "condition_event": my_env.all_of(events=[to_site.container.get_full_event(id_="MP"),to_site.container.get_full_event(id_="TP")]),
-    "condition_event": [{"type":"container", "concept": to_site, "state":"full", "id_":"TP"}],
+    "condition_event": [
+        {"type": "container", "concept": to_site, "state": "full", "id_": "TP"}
+    ],
     "postpone_start": False,
 }
 while_activity = model.WhileActivity(**while_data)

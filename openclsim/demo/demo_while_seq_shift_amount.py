@@ -163,7 +163,7 @@ sequential_activity_data = {
 }
 activity = model.SequentialActivity(**sequential_activity_data)
 
-expr = [{"type":"container", "concept": hopper, "state":"full"}]
+expr = [{"type": "container", "concept": hopper, "state": "full"}]
 while_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "while",  # We are moving soil
@@ -171,7 +171,7 @@ while_data = {
     "registry": registry,
     "sub_process": activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
-    #"condition_event": to_site.container.full_event,
+    # "condition_event": to_site.container.full_event,
     "condition_event": expr,
     "postpone_start": False,
 }

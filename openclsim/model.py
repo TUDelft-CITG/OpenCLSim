@@ -169,9 +169,7 @@ class GenericActivity(core.Identifiable, core.Log):
         self.keep_resources = keep_resources
         self.done_event = self.env.event()
 
-    def register_process(
-        self, main_proc, show=False, additional_logs=[],
-    ):
+    def register_process(self, main_proc, show=False, additional_logs=[]):
         # replace the done event
         self.done_event = self.env.event()
 
@@ -336,7 +334,7 @@ class GenericActivity(core.Identifiable, core.Log):
         return res
 
     def end(self):
-        print("Activity end()")
+        print(f"Activity end({self.name})")
         self.done_event.succeed()
 
 
@@ -363,9 +361,7 @@ class MoveActivity(GenericActivity):
                 container becomes empty
     """
 
-    def __init__(
-        self, mover, destination, show=False, *args, **kwargs,
-    ):
+    def __init__(self, mover, destination, show=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.destination = destination
@@ -383,9 +379,7 @@ class MoveActivity(GenericActivity):
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
         )
-        self.register_process(
-            main_proc=main_proc, show=self.print,
-        )
+        self.register_process(main_proc=main_proc, show=self.print)
 
 
 class BasicActivity(GenericActivity):
@@ -411,9 +405,7 @@ class BasicActivity(GenericActivity):
                 container becomes empty
     """
 
-    def __init__(
-        self, duration, additional_logs=[], show=False, *args, **kwargs,
-    ):
+    def __init__(self, duration, additional_logs=[], show=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
@@ -457,9 +449,7 @@ class SequentialActivity(GenericActivity):
                 container becomes empty
     """
 
-    def __init__(
-        self, sub_processes, show=False, *args, **kwargs,
-    ):
+    def __init__(self, sub_processes, show=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
@@ -476,9 +466,7 @@ class SequentialActivity(GenericActivity):
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
         )
-        self.register_process(
-            main_proc=main_proc, show=self.print,
-        )
+        self.register_process(main_proc=main_proc, show=self.print)
 
 
 class WhileActivity(GenericActivity):
@@ -496,9 +484,7 @@ class WhileActivity(GenericActivity):
     """
 
     #     activity_log, env, stop_event, sub_processes, requested_resources, keep_resources
-    def __init__(
-        self, sub_process, condition_event, show=False, *args, **kwargs,
-    ):
+    def __init__(self, sub_process, condition_event, show=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
@@ -522,9 +508,7 @@ class WhileActivity(GenericActivity):
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
         )
-        self.register_process(
-            main_proc=main_proc, show=self.print,
-        )
+        self.register_process(main_proc=main_proc, show=self.print)
 
 
 class ShiftAmountActivity(GenericActivity):
@@ -590,9 +574,7 @@ class ShiftAmountActivity(GenericActivity):
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
         )
-        self.register_process(
-            main_proc=main_proc, show=self.print,
-        )
+        self.register_process(main_proc=main_proc, show=self.print)
 
 
 def delayed_process(
@@ -618,7 +600,7 @@ def delayed_process(
     if hasattr(start_event, "__call__"):
         start_event = start_event()
     activity_log.log_entry(
-        activity_log.name, env.now, -1, None, activity_log.id, core.LogState.WAIT_START,
+        activity_log.name, env.now, -1, None, activity_log.id, core.LogState.WAIT_START
     )
     if isinstance(additional_logs, list) and len(additional_logs) > 0:
         for log in additional_logs:
@@ -803,9 +785,7 @@ def _request_resource_if_available(
     all_available = False
     while not all_available and amount > 0:
         # yield until enough content and space available in origin and destination
-        yield env.all_of(
-            events=[site.container.get_available(amount, id_),]
-        )
+        yield env.all_of(events=[site.container.get_available(amount, id_)])
 
         yield from _request_resource(resource_requests, processor.resource)
         print(f"processor request : {resource_requests}")
@@ -919,7 +899,7 @@ def shift_amount_process(
         )
         print(f"after req resource if available : {resource_requests}")
         activity_log.log_entry(
-            name, env.now, amount, None, activity_log.id, core.LogState.START,
+            name, env.now, amount, None, activity_log.id, core.LogState.START
         )
         # unload the mover
         print("_shift_amount")
@@ -935,7 +915,7 @@ def shift_amount_process(
             verbose=verbose,
         )
         activity_log.log_entry(
-            name, env.now, amount, None, activity_log.id, core.LogState.STOP,
+            name, env.now, amount, None, activity_log.id, core.LogState.STOP
         )
         print(f"after shift amount : {resource_requests}")
 
@@ -1417,8 +1397,10 @@ def _release_resource(requested_resources, resource, kept_resource=None):
                 return
         elif resource == kept_resource.resource or resource == kept_resource:
             return
-    resource.release(requested_resources[resource])
-    del requested_resources[resource]
+
+    if resource in requested_resources.keys():
+        resource.release(requested_resources[resource])
+        del requested_resources[resource]
 
 
 def _shift_amount(

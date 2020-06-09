@@ -160,7 +160,7 @@ basic_activity_data = {
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5h",  # For logging purposes
     "registry": registry,
     "duration": 0,
-     "additional_logs": [hopper],
+    "additional_logs": [hopper],
     "postpone_start": True,
 }
 single_run.append(model.BasicActivity(**basic_activity_data))
@@ -176,7 +176,7 @@ sequential_activity_data = {
 }
 activity = model.SequentialActivity(**sequential_activity_data)
 
-expr = [{"type":"container", "concept": to_site, "state":"full"}]
+expr = [{"type": "container", "concept": to_site, "state": "full"}]
 while_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "while",  # We are moving soil
@@ -184,7 +184,7 @@ while_data = {
     "registry": registry,
     "sub_process": activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
-    #"condition_event": to_site.container.get_full_event,
+    # "condition_event": to_site.container.get_full_event,
     "condition_event": expr,
     "postpone_start": False,
 }
