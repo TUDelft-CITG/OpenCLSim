@@ -1417,8 +1417,10 @@ def _release_resource(requested_resources, resource, kept_resource=None):
                 return
         elif resource == kept_resource.resource or resource == kept_resource:
             return
-    resource.release(requested_resources[resource])
-    del requested_resources[resource]
+
+    if resource in requested_resources.keys():
+        resource.release(requested_resources[resource])
+        del requested_resources[resource]
 
 
 def _shift_amount(
