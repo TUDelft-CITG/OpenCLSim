@@ -12,10 +12,53 @@
             {
                 "name": "SingeRunCycle1",
                 "class": "WhileActivity",
-                "children": [
-                    "WhileFull1"
-                ],
                 "properties": {
+                    "sub_process": {
+                        "name": "WhileFull1",
+                        "class": "SequenceActivity",
+                        "properties": {
+                            "sub_processes": [
+                                {
+                                    "name": "sailing_empty1",
+                                    "class": "MoveActivity",
+                                    "properties": {
+                                        "mover": "barge_1",
+                                        "destination": "from_site"
+                                    }
+                                },
+                                {
+                                    "name": "loading1",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "cutter",
+                                        "origin": "from_site",
+                                        "destination": "barge_1",
+                                        "amount": 5,
+                                        "duration": 3600
+                                    }
+                                },
+                                {
+                                    "name": "sailing_full1",
+                                    "class": "MoveActivity",
+                                    "properties": {
+                                        "mover": "barge_1",
+                                        "destination": "to_site"
+                                    }
+                                },
+                                {
+                                    "name": "unloading1",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "barge_1",
+                                        "origin": "barge_1",
+                                        "destination": "to_site",
+                                        "amount": 5,
+                                        "duration": 3600
+                                    }
+                                }
+                            ]
+                        }
+                    },
                     "condition_event": [
                         {
                             "type": "container",
@@ -23,64 +66,58 @@
                             "state": "full"
                         }
                     ]
-                }
-            },
-            {
-                "name": "WhileFull1",
-                "class": "SequenceActivity",
-                "children": [
-                    "sailing_empty1",
-                    "loading1",
-                    "sailing_full1",
-                    "unloading1"
-                ],
-                "properties": {}
-            },
-            {
-                "name": "sailing_empty1",
-                "class": "MoveActivity",
-                "properties": {
-                    "mover": "barge_1",
-                    "destination": "from_site"
-                }
-            },
-            {
-                "name": "loading1",
-                "class": "ShiftAmountActivity",
-                "properties": {
-                    "processor": "cutter",
-                    "origin": "from_site",
-                    "destination": "barge_1",
-                    "amount": 5,
-                    "duration": 3600
-                }
-            },
-            {
-                "name": "sailing_full1",
-                "class": "MoveActivity",
-                "properties": {
-                    "mover": "barge_1",
-                    "destination": "to_site"
-                }
-            },
-            {
-                "name": "unloading1",
-                "class": "ShiftAmountActivity",
-                "properties": {
-                    "processor": "barge_1",
-                    "origin": "barge_1",
-                    "destination": "to_site",
-                    "amount": 5,
-                    "duration": 3600
                 }
             },
             {
                 "name": "SingeRunCycle",
                 "class": "WhileActivity",
-                "children": [
-                    "WhileFull"
-                ],
                 "properties": {
+                    "sub_process": {
+                        "name": "WhileFull",
+                        "class": "SequenceActivity",
+                        "properties": {
+                            "sub_processes": [
+                                {
+                                    "name": "sailing_empty",
+                                    "class": "MoveActivity",
+                                    "properties": {
+                                        "mover": "barge_2",
+                                        "destination": "from_site"
+                                    }
+                                },
+                                {
+                                    "name": "loading",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "cutter",
+                                        "origin": "from_site",
+                                        "destination": "barge_2",
+                                        "amount": 5,
+                                        "duration": 3600
+                                    }
+                                },
+                                {
+                                    "name": "sailing_full",
+                                    "class": "MoveActivity",
+                                    "properties": {
+                                        "mover": "barge_2",
+                                        "destination": "to_site"
+                                    }
+                                },
+                                {
+                                    "name": "unloading",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "barge_2",
+                                        "origin": "barge_2",
+                                        "destination": "to_site",
+                                        "amount": 5,
+                                        "duration": 3600
+                                    }
+                                }
+                            ]
+                        }
+                    },
                     "condition_event": [
                         {
                             "type": "container",
@@ -88,55 +125,6 @@
                             "state": "full"
                         }
                     ]
-                }
-            },
-            {
-                "name": "WhileFull",
-                "class": "SequenceActivity",
-                "children": [
-                    "sailing_empty",
-                    "loading",
-                    "sailing_full",
-                    "unloading"
-                ],
-                "properties": {}
-            },
-            {
-                "name": "sailing_empty",
-                "class": "MoveActivity",
-                "properties": {
-                    "mover": "barge_2",
-                    "destination": "from_site"
-                }
-            },
-            {
-                "name": "loading",
-                "class": "ShiftAmountActivity",
-                "properties": {
-                    "processor": "cutter",
-                    "origin": "from_site",
-                    "destination": "barge_2",
-                    "amount": 5,
-                    "duration": 3600
-                }
-            },
-            {
-                "name": "sailing_full",
-                "class": "MoveActivity",
-                "properties": {
-                    "mover": "barge_2",
-                    "destination": "to_site"
-                }
-            },
-            {
-                "name": "unloading",
-                "class": "ShiftAmountActivity",
-                "properties": {
-                    "processor": "barge_2",
-                    "origin": "barge_2",
-                    "destination": "to_site",
-                    "amount": 5,
-                    "duration": 3600
                 }
             }
         ],
