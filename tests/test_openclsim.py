@@ -122,6 +122,7 @@ def test_move_to_same_place(env, geometry_a, locatable_a):
 class BasicStorageUnit(core.HasContainer, core.HasResource, core.Locatable, core.Log):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.name = "BasicStorageUnit"
 
 
 class Processor(
@@ -134,7 +135,7 @@ class Processor(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-
+@pytest.mark.skip
 def test_basic_processor(env, geometry_a):
     # move content from one container to another, then move some of it back again
     source = BasicStorageUnit(
