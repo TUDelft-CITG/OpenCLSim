@@ -1,124 +1,7 @@
 from functools import partial
-import itertools
 import openclsim.core as core
-import datetime
 import simpy
-import shapely
-import shapely.geometry
-import scipy.interpolate
-import scipy.integrate
-import pandas as pd
 import numpy as np
-
-
-# class Activity(core.Identifiable, core.Log):
-#     """The Activity Class forms a specific class for a single activity within a simulation.
-#     It deals with a single origin container, destination container and a single combination of equipment
-#     to move substances from the origin to the destination. It will initiate and suspend processes
-#     according to a number of specified conditions. To run an activity after it has been initialized call env.run()
-#     on the Simpy environment with which it was initialized.
-
-#     To check when a transportation of substances can take place, the Activity class uses three different condition
-#     arguments: start_condition, stop_condition and condition. These condition arguments should all be given a condition
-#     object which has a satisfied method returning a boolean value. True if the condition is satisfied, False otherwise.
-
-#     origin: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
-#     destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
-#     loader: object which will get units from 'origin' Container and put them into 'mover' Container
-#             should inherit from Processor, HasResource, Identifiable and Log
-#             after the simulation is complete, its log will contain entries for each time it
-#             started loading and stopped loading
-#     mover: moves to 'origin' if it is not already there, is loaded, then moves to 'destination' and is unloaded
-#            should inherit from Movable, HasContainer, HasResource, Identifiable and Log
-#            after the simulation is complete, its log will contain entries for each time it started moving,
-#            stopped moving, started loading / unloading and stopped loading / unloading
-#     unloader: gets amount from 'mover' Container and puts it into 'destination' Container
-#               should inherit from Processor, HasResource, Identifiable and Log
-#               after the simulation is complete, its log will contain entries for each time it
-#               started unloading and stopped unloading
-#     start_event: the activity will start as soon as this event is triggered
-#                  by default will be to start immediately
-#     stop_event: the activity will stop (terminate) as soon as this event is triggered
-#                 by default will be an event triggered when the destination container becomes full or the source
-#                 container becomes empty
-#     """
-
-#     def __init__(
-#         self,
-#         origin,
-#         destination,
-#         loader,
-#         mover,
-#         unloader,
-#         start_event=None,
-#         stop_event=None,
-#         show=False,
-#         *args,
-#         **kwargs,
-#     ):
-#         super().__init__(*args, **kwargs)
-#         """Initialization"""
-
-#         self.origin = origin if type(origin) == list else [origin]
-#         self.destination = destination if type(destination) == list else [destination]
-
-#         self.start_event = (
-#             start_event
-#             if start_event is None or isinstance(start_event, simpy.Event)
-#             else self.env.all_of(events=start_event)
-#         )
-
-#         if type(stop_event) == list:
-#             stop_event = self.env.any_of(events=stop_event)
-
-#         if stop_event is not None:
-#             self.stop_event = stop_event
-
-#         elif start_event is None:
-#             stop_event = []
-#             stop_event.extend(orig.container.empty_event for orig in self.origin)
-#             stop_event.extend(dest.container.full_event for dest in self.destination)
-#             self.stop_event = self.env.any_of(stop_event)
-
-#         elif start_event:
-#             stop_event = []
-#             stop_event.extend(orig.container.get_empty_event for orig in self.origin)
-#             stop_event.extend(
-#                 dest.container.get_full_event for dest in self.destination
-#             )
-#             self.stop_event = stop_event
-
-#         self.stop_reservation_waiting_event = (
-#             self.stop_event()
-#             if hasattr(self.stop_event, "__call__")
-#             else self.stop_event
-#         )
-
-#         self.loader = loader
-#         self.mover = mover
-#         self.unloader = unloader
-#         self.print = show
-
-#         single_run_proc = partial(
-#             single_run_process,
-#             origin=self.origin,
-#             destination=self.destination,
-#             loader=self.loader,
-#             mover=self.mover,
-#             unloader=self.unloader,
-#             stop_reservation_waiting_event=self.stop_reservation_waiting_event,
-#             verbose=self.print,
-#         )
-#         main_proc = partial(
-#             conditional_process,
-#             stop_event=self.stop_event,
-#             sub_processes=[single_run_proc],
-#         )
-#         if start_event is not None:
-#             main_proc = partial(
-#                 delayed_process, start_event=self.start_event, sub_processes=[main_proc]
-#             )
-#         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
 
 
 class GenericActivity(core.Identifiable, core.Log):
@@ -185,29 +68,6 @@ class GenericActivity(core.Identifiable, core.Log):
             else self.env.all_of(events=start_event)
         )
         print(f"start event instance {start_event_instance}")
-
-        # if type(stop_event) == list:
-        #    stop_event = self.env.any_of(events=stop_event)
-
-        # if stop_event is not None:
-        #    self.stop_event = self.env.any_of(stop_event)
-        # else:
-        #    stop_event = []
-        #    self.stop_event = self.env.any_of(stop_event)
-
-        # self.stop_reservation_waiting_event = (
-        #    self.stop_event()
-        #    if hasattr(self.stop_event, "__call__")
-        #    else self.stop_event
-        # )
-
-        # main_proc = partial(
-        #    conditional_process,
-        #    stop_event=self.stop_event,
-        #    sub_processes=[main_proc],
-        #    requested_resources=self.requested_resources,
-        #    keep_resources=self.keep_resources,
-        # )
         if start_event_instance is not None:
             main_proc = partial(
                 delayed_process,
@@ -630,9 +490,7 @@ def delayed_process(
                     activity_log.id,
                     core.LogState.WAIT_STOP,
                 )
-    # for sub_process in sub_processes:
-    #    sub_process.start()
-    #    yield from sub_process.call_main_proc(activity_log=activity_log, env=env)
+
     for sub_process in sub_processes:
         print(f"delayed process start subprocess {sub_process}")
         yield from sub_process(activity_log=activity_log, env=env)
@@ -867,24 +725,15 @@ def shift_amount_process(
     amount, all_amounts = processor.determine_processor_amount(
         [origin], destination, amount, id_
     )
-    # print(f"amount: {amount}   amounts:{all_amounts}")
     # Check if activity can start
     # If the transported amount is larger than zero, start activity
-    # print(f"amount {amount}")
-    if 0 != amount:
-        # vrachtbrief = mover.determine_schedule(amount, all_amounts, site, site)
 
-        # origins = vrachtbrief[vrachtbrief["Type"] == "Origin"]
-        # destinations = vrachtbrief[vrachtbrief["Type"] == "Destination"]
+    if 0 != amount:
+
         yield from _request_resource(resource_requests, destination.resource)
         print(f"destination request : {resource_requests}")
         print(f"shift amount process keep_resources {keep_resources}")
 
-        # for i in origins.index:
-        #    origin = origins.loc[i, "ID"]
-        #    amount = float(origins.loc[i, "Amount"])
-
-        # print("_request_resources_if_transfer_possible")
         yield from _request_resource_if_available(
             env,
             resource_requests,
@@ -920,7 +769,6 @@ def shift_amount_process(
         print(f"after shift amount : {resource_requests}")
 
         # release the unloader, destination and mover requests
-        # print("_release_resource")
         print(f"keep resources {keep_resources}")
         _release_resource(resource_requests, destination.resource, keep_resources)
         print(f"release destination : {resource_requests}")
@@ -931,59 +779,6 @@ def shift_amount_process(
             _release_resource(resource_requests, processor.resource, keep_resources)
         print(f"released processor : {resource_requests}")
         # print("done")
-    # else:
-    #    origin_requested = 0
-    #    origin_left = 0
-    #    destination_requested = 0
-
-    #    for key in all_amounts.keys():
-    #        if "origin" in key:
-    #            origin_requested += all_amounts[key]
-    #        else:
-    #            destination_requested = all_amounts[key]
-
-    # if origin_requested == 0:
-    #    events = [origin.container.reserve_get_available]
-    #    activity_log.log_entry(
-    #        "waiting origin reservation",
-    #        env.now,
-    #        origin.container.get_level(id_),
-    #        origin.geometry,
-    #        activity_log.id,
-    #        core.LogState.START,
-    #    )
-    #    yield _or_optional_event(
-    #        env, env.any_of(events), stop_reservation_waiting_event
-    #    )
-    #    activity_log.log_entry(
-    #        "waiting origin reservation",
-    #        env.now,
-    #        origin.container.get_level(id_),
-    #        origin.geometry,
-    #        activity_log.id,
-    #        core.LogState.STOP,
-    #    )
-    # el
-    # if destination.container.get_level(id_) == destination.container.get_capacity(
-    #    id_
-    # ):
-    #    activity_log.log_entry(
-    #        "waiting destination to finish",
-    #        env.now,
-    #        destination.container.get_capacity(id_),
-    #        destination.geometry,
-    #        activity_log.id,
-    #        core.LogState.START,
-    #    )
-    #    yield env.timeout(3600)
-    #    activity_log.log_entry(
-    #        "waiting destination to finish",
-    #        env.now,
-    #        destination.container.get_capacity(id_),
-    #        destination.geometry,
-    #        activity_log.id,
-    #        core.LogState.STOP,
-    #    )
 
     else:
         raise RuntimeError(
@@ -1009,7 +804,6 @@ def sequential_process(
     )
     for sub_process in sub_processes:
         print(sub_process)
-        # print(f"postpone_start is {sub_process.postpone_start}")
         print(f"keep_resources {keep_resources}")
         if not sub_process.postpone_start:
             raise Exception(
@@ -1029,10 +823,8 @@ def sequential_process(
             core.LogState.START,
         )
         sub_process.start()
-        # print("sequential before yield from")
         yield from sub_process.call_main_proc(activity_log=sub_process, env=env)
         sub_process.end()
-        # print("sequential after yield from")
         # work around for the event evaluation
         # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
         # which will result in triggered but not processed events to be taken care of before further progressing
@@ -1100,6 +892,202 @@ def move_process(
         core.LogState.STOP,
     )
 
+
+def _request_resource(requested_resources, resource):
+    """Requests the given resource and yields it.
+    """
+    if resource not in requested_resources:
+        requested_resources[resource] = resource.request()
+        yield requested_resources[resource]
+
+
+def _release_resource(requested_resources, resource, kept_resource=None):
+    """Releases the given resource, provided it does not equal the kept_resource parameter.
+    Deletes the released resource from the requested_resources dictionary."""
+    if kept_resource != None:
+        if isinstance(kept_resource, list):
+            if resource in [item.resource for item in kept_resource]:
+                return
+        elif resource == kept_resource.resource or resource == kept_resource:
+            return
+
+    if resource in requested_resources.keys():
+        resource.release(requested_resources[resource])
+        del requested_resources[resource]
+
+
+def _shift_amount(
+    env,
+    processor,
+    origin,
+    desired_level,
+    destination,
+    ActivityID,
+    duration=0,
+    id_="default",
+    verbose=False,
+):
+    print("start _shift_amount")
+    """Calls the processor.process method, giving debug print statements when verbose is True."""
+    amount = np.abs(origin.container.get_level(id_) - desired_level)
+    print(f"amount {amount}")
+    # Set ActivityID to processor and mover
+    processor.ActivityID = ActivityID
+    origin.ActivityID = ActivityID
+    print("processor start process")
+    # Check if loading or unloading
+    yield from processor.process(
+        origin, amount, destination, id_=id_, duration=duration
+    )
+    print("processor end process")
+
+    if verbose:
+        org_level = origin.container.get_level(id_)
+        dest_level = destination.container.get_level(id_)
+        print(f"Processed {amount} of {id_}:")
+        print(f"  by:          {processor.name}")
+        print(f"  origin        {origin.name}  contains: {org_level} of {id_}")
+        print(f"  destination:  {destination.name} contains: {dest_level} of {id_}")
+
+
+def _move_mover(mover, origin, ActivityID, engine_order=1.0, verbose=False):
+    """Calls the mover.move method, giving debug print statements when verbose is True."""
+    old_location = mover.geometry
+
+    # Set ActivityID to mover
+    mover.ActivityID = ActivityID
+    yield from mover.move(origin, engine_order=engine_order)
+
+    if verbose:
+        print("Moved:")
+        print(
+            "  object:      "
+            + mover.name
+            + " contains: "
+            + str(mover.container.get_level())
+        )
+        print(
+            "  from:        "
+            + format(old_location.x, "02.5f")
+            + " "
+            + format(old_location.y, "02.5f")
+        )
+        print(
+            "  to:          "
+            + format(mover.geometry.x, "02.5f")
+            + " "
+            + format(mover.geometry.y, "02.5f")
+        )
+
+
+# class Activity(core.Identifiable, core.Log):
+#     """The Activity Class forms a specific class for a single activity within a simulation.
+#     It deals with a single origin container, destination container and a single combination of equipment
+#     to move substances from the origin to the destination. It will initiate and suspend processes
+#     according to a number of specified conditions. To run an activity after it has been initialized call env.run()
+#     on the Simpy environment with which it was initialized.
+
+#     To check when a transportation of substances can take place, the Activity class uses three different condition
+#     arguments: start_condition, stop_condition and condition. These condition arguments should all be given a condition
+#     object which has a satisfied method returning a boolean value. True if the condition is satisfied, False otherwise.
+
+#     origin: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
+#     destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
+#     loader: object which will get units from 'origin' Container and put them into 'mover' Container
+#             should inherit from Processor, HasResource, Identifiable and Log
+#             after the simulation is complete, its log will contain entries for each time it
+#             started loading and stopped loading
+#     mover: moves to 'origin' if it is not already there, is loaded, then moves to 'destination' and is unloaded
+#            should inherit from Movable, HasContainer, HasResource, Identifiable and Log
+#            after the simulation is complete, its log will contain entries for each time it started moving,
+#            stopped moving, started loading / unloading and stopped loading / unloading
+#     unloader: gets amount from 'mover' Container and puts it into 'destination' Container
+#               should inherit from Processor, HasResource, Identifiable and Log
+#               after the simulation is complete, its log will contain entries for each time it
+#               started unloading and stopped unloading
+#     start_event: the activity will start as soon as this event is triggered
+#                  by default will be to start immediately
+#     stop_event: the activity will stop (terminate) as soon as this event is triggered
+#                 by default will be an event triggered when the destination container becomes full or the source
+#                 container becomes empty
+#     """
+
+#     def __init__(
+#         self,
+#         origin,
+#         destination,
+#         loader,
+#         mover,
+#         unloader,
+#         start_event=None,
+#         stop_event=None,
+#         show=False,
+#         *args,
+#         **kwargs,
+#     ):
+#         super().__init__(*args, **kwargs)
+#         """Initialization"""
+
+#         self.origin = origin if type(origin) == list else [origin]
+#         self.destination = destination if type(destination) == list else [destination]
+
+#         self.start_event = (
+#             start_event
+#             if start_event is None or isinstance(start_event, simpy.Event)
+#             else self.env.all_of(events=start_event)
+#         )
+
+#         if type(stop_event) == list:
+#             stop_event = self.env.any_of(events=stop_event)
+
+#         if stop_event is not None:
+#             self.stop_event = stop_event
+
+#         elif start_event is None:
+#             stop_event = []
+#             stop_event.extend(orig.container.empty_event for orig in self.origin)
+#             stop_event.extend(dest.container.full_event for dest in self.destination)
+#             self.stop_event = self.env.any_of(stop_event)
+
+#         elif start_event:
+#             stop_event = []
+#             stop_event.extend(orig.container.get_empty_event for orig in self.origin)
+#             stop_event.extend(
+#                 dest.container.get_full_event for dest in self.destination
+#             )
+#             self.stop_event = stop_event
+
+#         self.stop_reservation_waiting_event = (
+#             self.stop_event()
+#             if hasattr(self.stop_event, "__call__")
+#             else self.stop_event
+#         )
+
+#         self.loader = loader
+#         self.mover = mover
+#         self.unloader = unloader
+#         self.print = show
+
+#         single_run_proc = partial(
+#             single_run_process,
+#             origin=self.origin,
+#             destination=self.destination,
+#             loader=self.loader,
+#             mover=self.mover,
+#             unloader=self.unloader,
+#             stop_reservation_waiting_event=self.stop_reservation_waiting_event,
+#             verbose=self.print,
+#         )
+#         main_proc = partial(
+#             conditional_process,
+#             stop_event=self.stop_event,
+#             sub_processes=[single_run_proc],
+#         )
+#         if start_event is not None:
+#             main_proc = partial(
+#                 delayed_process, start_event=self.start_event, sub_processes=[main_proc]
+#             )
+#         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
 
 # def single_run_process(
 #     activity_log,
@@ -1379,64 +1367,6 @@ def move_process(
 #         return event
 #     return env.any_of(events=[event, optional_event])
 
-
-def _request_resource(requested_resources, resource):
-    """Requests the given resource and yields it.
-    """
-    if resource not in requested_resources:
-        requested_resources[resource] = resource.request()
-        yield requested_resources[resource]
-
-
-def _release_resource(requested_resources, resource, kept_resource=None):
-    """Releases the given resource, provided it does not equal the kept_resource parameter.
-    Deletes the released resource from the requested_resources dictionary."""
-    if kept_resource != None:
-        if isinstance(kept_resource, list):
-            if resource in [item.resource for item in kept_resource]:
-                return
-        elif resource == kept_resource.resource or resource == kept_resource:
-            return
-
-    if resource in requested_resources.keys():
-        resource.release(requested_resources[resource])
-        del requested_resources[resource]
-
-
-def _shift_amount(
-    env,
-    processor,
-    origin,
-    desired_level,
-    destination,
-    ActivityID,
-    duration=0,
-    id_="default",
-    verbose=False,
-):
-    print("start _shift_amount")
-    """Calls the processor.process method, giving debug print statements when verbose is True."""
-    amount = np.abs(origin.container.get_level(id_) - desired_level)
-    print(f"amount {amount}")
-    # Set ActivityID to processor and mover
-    processor.ActivityID = ActivityID
-    origin.ActivityID = ActivityID
-    print("processor start process")
-    # Check if loading or unloading
-    yield from processor.process(
-        origin, amount, destination, id_=id_, duration=duration
-    )
-    print("processor end process")
-
-    if verbose:
-        org_level = origin.container.get_level(id_)
-        dest_level = destination.container.get_level(id_)
-        print(f"Processed {amount} of {id_}:")
-        print(f"  by:          {processor.name}")
-        print(f"  origin        {origin.name}  contains: {org_level} of {id_}")
-        print(f"  destination:  {destination.name} contains: {dest_level} of {id_}")
-
-
 # def _request_resources_if_transfer_possible(
 #     env,
 #     resource_requests,
@@ -1540,33 +1470,3 @@ def _shift_amount(
 #             )
 #             continue
 #         all_available = True
-
-
-def _move_mover(mover, origin, ActivityID, engine_order=1.0, verbose=False):
-    """Calls the mover.move method, giving debug print statements when verbose is True."""
-    old_location = mover.geometry
-
-    # Set ActivityID to mover
-    mover.ActivityID = ActivityID
-    yield from mover.move(origin, engine_order=engine_order)
-
-    if verbose:
-        print("Moved:")
-        print(
-            "  object:      "
-            + mover.name
-            + " contains: "
-            + str(mover.container.get_level())
-        )
-        print(
-            "  from:        "
-            + format(old_location.x, "02.5f")
-            + " "
-            + format(old_location.y, "02.5f")
-        )
-        print(
-            "  to:          "
-            + format(mover.geometry.x, "02.5f")
-            + " "
-            + format(mover.geometry.y, "02.5f")
-        )
