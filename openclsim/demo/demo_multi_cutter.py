@@ -24,7 +24,7 @@ Site = type(
         core.Identifiable,  # Give it a name
         core.Log,  # Allow logging of all discrete events
         core.Locatable,  # Add coordinates to extract distance information and visualize
-  y      core.HasContainer,  # Add information on the material available at the site
+        core.HasContainer,  # Add information on the material available at the site
         core.HasResource,
     ),  # Add information on serving equipment
     {},

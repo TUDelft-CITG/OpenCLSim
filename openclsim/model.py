@@ -10,6 +10,8 @@ import scipy.integrate
 import pandas as pd
 import numpy as np
 
+from abc import ABC
+
 
 class Activity(core.Identifiable, core.Log):
     """The Activity Class forms a specific class for a single activity within a simulation.
@@ -121,16 +123,51 @@ class Activity(core.Identifiable, core.Log):
         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
 
 
-class GenericActivity(core.Identifiable, core.Log):
+class AbstractPluginClass(ABC):
+    def __init__(self, plugin_name):
+        self.plugin_name = plugin_name
+
+    def pre_process(self, *args, **kwargs):
+        return {}
+
+    def post_process(self, *args, **kwargs):
+        return {}
+
+
+class PluginActivity(core.Identifiable, core.Log):
+    def __init__(
+        self, *args, **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self.plugins = list()
+
+    def get_priority(self, elem):
+        return elem["priority"]
+
+    def register_plugin(self, plugin, priority=0):
+        self.plugins.append({"priority": priority, "plugin": plugin})
+        self.plugins = sorted(self.plugins, key=self.get_priority)
+
+    def pre_process(self, *args, **kwargs):
+        for item in self.plugins:
+            result = item["plugin"].pre_process(*args, **kwargs)
+            self.process_pre_processing_result(result)
+
+    def post_process(self, *args, **kwargs):
+        for item in self.plugins:
+            item["plugin"].post_process(*args, **kwargs)
+
+    def process_pre_processing_result(self, result):
+        pass
+
+
+class GenericActivity(PluginActivity):
     """The GenericActivity Class forms a generic class which sets up all required mechanisms to control 
     an activity by providing start and end events. Since it is generic, a parameter of the initialization
     is the main process, which is provided by an inheriting class
     main_proc  : the main process to be executed
     start_event: the activity will start as soon as this event is triggered
                  by default will be to start immediately
-    stop_event: the activity will stop (terminate) as soon as this event is triggered
-                by default will be an event triggered when the destination container becomes full or the source
-                container becomes empty
     """
 
     def __init__(
@@ -138,8 +175,8 @@ class GenericActivity(core.Identifiable, core.Log):
         registry,
         postpone_start=False,
         start_event=None,
-        requested_resources={},
-        keep_resources=[],
+        requested_resources=dict(),
+        keep_resources=list(),
         *args,
         **kwargs,
     ):
@@ -382,6 +419,7 @@ class MoveActivity(GenericActivity):
             mover=self.mover,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
+            activity=self,
         )
         self.register_process(
             main_proc=main_proc, show=self.print,
@@ -1079,6 +1117,7 @@ def move_process(
     name,
     requested_resources,
     keep_resources,
+    activity,
     engine_order=1.0,
 ):
     """Returns a generator which can be added as a process to a simpy.Environment. In the process, a move will be made
@@ -1109,9 +1148,24 @@ def move_process(
     yield from _request_resource(requested_resources, mover.resource)
     print("Mover_move after mover resource request")
 
+    start_time = env.now
+    args_data = {
+        "env": env,
+        "destination": destination,
+        "engine_order": engine_order,
+        "activity_log": activity_log,
+    }
+    result = activity.pre_process(**args_data)
+    print(f"pre_processing result {result}")
+
+    start_mover = env.now
     mover.ActivityID = activity_log.id
     yield from mover.move(destination=destination, engine_order=engine_order)
     print("Mover_move after move")
+
+    args_data["start_preprocessing"] = start_time
+    args_data["start_activity"] = start_mover
+    activity.post_process(**args_data)
 
     _release_resource(requested_resources, mover.resource, keep_resources)
     activity_log.log_entry(
