@@ -40,7 +40,6 @@ def vessel_planning(vessels, activities, colors=None, web=False, static=False):
     """create a plot of the planning of vessels"""
 
     if colors is None:
-        print(activities)
         C = get_colors(len(activities))
         colors = {}
         for i in range(len(activities)):
