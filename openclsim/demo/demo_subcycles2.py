@@ -117,14 +117,15 @@ hopper = TransportProcessingResource(**data_hopper)
 registry = {}
 loading = []
 
-basic_activity_data1= {"env"  : my_env,
-                      "name" : "MP loading hook on rigging",
-                      "registry": registry,
-                      "ID":str(uuid.uuid4()),  # For logging purposes
-                      "duration" : 45,
-                      "additional_logs": [hopper],
-                      "postpone_start": True,
-                      }
+basic_activity_data1 = {
+    "env": my_env,
+    "name": "MP loading hook on rigging",
+    "registry": registry,
+    "ID": str(uuid.uuid4()),  # For logging purposes
+    "duration": 45,
+    "additional_logs": [hopper],
+    "postpone_start": True,
+}
 loading.append(model.BasicActivity(**basic_activity_data1))
 
 shift_amount_loading_data = {
@@ -156,32 +157,44 @@ while_data = {
     "ID": str(uuid.uuid4()),  # For logging purposes
     "registry": registry,
     "sub_process": activity_mp_loading_seq,
-    "condition_event": [{"or":[{"type":"container", "concept": hopper, "state":"full", "id_":"MP"},
-                                {"type":"container", "concept": from_site, "state":"empty", "id_":"MP"}]
-                        }],
-    #"condition_event": [{"type":"container", "concept": hopper, "state":"full", "id_":"MP"}],
+    "condition_event": [
+        {
+            "or": [
+                {"type": "container", "concept": hopper, "state": "full", "id_": "MP"},
+                {
+                    "type": "container",
+                    "concept": from_site,
+                    "state": "empty",
+                    "id_": "MP",
+                },
+            ]
+        }
+    ],
+    # "condition_event": [{"type":"container", "concept": hopper, "state":"full", "id_":"MP"}],
     "postpone_start": True,
 }
 loading.append(model.WhileActivity(**while_data))
 
-basic_activity_data2= {"env"  : my_env,
-                      "name" : "MP loading hook off rigging",
-                      "registry": registry,
-                      "ID":str(uuid.uuid4()),  # For logging purposes
-                      "duration" : 15,
-                      "additional_logs": [hopper],
-                      "postpone_start": True,
-                      }
+basic_activity_data2 = {
+    "env": my_env,
+    "name": "MP loading hook off rigging",
+    "registry": registry,
+    "ID": str(uuid.uuid4()),  # For logging purposes
+    "duration": 15,
+    "additional_logs": [hopper],
+    "postpone_start": True,
+}
 loading.append(model.BasicActivity(**basic_activity_data2))
 
-basic_activity_data3= {"env"  : my_env,
-                      "name" : "TP loading hook on rigging",
-                      "registry": registry,
-                      "ID":str(uuid.uuid4()),  # For logging purposes
-                      "duration" : 30,
-                      "additional_logs": [hopper],
-                      "postpone_start": True,
-                      }
+basic_activity_data3 = {
+    "env": my_env,
+    "name": "TP loading hook on rigging",
+    "registry": registry,
+    "ID": str(uuid.uuid4()),  # For logging purposes
+    "duration": 30,
+    "additional_logs": [hopper],
+    "postpone_start": True,
+}
 loading.append(model.BasicActivity(**basic_activity_data3))
 
 shift_amount_loading_data2 = {
@@ -213,22 +226,33 @@ while_data2 = {
     "ID": str(uuid.uuid4()),  # For logging purposes
     "registry": registry,
     "sub_process": activity_tp_loading_seq,
-    "condition_event": [{"or":[{"type":"container", "concept": hopper, "state":"full", "id_":"TP"},
-                                {"type":"container", "concept": from_site, "state":"empty", "id_":"TP"}]
-                          }],
-    #"condition_event": [{"type":"container", "concept": hopper, "state":"full", "id_":"TP"}],
+    "condition_event": [
+        {
+            "or": [
+                {"type": "container", "concept": hopper, "state": "full", "id_": "TP"},
+                {
+                    "type": "container",
+                    "concept": from_site,
+                    "state": "empty",
+                    "id_": "TP",
+                },
+            ]
+        }
+    ],
+    # "condition_event": [{"type":"container", "concept": hopper, "state":"full", "id_":"TP"}],
     "postpone_start": True,
 }
 loading.append(model.WhileActivity(**while_data2))
 
-basic_activity_data4= {"env"  : my_env,
-                      "name" : "TP loading hook off rigging",
-                      "registry": registry,
-                      "ID":str(uuid.uuid4()),  # For logging purposes
-                      "duration" : 15,
-                      "additional_logs": [hopper],
-                      "postpone_start": True,
-                      }
+basic_activity_data4 = {
+    "env": my_env,
+    "name": "TP loading hook off rigging",
+    "registry": registry,
+    "ID": str(uuid.uuid4()),  # For logging purposes
+    "duration": 15,
+    "additional_logs": [hopper],
+    "postpone_start": True,
+}
 loading.append(model.BasicActivity(**basic_activity_data4))
 
 sequential_activity_data1 = {
@@ -257,14 +281,15 @@ move_activity_transit_data = {
     "postpone_start": True,
 }
 unloading.append(model.MoveActivity(**move_activity_transit_data))
-basic_activity_data20= {"env"  : my_env,
-                      "name" : "MP preparing for installation",
-                      "registry": registry,
-                      "ID":str(uuid.uuid4()),  # For logging purposes
-                      "duration" : 45,
-                      "additional_logs": [hopper],
-                      "postpone_start": True,
-                      }
+basic_activity_data20 = {
+    "env": my_env,
+    "name": "MP preparing for installation",
+    "registry": registry,
+    "ID": str(uuid.uuid4()),  # For logging purposes
+    "duration": 45,
+    "additional_logs": [hopper],
+    "postpone_start": True,
+}
 unloading.append(model.BasicActivity(**basic_activity_data20))
 shift_amount_unloading_data = {
     "env": my_env,  # The simpy environment defined in the first cel
@@ -280,23 +305,25 @@ shift_amount_unloading_data = {
     "postpone_start": True,
 }
 unloading.append(model.ShiftAmountActivity(**shift_amount_unloading_data))
-basic_activity_data21= {"env"  : my_env,
-                      "name" : "Installing MP",
-                      "registry": registry,
-                      "ID":str(uuid.uuid4()),  # For logging purposes
-                      "duration" : 45,
-                      "additional_logs": [hopper],
-                      "postpone_start": True,
-                      }
+basic_activity_data21 = {
+    "env": my_env,
+    "name": "Installing MP",
+    "registry": registry,
+    "ID": str(uuid.uuid4()),  # For logging purposes
+    "duration": 45,
+    "additional_logs": [hopper],
+    "postpone_start": True,
+}
 unloading.append(model.BasicActivity(**basic_activity_data21))
-basic_activity_data22= {"env"  : my_env,
-                      "name" : "Prepare TP installation",
-                      "registry": registry,
-                      "ID":str(uuid.uuid4()),  # For logging purposes
-                      "duration" : 45,
-                      "additional_logs": [hopper],
-                      "postpone_start": True,
-                      }
+basic_activity_data22 = {
+    "env": my_env,
+    "name": "Prepare TP installation",
+    "registry": registry,
+    "ID": str(uuid.uuid4()),  # For logging purposes
+    "duration": 45,
+    "additional_logs": [hopper],
+    "postpone_start": True,
+}
 unloading.append(model.BasicActivity(**basic_activity_data22))
 
 shift_amount_unloading_data2 = {
@@ -314,14 +341,15 @@ shift_amount_unloading_data2 = {
 }
 unloading.append(model.ShiftAmountActivity(**shift_amount_unloading_data2))
 
-basic_activity_data23= {"env"  : my_env,
-                      "name" : "TP finalize installation",
-                      "registry": registry,
-                      "ID":str(uuid.uuid4()),  # For logging purposes
-                      "duration" : 45,
-                      "additional_logs": [hopper],
-                      "postpone_start": True,
-                      }
+basic_activity_data23 = {
+    "env": my_env,
+    "name": "TP finalize installation",
+    "registry": registry,
+    "ID": str(uuid.uuid4()),  # For logging purposes
+    "duration": 45,
+    "additional_logs": [hopper],
+    "postpone_start": True,
+}
 unloading.append(model.BasicActivity(**basic_activity_data23))
 
 
@@ -338,19 +366,23 @@ sequential_activity = model.SequentialActivity(**sequential_activity_data2)
 while_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "unloading while",  # We are moving soil
-    "ID":str(uuid.uuid4()),  # For logging purposes
+    "ID": str(uuid.uuid4()),  # For logging purposes
     "registry": registry,
     "sub_process": sequential_activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
     # "condition_event": my_env.all_of(events=[to_site.container.get_full_event(id_="MP"),to_site.container.get_full_event(id_="TP")]),
-    "condition_event": [{"or":[{"type":"container", "concept": to_site, "state":"full", "id_":"TP"},
-                                {"type":"container", "concept": hopper, "state":"empty", "id_":"TP"}]
-                          }],
-    #"condition_event": [{"type":"container", "concept": hopper, "state":"empty", "id_":"TP"}],
+    "condition_event": [
+        {
+            "or": [
+                {"type": "container", "concept": to_site, "state": "full", "id_": "TP"},
+                {"type": "container", "concept": hopper, "state": "empty", "id_": "TP"},
+            ]
+        }
+    ],
+    # "condition_event": [{"type":"container", "concept": hopper, "state":"empty", "id_":"TP"}],
     "postpone_start": True,
 }
 unloading_activity = model.WhileActivity(**while_data)
-
 
 
 #
@@ -402,7 +434,9 @@ while_data = {
     "sub_process": activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
     # "condition_event": my_env.all_of(events=[to_site.container.get_full_event(id_="MP"),to_site.container.get_full_event(id_="TP")]),
-    "condition_event": [{"type":"container", "concept": to_site, "state":"full", "id_":"TP"}],
+    "condition_event": [
+        {"type": "container", "concept": to_site, "state": "full", "id_": "TP"}
+    ],
     "postpone_start": False,
 }
 while_activity = model.WhileActivity(**while_data)
@@ -412,7 +446,7 @@ my_env.run()
 log_df = pd.DataFrame(hopper.log)
 data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 data = data.drop_duplicates()
-data = data[data['ActivityState']=='START']
+data = data[data["ActivityState"] == "START"]
 
 while_df = pd.DataFrame(while_activity.log)
 data_while = while_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
@@ -432,9 +466,24 @@ ee = c.get_full_event(id_="MP")
 ee = c.full_event
 
 #%%
-ee = activity.parse_expression([{"or":[{"type":"container", "concept": hopper, "state":"full", "id_":"TP"},
-                               {"type":"container", "concept": from_site, "state":"empty", "id_":"TP"}]}])
+ee = activity.parse_expression(
+    [
+        {
+            "or": [
+                {"type": "container", "concept": hopper, "state": "full", "id_": "TP"},
+                {
+                    "type": "container",
+                    "concept": from_site,
+                    "state": "empty",
+                    "id_": "TP",
+                },
+            ]
+        }
+    ]
+)
 my_env.timeout(1)
 #%%
-ee = activity.parse_expression([{"type":"container", "concept": hopper, "state":"full", "id_":"TP"}])
+ee = activity.parse_expression(
+    [{"type": "container", "concept": hopper, "state": "full", "id_": "TP"}]
+)
 my_env.timeout(1)

@@ -1606,7 +1606,8 @@ class Movable(SimpyObject, Locatable):
             )
         else:
             self.log_entry(
-                "sailing {}".format(event),
+                # "sailing {}".format(event),
+                "sailing",
                 self.env.now,
                 -1,
                 self.geometry,
@@ -2735,7 +2736,7 @@ class DictEncoder(json.JSONEncoder):
                 result["capacity"] = val.get_capacity()
                 result["level"] = val.get_level()
             elif isinstance(val, simpy.Resource):
-                result["nr_resources"] = val.get_capacity()
+                result["nr_resources"] = val.capacity
             else:
                 result[key] = val
 

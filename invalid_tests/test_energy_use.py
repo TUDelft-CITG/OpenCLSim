@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 class BasicStorageUnit(core.HasContainer, core.HasResource, core.Locatable, core.Log):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.name = "BasicStorageUnit"
 
 
 @pytest.fixture

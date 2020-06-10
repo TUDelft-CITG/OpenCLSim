@@ -24,7 +24,7 @@ Site = type(
         core.Identifiable,  # Give it a name
         core.Log,  # Allow logging of all discrete events
         core.Locatable,  # Add coordinates to extract distance information and visualize
-         core.HasContainer,  # Add information on the material available at the site
+        core.HasContainer,  # Add information on the material available at the site
         core.HasResource,
     ),  # Add information on serving equipment
     {},
@@ -117,7 +117,9 @@ shift_amount_activity_data = {
 }
 activity = model.ShiftAmountActivity(**shift_amount_activity_data)
 
-expr = [{"type":"activity", "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b", "state":"done"}]
+expr = [
+    {"type": "activity", "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b", "state": "done"}
+]
 move_activity_data = {
     "env": my_env,  # The simpy environment defined in the first cel
     "name": "Soil movement",  # We are moving soil
@@ -125,7 +127,7 @@ move_activity_data = {
     "registry": registry,
     "mover": hopper,
     "destination": to_site,
-    #"start_event": activity.main_process,
+    # "start_event": activity.main_process,
     "start_event": expr,
 }
 activity2 = model.MoveActivity(**move_activity_data)

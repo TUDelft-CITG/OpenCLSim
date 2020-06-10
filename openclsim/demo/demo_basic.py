@@ -28,18 +28,17 @@ reporting_activity_data = {
 reporting_activity = model.BasicActivity(**reporting_activity_data)
 
 
-basic_activity_data= {"env"  : my_env,
-                      "name" : "Basic activity",
-                      "registry": registry,
-                      "ID":"6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
-                      "duration" : 14,
-                      "additional_logs": [reporting_activity],
-                      }
+basic_activity_data = {
+    "env": my_env,
+    "name": "Basic activity",
+    "registry": registry,
+    "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+    "duration": 14,
+    "additional_logs": [reporting_activity],
+}
 activity = model.BasicActivity(**basic_activity_data)
 
 my_env.run(until=100)
 
 log_df = pd.DataFrame(activity.log)
-data =log_df[['Message', 'ActivityState', 'Timestamp', 'Value', 'ActivityID']]
-
-
+data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]

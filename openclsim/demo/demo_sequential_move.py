@@ -130,7 +130,7 @@ basic_activity_data2 = {
     "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5c",  # For logging purposes
     "registry": registry,
     "duration": 5,
-    #"additional_logs": [hopper],
+    # "additional_logs": [hopper],
     "postpone_start": True,
     "keep_resources": keep_resources,
 }
@@ -163,7 +163,9 @@ log_df = pd.DataFrame(activity.log)
 data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
 
 hopper_log_df = pd.DataFrame(hopper.log)
-data_hop = hopper_log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
+data_hop = hopper_log_df[
+    ["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]
+]
 data_hop = data_hop.drop_duplicates()
 
 basic = []

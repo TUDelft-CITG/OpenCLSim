@@ -61,7 +61,7 @@ basic_activity_data3 = {
     "additional_logs": [reporting_activity],
     "postpone_start": True,
     "keep_resources": keep_resources,
-    "start_event": [{"type":"activity", "name": "B Basic activity2" , "state":"done"}],
+    "start_event": [{"type": "activity", "name": "B Basic activity2", "state": "done"}],
 }
 sub_processes.append(model.BasicActivity(**basic_activity_data3))
 
@@ -119,7 +119,6 @@ sequential_activity_data2 = {
     "keep_resources": keep_resources,
 }
 activity2 = model.SequentialActivity(**sequential_activity_data2)
-
 
 
 my_env.run()

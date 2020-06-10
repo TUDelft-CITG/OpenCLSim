@@ -24,7 +24,7 @@ Site = type(
         core.Identifiable,  # Give it a name
         core.Log,  # Allow logging of all discrete events
         core.Locatable,  # Add coordinates to extract distance information and visualize
-        core.HasContainer,  # Add information on the material available at the site
+  y      core.HasContainer,  # Add information on the material available at the site
         core.HasResource,
     ),  # Add information on serving equipment
     {},
@@ -39,8 +39,8 @@ data_from_site = {
     "geometry": location_from_site,  # The coordinates of the project site
     "capacity": 4,
     "level": 4,
-    "nr_resources":3,
-    }  # The actual volume of the site
+    "nr_resources": 3,
+}  # The actual volume of the site
 from_site = Site(**data_from_site)
 
 location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)  # lon, lat
@@ -76,6 +76,7 @@ TransportProcessingResource = type(
 # For more realistic simulation you might want to have speed dependent on the volume carried by the vessel
 def compute_v_provider(v_empty, v_full):
     return lambda x: 10
+
 
 data_cutter1 = {
     "env": my_env,  # The simpy environment
@@ -159,12 +160,12 @@ registry = {}
 cutter_list = [cutter1, cutter2]
 for hopper in [hopper1, hopper2, hopper3]:
     first_cutter = cutter_list[0]
-    cutter_list= cutter_list[1:]
+    cutter_list = cutter_list[1:]
     cutter_list.append(first_cutter)
     for cutter in cutter_list:
         requested_resources = {}
         run = []
-        
+
         shift_amount_loading_data = {
             "env": my_env,  # The simpy environment defined in the first cel
             "name": "Load",  # We are moving soil
@@ -174,20 +175,20 @@ for hopper in [hopper1, hopper2, hopper3]:
             "destination": hopper,
             "amount": 1,
             "duration": 10,
-            "requested_resources":requested_resources,
-            "keep_resources":[hopper],
+            "requested_resources": requested_resources,
+            "keep_resources": [hopper],
             "postpone_start": True,
         }
         run.append(model.ShiftAmountActivity(**shift_amount_loading_data))
-        
+
         move_activity_to_harbor_data = {
             "env": my_env,  # The simpy environment defined in the first cel
             "name": "sailing full",  # We are moving soil
             "registry": registry,
             "mover": hopper,
             "destination": to_site,
-            "requested_resources":requested_resources,
-            "keep_resources":[hopper],
+            "requested_resources": requested_resources,
+            "keep_resources": [hopper],
             "postpone_start": True,
         }
         run.append(model.MoveActivity(**move_activity_to_harbor_data))
@@ -201,19 +202,19 @@ for hopper in [hopper1, hopper2, hopper3]:
             "destination": to_site,
             "amount": 1,
             "duration": 10,
-            "requested_resources":requested_resources,
-            "keep_resources":[hopper],
+            "requested_resources": requested_resources,
+            "keep_resources": [hopper],
             "postpone_start": True,
         }
         run.append(model.ShiftAmountActivity(**shift_amount_loading_data))
-        
+
         move_activity_to_harbor_data = {
             "env": my_env,  # The simpy environment defined in the first cel
             "name": "sailing empty",  # We are moving soil
             "registry": registry,
             "mover": hopper,
             "destination": from_site,
-            "requested_resources":requested_resources,
+            "requested_resources": requested_resources,
             "postpone_start": True,
         }
         run.append(model.MoveActivity(**move_activity_to_harbor_data))
@@ -226,13 +227,15 @@ for hopper in [hopper1, hopper2, hopper3]:
             "postpone_start": True,
         }
         sequential_activity = model.SequentialActivity(**sequential_activity_data)
-        
+
         while_data = {
             "env": my_env,  # The simpy environment defined in the first cel
             "name": "run while",  # We are moving soil
             "registry": registry,
             "sub_process": sequential_activity,
-            "condition_event": [{"type":"container", "concept": from_site, "state":"empty"}],
+            "condition_event": [
+                {"type": "container", "concept": from_site, "state": "empty"}
+            ],
             "postpone_start": False,
         }
         run_activity = model.WhileActivity(**while_data)
@@ -249,15 +252,19 @@ data2 = log2_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]
 data2 = data2.drop_duplicates()
 
 hopper1_log_df = pd.DataFrame(hopper1.log)
-data_hopper1 = hopper1_log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
+data_hopper1 = hopper1_log_df[
+    ["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]
+]
 data_hopper1 = data_hopper1.drop_duplicates()
 
 hopper2_log_df = pd.DataFrame(hopper2.log)
-data_hopper2 = hopper2_log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
+data_hopper2 = hopper2_log_df[
+    ["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]
+]
 data_hopper2 = data_hopper2.drop_duplicates()
 
 hopper3_log_df = pd.DataFrame(hopper3.log)
-data_hopper3 = hopper3_log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
+data_hopper3 = hopper3_log_df[
+    ["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]
+]
 data_hopper3 = data_hopper3.drop_duplicates()
-
-

@@ -57,8 +57,8 @@ basic_activity_data = {
 }
 activity = model.BasicActivity(**basic_activity_data)
 
-#expr = [{"type":"container", "concept": from_site, "state":"empty"}]
-expr = [{"type":"activity", "name": "while", "state":"done"}]
+# expr = [{"type":"container", "concept": from_site, "state":"empty"}]
+expr = [{"type": "activity", "name": "while", "state": "done"}]
 registry
 
 while_data = {
@@ -69,7 +69,7 @@ while_data = {
     "sub_process": activity,
     # "condition_event": [from_site.container.get_empty_event, to_site.container.get_full_event],
     # "condition_event": from_site.container.get_full_event(),
-    #"condition_event": from_site.container.get_empty_event(),
+    # "condition_event": from_site.container.get_empty_event(),
     "condition_event": expr,
     "postpone_start": False,
 }

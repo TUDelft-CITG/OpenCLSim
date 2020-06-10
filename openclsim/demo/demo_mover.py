@@ -125,4 +125,3 @@ my_env.run()
 activity.log
 log_df = pd.DataFrame(activity.log)
 data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
-
