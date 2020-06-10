@@ -3,21 +3,48 @@ import pandas as pd
 from plotly.offline import init_notebook_mode, iplot
 import plotly.graph_objs as go
 
+import random
 
-def vessel_planning(vessels, activities, colors, web=False, static=False):
+
+def get_colors(n):
+    ret = []
+    r = int(random.random() * 256)
+    g = int(random.random() * 256)
+    b = int(random.random() * 256)
+    step = 256 / n
+    for i in range(n):
+        r += step
+        g += step
+        b += step
+        r = int(r) % 256
+        g = int(g) % 256
+        b = int(b) % 256
+        ret.append((r, g, b))
+    return ret
+
+
+def get_segments(df, activity, y_val):
+    """extract 'start' and 'stop' of activities from log"""
+    x = []
+    y = []
+    for i in range(len(df)):
+        if df["activity_state"][i] == "START" and df["log_string"][i] == activity:
+            start = df.index[i]
+        if df["activity_state"][i] == "STOP" and df["log_string"][i] == activity:
+            x.extend((start, start, df.index[i], df.index[i], df.index[i]))
+            y.extend((y_val, y_val, y_val, y_val, None))
+    return x, y
+
+
+def vessel_planning(vessels, activities, colors=None, web=False, static=False):
     """create a plot of the planning of vessels"""
 
-    def get_segments(df, activity, y_val):
-        """extract 'start' and 'stop' of activities from log"""
-        x = []
-        y = []
-        for i in range(len(df)):
-            if df["activity_state"][i] == "START" and df["log_string"][i] == activity:
-                start = df.index[i]
-            if df["activity_state"][i] == "STOP" and df["log_string"][i] == activity:
-                x.extend((start, start, df.index[i], df.index[i], df.index[i]))
-                y.extend((y_val, y_val, y_val, y_val, None))
-        return x, y
+    if colors is None:
+        print(activities)
+        C = get_colors(len(activities))
+        colors = {}
+        for i in range(len(activities)):
+            colors[i] = f"rgb({C[i][0]},{C[i][1]},{C[i][2]})"
 
     # organise logdata into 'dataframes'
     dataframes = []
