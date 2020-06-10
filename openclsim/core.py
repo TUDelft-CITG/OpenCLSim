@@ -2201,7 +2201,7 @@ class Processor(SimpyObject):
             else:
                 destination_requested += all_amounts[key]
 
-        amount_ = min(origin_requested, destination_requested,)
+        amount_ = min(origin_requested, destination_requested)
         if amount != None:
             amount_ = min(amount_, amount)
 
