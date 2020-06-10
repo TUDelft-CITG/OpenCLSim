@@ -34,11 +34,11 @@ def test_store_stockpile(env):
     """Create a new type crane, based on existing components"""
     Stockpile = type("Stockpile", (core.Identifiable, core.HasResource), {})
     stockpile = Stockpile(name="my stockpile", env=env, nr_resources=3)
-    assert stockpile.resource.get_capacity() == 3
+    assert stockpile.resource.capacity == 3
     txt = core.serialize(stockpile)
     data = json.loads(txt)
     print(data)
     data["ID"] = data["id"]
     del data["id"]
     stockpile2 = Stockpile(env=env, **data)
-    assert stockpile2.resource.get_capacity() == 3
+    assert stockpile2.resource.capacity == 3

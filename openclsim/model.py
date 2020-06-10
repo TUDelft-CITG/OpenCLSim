@@ -875,14 +875,17 @@ def move_process(
     )
 
     print("Mover_move before mover resource request")
-    with mover.resource.request() as my_mover_turn:
-        yield my_mover_turn
-        print("Mover_move after mover resource request")
+    # if mover.resource not in requested_resources:
+    #    with mover.resource.request() as my_mover_turn:
+    #        yield my_mover_turn
+    yield from _request_resource(requested_resources, mover.resource)
+    print("Mover_move after mover resource request")
 
-        mover.ActivityID = activity_log.id
-        yield from mover.move(destination=destination, engine_order=engine_order)
-        print("Mover_move after move")
+    mover.ActivityID = activity_log.id
+    yield from mover.move(destination=destination, engine_order=engine_order)
+    print("Mover_move after move")
 
+    _release_resource(requested_resources, mover.resource, keep_resources)
     activity_log.log_entry(
         "move activity {} of {} to {}".format(name, mover.name, destination.name),
         env.now,
