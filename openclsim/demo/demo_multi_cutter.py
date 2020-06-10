@@ -39,7 +39,8 @@ data_from_site = {
     "geometry": location_from_site,  # The coordinates of the project site
     "capacity": 4,
     "level": 4,
-}  # The actual volume of the site
+    "nr_resources":3,
+    }  # The actual volume of the site
 from_site = Site(**data_from_site)
 
 location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)  # lon, lat
