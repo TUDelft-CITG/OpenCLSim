@@ -91,6 +91,9 @@ class Locatable:
 
 
 class EventsContainer(simpy.FilterStore):
+    """EventsContainer provide a basic class for managing information which has to be stored in an object.
+    It is a generic container, which has a default behavior, but can be used for storing arbitrary objects."""
+
     def __init__(self, env, store_capacity=1, *args, **kwargs):
         super().__init__(env, capacity=store_capacity)
         self._env = env
@@ -99,9 +102,11 @@ class EventsContainer(simpy.FilterStore):
         print("init")
 
     def initialize(self, init=0, capacity=0):
+        """Initialize method is a convenience method for backwards compatibility reasons."""
         self.put(init, capacity)
 
     def initialize_container(self, initials):
+        """This is the initialization method used for MultiContainers."""
         for item in initials:
             print(item)
             assert "id" in item
@@ -176,10 +181,12 @@ class EventsContainer(simpy.FilterStore):
 
     @property
     def empty_event(self):
+        """These properties are kept for backwards compatibility. mThey are NOT applicable for MultiContainers"""
         return self.put_available(self.get_capacity())
 
     @property
     def full_event(self):
+        """These properties are kept for backwards compatibility. mThey are NOT applicable for MultiContainers"""
         return self.get_available(self.get_capacity())
 
     def put(self, amount, capacity=0, id_="default"):
@@ -271,6 +278,8 @@ class EventsContainer(simpy.FilterStore):
 
 
 class EventsObjects(SimpyObject):
+    """This is a incomplete and untested class as a basis for implementing a ObjectStore"""
+
     def __init__(
         self,
         env,
@@ -308,6 +317,8 @@ class EventsObjects(SimpyObject):
 
 
 class EventsStore(simpy.FilterStore):
+    """This is an incomplete and untested class which could be used for implementing an ObjectStore"""
+
     def __init__(self, env, store_capacity=1000, *args, **kwargs):
         super().__init__(env, capacity=store_capacity)
         self._get_available_events = {}
@@ -466,6 +477,8 @@ class EventsStore(simpy.FilterStore):
 
 
 class ReservationContainer(EventsContainer):
+    """This class should be removed as soon as the ObjectStore has been implemented."""
+
     def __init__(self, env, store_capacity=1, *args, **kwargs):
         super().__init__(env, capacity=store_capacity, *args, **kwargs)
         # super().__init__(*args, **kwargs)
@@ -539,10 +552,12 @@ class ReservationContainer(EventsContainer):
 
 class HasContainer(SimpyObject):
     """Container class
+    A class which can hold information about objects of the same type
 
     capacity: amount the container can hold
     level: amount the container holds initially
-    container: a simpy object that can hold stuff"""
+    store_capacity: The number of different types of information can be stored. In this class it usually is 1.
+    """
 
     def __init__(self, store_capacity=1, capacity=0, level=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -561,10 +576,11 @@ class HasContainer(SimpyObject):
 
 class HasMultiContainer(HasContainer):
     """Container class
+    A class which can represent information of objects of multiple types
 
-    capacity: amount the container can hold
-    level: amount the container holds initially
-    container: a simpy object that can hold stuff"""
+    store_capacity:  The number of different types of information can be stored. In this calss it is usually >1.
+    initials: a list of dictionaries describing the id_ of the container, the level of the individual container and the capacity of the individual container.
+    """
 
     def __init__(self, initials, store_capacity=10, *args, **kwargs):
         super().__init__(store_capacity=store_capacity, *args, **kwargs)
@@ -583,6 +599,8 @@ class EnergyUse(SimpyObject):
 
     def energy_use_loading(power_use):
         return lambda x: x * power_use
+    
+    This calss should be turned into a plugin class
     """
 
     def __init__(
@@ -1040,12 +1058,8 @@ class HasWeather(HasAbstractWeather):
     """HasWeather class
 
     Used to add weather conditions to a project site
-    name: name of .csv file in folder
-
-    year: name of the year column
-    month: name of the month column
-    day: name of the day column
-
+    
+    dataframe: containing the weather data
     timestep: size of timestep to interpolate between datapoints (minutes)
     bed: level of the seabed / riverbed with respect to CD (meters)
     """
@@ -1144,6 +1158,7 @@ class HasWorkabilityCriteria(HasAbstractWorkabilityCriteria):
         self.work_restrictions = {}
 
     def calc_work_restrictions(self, location):
+        """Preprocess the weather constraints for a particular location."""
         # Loop through series to find windows
         for criterion in self.criteria:
             condition = location.metocean_data[criterion.condition]
@@ -1172,7 +1187,7 @@ class HasWorkabilityCriteria(HasAbstractWorkabilityCriteria):
             )[criterion.condition] = ranges
 
     def check_weather_restriction(self, location, event_name):
-
+        """Check the weather constraints."""
         if location.name not in self.work_restrictions.keys():
             self.calc_work_restrictions(location)
 
@@ -1773,7 +1788,8 @@ class ContainerDependentMovable(Movable, HasContainer):
 class MultiContainerDependentMovable(Movable, HasMultiContainer):
     """MultiContainerDependentMovable class
 
-    Used for objects that move with a speed dependent on the container level
+    Used for objects that move with a speed dependent on the container level. 
+    This movable is provided with a MultiContainer, thus can handle container containing different object.
     compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
 
     def __init__(self, compute_v, *args, **kwargs):
@@ -1963,10 +1979,11 @@ class LogState(Enum):
 class Log(SimpyObject):
     """Log class
 
-    log: log message [format: 'start activity' or 'stop activity']
+    log: log message [format: 'transfer activity' or 'move activity']
     t: timestamp
     value: a value can be logged as well
-    geometry: value from locatable (lat, lon)"""
+    geometry: value from locatable (lat, lon)
+    ActivityState to explicate the meaning of the message"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

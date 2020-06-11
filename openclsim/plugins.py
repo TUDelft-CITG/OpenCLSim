@@ -79,6 +79,8 @@ class TestPluginMoveActivity(model.AbstractPluginClass):
 
 
 class HasTestPluginMoveActivity:
+    """Mixin for MoveActivity to initialize TestPluginMoveActivity"""
+
     def __init__(
         self, *args, **kwargs,
     ):
