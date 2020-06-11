@@ -217,6 +217,8 @@ class WeatherPluginMoveActivity(model.AbstractPluginClass):
 
 
 class HasWeatherPluginMoveActivity:
+    """Mixin for MoveActivity to initialize WeatherPluginMoveActivity"""
+
     def __init__(
         self,
         metocean_criteria=None,
