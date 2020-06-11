@@ -122,6 +122,7 @@ class WeatherPluginMoveActivity(model.AbstractPluginClass):
             activity_log.id,
             core.LogState.UNKNOWN,
         )
+
         return self.check_weather_restriction(
             env, origin, activity, activity_log, message
         )
