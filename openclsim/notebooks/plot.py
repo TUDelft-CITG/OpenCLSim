@@ -28,9 +28,9 @@ def get_segments(df, activity, y_val):
     x = []
     y = []
     for i in range(len(df)):
-        if df["activity_state"][i] == "START" and df["log_string"][i] == activity:
+        if "START" in df["activity_state"][i] and df["log_string"][i] == activity:
             start = df.index[i]
-        if df["activity_state"][i] == "STOP" and df["log_string"][i] == activity:
+        elif "STOP" in df["activity_state"][i] and df["log_string"][i] == activity:
             x.extend((start, start, df.index[i], df.index[i], df.index[i]))
             y.extend((y_val, y_val, y_val, y_val, None))
     return x, y

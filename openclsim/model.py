@@ -3,17 +3,69 @@ import openclsim.core as core
 import simpy
 import numpy as np
 
+from abc import ABC
 
-class GenericActivity(core.Identifiable, core.Log):
+
+class AbstractPluginClass(ABC):
+    def __init__(self, plugin_name, activity):
+        self.plugin_name = plugin_name
+        self.activity = activity
+
+    def pre_process(self, *args, **kwargs):
+        return {}
+
+    def post_process(self, *args, **kwargs):
+        return {}
+
+
+class PluginActivity(core.Identifiable, core.Log):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.plugins = list()
+
+    def get_priority(self, elem):
+        return elem["priority"]
+
+    def register_plugin(self, plugin, priority=0):
+        self.plugins.append({"priority": priority, "plugin": plugin})
+        self.plugins = sorted(self.plugins, key=self.get_priority)
+
+    def pre_process(self, args_data):
+        for item in self.plugins:
+            yield from item["plugin"].pre_process(**args_data)
+
+        # for item in self.plugins:
+        #    yield from item["plugin"].pre_process(*args, **kwargs)
+        #    # self.process_pre_processing_result(result)
+
+    def post_process(self, *args, **kwargs):
+        for item in self.plugins:
+            item["plugin"].post_process(*args, **kwargs)
+
+    def process_pre_processing_result(self, result):
+        pass
+
+    def delay_processing(self, env, delay_name, activity_log, waiting):
+        """Waiting must be a delay expressed in seconds"""
+        print(f"delay processing {waiting}")
+        activity_log.log_entry(
+            delay_name, env.now, -1, None, activity_log.id, core.LogState.WAIT_START
+        )
+        print(f"before delay {env.now}")
+        yield env.timeout(waiting)
+        print(f"after delay {env.now}")
+        activity_log.log_entry(
+            delay_name, env.now, -1, None, activity_log.id, core.LogState.WAIT_STOP
+        )
+
+
+class GenericActivity(PluginActivity):
     """The GenericActivity Class forms a generic class which sets up all required mechanisms to control 
     an activity by providing start and end events. Since it is generic, a parameter of the initialization
     is the main process, which is provided by an inheriting class
     main_proc  : the main process to be executed
     start_event: the activity will start as soon as this event is triggered
                  by default will be to start immediately
-    stop_event: the activity will stop (terminate) as soon as this event is triggered
-                by default will be an event triggered when the destination container becomes full or the source
-                container becomes empty
     """
 
     def __init__(
@@ -21,8 +73,8 @@ class GenericActivity(core.Identifiable, core.Log):
         registry,
         postpone_start=False,
         start_event=None,
-        requested_resources={},
-        keep_resources=[],
+        requested_resources=dict(),
+        keep_resources=list(),
         *args,
         **kwargs,
     ):
@@ -238,6 +290,7 @@ class MoveActivity(GenericActivity):
             mover=self.mover,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
+            activity=self,
         )
         self.register_process(main_proc=main_proc, show=self.print)
 
@@ -851,6 +904,7 @@ def move_process(
     name,
     requested_resources,
     keep_resources,
+    activity,
     engine_order=1.0,
 ):
     """Returns a generator which can be added as a process to a simpy.Environment. In the process, a move will be made
@@ -865,15 +919,7 @@ def move_process(
     engine_order: optional parameter specifying at what percentage of the maximum speed the mover should sail.
                   for example, engine_order=0.5 corresponds to sailing at 50% of max speed
     """
-    activity_log.log_entry(
-        "move activity {} of {} to {}".format(name, mover.name, destination.name),
-        env.now,
-        -1,
-        mover.geometry,
-        activity_log.id,
-        core.LogState.START,
-    )
-
+    message = "move activity {} of {} to {}".format(name, mover.name, destination.name)
     print("Mover_move before mover resource request")
     # if mover.resource not in requested_resources:
     #    with mover.resource.request() as my_mover_turn:
@@ -881,18 +927,35 @@ def move_process(
     yield from _request_resource(requested_resources, mover.resource)
     print("Mover_move after mover resource request")
 
+    start_time = env.now
+    args_data = {
+        "env": env,
+        "mover": mover,
+        "origin": mover,
+        "destination": destination,
+        "engine_order": engine_order,
+        "activity_log": activity_log,
+        "message": message,
+        "activity": activity,
+    }
+    yield from activity.pre_process(args_data)
+
+    activity_log.log_entry(
+        message, env.now, -1, mover.geometry, activity_log.id, core.LogState.START
+    )
+
+    start_mover = env.now
     mover.ActivityID = activity_log.id
     yield from mover.move(destination=destination, engine_order=engine_order)
     print("Mover_move after move")
 
+    args_data["start_preprocessing"] = start_time
+    args_data["start_activity"] = start_mover
+    activity.post_process(**args_data)
+
     _release_resource(requested_resources, mover.resource, keep_resources)
     activity_log.log_entry(
-        "move activity {} of {} to {}".format(name, mover.name, destination.name),
-        env.now,
-        -1,
-        mover.geometry,
-        activity_log.id,
-        core.LogState.STOP,
+        message, env.now, -1, mover.geometry, activity_log.id, core.LogState.STOP
     )
 
 
