@@ -69,7 +69,7 @@ def vessel_planning(vessels, activities, colors=None, web=False, static=False):
         x_combined = []
         y_combined = []
         for k, df in enumerate(dataframes):
-            y_val = names[k]
+            y_val = -k  # names[k]
             x, y = get_segments(df, activity=activity, y_val=y_val)
             x_combined.extend(x)
             y_combined.extend(y)

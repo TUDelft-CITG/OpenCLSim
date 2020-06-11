@@ -486,6 +486,7 @@ class ShiftAmountActivity(GenericActivity):
             id_=self.id_,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
+            activity=self,
         )
         self.register_process(main_proc=main_proc, show=self.print)
 
@@ -746,6 +747,7 @@ def shift_amount_process(
     destination,
     name,
     duration,
+    activity,
     amount=None,
     requested_resources={},
     keep_resources=[],
@@ -803,6 +805,23 @@ def shift_amount_process(
         activity_log.log_entry(
             name, env.now, amount, None, activity_log.id, core.LogState.START
         )
+
+        start_time = env.now
+        args_data = {
+            "env": env,
+            "processor": processor,
+            "origin": origin,
+            "destination": destination,
+            "engine_order": engine_order,
+            "activity_log": activity_log,
+            "message": name,
+            "activity": activity,
+            "duration": duration,
+            "amount": amount,
+        }
+        yield from activity.pre_process(args_data)
+
+        start_shift = env.now
         # unload the mover
         print("_shift_amount")
         yield from _shift_amount(
@@ -816,6 +835,11 @@ def shift_amount_process(
             id_=id_,
             verbose=verbose,
         )
+
+        args_data["start_preprocessing"] = start_time
+        args_data["start_activity"] = start_shift
+        activity.post_process(**args_data)
+
         activity_log.log_entry(
             name, env.now, amount, None, activity_log.id, core.LogState.STOP
         )
@@ -1000,6 +1024,7 @@ def _shift_amount(
     # Set ActivityID to processor and mover
     processor.ActivityID = ActivityID
     origin.ActivityID = ActivityID
+
     print("processor start process")
     # Check if loading or unloading
     yield from processor.process(
