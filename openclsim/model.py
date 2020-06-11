@@ -124,14 +124,28 @@ class Activity(core.Identifiable, core.Log):
 
 
 class AbstractPluginClass(ABC):
-    def __init__(self, plugin_name):
+    def __init__(self, plugin_name, activity):
         self.plugin_name = plugin_name
+        self.activity = activity
 
     def pre_process(self, *args, **kwargs):
         return {}
 
     def post_process(self, *args, **kwargs):
         return {}
+
+    # def delay_processing(self, env, delay_name, activity_log, waiting):
+    #    """Waiting must be a delay expressed in seconds"""
+    #    print(f"delay processing {waiting}")
+    #    activity_log.log_entry(
+    #        delay_name, env.now, -1, None, activity_log.id, core.LogState.WAIT_START,
+    #    )
+    #    print(f"before delay {env.now}")
+    #    yield env.timeout(waiting)
+    #    print(f"after delay {env.now}")
+    #    activity_log.log_entry(
+    #        delay_name, env.now, -1, None, activity_log.id, core.LogState.WAIT_STOP,
+    #    )
 
 
 class PluginActivity(core.Identifiable, core.Log):
@@ -148,10 +162,13 @@ class PluginActivity(core.Identifiable, core.Log):
         self.plugins.append({"priority": priority, "plugin": plugin})
         self.plugins = sorted(self.plugins, key=self.get_priority)
 
-    def pre_process(self, *args, **kwargs):
+    def pre_process(self, args_data):
         for item in self.plugins:
-            result = item["plugin"].pre_process(*args, **kwargs)
-            self.process_pre_processing_result(result)
+            yield from item["plugin"].pre_process(**args_data)
+
+        # for item in self.plugins:
+        #    yield from item["plugin"].pre_process(*args, **kwargs)
+        #    # self.process_pre_processing_result(result)
 
     def post_process(self, *args, **kwargs):
         for item in self.plugins:
@@ -159,6 +176,19 @@ class PluginActivity(core.Identifiable, core.Log):
 
     def process_pre_processing_result(self, result):
         pass
+
+    def delay_processing(self, env, delay_name, activity_log, waiting):
+        """Waiting must be a delay expressed in seconds"""
+        print(f"delay processing {waiting}")
+        activity_log.log_entry(
+            delay_name, env.now, -1, None, activity_log.id, core.LogState.WAIT_START,
+        )
+        print(f"before delay {env.now}")
+        yield env.timeout(waiting)
+        print(f"after delay {env.now}")
+        activity_log.log_entry(
+            delay_name, env.now, -1, None, activity_log.id, core.LogState.WAIT_STOP,
+        )
 
 
 class GenericActivity(PluginActivity):
@@ -277,7 +307,7 @@ class GenericActivity(PluginActivity):
                         # self.env.all_of(events=[event() for event in partial_res])
                         self.env.all_of(events=partial_res)
                     )
-                    self.env.timeout(0)
+                    self.env.timeout(datetime.timedelta(seconds=0))
                 elif "or" in key_val:
                     partial_res = self.parse_expression(key_val["or"])
                     self.env.timeout(0)
@@ -1132,15 +1162,7 @@ def move_process(
     engine_order: optional parameter specifying at what percentage of the maximum speed the mover should sail.
                   for example, engine_order=0.5 corresponds to sailing at 50% of max speed
     """
-    activity_log.log_entry(
-        "move activity {} of {} to {}".format(name, mover.name, destination.name),
-        env.now,
-        -1,
-        mover.geometry,
-        activity_log.id,
-        core.LogState.START,
-    )
-
+    message = "move activity {} of {} to {}".format(name, mover.name, destination.name)
     print("Mover_move before mover resource request")
     # if mover.resource not in requested_resources:
     #    with mover.resource.request() as my_mover_turn:
@@ -1151,12 +1173,19 @@ def move_process(
     start_time = env.now
     args_data = {
         "env": env,
+        "mover": mover,
+        "origin": mover,
         "destination": destination,
         "engine_order": engine_order,
         "activity_log": activity_log,
+        "message": message,
+        "activity": activity,
     }
-    result = activity.pre_process(**args_data)
-    print(f"pre_processing result {result}")
+    yield from activity.pre_process(args_data)
+
+    activity_log.log_entry(
+        message, env.now, -1, mover.geometry, activity_log.id, core.LogState.START,
+    )
 
     start_mover = env.now
     mover.ActivityID = activity_log.id
@@ -1169,12 +1198,7 @@ def move_process(
 
     _release_resource(requested_resources, mover.resource, keep_resources)
     activity_log.log_entry(
-        "move activity {} of {} to {}".format(name, mover.name, destination.name),
-        env.now,
-        -1,
-        mover.geometry,
-        activity_log.id,
-        core.LogState.STOP,
+        message, env.now, -1, mover.geometry, activity_log.id, core.LogState.STOP,
     )
 
 

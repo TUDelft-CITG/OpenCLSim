@@ -19,9 +19,11 @@ import openclsim.model as model
 import openclsim.plot as plot
 import openclsim.plugins as plugin
 
-simulation_start = 0
+#simulation_start = pd.Timestamp().to_datetime64()
+simulation_start  = datetime.datetime(2010,1,1)
 
-my_env = simpy.Environment(initial_time=simulation_start)
+my_env = simpy.Environment(initial_time=simulation_start.timestamp())
+
 registry = {}
 
 # The generic site class
@@ -104,6 +106,7 @@ data_hopper = {
 hopper = TransportProcessingResource(**data_hopper)
 
 
+
 # activity = model.GenericActivity(
 #     env=my_env,  # The simpy environment defined in the first cel
 #     name="Soil movement",  # We are moving soil
@@ -113,11 +116,22 @@ hopper = TransportProcessingResource(**data_hopper)
 TestMoveActivity =  type(
     "TestMoveActivity",
     (
-        plugin.HasTestPlugin,
+        plugin.HasTestPluginMoveActivity,
+        plugin.HasWeatherPluginMoveActivity,
         model.MoveActivity,  # the order is critical!
     ),
     {},
 )
+
+metocean_df = pd.read_csv("openclsim/demo/unit_test_weather.csv")
+metocean_df = metocean_df.set_index(pd.to_datetime(metocean_df["Time"], dayfirst=True))
+metocean_df = metocean_df.sort_index()
+
+criteria_data = {"event_name":"this",
+                 "condition":"Hs [m]",
+                 "maximum":3,
+                 "window_length":datetime.timedelta(hours=1)}
+crit = core.WorkabilityCriterion(**criteria_data)
 
 move_activity_data = {
     "env": my_env,  # The simpy environment defined in the first cel
@@ -126,6 +140,8 @@ move_activity_data = {
     "registry": registry,
     "mover": hopper,
     "destination": to_site,
+    "metocean_criteria":[crit],
+    "metocean_df": metocean_df,
 }
 
 activity = TestMoveActivity(**move_activity_data)
@@ -135,3 +151,15 @@ my_env.run()
 activity.log
 log_df = pd.DataFrame(activity.log)
 data = log_df[["Message", "ActivityState", "Timestamp", "Value", "ActivityID"]]
+
+#%%
+timestep = datetime.timedelta(minutes=10)
+for citerion in [crit]:
+    series = (
+        pd.Series(metocean_df[citerion.condition], index=metocean_df.index)
+        .fillna(0)
+        .resample(timestep)
+        .interpolate("linear")
+    )
+
+    data[citerion.condition] = series.values
