@@ -289,7 +289,9 @@ class EventsObjects(SimpyObject):
         self.object_capacity = object_capacity
         self.object_level = object_level
         self.object_type = object_type
-        self.object_state = object_state  # state can be any identifier, like e.g. the different locations an object has to go through
+        self.object_state = (
+            object_state
+        )  # state can be any identifier, like e.g. the different locations an object has to go through
 
     def is_equal(
         self, state="default_state", object_type="default_type", object_id=None

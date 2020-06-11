@@ -47,16 +47,20 @@ def vessel_planning(vessels, activities, colors=None, web=False, static=False):
 
     # organise logdata into 'dataframes'
     dataframes = []
+    names = []
     for vessel in vessels:
-        df = pd.DataFrame(
-            {
-                "log_value": vessel.log["Value"],
-                "log_string": vessel.log["Message"],
-                "activity_state": vessel.log["ActivityState"],
-            },
-            vessel.log["Timestamp"],
-        )
-        dataframes.append(df)
+        if len(vessel.log["Timestamp"]) > 0:
+            df = pd.DataFrame(
+                {
+                    "log_value": vessel.log["Value"],
+                    "log_string": vessel.log["Message"],
+                    "activity_state": vessel.log["ActivityState"],
+                },
+                vessel.log["Timestamp"],
+            )
+            dataframes.append(df)
+            names.append(vessel.name)
+
     df = dataframes[0]
 
     # prepare traces for each of the activities
@@ -65,7 +69,7 @@ def vessel_planning(vessels, activities, colors=None, web=False, static=False):
         x_combined = []
         y_combined = []
         for k, df in enumerate(dataframes):
-            y_val = vessels[k].name
+            y_val = names[k]
             x, y = get_segments(df, activity=activity, y_val=y_val)
             x_combined.extend(x)
             y_combined.extend(y)
@@ -81,7 +85,11 @@ def vessel_planning(vessels, activities, colors=None, web=False, static=False):
             )
         )
 
-    # prepare layout of figure
+    timestamps = []
+    logs = [o.log["Timestamp"] for o in vessels]
+    for log in logs:
+        timestamps.extend(log)
+
     layout = go.Layout(
         title="Vessel planning",
         hovermode="closest",
@@ -89,10 +97,7 @@ def vessel_planning(vessels, activities, colors=None, web=False, static=False):
         xaxis=dict(
             title="Time",
             titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
-            range=[
-                vessel.log["Timestamp"][0],
-                vessel.log["Timestamp"][-1] + datetime.timedelta(seconds=4 * 3600),
-            ],
+            range=[min(timestamps), max(timestamps)],
         ),
         yaxis=dict(
             title="Vessels",
@@ -101,7 +106,6 @@ def vessel_planning(vessels, activities, colors=None, web=False, static=False):
     )
 
     if static == False:
-        # plot figure
         init_notebook_mode(connected=True)
         fig = go.Figure(data=traces, layout=layout)
 
