@@ -56,12 +56,18 @@ class DebugArgs:
 
 
 class Identifiable:
-    """Something that has a name and id
+    """
+    Something that has a name and id.
 
-    name: a name
-    id: a unique id generated with uuid"""
+    Parameters
+    ----------
+    name
+        a name
+    ID : UUID
+        a unique id generated with uuid
+    """
 
-    def __init__(self, name, ID=None, *args, **kwargs):
+    def __init__(self, name: str, ID: str = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.name = name
@@ -91,10 +97,18 @@ class Locatable:
 
 
 class EventsContainer(simpy.FilterStore):
-    """EventsContainer provide a basic class for managing information which has to be stored in an object.
-    It is a generic container, which has a default behavior, but can be used for storing arbitrary objects."""
+    """
+    EventsContainer provide a basic class for managing information which has to be stored in an object.
 
-    def __init__(self, env, store_capacity=1, *args, **kwargs):
+    It is a generic container, which has a default behavior, but can be used for storing arbitrary objects.
+
+    Parameters
+    ----------
+    store_capacity
+        Number of stores that can be contained by the multicontainer
+    """
+
+    def __init__(self, env, store_capacity: int = 1, *args, **kwargs):
         super().__init__(env, capacity=store_capacity)
         self._env = env
         self._get_available_events = {}
@@ -479,9 +493,16 @@ class EventsStore(simpy.FilterStore):
 
 
 class ReservationContainer(EventsContainer):
-    """This class should be removed as soon as the ObjectStore has been implemented."""
+    """
+    This class should be removed as soon as the ObjectStore has been implemented.
 
-    def __init__(self, env, store_capacity=1, *args, **kwargs):
+    Parameters
+    ----------
+    store_capacity
+        Number of stores that can be contained by the multicontainer
+    """
+
+    def __init__(self, env, store_capacity: int = 1, *args, **kwargs):
         super().__init__(env, capacity=store_capacity, *args, **kwargs)
         # super().__init__(*args, **kwargs)
 
@@ -553,15 +574,27 @@ class ReservationContainer(EventsContainer):
 
 
 class HasContainer(SimpyObject):
-    """Container class
-    A class which can hold information about objects of the same type
+    """
+    A class which can hold information about objects of the same type.
 
-    capacity: amount the container can hold
-    level: amount the container holds initially
-    store_capacity: The number of different types of information can be stored. In this class it usually is 1.
+    Parameters
+    ----------
+    capacity
+        amount the container can hold
+    level
+        Amount the container holds initially
+    store_capacity 
+        The number of different types of information can be stored. In this class it usually is 1.
     """
 
-    def __init__(self, store_capacity=1, capacity=0, level=0, *args, **kwargs):
+    def __init__(
+        self,
+        capacity: float,
+        store_capacity: int = 1,
+        level: float = 0.0,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
         # container_class = type(
@@ -1899,11 +1932,17 @@ class ContainerDependentRouteable(ContainerDependentMovable, Routeable):
 
 
 class HasResource(SimpyObject):
-    """HasProcessingLimit class
+    """
+    Adds a limited Simpy resource which should be requested before the object is used for processing.
+    
+    Parameters
+    ----------
+    nr_resources
+        capacity of the resource
+    
+    """
 
-    Adds a limited Simpy resource which should be requested before the object is used for processing."""
-
-    def __init__(self, nr_resources=1, *args, **kwargs):
+    def __init__(self, nr_resources: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.resource = simpy.Resource(self.env, capacity=nr_resources)
@@ -1983,13 +2022,20 @@ class Log(SimpyObject):
 class LoadingFunction:
     """
     Create a loading function and add it a processor.
+
     This is a generic and easy to read function, you can create your own LoadingFunction class and add this as a mixin.
 
-    loading_rate: the rate at which units are loaded per second
-    load_manoeuvring: the time it takes to manoeuvring in minutes
+    Parameters
+    ----------
+    loading_rate : amount / second
+        The rate at which units are loaded per second
+    load_manoeuvring : seconds
+        The time it takes to manoeuvring in minutes
     """
 
-    def __init__(self, loading_rate, load_manoeuvring=0, *args, **kwargs):
+    def __init__(
+        self, loading_rate: float, load_manoeuvring: float = 0, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.loading_rate = loading_rate
@@ -2015,13 +2061,20 @@ class LoadingFunction:
 class UnloadingFunction:
     """
     Create an unloading function and add it a processor.
+
     This is a generic and easy to read function, you can create your own LoadingFunction class and add this as a mixin.
 
-    unloading_rate: the rate at which units are loaded per second
-    unload_manoeuvring: the time it takes to manoeuvring in minutes
+    Parameters
+    ----------
+    unloading_rate : amount / second
+        The rate at which units are loaded per second
+    unload_manoeuvring : seconds
+        The time it takes to manoeuvring in minutes
     """
 
-    def __init__(self, unloading_rate, unload_manoeuvring=0, *args, **kwargs):
+    def __init__(
+        self, unloading_rate: float, unload_manoeuvring: float = 0, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.unloading_rate = unloading_rate
