@@ -1053,10 +1053,18 @@ def _move_mover(mover, origin, ActivityID, engine_order=1.0, verbose=False):
 
 
 def single_run_process(
-    env, origin, destination, mover, loader, unloader, start_event=None, stop_event=[]
+    env,
+    registry,
+    name,
+    origin,
+    destination,
+    mover,
+    loader,
+    unloader,
+    start_event=None,
+    stop_event=[],
+    requested_resources={},
 ):
-    registry = {}
-    requested_resources = {}
 
     if stop_event == []:
         stop_event = [
@@ -1074,7 +1082,7 @@ def single_run_process(
             registry=registry,
             requested_resources=requested_resources,
             postpone_start=True,
-            name="sailing empty",
+            name=f"{name} sailing empty",
             mover=mover,
             destination=origin,
         ),
@@ -1084,7 +1092,7 @@ def single_run_process(
             requested_resources=requested_resources,
             postpone_start=True,
             phase="loading",
-            name="loading",
+            name=f"{name} loading",
             processor=loader,
             origin=origin,
             destination=mover,
@@ -1094,7 +1102,7 @@ def single_run_process(
             registry=registry,
             requested_resources=requested_resources,
             postpone_start=True,
-            name="sailing filled",
+            name=f"{name} sailing filled",
             mover=mover,
             destination=destination,
         ),
@@ -1103,7 +1111,7 @@ def single_run_process(
             registry=registry,
             requested_resources=requested_resources,
             phase="unloading",
-            name="unloading",
+            name=f"{name} unloading",
             postpone_start=True,
             processor=unloader,
             origin=mover,
@@ -1113,7 +1121,7 @@ def single_run_process(
 
     activity = SequentialActivity(
         env=env,
-        name="Single run process",
+        name=f"{name} sequence",
         registry=registry,
         sub_processes=single_run,
         postpone_start=True,
@@ -1121,7 +1129,7 @@ def single_run_process(
 
     while_activity = WhileActivity(
         env=env,
-        name="while",
+        name=name,
         registry=registry,
         sub_process=activity,
         condition_event=stop_event,

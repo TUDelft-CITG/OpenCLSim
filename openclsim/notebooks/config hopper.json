@@ -139,7 +139,6 @@
                     "v_full": 8,
                     "v_empty": 10,
                     "capacity": 5,
-                    "duplicates": 1,
                     "loading_rate": 360,
                     "unloading_rate": 360
                 }
@@ -154,7 +153,6 @@
                     "v_full": 8,
                     "v_empty": 10,
                     "capacity": 5,
-                    "duplicates": 1,
                     "loading_rate": 360,
                     "unloading_rate": 360
                 }
@@ -169,7 +167,6 @@
                     "v_full": 8,
                     "v_empty": 10,
                     "capacity": 5,
-                    "duplicates": 1,
                     "loading_rate": 1,
                     "nr_resources": 1,
                     "unloading_rate": 1
