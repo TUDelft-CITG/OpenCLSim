@@ -1715,62 +1715,6 @@ class ContainerDependentMovable(Movable, HasContainer):
 
             return min(amounts), all_amounts
 
-    def determine_schedule(self, amount, all_amounts, origins, destinations):
-        """ 
-        Define a strategy for passing through the origins and destinations
-        Implemented is FIFO: First origins will start and first destinations will start.
-        """
-        self.vrachtbrief = {"Type": [], "ID": [], "Priority": [], "Amount": []}
-
-        def update_vrachtbrief(typestring, id, priority, amount):
-            """ Update the vrachtbrief """
-
-            self.vrachtbrief["Type"].append(typestring)
-            self.vrachtbrief["ID"].append(id)
-            self.vrachtbrief["Priority"].append(priority)
-            self.vrachtbrief["Amount"].append(amount)
-
-        to_retrieve = 0
-        to_place = 0
-
-        # reserve the amount in origin an destination
-        for origin in origins:
-            if all_amounts["origin." + origin.id] == 0:
-                continue
-            elif all_amounts["origin." + origin.id] <= amount - to_retrieve:
-                to_retrieve += all_amounts["origin." + origin.id]
-                origin.container.reserve_get(all_amounts["origin." + origin.id])
-                update_vrachtbrief(
-                    "Origin", origin, 1, all_amounts["origin." + origin.id]
-                )
-
-            else:
-                origin.container.reserve_get(amount - to_retrieve)
-                update_vrachtbrief("Origin", origin, 1, amount - to_retrieve)
-                break
-
-        for destination in destinations:
-            if all_amounts["destination." + destination.id] == 0:
-                continue
-            elif all_amounts["destination." + destination.id] <= amount - to_place:
-                to_place += all_amounts["destination." + destination.id]
-                destination.container.reserve_put(
-                    all_amounts["destination." + destination.id]
-                )
-                update_vrachtbrief(
-                    "Destination",
-                    destination,
-                    1,
-                    all_amounts["destination." + destination.id],
-                )
-
-            else:
-                destination.container.reserve_put(amount - to_place)
-                update_vrachtbrief("Destination", destination, 1, amount - to_place)
-                break
-
-        return pd.DataFrame.from_dict(self.vrachtbrief).sort_values("Priority")
-
 
 class MultiContainerDependentMovable(Movable, HasMultiContainer):
     """MultiContainerDependentMovable class
@@ -2039,7 +1983,6 @@ class LoadingFunction:
         Determine the duration based on an amount that is given as input with processing.
         The origin an destination are also part of the input, because other functions might be dependent on the location.
         """
-
         if not hasattr(self.loading_rate, "__call__"):
             return amount / self.loading_rate + self.load_manoeuvring * 60
         else:
@@ -2232,20 +2175,15 @@ class Processor(SimpyObject):
         """Moves content from ship to the site or from the site to the ship to ensure that the ship's container reaches
         the desired level. Yields the time it takes to process."""
 
-        # Before starting to process, check the following requirements
-        # Make sure that both objects have storage
-        assert isinstance(origin, HasContainer) and isinstance(
-            destination, HasContainer
-        )
-        # Make sure that both objects allow processing
-        assert isinstance(origin, HasResource) and isinstance(destination, HasResource)
-        # Make sure that the processor (self), container and site can log the events
-        assert (
-            isinstance(self, Log)
-            and isinstance(origin, Log)
-            and isinstance(destination, Log)
-        )
-        # Make sure that the processor, origin and destination are all at the same location
+        assert isinstance(origin, HasContainer)
+        assert isinstance(destination, HasContainer)
+        assert isinstance(origin, HasResource)
+        assert isinstance(destination, HasResource)
+        assert isinstance(self, Log)
+        assert isinstance(origin, Log)
+        assert isinstance(destination, Log)
+
+        # Make sure that the , origin and destination are all at the same location
         assert self.is_at(origin)
         assert destination.is_at(origin)
 

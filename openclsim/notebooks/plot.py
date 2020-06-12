@@ -36,7 +36,9 @@ def get_segments(df, activity, y_val):
     return x, y
 
 
-def vessel_planning(vessels, activities, colors=None, web=False, static=False):
+def vessel_planning(
+    vessels, activities, colors=None, web=False, static=False, y_scale="text"
+):
     """create a plot of the planning of vessels"""
 
     if colors is None:
@@ -69,7 +71,7 @@ def vessel_planning(vessels, activities, colors=None, web=False, static=False):
         x_combined = []
         y_combined = []
         for k, df in enumerate(dataframes):
-            y_val = -k  # names[k]
+            y_val = -k if y_scale == "numbers" else names[k]
             x, y = get_segments(df, activity=activity, y_val=y_val)
             x_combined.extend(x)
             y_combined.extend(y)
