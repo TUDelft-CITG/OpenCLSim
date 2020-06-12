@@ -7,6 +7,9 @@ from abc import ABC
 
 
 class AbstractPluginClass(ABC):
+    """Abstract class used as the basis for all Classes implementing a plugin for a specific Activity. 
+    Instance checks will be performed on this class level."""
+
     def __init__(self, plugin_name, activity):
         self.plugin_name = plugin_name
         self.activity = activity
@@ -19,6 +22,10 @@ class AbstractPluginClass(ABC):
 
 
 class PluginActivity(core.Identifiable, core.Log):
+    """"This is the base class for all activities which will provide a plugin mechanism. 
+    The plugin mechanism foresees that the plugin function pre_process is called before the activity is executed, while
+    the function post_process is called after the activity has been executed."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.plugins = list()
@@ -31,19 +38,14 @@ class PluginActivity(core.Identifiable, core.Log):
         self.plugins = sorted(self.plugins, key=self.get_priority)
 
     def pre_process(self, args_data):
+        # iterating over all registered plugins for this activity calling pre_process
         for item in self.plugins:
             yield from item["plugin"].pre_process(**args_data)
 
-        # for item in self.plugins:
-        #    yield from item["plugin"].pre_process(*args, **kwargs)
-        #    # self.process_pre_processing_result(result)
-
     def post_process(self, *args, **kwargs):
+        # iterating over all registered plugins for this activity calling post_process
         for item in self.plugins:
             item["plugin"].post_process(*args, **kwargs)
-
-    def process_pre_processing_result(self, result):
-        pass
 
     def delay_processing(self, env, delay_name, activity_log, waiting):
         """Waiting must be a delay expressed in seconds"""
@@ -61,11 +63,15 @@ class PluginActivity(core.Identifiable, core.Log):
 
 class GenericActivity(PluginActivity):
     """The GenericActivity Class forms a generic class which sets up all required mechanisms to control 
-    an activity by providing start and end events. Since it is generic, a parameter of the initialization
+    an activity by providing a start event. Since it is generic, a parameter of the initialization
     is the main process, which is provided by an inheriting class
     main_proc  : the main process to be executed
     start_event: the activity will start as soon as this event is triggered
                  by default will be to start immediately
+    requested_resources: a call by refernce value to a dictionary of resources, which have been requested and not released yet.
+    keep_resources: a list of resources, which should not be released at the end of the activity
+    postpone_start: if set to True, the activity will not be directly started in the simpy environment, 
+                but will be started by a structrual activity, like sequential or while activity.
     """
 
     def __init__(
@@ -136,6 +142,7 @@ class GenericActivity(PluginActivity):
             )
 
     def parse_expression(self, expr):
+        """Parsing of the expression language used for start_events and conditional_events."""
         res = []
         if not isinstance(expr, list):
             raise Exception(
@@ -268,9 +275,6 @@ class MoveActivity(GenericActivity):
            stopped moving, started loading / unloading and stopped loading / unloading
     start_event: the activity will start as soon as this event is triggered
                  by default will be to start immediately
-    stop_event: the activity will stop (terminate) as soon as this event is triggered
-                by default will be an event triggered when the destination container becomes full or the source
-                container becomes empty
     """
 
     def __init__(self, mover, destination, show=False, *args, **kwargs):
@@ -296,26 +300,13 @@ class MoveActivity(GenericActivity):
 
 
 class BasicActivity(GenericActivity):
-    """The MoveActivity Class forms a specific class for a single move activity within a simulation.
-    It deals with a single origin container, destination container and a single combination of equipment
-    to move substances from the origin to the destination. It will initiate and suspend processes
-    according to a number of specified conditions. To run an activity after it has been initialized call env.run()
-    on the Simpy environment with which it was initialized.
+    """The BasicActivity Class is a generic class to describe an activity, which does not require any specific resource, 
+    but has a specific duration.
 
-    To check when a transportation of substances can take place, the Activity class uses three different condition
-    arguments: start_condition, stop_condition and condition. These condition arguments should all be given a condition
-    object which has a satisfied method returning a boolean value. True if the condition is satisfied, False otherwise.
-
-    destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
-    mover: moves to 'origin' if it is not already there, is loaded, then moves to 'destination' and is unloaded
-           should inherit from Movable, HasContainer, HasResource, Identifiable and Log
-           after the simulation is complete, its log will contain entries for each time it started moving,
-           stopped moving, started loading / unloading and stopped loading / unloading
+    duration: time required to perform the described activity.
+    additional_logs: list of other concepts, where the start and the stop of the basic activity should be recorded.
     start_event: the activity will start as soon as this event is triggered
                  by default will be to start immediately
-    stop_event: the activity will stop (terminate) as soon as this event is triggered
-                by default will be an event triggered when the destination container becomes full or the source
-                container becomes empty
     """
 
     def __init__(self, duration, additional_logs=[], show=False, *args, **kwargs):
@@ -345,21 +336,11 @@ class BasicActivity(GenericActivity):
 
 class SequentialActivity(GenericActivity):
     """The SequenceActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+    It is a structural activity, which does not require specific resources.
     
-    To check when a transportation of substances can take place, the Activity class uses three different condition
-    arguments: start_condition, stop_condition and condition. These condition arguments should all be given a condition
-    object which has a satisfied method returning a boolean value. True if the condition is satisfied, False otherwise.
-
-    destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
-    mover: moves to 'origin' if it is not already there, is loaded, then moves to 'destination' and is unloaded
-           should inherit from Movable, HasContainer, HasResource, Identifiable and Log
-           after the simulation is complete, its log will contain entries for each time it started moving,
-           stopped moving, started loading / unloading and stopped loading / unloading
+    sub_processes: a list of activities to be executed in the provided sequence.
     start_event: the activity will start as soon as this event is triggered
                  by default will be to start immediately
-    stop_event: the activity will stop (terminate) as soon as this event is triggered
-                by default will be an event triggered when the destination container becomes full or the source
-                container becomes empty
     """
 
     def __init__(self, sub_processes, show=False, *args, **kwargs):
@@ -384,16 +365,12 @@ class SequentialActivity(GenericActivity):
 
 class WhileActivity(GenericActivity):
     """The WhileActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
-    
-    To check when a transportation of substances can take place, the Activity class uses three different condition
-    arguments: start_condition, stop_condition and condition. These condition arguments should all be given a condition
-    object which has a satisfied method returning a boolean value. True if the condition is satisfied, False otherwise.
+    The while activity is a structural activity, which does not require specific resources.
 
+    sub_process: the sub_process which is executed in every iteration
+    condition_event: a condition event provided in the expression language which will stop the iteration as soon as the event is fulfilled.    
     start_event: the activity will start as soon as this event is triggered
                  by default will be to start immediately
-    stop_event: the activity will stop (terminate) as soon as this event is triggered
-                by default will be an event triggered when the destination container becomes full or the source
-                container becomes empty
     """
 
     #     activity_log, env, stop_event, sub_processes, requested_resources, keep_resources
@@ -431,20 +408,15 @@ class ShiftAmountActivity(GenericActivity):
     according to a number of specified conditions. To run an activity after it has been initialized call env.run()
     on the Simpy environment with which it was initialized.
 
-    To check when a transportation of substances can take place, the Activity class uses three different condition
-    arguments: start_condition, stop_condition and condition. These condition arguments should all be given a condition
-    object which has a satisfied method returning a boolean value. True if the condition is satisfied, False otherwise.
-
-    destination: object inheriting from HasContainer, HasResource, Locatable, Identifiable and Log
-    mover: moves to 'origin' if it is not already there, is loaded, then moves to 'destination' and is unloaded
-           should inherit from Movable, HasContainer, HasResource, Identifiable and Log
-           after the simulation is complete, its log will contain entries for each time it started moving,
-           stopped moving, started loading / unloading and stopped loading / unloading
+    
+    origin: container where the source objects are located.
+    destination: container, where the objects are assigned to
+    processor: resource responsible to implement the transfer.
+    amount: the maximum amount of objects to be transfered.
+    duration: time specified in seconds on how long it takes to transfer the objects.
+    id_: in case of MultiContainers the id_ of the container, where the objects should be removed from or assiged to respectively.
     start_event: the activity will start as soon as this event is triggered
                  by default will be to start immediately
-    stop_event: the activity will stop (terminate) as soon as this event is triggered
-                by default will be an event triggered when the destination container becomes full or the source
-                container becomes empty
     """
 
     def __init__(
@@ -563,15 +535,14 @@ def conditional_process(
     keep_resources,
 ):
     """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
-    sub_processes will be executed until the given stop_event occurs. If the stop_event occurs during the execution
-    of the sub_processes, the conditional process will first complete all sub_processes (which are executed sequentially
-    in the order in which they are given), before finishing its own process.
+    sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
+    of the sub_process, the conditional process will first complete the sub_process before finishing its own process.
 
     activity_log: the core.Log object in which log_entries about the activities progress will be added.
     env: the simpy.Environment in which the process will be run
-    stop_event: a simpy.Event object, when this event occurs, the conditional process will finish executing its current
+    condition_event: a simpy.Event object, when this event occurs, the conditional process will finish executing its current
                 run of its sub_processes and then finish
-    sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
+    sub_process: an Iterable of methods which will be called with the activity_log and env parameters and should
                    return a generator which could be added as a process to a simpy.Environment
                    the sub_processes will be executed sequentially, in the order in which they are given as long
                    as the stop_event has not occurred.
@@ -649,10 +620,8 @@ def basic_process(
     keep_resources,
     additional_logs=[],
 ):
-    """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
-    sub_processes will be executed until the given stop_event occurs. If the stop_event occurs during the execution
-    of the sub_processes, the conditional process will first complete all sub_processes (which are executed sequentially
-    in the order in which they are given), before finishing its own process.
+    """Returns a generator which can be added as a process to a simpy.Environment. The process will report the start of the 
+    activity, delay the execution for the provided duration, and finally report the completion of the activiy.
 
     activity_log: the core.Log object in which log_entries about the activities progress will be added.
     env: the simpy.Environment in which the process will be run
@@ -867,8 +836,6 @@ def shift_amount_process(
         if processor.resource in resource_requests:
             _release_resource(resource_requests, processor.resource, keep_resources)
         print(f"released processor : {resource_requests}")
-        # print("done")
-
     else:
         raise RuntimeError(
             f"Attempting to shift content from an empty origin or to a full destination. ({all_amounts})"

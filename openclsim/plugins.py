@@ -77,6 +77,8 @@ class TestPluginMoveActivity(model.AbstractPluginClass):
 
 
 class HasTestPluginMoveActivity:
+    """Mixin for MoveActivity to initialize TestPluginMoveActivity"""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if isinstance(self, model.PluginActivity):
@@ -213,6 +215,8 @@ class WeatherPluginMoveActivity(model.AbstractPluginClass):
 
 
 class HasWeatherPluginMoveActivity:
+    """Mixin for MoveActivity to initialize WeatherPluginMoveActivity"""
+
     def __init__(
         self,
         metocean_criteria=None,
