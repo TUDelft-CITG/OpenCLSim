@@ -36,7 +36,10 @@ logger = logging.getLogger(__name__)
 class SimpyObject:
     """General object which can be extended by any class requiring a simpy environment
 
-    env: a simpy Environment
+    Parameters
+    ----------
+    env
+        A simpy Environment
     """
 
     def __init__(self, env, *args, **kwargs):
@@ -78,7 +81,10 @@ class Identifiable:
 class Locatable:
     """Something with a geometry (geojson format)
 
-    geometry: can be a point as well as a polygon"""
+    Parameters
+    ----------
+    geometry
+        can be a point as well as a polygon"""
 
     def __init__(self, geometry, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -625,17 +631,22 @@ class HasMultiContainer(HasContainer):
 class EnergyUse(SimpyObject):
     """EnergyUse class
 
-    energy_use_sailing:   function that specifies the fuel use during sailing activity   - input should be time
-    energy_use_loading:   function that specifies the fuel use during loading activity   - input should be time
-    energy_use_unloading: function that specifies the fuel use during unloading activity - input should be time
-
     Example function could be as follows.
     The energy use of the loading event is equal to: duration * power_use.
-
     def energy_use_loading(power_use):
         return lambda x: x * power_use
-    
-    This calss should be turned into a plugin class
+
+    This class should be turned into a plugin class
+
+
+    Parameters
+    ----------
+    energy_use_sailing
+        function that specifies the fuel use during sailing activity   - input should be time
+    energy_use_loading
+        function that specifies the fuel use during loading activity   - input should be time
+    energy_use_unloading
+        function that specifies the fuel use during unloading activity - input should be time
     """
 
     def __init__(
@@ -646,8 +657,8 @@ class EnergyUse(SimpyObject):
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
         """Initialization"""
+        super().__init__(*args, **kwargs)
         self.energy_use_sailing = energy_use_sailing
         self.energy_use_loading = energy_use_loading
         self.energy_use_unloading = energy_use_unloading
@@ -656,14 +667,25 @@ class EnergyUse(SimpyObject):
 class HasCosts:
     """
     Add cost properties to objects
+
+    Parameters
+    ----------
+    dayrate : currency / day
+        Cost of the object per day
+    weekrate : currency / week
+        Cost of the object per week
+    mobilisation : currency
+        Cost of the mobilisation of the object
+    demobilisation : currency
+        Cost of the demobilisation of the object
     """
 
     def __init__(
         self,
-        dayrate=None,
-        weekrate=None,
-        mobilisation=None,
-        demobilisation=None,
+        dayrate: float = None,
+        weekrate: float = None,
+        mobilisation: float = None,
+        demobilisation: float = None,
         *args,
         **kwargs,
     ):
@@ -1093,10 +1115,22 @@ class HasWeather(HasAbstractWeather):
     """HasWeather class
 
     Used to add weather conditions to a project site
-    
-    dataframe: containing the weather data
-    timestep: size of timestep to interpolate between datapoints (minutes)
-    bed: level of the seabed / riverbed with respect to CD (meters)
+
+
+    Parameters
+    ----------
+    dataframe
+        Pandas dataframe that contains the weather information
+    timestep
+        size of timestep to interpolate between datapoints (minutes)
+    bed
+        level of the seabed / riverbed with respect to CD (meters)
+    waveheight_column
+        Column fo the dataframe that contains wave height
+    waveperiod_column
+        Column fo the dataframe that contains wave period
+    waterlevel_column
+        Column fo the dataframe that contains water level height
     """
 
     def __init__(
@@ -1104,9 +1138,9 @@ class HasWeather(HasAbstractWeather):
         dataframe,
         timestep=10,
         bed=None,
-        waveheight_column="Hm0 [m]",
-        waveperiod_column="Tp [s]",
-        waterlevel_column="Tide [m]",
+        waveheight_column: str = "Hm0 [m]",
+        waveperiod_column: str = "Tp [s]",
+        waterlevel_column: str = "Tide [m]",
         *args,
         **kwargs,
     ):
@@ -1596,13 +1630,19 @@ class HasDepthRestriction:
 
 
 class Movable(SimpyObject, Locatable):
-    """Movable class
+    """
+    Movable class
 
     Used for object that can move with a fixed speed
     geometry: point used to track its current location
-    v: speed"""
 
-    def __init__(self, v=1, *args, **kwargs):
+    Parameters
+    ----------
+    v : m/s
+        speed
+    """
+
+    def __init__(self, v: float = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.v = v
@@ -1697,7 +1737,11 @@ class ContainerDependentMovable(Movable, HasContainer):
     """ContainerDependentMovable class
 
     Used for objects that move with a speed dependent on the container level
-    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
+
+    Parameters
+    ----------
+    compute_v
+        a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
 
     def __init__(self, compute_v, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1896,10 +1940,11 @@ class Routeable(Movable):
 
 
 class ContainerDependentRouteable(ContainerDependentMovable, Routeable):
-    """ContainerDependentRouteable class
+    """
+    ContainerDependentRouteable class
 
     Used for objects that move with a speed dependent on the container level
-    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1933,13 +1978,14 @@ class ContainerDependentRouteable(ContainerDependentMovable, Routeable):
 
 class HasResource(SimpyObject):
     """
+    HasProcessingLimit class
+
     Adds a limited Simpy resource which should be requested before the object is used for processing.
-    
+
     Parameters
     ----------
     nr_resources
-        capacity of the resource
-    
+        Number of rescources of the object
     """
 
     def __init__(self, nr_resources: int = 1, *args, **kwargs):
@@ -2066,10 +2112,10 @@ class UnloadingFunction:
 
     Parameters
     ----------
-    unloading_rate : amount / second
-        The rate at which units are loaded per second
-    unload_manoeuvring : seconds
-        The time it takes to manoeuvring in minutes
+    unloading_rate : volume / second
+        the rate at which units are loaded per second
+    unload_manoeuvring : minutes
+        the time it takes to manoeuvring in minutes
     """
 
     def __init__(
@@ -2100,7 +2146,14 @@ class UnloadingFunction:
 
 class LoadingSubcycle:
     """
-    loading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
+    Loading Subcycle for simulations.
+
+    Parameters
+    ----------
+    loading_subcycle
+        pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
+    loading_subcycle_frequency
+        frequency of the subcycle
     """
 
     def __init__(self, loading_subcycle, loading_subcycle_frequency, *args, **kwargs):
@@ -2123,7 +2176,14 @@ class LoadingSubcycle:
 
 class UnloadingSubcycle:
     """
-    unloading_subcycle: pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
+    Loading Subcycle for simulations.
+
+    Parameters
+    ----------
+    unloading_subcycle
+        pandas dataframe with at least the columns EventName (str) and Duration (int or float in minutes)
+    unloading_subcycle_frequency
+        frequency of the subcycle
     """
 
     def __init__(
