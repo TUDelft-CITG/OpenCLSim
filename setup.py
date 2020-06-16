@@ -41,7 +41,7 @@ requires = [
 
 setup_requirements = ["pytest-runner"]
 
-tests_require = ["pytest==3.10.1", "pytest-cov", "pytest-timeout", "pytest-datadir"]
+tests_require = ["pytest", "pytest-cov", "pytest-timeout", "pytest-datadir"]
 
 with open("README.md", "r") as des:
     long_description = des.read()
