@@ -1,0 +1,167 @@
+{
+    "tag": [
+        "Cutter",
+        "Barge",
+        "example",
+        "demo"
+    ],
+    "engine": "colos",
+    "config": {
+        "simulationProperties": {},
+        "activities": [
+            {
+                "name": "While_Subcycle",
+                "class": "WhileActivity",
+                "properties": {
+                    "condition_event": [
+                        {
+                            "or": [
+                                {
+                                    "type": "container",
+                                    "concept": "boot_1",
+                                    "state": "full"
+                                },
+                                {
+                                    "type": "container",
+                                    "concept": "from_site_1",
+                                    "state": "empty"
+                                }
+                            ]
+                        }
+                    ],
+                    "sub_process": {
+                        "name": "Subcycle",
+                        "class": "SequenceActivity",
+                        "properties": {
+                            "sub_processes": [
+                                {
+                                    "name": "BasicActivity_A",
+                                    "class": "BasicActivity",
+                                    "properties": {
+                                        "duration": 100
+                                    }
+                                },
+                                {
+                                    "name": "BasicActivity_B",
+                                    "class": "BasicActivity",
+                                    "properties": {
+                                        "duration": 100
+                                    }
+                                },
+                                {
+                                    "name": "BasicActivity_C",
+                                    "class": "BasicActivity",
+                                    "properties": {
+                                        "duration": 100
+                                    }
+                                },
+                                {
+                                    "name": "loading_1",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "boot_1",
+                                        "origin": "from_site_1",
+                                        "destination": "boot_1",
+                                        "amount": 1,
+                                        "duration": 3600
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        ],
+        "vessels": {
+            "boot_1": {
+                "class": "TestHopper",
+                "properties": {
+                    "v": 1,
+                    "lat": 50.1,
+                    "lon": 6,
+                    "level": 0,
+                    "v_full": 8,
+                    "v_empty": 10,
+                    "capacity": 5,
+                    "loading_rate": 360,
+                    "unloading_rate": 360
+                }
+            },
+            "boot_2": {
+                "class": "TestHopper",
+                "properties": {
+                    "v": 1,
+                    "lat": 50.1,
+                    "lon": 6,
+                    "level": 0,
+                    "v_full": 8,
+                    "v_empty": 10,
+                    "capacity": 5,
+                    "loading_rate": 360,
+                    "unloading_rate": 360
+                }
+            },
+            "boot_3": {
+                "class": "TestHopper",
+                "properties": {
+                    "v": 1,
+                    "lat": 50.1,
+                    "lon": 6,
+                    "level": 0,
+                    "v_full": 8,
+                    "v_empty": 10,
+                    "capacity": 5,
+                    "loading_rate": 1,
+                    "nr_resources": 1,
+                    "unloading_rate": 1
+                }
+            }
+        },
+        "sites": {
+            "from_site_1": {
+                "class": "TestSite",
+                "properties": {
+                    "lat": 50.1,
+                    "lon": 6,
+                    "level": 55,
+                    "capacity": 55,
+                    "nr_resources": 1
+                }
+            },
+            "from_site_2": {
+                "class": "TestSite",
+                "properties": {
+                    "lat": 50.2,
+                    "lon": 6,
+                    "level": 55,
+                    "capacity": 55,
+                    "nr_resources": 1
+                }
+            },
+            "from_site_3": {
+                "class": "TestSite",
+                "properties": {
+                    "lat": 50.3,
+                    "lon": 6,
+                    "level": 55,
+                    "capacity": 55,
+                    "nr_resources": 1
+                }
+            },
+            "to_site": {
+                "class": "TestSite",
+                "properties": {
+                    "lat": 50,
+                    "lon": 6.1,
+                    "level": 0,
+                    "capacity": 1000000,
+                    "nr_resources": 1
+                }
+            }
+        },
+        "graph": {
+            "nodes": [],
+            "edges": []
+        }
+    }
+}
