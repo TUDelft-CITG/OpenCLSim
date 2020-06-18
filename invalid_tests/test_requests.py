@@ -53,6 +53,7 @@ class BasicStorageUnit(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.name="BasicStorageUnit"
 
 
 class Mover(
@@ -125,9 +126,9 @@ def test_dual_processors(env, geometry_a):
     env.run()
 
     np.testing.assert_almost_equal(env.now, env.epoch + 400)
-    assert unlimited_container.container.level == 200
-    assert limited_container_1.container.level == 400
-    assert limited_container_2.container.level == 400
+    assert unlimited_container.container.get_level() == 200
+    assert limited_container_1.container.get_level() == 400
+    assert limited_container_2.container.get_level() == 400
 
     env.process(processor1.process(limited_container_1, 100, unlimited_container))
     env.process(processor2.process(limited_container_2, 300, unlimited_container))
@@ -136,9 +137,9 @@ def test_dual_processors(env, geometry_a):
     time_spent = env.now - start
 
     np.testing.assert_almost_equal(time_spent, 150)
-    assert unlimited_container.container.level == 600
-    assert limited_container_1.container.level == 100
-    assert limited_container_2.container.level == 300
+    assert unlimited_container.container.get_level() == 600
+    assert limited_container_1.container.get_level() == 100
+    assert limited_container_2.container.get_level() == 300
 
 
 def test_dual_processors_with_limit(env, geometry_a):
@@ -225,6 +226,6 @@ def test_dual_processors_with_limit(env, geometry_a):
 
     # Simultaneous accessing limited_container, so waiting event of 1000 seconds
     np.testing.assert_almost_equal(env.now, env.epoch + 3000)
-    assert limited_container.container.level == 2000
-    assert unlimited_container_1.container.level == 0
-    assert unlimited_container_2.container.level == 0
+    assert limited_container.container.get_level() == 2000
+    assert unlimited_container_1.container.get_level() == 0
+    assert unlimited_container_2.container.get_level() == 0

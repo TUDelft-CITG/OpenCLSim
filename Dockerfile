@@ -1,5 +1,5 @@
 # Start with docker image from anaconda
-FROM continuumio/miniconda3:4.6.14
+FROM continuumio/miniconda3
 
 # Install conda stuff first
 RUN conda install numpy pandas nomkl pyproj
@@ -15,4 +15,4 @@ RUN pip install -e .
 # expose port 5000
 EXPOSE 5000
 # Serve on port 5000
-CMD openclsim serve --port 5000
+#CMD openclsim serve --port 5000

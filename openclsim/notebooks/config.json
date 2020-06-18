@@ -1,0 +1,205 @@
+{
+    "tag": [
+        "Cutter",
+        "Barge",
+        "example",
+        "demo"
+    ],
+    "engine": "colos",
+    "config": {
+        "simulationProperties": {},
+        "activities": [
+            {
+                "name": "SingeRunCycle1",
+                "class": "WhileActivity",
+                "properties": {
+                    "sub_process": {
+                        "name": "WhileFull1",
+                        "class": "SequenceActivity",
+                        "properties": {
+                            "sub_processes": [
+                                {
+                                    "name": "sailing_empty1",
+                                    "class": "MoveActivity",
+                                    "properties": {
+                                        "mover": "barge_1",
+                                        "destination": "from_site"
+                                    }
+                                },
+                                {
+                                    "name": "loading1",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "cutter",
+                                        "origin": "from_site",
+                                        "destination": "barge_1",
+                                        "amount": 5,
+                                        "duration": 3600
+                                    }
+                                },
+                                {
+                                    "name": "sailing_full1",
+                                    "class": "MoveActivity",
+                                    "properties": {
+                                        "mover": "barge_1",
+                                        "destination": "to_site"
+                                    }
+                                },
+                                {
+                                    "name": "unloading1",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "barge_1",
+                                        "origin": "barge_1",
+                                        "destination": "to_site",
+                                        "amount": 5,
+                                        "duration": 3600
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "condition_event": [
+                        {
+                            "type": "container",
+                            "concept": "to_site",
+                            "state": "full"
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "SingeRunCycle",
+                "class": "WhileActivity",
+                "properties": {
+                    "sub_process": {
+                        "name": "WhileFull",
+                        "class": "SequenceActivity",
+                        "properties": {
+                            "sub_processes": [
+                                {
+                                    "name": "sailing_empty",
+                                    "class": "MoveActivity",
+                                    "properties": {
+                                        "mover": "barge_2",
+                                        "destination": "from_site"
+                                    }
+                                },
+                                {
+                                    "name": "loading",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "cutter",
+                                        "origin": "from_site",
+                                        "destination": "barge_2",
+                                        "amount": 5,
+                                        "duration": 3600
+                                    }
+                                },
+                                {
+                                    "name": "sailing_full",
+                                    "class": "MoveActivity",
+                                    "properties": {
+                                        "mover": "barge_2",
+                                        "destination": "to_site"
+                                    }
+                                },
+                                {
+                                    "name": "unloading",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "barge_2",
+                                        "origin": "barge_2",
+                                        "destination": "to_site",
+                                        "amount": 5,
+                                        "duration": 3600
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "condition_event": [
+                        {
+                            "type": "container",
+                            "concept": "to_site",
+                            "state": "full"
+                        }
+                    ]
+                }
+            }
+        ],
+        "vessels": {
+            "cutter": {
+                "class": "TestCutter",
+                "properties": {
+                    "lat": 50,
+                    "lon": 6,
+                    "duplicates": 1,
+                    "loading_rate": 1,
+                    "nr_resources": 1,
+                    "unloading_rate": 1,
+                    "load_manoeuvring": 0,
+                    "unload_manoeuvring": 0
+                }
+            },
+            "barge_1": {
+                "class": "TestBarge",
+                "properties": {
+                    "v": 1,
+                    "lat": 50,
+                    "lon": 6,
+                    "level": 0,
+                    "v_full": 8,
+                    "v_empty": 10,
+                    "capacity": 5,
+                    "duplicates": 1,
+                    "nr_resources": 1,
+                    "unloading_rate": 1,
+                    "unload_manoeuvring": 0
+                }
+            },
+            "barge_2": {
+                "class": "TestBarge",
+                "properties": {
+                    "v": 1,
+                    "lat": 50,
+                    "lon": 6,
+                    "level": 0,
+                    "v_full": 8,
+                    "v_empty": 10,
+                    "capacity": 5,
+                    "duplicates": 1,
+                    "nr_resources": 1,
+                    "unloading_rate": 1,
+                    "unload_manoeuvring": 0
+                }
+            }
+        },
+        "sites": {
+            "from_site": {
+                "class": "TestSite",
+                "properties": {
+                    "lat": 50,
+                    "lon": 6,
+                    "level": 55,
+                    "capacity": 55,
+                    "nr_resources": 1
+                }
+            },
+            "to_site": {
+                "class": "TestSite",
+                "properties": {
+                    "lat": 50,
+                    "lon": 7,
+                    "level": 0,
+                    "capacity": 55,
+                    "nr_resources": 1
+                }
+            }
+        },
+        "graph": {
+            "nodes": [],
+            "edges": []
+        }
+    }
+}

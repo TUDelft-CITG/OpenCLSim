@@ -120,8 +120,8 @@ def test_two_origins_two_destinations(env, Location, TransportProcessingResource
 
     env.run()
 
-    assert from_site[0].container.level == 0
-    assert from_site[1].container.level == 0
+    assert from_site[0].container.get_level() == 0
+    assert from_site[1].container.get_level() == 0
 
-    assert to_site[0].container.level == 2_500
-    assert to_site[1].container.level == 2_500
+    assert to_site[0].container.get_level() == 2_500
+    assert to_site[1].container.get_level() == 2_500

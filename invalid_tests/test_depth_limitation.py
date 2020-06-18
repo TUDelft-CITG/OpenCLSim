@@ -211,7 +211,7 @@ def test_calc_restrictions(
     assert (
         location.metocean_data["Water depth"][datetime.datetime(2019, 1, 1, 21)] == 6.5
     )
-    assert mover.container.level / mover.container.capacity in list(
+    assert mover.container.get_level() / mover.container.get_capacity() in list(
         mover.depth_data[location.name].keys()
     )
 

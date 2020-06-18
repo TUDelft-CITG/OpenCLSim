@@ -1,0 +1,223 @@
+{
+    "tag": [
+        "Cutter",
+        "Barge",
+        "example",
+        "demo"
+    ],
+    "engine": "colos",
+    "config": {
+        "simulationProperties": {},
+        "activities": [
+            {
+                "name": "SingeRunCycle_1",
+                "class": "WhileActivity",
+                "properties": {
+                    "sub_process": {
+                        "name": "WhileFull_1",
+                        "class": "SequenceActivity",
+                        "properties": {
+                            "sub_processes": [
+                                {
+                                    "name": "sailing_empty_1",
+                                    "class": "MoveActivity",
+                                    "properties": {
+                                        "mover": "boot_1",
+                                        "destination": "from_site_1"
+                                    }
+                                },
+                                {
+                                    "name": "loading_1",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "boot_1",
+                                        "origin": "from_site_1",
+                                        "destination": "boot_1",
+                                        "amount": 5,
+                                        "duration": 3600
+                                    }
+                                },
+                                {
+                                    "name": "sailing_full_1",
+                                    "class": "MoveActivity",
+                                    "properties": {
+                                        "mover": "boot_1",
+                                        "destination": "to_site"
+                                    }
+                                },
+                                {
+                                    "name": "unloading_1",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "boot_1",
+                                        "origin": "boot_1",
+                                        "destination": "to_site",
+                                        "amount": 5,
+                                        "duration": 3600
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "condition_event": [
+                        {
+                            "type": "container",
+                            "concept": "from_site_1",
+                            "state": "empty"
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "SingeRunCycle_3",
+                "class": "WhileActivity",
+                "properties": {
+                    "sub_process": {
+                        "name": "WhileFull_3",
+                        "class": "SequenceActivity",
+                        "properties": {
+                            "sub_processes": [
+                                {
+                                    "name": "sailing_empty_3",
+                                    "class": "MoveActivity",
+                                    "properties": {
+                                        "mover": "boot_3",
+                                        "destination": "from_site_2"
+                                    }
+                                },
+                                {
+                                    "name": "loading_3",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "boot_3",
+                                        "origin": "from_site_2",
+                                        "destination": "boot_3",
+                                        "amount": 5,
+                                        "duration": 3600
+                                    }
+                                },
+                                {
+                                    "name": "sailing_full_3",
+                                    "class": "MoveActivity",
+                                    "properties": {
+                                        "mover": "boot_3",
+                                        "destination": "to_site"
+                                    }
+                                },
+                                {
+                                    "name": "unloading_3",
+                                    "class": "ShiftAmountActivity",
+                                    "properties": {
+                                        "processor": "boot_3",
+                                        "origin": "boot_3",
+                                        "destination": "to_site",
+                                        "amount": 5,
+                                        "duration": 3600
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "condition_event": [
+                        {
+                            "type": "container",
+                            "concept": "from_site_2",
+                            "state": "empty"
+                        }
+                    ]
+                }
+            }
+        ],
+        "vessels": {
+            "boot_1": {
+                "class": "TestHopper",
+                "properties": {
+                    "v": 1,
+                    "lat": 50,
+                    "lon": 6,
+                    "level": 0,
+                    "v_full": 8,
+                    "v_empty": 10,
+                    "capacity": 5,
+                    "loading_rate": 360,
+                    "unloading_rate": 360
+                }
+            },
+            "boot_2": {
+                "class": "TestHopper",
+                "properties": {
+                    "v": 1,
+                    "lat": 50,
+                    "lon": 6,
+                    "level": 0,
+                    "v_full": 8,
+                    "v_empty": 10,
+                    "capacity": 5,
+                    "loading_rate": 360,
+                    "unloading_rate": 360
+                }
+            },
+            "boot_3": {
+                "class": "TestHopper",
+                "properties": {
+                    "v": 1,
+                    "lat": 50,
+                    "lon": 6,
+                    "level": 0,
+                    "v_full": 8,
+                    "v_empty": 10,
+                    "capacity": 5,
+                    "loading_rate": 1,
+                    "nr_resources": 1,
+                    "unloading_rate": 1
+                }
+            }
+        },
+        "sites": {
+            "from_site_1": {
+                "class": "TestSite",
+                "properties": {
+                    "lat": 50.1,
+                    "lon": 6,
+                    "level": 55,
+                    "capacity": 55,
+                    "nr_resources": 1
+                }
+            },
+            "from_site_2": {
+                "class": "TestSite",
+                "properties": {
+                    "lat": 50.2,
+                    "lon": 6,
+                    "level": 55,
+                    "capacity": 55,
+                    "nr_resources": 1
+                }
+            },
+            "from_site_3": {
+                "class": "TestSite",
+                "properties": {
+                    "lat": 50.3,
+                    "lon": 6,
+                    "level": 55,
+                    "capacity": 55,
+                    "nr_resources": 1
+                }
+            },
+            "to_site": {
+                "class": "TestSite",
+                "properties": {
+                    "lat": 50,
+                    "lon": 6.1,
+                    "level": 0,
+                    "capacity": 1000000,
+                    "nr_resources": 1
+                }
+            }
+        },
+        "graph": {
+            "nodes": [],
+            "edges": []
+        }
+    }
+}

@@ -41,7 +41,7 @@ requires = [
 
 setup_requirements = ["pytest-runner"]
 
-tests_require = ["pytest==3.10.1", "pytest-cov", "pytest-timeout", "pytest-datadir"]
+tests_require = ["pytest", "pytest-cov", "pytest-timeout", "pytest-datadir"]
 
 with open("README.md", "r") as des:
     long_description = des.read()
@@ -68,6 +68,6 @@ setup(
     test_suite="tests",
     tests_require=tests_require,
     url="https://github.com/TUDelft-CITG/openclsim",
-    version="1.2.2",
+    version="v1.3.0a14",
     zip_safe=False,
 )

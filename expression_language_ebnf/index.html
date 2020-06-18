@@ -1,0 +1,373 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+   
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      
+      
+      <meta name="generator" content="Railroad Diagram Generator 1.62">
+      
+      <style type="text/css">
+    ::-moz-selection
+    {
+      color: #FFFCF0;
+      background: #0F0C00;
+    }
+    ::selection
+    {
+      color: #FFFCF0;
+      background: #0F0C00;
+    }
+    .ebnf a, .grammar a
+    {
+      text-decoration: none;
+    }
+    .ebnf a:hover, .grammar a:hover
+    {
+      color: #050400;
+      text-decoration: underline;
+    }
+    .signature
+    {
+      color: #806600;
+      font-size: 11px;
+      text-align: right;
+    }
+    body
+    {
+      font: normal 12px Verdana, sans-serif;
+      color: #0F0C00;
+      background: #FFFCF0;
+    }
+    a:link, a:visited
+    {
+      color: #0F0C00;
+    }
+    a:link.signature, a:visited.signature
+    {
+      color: #806600;
+    }
+    a.button, #tabs li a
+    {
+      padding: 0.25em 0.5em;
+      border: 1px solid #806600;
+      background: #F1E8C6;
+      color: #806600;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    a.button:hover, #tabs li a:hover
+    {
+      color: #050400;
+      background: #FFF6D1;
+      border-color: #050400;
+    }
+    #tabs
+    {
+      padding: 3px 10px;
+      margin-left: 0;
+      margin-top: 58px;
+      border-bottom: 1px solid #0F0C00;
+    }
+    #tabs li
+    {
+      list-style: none;
+      margin-left: 5px;
+      display: inline;
+    }
+    #tabs li a
+    {
+      border-bottom: 1px solid #0F0C00;
+    }
+    #tabs li a.active
+    {
+      color: #0F0C00;
+      background: #FFFCF0;
+      border-color: #0F0C00;
+      border-bottom: 1px solid #FFFCF0;
+      outline: none;
+    }
+    #divs div
+    {
+      display: none;
+      overflow:auto;
+    }
+    #divs div.active
+    {
+      display: block;
+    }
+    #text
+    {
+      border-color: #806600;
+      background: #FFFEFA;
+      color: #050400;
+    }
+    .small
+    {
+      vertical-align: top;
+      text-align: right;
+      font-size: 9px;
+      font-weight: normal;
+      line-height: 120%;
+    }
+    td.small
+    {
+      padding-top: 0px;
+    }
+    .hidden
+    {
+      visibility: hidden;
+    }
+    td:hover .hidden
+    {
+      visibility: visible;
+    }
+    div.download
+    {
+      display: none;
+      background: #FFFCF0;
+      position: absolute;
+      right: 34px;
+      top: 94px;
+      padding: 10px;
+      border: 1px dotted #0F0C00;
+    }
+    #divs div.ebnf, .ebnf code
+    {
+      display: block;
+      padding: 10px;
+      background: #FFF6D1;
+      width: 992px;
+    }
+    #divs div.grammar
+    {
+      display: block;
+      padding-left: 16px;
+      padding-top: 2px;
+      padding-bottom: 2px;
+      background: #FFF6D1;
+    }
+    pre
+    {
+      margin: 0px;
+    }
+    .ebnf div
+    {
+      padding-left: 13ch;
+      text-indent: -13ch;
+    }
+    .ebnf code, .grammar code, textarea, pre
+    {
+      font:12px SFMono-Regular,Consolas,Liberation Mono,Menlo,Courier,monospace;
+    }
+    tr.option-line td:first-child
+    {
+      text-align: right
+    }
+    tr.option-text td
+    {
+      padding-bottom: 10px
+    }
+    table.palette
+    {
+      border-top: 1px solid #050400;
+      border-right: 1px solid #050400;
+      margin-bottom: 4px
+    }
+    td.palette
+    {
+      border-bottom: 1px solid #050400;
+      border-left: 1px solid #050400;
+    }
+    a.palette
+    {
+      padding: 2px 3px 2px 10px;
+      text-decoration: none;
+    }
+    .palette
+    {
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -o-user-select: none;
+      -ms-user-select: none;
+    }
+  </style>
+   </head>
+   
+   <body>
+      
+      <p style="font-size: 14px; font-weight:bold"><a name="ExpressionLanguage">ExpressionLanguage:</a></p><img border="0" src="diagram/ExpressionLanguage.png" height="37" width="241" usemap="#ExpressionLanguage.map"><map name="ExpressionLanguage.map"><area shape="rect" coords="75,1,165,33" href="#Expression" title="Expression"></map><p>
+         
+         <div class="ebnf"><code>
+               
+               <div><a href="#ExpressionLanguage" title="ExpressionLanguage">ExpressionLanguage</a></div>
+               
+               <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;::= '[' <a href="#Expression" title="Expression">Expression</a> ']'</div></code></div>
+         </p>
+      
+      <p>no references</p><br><p style="font-size: 14px; font-weight:bold"><a name="Expression">Expression:</a></p><img border="0" src="diagram/Expression.png" height="125" width="231" usemap="#Expression.map"><map name="Expression.map"><area shape="rect" coords="49,1,163,33" href="#AndExpression" title="AndExpression"><area shape="rect" coords="49,45,153,77" href="#OrExpression" title="OrExpression"><area shape="rect" coords="49,89,181,121" href="#AtomicExpression" title="AtomicExpression"></map><p>
+         
+         <div class="ebnf"><code>
+               
+               <div><a href="#Expression" title="Expression">Expression</a></div>
+               
+               <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;::= <a href="#AndExpression" title="AndExpression">AndExpression</a></div>
+               
+               <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a href="#OrExpression" title="OrExpression">OrExpression</a></div>
+               
+               <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a href="#AtomicExpression" title="AtomicExpression">AtomicExpression</a></div></code></div>
+         </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#AndExpression" title="AndExpression">AndExpression</a></li>
+            
+            <li><a href="#ExpressionLanguage" title="ExpressionLanguage">ExpressionLanguage</a></li>
+            
+            <li><a href="#OrExpression" title="OrExpression">OrExpression</a></li>
+            </ul>
+         </p><br><p style="font-size: 14px; font-weight:bold"><a name="AndExpression">AndExpression:</a></p><img border="0" src="diagram/AndExpression.png" height="81" width="351" usemap="#AndExpression.map"><map name="AndExpression.map"><area shape="rect" coords="155,45,245,77" href="#Expression" title="Expression"></map><p>
+         
+         <div class="ebnf"><code>
+               
+               <div><a href="#AndExpression" title="AndExpression">AndExpression</a></div>
+               
+               <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;::= '{ "and": [' <a href="#Expression" title="Expression">Expression</a> ( ',' <a href="#Expression" title="Expression">Expression</a> )* ']}'</div></code></div>
+         </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#Expression" title="Expression">Expression</a></li>
+            </ul>
+         </p><br><p style="font-size: 14px; font-weight:bold"><a name="OrExpression">OrExpression:</a></p><img border="0" src="diagram/OrExpression.png" height="81" width="341" usemap="#OrExpression.map"><map name="OrExpression.map"><area shape="rect" coords="145,45,235,77" href="#Expression" title="Expression"></map><p>
+         
+         <div class="ebnf"><code>
+               
+               <div><a href="#OrExpression" title="OrExpression">OrExpression</a></div>
+               
+               <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;::= '{ "or": [' <a href="#Expression" title="Expression">Expression</a> ( ',' <a href="#Expression" title="Expression">Expression</a> )* ']}'</div></code></div>
+         </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#Expression" title="Expression">Expression</a></li>
+            </ul>
+         </p><br><p style="font-size: 14px; font-weight:bold"><a name="AtomicExpression">AtomicExpression:</a></p><img border="0" src="diagram/AtomicExpression.png" height="81" width="313" usemap="#AtomicExpression.map"><map name="AtomicExpression.map"><area shape="rect" coords="97,1,215,33" href="#ContainerEvent" title="ContainerEvent"><area shape="rect" coords="97,45,197,77" href="#ActivityEvent" title="ActivityEvent"></map><p>
+         
+         <div class="ebnf"><code>
+               
+               <div><a href="#AtomicExpression" title="AtomicExpression">AtomicExpression</a></div>
+               
+               <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;::= '{' ( <a href="#ContainerEvent" title="ContainerEvent">ContainerEvent</a> | <a href="#ActivityEvent" title="ActivityEvent">ActivityEvent</a> ) '}'</div></code></div>
+         </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#Expression" title="Expression">Expression</a></li>
+            </ul>
+         </p><br><p style="font-size: 14px; font-weight:bold"><a name="ContainerEvent">ContainerEvent:</a></p><img border="0" src="diagram/ContainerEvent.png" height="69" width="801" usemap="#ContainerEvent.map"><map name="ContainerEvent.map"><area shape="rect" coords="275,1,335,33" href="#Object" title="Object"><area shape="rect" coords="459,33,515,65" href="#Name" title="Name"><area shape="rect" coords="655,1,771,33" href="#ContainerState" title="ContainerState"></map><p>
+         
+         <div class="ebnf"><code>
+               
+               <div><a href="#ContainerEvent" title="ContainerEvent">ContainerEvent</a></div>
+               
+               <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;::= '"type":"container", "concept":' <a href="#Object" title="Object">Object</a> ( ',"id_":' <a href="#Name" title="Name">Name</a> )? ', "state":' <a href="#ContainerState" title="ContainerState">ContainerState</a></div></code></div>
+         </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#AtomicExpression" title="AtomicExpression">AtomicExpression</a></li>
+            </ul>
+         </p><br><p style="font-size: 14px; font-weight:bold"><a name="ContainerState">ContainerState:</a></p><img border="0" src="diagram/ContainerState.png" height="81" width="175"><p>
+         
+         <div class="ebnf"><code>
+               
+               <div><a href="#ContainerState" title="ContainerState">ContainerState</a></div>
+               
+               <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;::= '"full"'</div>
+               
+               <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| '"empty"'</div></code></div>
+         </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#ContainerEvent" title="ContainerEvent">ContainerEvent</a></li>
+            </ul>
+         </p><br><p style="font-size: 14px; font-weight:bold"><a name="ActivityEvent">ActivityEvent:</a></p><img border="0" src="diagram/ActivityEvent.png" height="81" width="597" usemap="#ActivityEvent.map"><map name="ActivityEvent.map"><area shape="rect" coords="283,1,317,33" href="#ID" title="ID"><area shape="rect" coords="305,45,361,77" href="#Name" title="Name"></map><p>
+         
+         <div class="ebnf"><code>
+               
+               <div><a href="#ActivityEvent" title="ActivityEvent">ActivityEvent</a></div>
+               
+               <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;::= '"type":"activity", ' ( '"ID":' <a href="#ID" title="ID">ID</a> | '"name":' <a href="#Name" title="Name">Name</a> ) ', "state":' '"done"'</div></code></div>
+         </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#AtomicExpression" title="AtomicExpression">AtomicExpression</a></li>
+            </ul>
+         </p><br><p style="font-size: 14px; font-weight:bold"><a name="ID">ID:</a></p><img border="0" src="diagram/ID.png" height="37" width="117" usemap="#ID.map"><map name="ID.map"><area shape="rect" coords="29,1,87,33" href="#String" title="String"></map><p>
+         
+         <div class="ebnf"><code>
+               
+               <div><a href="#ID" title="ID">ID</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;::= <a href="#String" title="String">String</a></div></code></div>
+         </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#ActivityEvent" title="ActivityEvent">ActivityEvent</a></li>
+            </ul>
+         </p><br><p style="font-size: 14px; font-weight:bold"><a name="Name">Name:</a></p><img border="0" src="diagram/Name.png" height="37" width="117" usemap="#Name.map"><map name="Name.map"><area shape="rect" coords="29,1,87,33" href="#String" title="String"></map><p>
+         
+         <div class="ebnf"><code>
+               
+               <div><a href="#Name" title="Name">Name</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;::= <a href="#String" title="String">String</a></div></code></div>
+         </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#ActivityEvent" title="ActivityEvent">ActivityEvent</a></li>
+            
+            <li><a href="#ContainerEvent" title="ContainerEvent">ContainerEvent</a></li>
+            </ul>
+         </p><br><hr>
+      
+      <p>
+         
+         <table border="0" class="signature">
+            
+            <tr>
+               
+               <td style="width: 100%">&nbsp;</td>
+               
+               <td valign="top">
+                  
+                  <nobr class="signature">... generated by <a name="Railroad-Diagram-Generator" class="signature" title="https://www.bottlecaps.de/rr/ui" href="https://www.bottlecaps.de/rr/ui" target="_blank">RR - Railroad Diagram Generator</a></nobr>
+                  </td>
+               
+               <td><a name="Railroad-Diagram-Generator" title="https://www.bottlecaps.de/rr/ui" href="https://www.bottlecaps.de/rr/ui" target="_blank"><img border="0" src="diagram/rr-1.62.png" height="16" width="16"></a></td>
+               </tr>
+            </table>
+         </p>
+      </body>
+   </html>

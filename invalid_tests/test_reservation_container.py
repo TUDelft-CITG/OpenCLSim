@@ -7,7 +7,7 @@ class DummyShip:
     def __init__(self, env, name, capacity, relay_container, stop_event):
         self.env = env
         self.print_tag = name + ":"
-        self.capacity = capacity
+        self.get_capacity() = capacity
         self.relay_container = relay_container
         self.stop_event = stop_event
 
@@ -26,8 +26,9 @@ class DeliveryShip(DummyShip):
         while not self.stop_event.processed:
             self.print("determining amount to load")
             amount = min(
-                self.capacity,
-                self.relay_container.capacity - self.relay_container.expected_level,
+                self.get_capacity(),
+                self.relay_container.get_capacity()
+                - self.relay_container.expected_level,
             )
             if amount > 0:
                 self.print("reserving", amount, "space")
@@ -60,7 +61,7 @@ class CollectionShip(DummyShip):
     def collection_process(self):
         while not self.stop_event.processed:
             self.print("determining amount to load")
-            amount = min(self.capacity, self.relay_container.expected_level)
+            amount = min(self.get_capacity(), self.relay_container.expected_level)
             if amount > 0:
                 self.print("reserving", amount, "content")
                 self.relay_container.reserve_get(amount)
@@ -107,7 +108,8 @@ def test_relay_container():
     env.run()
 
     assert (
-        delivery_ship.total_delivered == container.level + collection_ship.total_dumped
+        delivery_ship.total_delivered
+        == container.get_level() + collection_ship.total_dumped
     )
     assert delivery_ship.total_delivered == 2500
     # the ships only check the timeout (stop_event) after completing a collection / delivery, so the simulation keeps
@@ -142,7 +144,8 @@ def test_relay_container_reversed_init():
     env.run()
 
     assert (
-        delivery_ship.total_delivered == container.level + collection_ship.total_dumped
+        delivery_ship.total_delivered
+        == container.get_level() + collection_ship.total_dumped
     )
     assert delivery_ship.total_delivered == 2500
     # the ships only check the timeout (stop_event) after completing a collection / delivery, so the simulation keeps
@@ -180,7 +183,7 @@ def test_relay_container_several_collectors():
     total_dumped = sum(
         collection_ship.total_dumped for collection_ship in collection_ships
     )
-    assert delivery_ship.total_delivered == total_dumped + container.level
+    assert delivery_ship.total_delivered == total_dumped + container.get_level()
     assert delivery_ship.total_delivered == 1700
     assert collection_ships[0].total_dumped == 300
     assert collection_ships[1].total_dumped == 450

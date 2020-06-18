@@ -323,9 +323,9 @@ def test_container_transfer_hub(env, geometry_a, Location, TransportProcessingRe
     )
 
     env.run()
-    assert from_location.container.level == 0
-    assert transfer_location.container.level == 0
-    assert to_location.container.level == 1000
+    assert from_location.container.get_level() == 0
+    assert transfer_location.container.get_level() == 0
+    assert to_location.container.get_level() == 1000
 
 
 # Testing the AndCondition
