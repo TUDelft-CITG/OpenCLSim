@@ -316,6 +316,7 @@ class BasicActivity(GenericActivity):
             additional_logs=self.additional_logs,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
+            activity=self,
         )
         self.register_process(
             main_proc=main_proc, show=self.print, additional_logs=self.additional_logs
@@ -347,6 +348,7 @@ class SequentialActivity(GenericActivity):
             sub_processes=self.sub_processes,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
+            activity=self,
         )
         self.register_process(main_proc=main_proc, show=self.print)
 
@@ -384,6 +386,7 @@ class WhileActivity(GenericActivity):
             condition_event=self.parse_expression(self.condition_event),
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
+            activity=self,
         )
         self.register_process(main_proc=main_proc, show=self.print)
 
@@ -515,7 +518,8 @@ def conditional_process(
     name,
     requested_resources,
     keep_resources,
-    max_iterations=1000,
+    activity,
+    max_iterations=10,
 ):
     """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
     sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
@@ -530,6 +534,22 @@ def conditional_process(
                    the sub_processes will be executed sequentially, in the order in which they are given as long
                    as the stop_event has not occurred.
     """
+    message = f"While activity {name}"
+
+    start_time = env.now
+    args_data = {
+        "env": env,
+        "activity_log": activity_log,
+        "message": message,
+        "activity": activity,
+        "sub_process": sub_process,
+        "name": name,
+        "keep_resources": keep_resources,
+    }
+    yield from activity.pre_process(args_data)
+
+    start_while = env.now
+
     if activity_log.log["Message"]:
         if activity_log.log["Message"][-1] == "delayed activity started" and hasattr(
             condition_event, "__call__"
@@ -577,6 +597,11 @@ def conditional_process(
         # maybe there is a better way of doing it, but his option works for now.
         yield env.timeout(0)
         ii = ii + 1
+
+    args_data["start_preprocessing"] = start_time
+    args_data["start_activity"] = start_while
+    activity.post_process(**args_data)
+
     activity_log.log_entry(
         f"conditional process {name}",
         env.now,
@@ -594,6 +619,7 @@ def basic_process(
     duration,
     requested_resources,
     keep_resources,
+    activity,
     additional_logs=[],
 ):
     """Returns a generator which can be added as a process to a simpy.Environment. The process will report the start of the 
@@ -608,6 +634,21 @@ def basic_process(
                    the sub_processes will be executed sequentially, in the order in which they are given as long
                    as the stop_event has not occurred.
     """
+    message = f"Basic activity {name}"
+
+    start_time = env.now
+    args_data = {
+        "env": env,
+        "activity_log": activity_log,
+        "message": message,
+        "activity": activity,
+        "duration": duration,
+        "name": name,
+    }
+    yield from activity.pre_process(args_data)
+
+    start_basic = env.now
+
     activity_log.log_entry(
         name, env.now, duration, None, activity_log.id, core.LogState.START
     )
@@ -618,6 +659,11 @@ def basic_process(
             )
 
     yield env.timeout(duration)
+
+    args_data["start_preprocessing"] = start_time
+    args_data["start_activity"] = start_basic
+    activity.post_process(**args_data)
+
     activity_log.log_entry(
         name, env.now, duration, None, activity_log.id, core.LogState.STOP
     )
@@ -736,9 +782,6 @@ def shift_amount_process(
             engine_order,
             verbose=False,
         )
-        activity_log.log_entry(
-            name, env.now, amount, None, activity_log.id, core.LogState.START
-        )
 
         if duration is not None:
             rate = None
@@ -768,6 +811,10 @@ def shift_amount_process(
             "amount": amount,
         }
         yield from activity.pre_process(args_data)
+
+        activity_log.log_entry(
+            name, env.now, amount, None, activity_log.id, core.LogState.START
+        )
 
         start_shift = env.now
         yield from _shift_amount(
@@ -804,7 +851,13 @@ def shift_amount_process(
 
 
 def sequential_process(
-    activity_log, env, sub_processes, name, requested_resources, keep_resources
+    activity_log,
+    env,
+    sub_processes,
+    name,
+    requested_resources,
+    keep_resources,
+    activity,
 ):
     """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
     sub_processes will be executed sequentially in the order in which they are given.
@@ -815,6 +868,20 @@ def sequential_process(
                    return a generator which could be added as a process to a simpy.Environment
                    the sub_processes will be executed sequentially, in the order in which they are given
     """
+    message = f"Sequence activity {name}"
+
+    start_time = env.now
+    args_data = {
+        "env": env,
+        "activity_log": activity_log,
+        "message": message,
+        "activity": activity,
+        "name": name,
+    }
+    yield from activity.pre_process(args_data)
+
+    start_sequence = env.now
+
     activity_log.log_entry(
         f"sequential {name}", env.now, -1, None, activity_log.id, core.LogState.START
     )
@@ -847,6 +914,11 @@ def sequential_process(
             activity_log.id,
             core.LogState.STOP,
         )
+
+    args_data["start_preprocessing"] = start_time
+    args_data["start_activity"] = start_sequence
+    activity.post_process(**args_data)
+
     activity_log.log_entry(
         f"sequential {name}", env.now, -1, None, activity_log.id, core.LogState.STOP
     )
