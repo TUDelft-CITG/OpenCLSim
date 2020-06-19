@@ -9,6 +9,63 @@ import openclsim.core as core
 import openclsim.model as model
 
 
+class WorkabilityCriterea:
+    def calc_work_restrictions(self, location):
+        # Loop through series to find windows
+        for criterion in self.metocean_criteria:
+            condition = self.metocean_data[criterion.condition]
+            ix_condition = condition <= criterion.maximum
+            ix_starts = ~ix_condition.values[:-1] & ix_condition.values[1:]
+            ix_ends = ix_condition.values[:-1] & ~ix_condition.values[1:]
+            if ix_condition[0]:
+                ix_starts[0] = True
+            if ix_starts.sum() > ix_ends.sum():
+                ix_ends[-1] = True
+            t_starts = condition.index[:-1][ix_starts]
+            t_ends = condition.index[:-1][ix_ends]
+            dt_windows = t_ends - t_starts
+            ix_windows = dt_windows >= criterion.window_length
+            ranges = np.concatenate(
+                (
+                    t_starts[ix_windows].values.reshape((-1, 1)),
+                    (t_ends[ix_windows] - criterion.window_length).values.reshape(
+                        (-1, 1)
+                    ),
+                ),
+                axis=1,
+            )
+            self.work_restrictions.setdefault(location.name, {})[
+                criterion.condition
+            ] = ranges
+
+    def check_weather_restriction(self, env, location, activity, activity_log, message):
+        if location.name not in self.work_restrictions.keys():
+            self.calc_work_restrictions(location)
+
+        # if event_name in [criterion.event_name for criterion in self.criteria]:
+        waiting = []
+
+        for condition in self.work_restrictions[location.name]:
+            ranges = self.work_restrictions[location.name][condition]
+
+            t = datetime.datetime.fromtimestamp(env.now)
+            t = pd.Timestamp(t).to_datetime64()
+            i = ranges[:, 0].searchsorted(t)
+            print(ranges)
+
+            if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
+                waiting.append(pd.Timedelta(0).total_seconds())
+            elif i + 1 < len(ranges):
+                waiting.append(pd.Timedelta(ranges[i, 0] - t).total_seconds())
+            else:
+                print("\nSimulation cannot continue.")
+                print("Simulation time exceeded the available metocean data.")
+        print(waiting)
+        if waiting:
+            print(f"we have to wait for {max(waiting)}")
+            return activity.delay_processing(env, message, activity_log, max(waiting))
+
+
 class TestPluginMoveActivity(model.AbstractPluginClass):
     """TestPluginMoveActivity is a class to generically test the plugin mechanism for MoveActivities."""
 
@@ -86,7 +143,7 @@ class HasTestPluginMoveActivity:
             self.register_plugin(plugin=test_plugin, priority=99)
 
 
-class WeatherPluginMoveActivity(model.AbstractPluginClass):
+class WeatherPluginMoveActivity(model.AbstractPluginClass, WorkabilityCriterea):
     """WeatherPluginMoveActivity is a class to allow to specify weather constraints to MoveActivities."""
 
     def __init__(
@@ -128,73 +185,6 @@ class WeatherPluginMoveActivity(model.AbstractPluginClass):
         return self.check_weather_restriction(
             env, origin, activity, activity_log, message
         )
-
-    def calc_work_restrictions(self, location):
-        # Loop through series to find windows
-        for criterion in self.metocean_criteria:
-            condition = self.metocean_data[criterion.condition]
-            ix_condition = condition <= criterion.maximum
-            ix_starts = ~ix_condition.values[:-1] & ix_condition.values[1:]
-            ix_ends = ix_condition.values[:-1] & ~ix_condition.values[1:]
-            if ix_condition[0]:
-                ix_starts[0] = True
-            if ix_starts.sum() > ix_ends.sum():
-                ix_ends[-1] = True
-            t_starts = condition.index[:-1][ix_starts]
-            t_ends = condition.index[:-1][ix_ends]
-            dt_windows = t_ends - t_starts
-            ix_windows = dt_windows >= criterion.window_length
-            ranges = np.concatenate(
-                (
-                    t_starts[ix_windows].values.reshape((-1, 1)),
-                    (t_ends[ix_windows] - criterion.window_length).values.reshape(
-                        (-1, 1)
-                    ),
-                ),
-                axis=1,
-            )
-            self.work_restrictions.setdefault(location.name, {})[
-                criterion.condition
-            ] = ranges
-
-    def check_weather_restriction(self, env, location, activity, activity_log, message):
-        if location.name not in self.work_restrictions.keys():
-            self.calc_work_restrictions(location)
-
-        # if event_name in [criterion.event_name for criterion in self.criteria]:
-        waiting = []
-
-        for condition in self.work_restrictions[location.name]:
-            ranges = self.work_restrictions[location.name][condition]
-
-            t = datetime.datetime.fromtimestamp(env.now)
-            t = pd.Timestamp(t).to_datetime64()
-            i = ranges[:, 0].searchsorted(t)
-            print(ranges)
-
-            if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
-                waiting.append(pd.Timedelta(0).total_seconds())
-            elif i + 1 < len(ranges):
-                waiting.append(pd.Timedelta(ranges[i, 0] - t).total_seconds())
-            else:
-                print("\nSimulation cannot continue.")
-                print("Simulation time exceeded the available metocean data.")
-        print(waiting)
-        if waiting:
-            print(f"we have to wait for {max(waiting)}")
-            # print(activity_log)
-            # return self.delay_processing(env, message, activity_log, max(waiting))
-            # print(f"delay processing {waiting}")
-            # activity_log.log_entry(
-            ##    message, env.now, -1, None, activity_log.id, core.LogState.WAIT_START,
-            # )
-            # print(f"before delay {env.now}")
-            # yield env.timeout(max(waiting))
-            # print(f"after delay {env.now}")
-            # activity_log.log_entry(
-            #    message, env.now, -1, None, activity_log.id, core.LogState.WAIT_STOP,
-            # )
-            return activity.delay_processing(env, message, activity_log, max(waiting))
 
     def post_process(
         self,
@@ -263,7 +253,7 @@ class HasWeatherPluginMoveActivity:
             self.register_plugin(plugin=weather_plugin, priority=2)
 
 
-class WeatherPluginShiftAmountActivity(model.AbstractPluginClass):
+class WeatherPluginShiftAmountActivity(model.AbstractPluginClass, WorkabilityCriterea):
     """WeatherPluginShiftAmountActivity is a class to allow to specify weather constraints to MoveActivities."""
 
     def __init__(
@@ -305,61 +295,6 @@ class WeatherPluginShiftAmountActivity(model.AbstractPluginClass):
         return self.check_weather_restriction(
             env, origin, activity, activity_log, message
         )
-
-    def calc_work_restrictions(self, location):
-        # Loop through series to find windows
-        for criterion in self.metocean_criteria:
-            condition = self.metocean_data[criterion.condition]
-            ix_condition = condition <= criterion.maximum
-            ix_starts = ~ix_condition.values[:-1] & ix_condition.values[1:]
-            ix_ends = ix_condition.values[:-1] & ~ix_condition.values[1:]
-            if ix_condition[0]:
-                ix_starts[0] = True
-            if ix_starts.sum() > ix_ends.sum():
-                ix_ends[-1] = True
-            t_starts = condition.index[:-1][ix_starts]
-            t_ends = condition.index[:-1][ix_ends]
-            dt_windows = t_ends - t_starts
-            ix_windows = dt_windows >= criterion.window_length
-            ranges = np.concatenate(
-                (
-                    t_starts[ix_windows].values.reshape((-1, 1)),
-                    (t_ends[ix_windows] - criterion.window_length).values.reshape(
-                        (-1, 1)
-                    ),
-                ),
-                axis=1,
-            )
-            self.work_restrictions.setdefault(location.name, {})[
-                criterion.condition
-            ] = ranges
-
-    def check_weather_restriction(self, env, location, activity, activity_log, message):
-        if location.name not in self.work_restrictions.keys():
-            self.calc_work_restrictions(location)
-
-        # if event_name in [criterion.event_name for criterion in self.criteria]:
-        waiting = []
-
-        for condition in self.work_restrictions[location.name]:
-            ranges = self.work_restrictions[location.name][condition]
-
-            t = datetime.datetime.fromtimestamp(env.now)
-            t = pd.Timestamp(t).to_datetime64()
-            i = ranges[:, 0].searchsorted(t)
-            print(ranges)
-
-            if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
-                waiting.append(pd.Timedelta(0).total_seconds())
-            elif i + 1 < len(ranges):
-                waiting.append(pd.Timedelta(ranges[i, 0] - t).total_seconds())
-            else:
-                print("\nSimulation cannot continue.")
-                print("Simulation time exceeded the available metocean data.")
-        print(waiting)
-        if waiting:
-            print(f"we have to wait for {max(waiting)}")
-            return activity.delay_processing(env, message, activity_log, max(waiting))
 
     def post_process(
         self,
