@@ -51,18 +51,17 @@ class WorkabilityCriterea:
             t = datetime.datetime.fromtimestamp(env.now)
             t = pd.Timestamp(t).to_datetime64()
             i = ranges[:, 0].searchsorted(t)
-            print(ranges)
 
             if i > 0 and (ranges[i - 1][0] <= t <= ranges[i - 1][1]):
                 waiting.append(pd.Timedelta(0).total_seconds())
             elif i + 1 < len(ranges):
                 waiting.append(pd.Timedelta(ranges[i, 0] - t).total_seconds())
             else:
-                print("\nSimulation cannot continue.")
-                print("Simulation time exceeded the available metocean data.")
-        print(waiting)
+                raise AssertionError(
+                    "\nSimulation cannot continue. Simulation time exceeded the available metocean data."
+                )
+
         if waiting:
-            print(f"we have to wait for {max(waiting)}")
             return activity.delay_processing(env, message, activity_log, max(waiting))
 
 
@@ -87,11 +86,6 @@ class TestPluginMoveActivity(model.AbstractPluginClass):
         The function may return a dictionary which may be processed by the activity before calling the next
         pre-processing function."""
 
-        print(f"plugin_data mover: {mover}")
-        print(f"plugin_data origin: {origin}")
-        print(f"plugin_data destination: {destination}")
-        print(f"plugin_data engine_oder: {engine_order}")
-        print(f"plugin_data activity_log: {activity_log}")
         activity_log.log_entry(
             "move activity pre-procesisng test plugin",
             env.now,
@@ -116,13 +110,7 @@ class TestPluginMoveActivity(model.AbstractPluginClass):
         start_preprocessing,
         start_activity,
     ):
-        print(f"plugin_data mover: {mover}")
-        print(f"plugin_data origin: {origin}")
-        print(f"plugin_data destination: {destination}")
-        print(f"plugin_data engine_oder: {engine_order}")
-        print(f"plugin_data activity_log: {activity_log}")
-        print(f"plugin_data start_preprocessing: {start_preprocessing}")
-        print(f"plugin_data start_activity: {start_activity}")
+
         activity_log.log_entry(
             "move activity post-procesisng test plugin",
             env.now,
@@ -171,7 +159,6 @@ class WeatherPluginMoveActivity(model.AbstractPluginClass, WorkabilityCriterea):
     ):
         """pre_process will checked whether the weather conditions are fulfilled at the time the move activity will be
         executed or whether the exdecution of the move activity has to be delayed."""
-        print("weatherPlugin start preprocess")
 
         activity_log.log_entry(
             message + " weather",
@@ -218,16 +205,11 @@ class HasWeatherPluginMoveActivity:
     ):
         super().__init__(*args, **kwargs)
 
-        print("check weather plugin")
-        print(metocean_criteria != None)
-        print(metocean_df is not None)
-        print(isinstance(self, model.PluginActivity))
         if (
             metocean_criteria != None
             and metocean_df is not None
             and isinstance(self, model.PluginActivity)
         ):
-            print("regrister weather plugin")
             self.timestep = datetime.timedelta(minutes=timestep)
 
             data = {}
@@ -283,7 +265,6 @@ class WeatherPluginShiftAmountActivity(model.AbstractPluginClass, WorkabilityCri
     ):
         """pre_process will checked whether the weather conditions are fulfilled at the time the move activity will be
         executed or whether the exdecution of the move activity has to be delayed."""
-        print("weatherPlugin start preprocess")
         activity_log.log_entry(
             message + " weather",
             env.now,
@@ -327,17 +308,11 @@ class HasWeatherPluginShiftAmountActivity:
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-
-        print("check weather plugin")
-        print(metocean_criteria != None)
-        print(metocean_df is not None)
-        print(isinstance(self, model.PluginActivity))
         if (
             metocean_criteria != None
             and metocean_df is not None
             and isinstance(self, model.PluginActivity)
         ):
-            print("regrister weather plugin")
             self.timestep = datetime.timedelta(minutes=timestep)
 
             data = {}
