@@ -533,6 +533,7 @@ def conditional_process(
     name,
     requested_resources,
     keep_resources,
+    max_iterations=1000,
 ):
     """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
     sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
@@ -567,7 +568,7 @@ def conditional_process(
         core.LogState.START,
     )
     ii = 0
-    while (not condition_event.processed) and ii < 10:
+    while (not condition_event.processed) and ii < max_iterations:
         print(sub_process)
         # for sub_process_ in (proc for proc in [sub_process]):
         print("conditional ")
