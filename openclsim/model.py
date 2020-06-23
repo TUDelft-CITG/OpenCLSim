@@ -10,15 +10,17 @@ class AbstractPluginClass(ABC):
     """Abstract class used as the basis for all Classes implementing a plugin for a specific Activity. 
     Instance checks will be performed on this class level."""
 
-    def __init__(self, plugin_name, activity):
-        self.plugin_name = plugin_name
-        self.activity = activity
+    def __init__(self):
+        pass
 
     def pre_process(self, *args, **kwargs):
         return {}
 
     def post_process(self, *args, **kwargs):
         return {}
+
+    def validate(self):
+        pass
 
 
 class PluginActivity(core.Identifiable, core.Log):
