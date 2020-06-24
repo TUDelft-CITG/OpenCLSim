@@ -521,7 +521,7 @@ def conditional_process(
     requested_resources,
     keep_resources,
     activity,
-    max_iterations=10,
+    max_iterations=1_000_000,
 ):
     """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
     sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
