@@ -75,7 +75,7 @@ class Identifiable:
         """Initialization"""
         self.name = name
         # generate some id, in this case based on m
-        self.id = ID if ID else str(uuid.uuid1())
+        self.id = ID if ID else str(uuid.uuid4())
 
 
 class Locatable:
@@ -1232,7 +1232,9 @@ class HasWorkabilityCriteria(HasAbstractWorkabilityCriteria):
                 elif i + 1 < len(ranges):
                     waiting.append(pd.Timedelta(ranges[i, 0] - t).total_seconds())
                 else:
-                    raise AssertionError("\nSimulation cannot continue. Simulation time exceeded the available metocean data.")
+                    raise AssertionError(
+                        "\nSimulation cannot continue. Simulation time exceeded the available metocean data."
+                    )
         if waiting:
             self.delay_processing(max(waiting))
 
