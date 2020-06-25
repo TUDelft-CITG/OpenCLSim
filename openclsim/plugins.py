@@ -9,7 +9,7 @@ import openclsim.core as core
 import openclsim.model as model
 
 
-class WorkabilityCriterea:
+class WorkabilityCriteriaMixin:
     def calc_work_restrictions(self, location):
         # Loop through series to find windows
         for criterion in self.metocean_criteria:
@@ -131,7 +131,7 @@ class HasTestPluginMoveActivity:
             self.register_plugin(plugin=test_plugin, priority=99)
 
 
-class WeatherPluginMoveActivity(model.AbstractPluginClass, WorkabilityCriterea):
+class WeatherPluginMoveActivity(model.AbstractPluginClass, WorkabilityCriteriaMixin):
     """WeatherPluginMoveActivity is a class to allow to specify weather constraints to MoveActivities."""
 
     def __init__(
@@ -235,7 +235,9 @@ class HasWeatherPluginMoveActivity:
             self.register_plugin(plugin=weather_plugin, priority=2)
 
 
-class WeatherPluginShiftAmountActivity(model.AbstractPluginClass, WorkabilityCriterea):
+class WeatherPluginShiftAmountActivity(
+    model.AbstractPluginClass, WorkabilityCriteriaMixin
+):
     """WeatherPluginShiftAmountActivity is a class to allow to specify weather constraints to MoveActivities."""
 
     def __init__(

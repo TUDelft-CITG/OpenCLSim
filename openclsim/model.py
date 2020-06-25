@@ -13,10 +13,20 @@ class AbstractPluginClass(ABC):
     def __init__(self):
         pass
 
-    def pre_process(self, *args, **kwargs):
+    def pre_process(self, env, activity_log, message, activity, *args, **kwargs):
         return {}
 
-    def post_process(self, *args, **kwargs):
+    def post_process(
+        self,
+        env,
+        activity_log,
+        message,
+        activity,
+        start_preprocessing,
+        start_activity,
+        *args,
+        **kwargs,
+    ):
         return {}
 
     def validate(self):
