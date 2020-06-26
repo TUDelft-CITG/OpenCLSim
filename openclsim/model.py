@@ -10,15 +10,27 @@ class AbstractPluginClass(ABC):
     """Abstract class used as the basis for all Classes implementing a plugin for a specific Activity. 
     Instance checks will be performed on this class level."""
 
-    def __init__(self, plugin_name, activity):
-        self.plugin_name = plugin_name
-        self.activity = activity
+    def __init__(self):
+        pass
 
-    def pre_process(self, *args, **kwargs):
+    def pre_process(self, env, activity_log, message, activity, *args, **kwargs):
         return {}
 
-    def post_process(self, *args, **kwargs):
+    def post_process(
+        self,
+        env,
+        activity_log,
+        message,
+        activity,
+        start_preprocessing,
+        start_activity,
+        *args,
+        **kwargs,
+    ):
         return {}
+
+    def validate(self):
+        pass
 
 
 class PluginActivity(core.Identifiable, core.Log):
@@ -49,13 +61,10 @@ class PluginActivity(core.Identifiable, core.Log):
 
     def delay_processing(self, env, delay_name, activity_log, waiting):
         """Waiting must be a delay expressed in seconds"""
-        print(f"delay processing {waiting}")
         activity_log.log_entry(
             delay_name, env.now, -1, None, activity_log.id, core.LogState.WAIT_START
         )
-        print(f"before delay {env.now}")
         yield env.timeout(waiting)
-        print(f"after delay {env.now}")
         activity_log.log_entry(
             delay_name, env.now, -1, None, activity_log.id, core.LogState.WAIT_STOP
         )
@@ -116,16 +125,13 @@ class GenericActivity(PluginActivity):
 
         start_event = None
         if self.start_event != None:
-            print(f"start event expression {self.start_event}")
             start_event = self.parse_expression(self.start_event)
-            print(f"start event {start_event}")
         start_event_instance = start_event
         (
             start_event
             if start_event is None or isinstance(start_event, simpy.Event)
             else self.env.all_of(events=start_event)
         )
-        print(f"start event instance {start_event_instance}")
         if start_event_instance is not None:
             main_proc = partial(
                 delayed_process,
@@ -161,10 +167,6 @@ class GenericActivity(PluginActivity):
                 elif "or" in key_val:
                     partial_res = self.parse_expression(key_val["or"])
                     self.env.timeout(0)
-                    for item in partial_res:
-                        print(
-                            f"evaluate event {item} as triggered {item.triggered} and processed {item.processed}"
-                        )
                     res.append(
                         # self.env.any_of(events=[event() for event in partial_res])
                         self.env.any_of(events=partial_res)
@@ -253,7 +255,6 @@ class GenericActivity(PluginActivity):
         return res
 
     def end(self):
-        print(f"Activity end({self.name})")
         self.done_event.succeed()
 
 
@@ -316,7 +317,6 @@ class BasicActivity(GenericActivity):
         self.print = show
         self.duration = duration
         self.additional_logs = additional_logs
-        # print(f"BasicActivity {self.name} - postpone_start {self.postpone_start}")
         if not self.postpone_start:
             self.start()
 
@@ -328,6 +328,7 @@ class BasicActivity(GenericActivity):
             additional_logs=self.additional_logs,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
+            activity=self,
         )
         self.register_process(
             main_proc=main_proc, show=self.print, additional_logs=self.additional_logs
@@ -359,6 +360,7 @@ class SequentialActivity(GenericActivity):
             sub_processes=self.sub_processes,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
+            activity=self,
         )
         self.register_process(main_proc=main_proc, show=self.print)
 
@@ -379,7 +381,6 @@ class WhileActivity(GenericActivity):
         """Initialization"""
 
         self.print = show
-        print(f"while Activity keep_resources {self.keep_resources}")
         self.sub_process = sub_process
         if not self.sub_process.postpone_start:
             raise Exception(
@@ -397,6 +398,7 @@ class WhileActivity(GenericActivity):
             condition_event=self.parse_expression(self.condition_event),
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
+            activity=self,
         )
         self.register_process(main_proc=main_proc, show=self.print)
 
@@ -447,8 +449,6 @@ class ShiftAmountActivity(GenericActivity):
             self.start()
 
     def start(self):
-        print(f"SHift amount Activity keep_resources {self.keep_resources}")
-
         main_proc = partial(
             shift_amount_process,
             name=self.name,
@@ -502,9 +502,7 @@ def delayed_process(
                     activity_log.id,
                     core.LogState.WAIT_START,
                 )
-    print(f"delayed process : {start_event}")
     yield start_event
-    print(f"delayed process : after yield {start_event.processed}")
     activity_log.log_entry(
         activity_log.name, env.now, -1, None, activity_log.id, core.LogState.WAIT_STOP
     )
@@ -521,7 +519,6 @@ def delayed_process(
                 )
 
     for sub_process in sub_processes:
-        print(f"delayed process start subprocess {sub_process}")
         yield from sub_process(activity_log=activity_log, env=env)
 
 
@@ -533,6 +530,8 @@ def conditional_process(
     name,
     requested_resources,
     keep_resources,
+    activity,
+    max_iterations=1_000_000,
 ):
     """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
     sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
@@ -547,6 +546,22 @@ def conditional_process(
                    the sub_processes will be executed sequentially, in the order in which they are given as long
                    as the stop_event has not occurred.
     """
+    message = f"While activity {name}"
+
+    start_time = env.now
+    args_data = {
+        "env": env,
+        "activity_log": activity_log,
+        "message": message,
+        "activity": activity,
+        "sub_process": sub_process,
+        "name": name,
+        "keep_resources": keep_resources,
+    }
+    yield from activity.pre_process(args_data)
+
+    start_while = env.now
+
     if activity_log.log["Message"]:
         if activity_log.log["Message"][-1] == "delayed activity started" and hasattr(
             condition_event, "__call__"
@@ -567,10 +582,8 @@ def conditional_process(
         core.LogState.START,
     )
     ii = 0
-    while (not condition_event.processed) and ii < 10:
-        print(sub_process)
+    while (not condition_event.processed) and ii < max_iterations:
         # for sub_process_ in (proc for proc in [sub_process]):
-        print("conditional ")
         activity_log.log_entry(
             f"sub process {sub_process.name}",
             env.now,
@@ -595,12 +608,12 @@ def conditional_process(
         # which will result in triggered but not processed events to be taken care of before further progressing
         # maybe there is a better way of doing it, but his option works for now.
         yield env.timeout(0)
-        print(
-            f"condition event triggered: {condition_event.triggered} {condition_event.processed} round {ii}"
-        )
-        print(f"while loop requested_resources {requested_resources}")
-        print(f"while loop keep_resources {keep_resources}")
         ii = ii + 1
+
+    args_data["start_preprocessing"] = start_time
+    args_data["start_activity"] = start_while
+    activity.post_process(**args_data)
+
     activity_log.log_entry(
         f"conditional process {name}",
         env.now,
@@ -618,6 +631,7 @@ def basic_process(
     duration,
     requested_resources,
     keep_resources,
+    activity,
     additional_logs=[],
 ):
     """Returns a generator which can be added as a process to a simpy.Environment. The process will report the start of the 
@@ -632,7 +646,21 @@ def basic_process(
                    the sub_processes will be executed sequentially, in the order in which they are given as long
                    as the stop_event has not occurred.
     """
-    # print(f"basic process {name} start")
+    message = f"Basic activity {name}"
+
+    start_time = env.now
+    args_data = {
+        "env": env,
+        "activity_log": activity_log,
+        "message": message,
+        "activity": activity,
+        "duration": duration,
+        "name": name,
+    }
+    yield from activity.pre_process(args_data)
+
+    start_basic = env.now
+
     activity_log.log_entry(
         name, env.now, duration, None, activity_log.id, core.LogState.START
     )
@@ -643,6 +671,11 @@ def basic_process(
             )
 
     yield env.timeout(duration)
+
+    args_data["start_preprocessing"] = start_time
+    args_data["start_activity"] = start_basic
+    activity.post_process(**args_data)
+
     activity_log.log_entry(
         name, env.now, duration, None, activity_log.id, core.LogState.STOP
     )
@@ -651,7 +684,6 @@ def basic_process(
             log_item.log_entry(
                 name, env.now, duration, None, activity_log.id, core.LogState.STOP
             )
-    # print(f"basic process {name} end")
 
 
 def _request_resource_if_available(
@@ -672,7 +704,6 @@ def _request_resource_if_available(
         yield env.all_of(events=[site.container.get_available(amount, id_)])
 
         yield from _request_resource(resource_requests, processor.resource)
-        print(f"processor request : {resource_requests}")
         if site.container.get_level(id_) < amount:
             # someone removed / added content while we were requesting the processor, so abort and wait for available
             # space/content again
@@ -698,7 +729,6 @@ def _request_resource_if_available(
                 continue
 
         yield from _request_resource(resource_requests, site.resource)
-        print(f"site request : {resource_requests}")
         if site.container.get_level(id_) < amount:
             _release_resource(
                 resource_requests, processor.resource, kept_resource=kept_resource
@@ -708,7 +738,6 @@ def _request_resource_if_available(
             )
             continue
         all_available = True
-        print(f"end requestIfAvailable : {resource_requests}")
 
 
 def shift_amount_process(
@@ -737,10 +766,9 @@ def shift_amount_process(
     ):
         raise Exception("Invalide use of method shift_amount")
 
-    verbose = True
+    verbose = False
     filling = 1.0
     resource_requests = requested_resources
-    print(f"start : {resource_requests}")
 
     if not hasattr(activity_log, "processor"):
         activity_log.processor = processor
@@ -753,8 +781,6 @@ def shift_amount_process(
     if 0 != amount:
 
         yield from _request_resource(resource_requests, destination.resource)
-        print(f"destination request : {resource_requests}")
-        print(f"shift amount process keep_resources {keep_resources}")
 
         yield from _request_resource_if_available(
             env,
@@ -767,10 +793,6 @@ def shift_amount_process(
             id_,
             engine_order,
             verbose=False,
-        )
-        print(f"after req resource if available : {resource_requests}")
-        activity_log.log_entry(
-            name, env.now, amount, None, activity_log.id, core.LogState.START
         )
 
         if duration is not None:
@@ -802,8 +824,11 @@ def shift_amount_process(
         }
         yield from activity.pre_process(args_data)
 
+        activity_log.log_entry(
+            name, env.now, amount, None, activity_log.id, core.LogState.START
+        )
+
         start_shift = env.now
-        print("_shift_amount")
         yield from _shift_amount(
             env,
             processor,
@@ -824,27 +849,27 @@ def shift_amount_process(
         activity_log.log_entry(
             name, env.now, amount, None, activity_log.id, core.LogState.STOP
         )
-        print(f"after shift amount : {resource_requests}")
 
         # release the unloader, destination and mover requests
-        print(f"keep resources {keep_resources}")
         _release_resource(resource_requests, destination.resource, keep_resources)
-        print(f"release destination : {resource_requests}")
         if origin.resource in resource_requests:
             _release_resource(resource_requests, origin.resource, keep_resources)
-        print(f"released origin : {resource_requests}")
         if processor.resource in resource_requests:
             _release_resource(resource_requests, processor.resource, keep_resources)
-        print(f"released processor : {resource_requests}")
     else:
         raise RuntimeError(
             f"Attempting to shift content from an empty origin or to a full destination. ({all_amounts})"
         )
-    print(resource_requests)
 
 
 def sequential_process(
-    activity_log, env, sub_processes, name, requested_resources, keep_resources
+    activity_log,
+    env,
+    sub_processes,
+    name,
+    requested_resources,
+    keep_resources,
+    activity,
 ):
     """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
     sub_processes will be executed sequentially in the order in which they are given.
@@ -855,21 +880,28 @@ def sequential_process(
                    return a generator which could be added as a process to a simpy.Environment
                    the sub_processes will be executed sequentially, in the order in which they are given
     """
+    message = f"Sequence activity {name}"
+
+    start_time = env.now
+    args_data = {
+        "env": env,
+        "activity_log": activity_log,
+        "message": message,
+        "activity": activity,
+        "name": name,
+    }
+    yield from activity.pre_process(args_data)
+
+    start_sequence = env.now
+
     activity_log.log_entry(
         f"sequential {name}", env.now, -1, None, activity_log.id, core.LogState.START
     )
     for sub_process in sub_processes:
-        print(sub_process)
-        print(f"keep_resources {keep_resources}")
         if not sub_process.postpone_start:
             raise Exception(
                 f"SequentialActivity requires all sub processes to have a postponed start. {sub_process.name} does not have attribute postpone_start."
             )
-            # print(
-            #    (
-            #        f"SequentialActivity requires all sub processes to have a postponed start. {sub_process.name} does not have attribute postpone_start."
-            #    )
-            # )
         activity_log.log_entry(
             f"sub process {sub_process.name}",
             env.now,
@@ -894,6 +926,11 @@ def sequential_process(
             activity_log.id,
             core.LogState.STOP,
         )
+
+    args_data["start_preprocessing"] = start_time
+    args_data["start_activity"] = start_sequence
+    activity.post_process(**args_data)
+
     activity_log.log_entry(
         f"sequential {name}", env.now, -1, None, activity_log.id, core.LogState.STOP
     )
@@ -923,12 +960,10 @@ def move_process(
                   for example, engine_order=0.5 corresponds to sailing at 50% of max speed
     """
     message = "move activity {} of {} to {}".format(name, mover.name, destination.name)
-    print("Mover_move before mover resource request")
     # if mover.resource not in requested_resources:
     #    with mover.resource.request() as my_mover_turn:
     #        yield my_mover_turn
     yield from _request_resource(requested_resources, mover.resource)
-    print("Mover_move after mover resource request")
 
     start_time = env.now
     args_data = {
@@ -950,7 +985,6 @@ def move_process(
     start_mover = env.now
     mover.ActivityID = activity_log.id
     yield from mover.move(destination=destination, engine_order=engine_order)
-    print("Mover_move after move")
 
     args_data["start_preprocessing"] = start_time
     args_data["start_activity"] = start_mover
@@ -997,21 +1031,17 @@ def _shift_amount(
     id_="default",
     verbose=False,
 ):
-    print("start _shift_amount")
     """Calls the processor.process method, giving debug print statements when verbose is True."""
     amount = np.abs(origin.container.get_level(id_) - desired_level)
-    print(f"amount {amount}")
     # Set ActivityID to processor and mover
     processor.ActivityID = ActivityID
     origin.ActivityID = ActivityID
 
-    print("processor start process")
     # Check if loading or unloading
 
     yield from processor.process(
         origin, amount, destination, id_=id_, duration=duration, rate=rate
     )
-    print("processor end process")
 
     if verbose:
         org_level = origin.container.get_level(id_)
