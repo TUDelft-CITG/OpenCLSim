@@ -1094,6 +1094,7 @@ def single_run_process(
     start_event=None,
     stop_event=[],
     requested_resources={},
+    postpone_start=False,
 ):
 
     if stop_event == []:
@@ -1164,7 +1165,7 @@ def single_run_process(
         sub_process=activity,
         condition_event=stop_event,
         start_event=start_event,
-        postpone_start=False,
+        postpone_start=postpone_start,
     )
 
     return single_run, activity, while_activity
