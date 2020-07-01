@@ -159,6 +159,8 @@ class GenericActivity(PluginActivity):
                 if "and" in key_val:
                     partial_res = self.parse_expression(key_val["and"])
                     self.env.timeout(0)
+                    if not isinstance(partial_res, list):
+                        partial_res = [partial_res]
                     res.append(
                         # self.env.all_of(events=[event() for event in partial_res])
                         self.env.all_of(events=partial_res)
@@ -167,6 +169,8 @@ class GenericActivity(PluginActivity):
                 elif "or" in key_val:
                     partial_res = self.parse_expression(key_val["or"])
                     self.env.timeout(0)
+                    if not isinstance(partial_res, list):
+                        partial_res = [partial_res]
                     res.append(
                         # self.env.any_of(events=[event() for event in partial_res])
                         self.env.any_of(events=partial_res)
