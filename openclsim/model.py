@@ -282,11 +282,12 @@ class MoveActivity(GenericActivity):
                  by default will be to start immediately
     """
 
-    def __init__(self, mover, destination, show=False, *args, **kwargs):
+    def __init__(self, mover, destination, duration=None, show=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.destination = destination
         self.mover = mover
+        self.duration = duration
         self.print = show
         if not self.postpone_start:
             self.start()
@@ -300,6 +301,7 @@ class MoveActivity(GenericActivity):
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
             activity=self,
+            duration=self.duration,
         )
         self.register_process(main_proc=main_proc, show=self.print)
 
@@ -950,6 +952,7 @@ def move_process(
     keep_resources,
     activity,
     engine_order=1.0,
+    duration=None,
 ):
     """Returns a generator which can be added as a process to a simpy.Environment. In the process, a move will be made
     by the mover, moving it to the destination.
@@ -979,6 +982,7 @@ def move_process(
         "activity_log": activity_log,
         "message": message,
         "activity": activity,
+        "duration": duration,
     }
     yield from activity.pre_process(args_data)
 
@@ -988,7 +992,9 @@ def move_process(
 
     start_mover = env.now
     mover.ActivityID = activity_log.id
-    yield from mover.move(destination=destination, engine_order=engine_order)
+    yield from mover.move(
+        destination=destination, engine_order=engine_order, duration=duration
+    )
 
     args_data["start_preprocessing"] = start_time
     args_data["start_activity"] = start_mover
