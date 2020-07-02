@@ -1601,7 +1601,7 @@ class Movable(SimpyObject, Locatable):
         """Initialization"""
         self.v = v
 
-    def move(self, destination, engine_order=1.0):
+    def move(self, destination, engine_order=1.0, duration=None):
         """determine distance between origin and destination. 
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
 
@@ -1609,9 +1609,12 @@ class Movable(SimpyObject, Locatable):
         self.log_sailing(log_state=LogState.START)
 
         # Determine the sailing_duration
-        sailing_duration = self.sailing_duration(
-            self.geometry, destination, engine_order
-        )
+        if duration is not None:
+            sailing_duration = duration
+        else:
+            sailing_duration = self.sailing_duration(
+                self.geometry, destination, engine_order
+            )
 
         # Check out the time based on duration of sailing event
         yield self.env.timeout(sailing_duration)
