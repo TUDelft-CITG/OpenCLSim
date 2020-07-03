@@ -691,6 +691,12 @@ def basic_process(
                 name, env.now, duration, None, activity_log.id, core.LogState.STOP
             )
 
+    # work around for the event evaluation
+    # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+    # which will result in triggered but not processed events to be taken care of before further progressing
+    # maybe there is a better way of doing it, but his option works for now.
+    yield env.timeout(0)
+
 
 def _request_resource_if_available(
     env,
@@ -862,6 +868,12 @@ def shift_amount_process(
             _release_resource(resource_requests, origin.resource, keep_resources)
         if processor.resource in resource_requests:
             _release_resource(resource_requests, processor.resource, keep_resources)
+
+        # work around for the event evaluation
+        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+        # which will result in triggered but not processed events to be taken care of before further progressing
+        # maybe there is a better way of doing it, but his option works for now.
+        yield env.timeout(0)
     else:
         raise RuntimeError(
             f"Attempting to shift content from an empty origin or to a full destination. ({all_amounts})"
@@ -919,6 +931,7 @@ def sequential_process(
         sub_process.start()
         yield from sub_process.call_main_proc(activity_log=sub_process, env=env)
         sub_process.end()
+
         # work around for the event evaluation
         # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
         # which will result in triggered but not processed events to be taken care of before further progressing
@@ -1001,6 +1014,13 @@ def move_process(
     activity.post_process(**args_data)
 
     _release_resource(requested_resources, mover.resource, keep_resources)
+
+    # work around for the event evaluation
+    # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+    # which will result in triggered but not processed events to be taken care of before further progressing
+    # maybe there is a better way of doing it, but his option works for now.
+    yield env.timeout(0)
+
     activity_log.log_entry(
         message, env.now, -1, mover.geometry, activity_log.id, core.LogState.STOP
     )
