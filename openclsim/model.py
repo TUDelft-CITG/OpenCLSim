@@ -773,10 +773,10 @@ def shift_amount_process(
     assert processor.is_at(origin)
     assert destination.is_at(origin)
 
-    if not isinstance(origin, core.HasContainer) or not isinstance(
-        destination, core.HasContainer
-    ):
-        raise Exception("Invalide use of method shift_amount")
+    # if not isinstance(origin, core.HasContainer) or not isinstance(
+    #     destination, core.HasContainer
+    # ):
+    #     raise Exception("Invalide use of method shift_amount")
 
     verbose = False
     filling = 1.0
