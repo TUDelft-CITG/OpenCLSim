@@ -433,7 +433,7 @@ class RepeatActivity(GenericActivity):
         self.sub_process = sub_process
         if not self.sub_process.postpone_start:
             raise Exception(
-                f"In While activity {self.name} the sub_process must have postpone_start=True"
+                f"In Repeat activity {self.name} the sub_process must have postpone_start=True"
             )
         self.repetitions = repetitions
         if not self.postpone_start:
