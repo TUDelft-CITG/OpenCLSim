@@ -741,12 +741,7 @@ def repeat_process(
     activity.post_process(**args_data)
 
     activity_log.log_entry(
-        f"conditional process {name}",
-        env.now,
-        -1,
-        None,
-        activity_log.id,
-        core.LogState.STOP,
+        f"repeat process {name}", env.now, -1, None, activity_log.id, core.LogState.STOP
     )
 
 
