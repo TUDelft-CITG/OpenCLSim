@@ -2294,7 +2294,7 @@ class Processor(SimpyObject):
         #     message = "unloading"
 
         message = "move activity {} from {} to {} with ".format(
-            name, origin.name, destination.name, self.name
+            activity_name, origin.name, destination.name, self.name
         )
 
         # Log the process for all parts
