@@ -1122,7 +1122,10 @@ def move_process(
     start_mover = env.now
     mover.ActivityID = activity_log.id
     yield from mover.move(
-        destination=destination, engine_order=engine_order, duration=duration
+        destination=destination,
+        engine_order=engine_order,
+        duration=duration,
+        activity_name=name,
     )
 
     args_data["start_preprocessing"] = start_time

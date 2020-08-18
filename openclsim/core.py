@@ -1601,12 +1601,23 @@ class Movable(SimpyObject, Locatable):
         """Initialization"""
         self.v = v
 
-    def move(self, destination, engine_order=1.0, duration=None):
+    def move(self, destination, activity_name, engine_order=1.0, duration=None):
         """determine distance between origin and destination. 
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
 
+        message = message = "move activity {} of {} to {}".format(
+            activity_name, moveselfr.name, destination.name
+        )
+
         # Log the start event
-        self.log_sailing(log_state=LogState.START)
+        self.log_entry(
+            message,
+            self.env.now,
+            self.container.get_level(),
+            self.geometry,
+            self.ActivityID,
+            LogState.START,
+        )
 
         # Determine the sailing_duration
         if duration is not None:
@@ -1626,41 +1637,18 @@ class Movable(SimpyObject, Locatable):
         logger.debug("  duration: " + "%4.2f" % (sailing_duration / 3600) + " hrs")
 
         # Log the stop event
-        self.log_sailing(log_state=LogState.STOP)
+        self.log_entry(
+            message,
+            self.env.now,
+            self.container.get_level(),
+            self.geometry,
+            self.ActivityID,
+            LogState.STOP,
+        )
 
     @property
     def current_speed(self):
         return self.v
-
-    def log_sailing(self, log_state):
-        """ Log the start or stop of the sailing event """
-
-        if isinstance(self, HasContainer):
-            list_ = self.container.container_list
-            status = (
-                "filled"
-                if len(list_) > 0
-                and sum([self.container.get_level(id_) for id_ in list_]) > 0
-                else "empty"
-            )
-            self.log_entry(
-                "sailing {}".format(status),
-                self.env.now,
-                self.container.get_level(),
-                self.geometry,
-                self.ActivityID,
-                log_state,
-            )
-        else:
-            self.log_entry(
-                # "sailing {}".format(event),
-                "sailing",
-                self.env.now,
-                -1,
-                self.geometry,
-                self.ActivityID,
-                log_state,
-            )
 
     def sailing_duration(self, origin, destination, engine_order, verbose=True):
         """ Determine the sailing duration """
@@ -2305,7 +2293,9 @@ class Processor(SimpyObject):
         #     subcycle_frequency = self.unloading_subcycle_frequency
         #     message = "unloading"
 
-        message = f"Shift amount activity {activity_name}"
+        message = "move activity {} from {} to {} with ".format(
+            name, origin.name, destination.name, self.name
+        )
 
         # Log the process for all parts
         for location in [origin, destination]:
