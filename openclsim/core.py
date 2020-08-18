@@ -2256,7 +2256,14 @@ class Processor(SimpyObject):
 
     # noinspection PyUnresolvedReferences
     def process(
-        self, origin, amount, destination, id_="default", rate=None, duration=None
+        self,
+        origin,
+        amount,
+        destination,
+        id_="default",
+        rate=None,
+        duration=None,
+        activity_name=None,
     ):
         """Moves content from ship to the site or from the site to the ship to ensure that the ship's container reaches
         the desired level. Yields the time it takes to process."""
@@ -2298,9 +2305,8 @@ class Processor(SimpyObject):
         #     subcycle_frequency = self.unloading_subcycle_frequency
         #     message = "unloading"
 
-        message = f"transfer {id_}"
-        if hasattr(destination, "name"):
-            message = message + f" to {destination.name}"
+        message = f"Shift amount activity {activity_name}"
+
         # Log the process for all parts
         for location in [origin, destination]:
             location.log_entry(

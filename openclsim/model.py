@@ -962,6 +962,7 @@ def shift_amount_process(
             origin,
             origin.container.get_level(id_) + amount,
             destination,
+            activity_name=name,
             ActivityID=activity_log.id,
             duration=duration,
             rate=rate,
@@ -1171,6 +1172,7 @@ def _shift_amount(
     desired_level,
     destination,
     ActivityID,
+    activity_name,
     duration=None,
     rate=None,
     id_="default",
@@ -1185,7 +1187,13 @@ def _shift_amount(
     # Check if loading or unloading
 
     yield from processor.process(
-        origin, amount, destination, id_=id_, duration=duration, rate=rate
+        origin,
+        amount,
+        destination,
+        id_=id_,
+        duration=duration,
+        rate=rate,
+        activity_name=activity_name,
     )
 
     if verbose:
