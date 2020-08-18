@@ -1606,7 +1606,7 @@ class Movable(SimpyObject, Locatable):
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
 
         message = message = "move activity {} of {} to {}".format(
-            activity_name, moveselfr.name, destination.name
+            activity_name, self.name, destination.name
         )
 
         # Log the start event
