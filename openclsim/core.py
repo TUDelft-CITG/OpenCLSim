@@ -1601,7 +1601,7 @@ class Movable(SimpyObject, Locatable):
         """Initialization"""
         self.v = v
 
-    def move(self, destination, activity_name, engine_order=1.0, duration=None):
+    def move(self, destination, activity_name = '', engine_order=1.0, duration=None):
         """determine distance between origin and destination. 
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
 
@@ -2251,7 +2251,7 @@ class Processor(SimpyObject):
         id_="default",
         rate=None,
         duration=None,
-        activity_name=None,
+        activity_name="",
     ):
         """Moves content from ship to the site or from the site to the ship to ensure that the ship's container reaches
         the desired level. Yields the time it takes to process."""
