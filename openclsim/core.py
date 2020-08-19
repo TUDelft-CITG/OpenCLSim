@@ -1601,25 +1601,27 @@ class Movable(SimpyObject, Locatable):
         """Initialization"""
         self.v = v
 
+    def get_container_level(self):
+        if hasattr(self, "container"):
+            return self.container.get_level()
+        else:
+            return -1
+
     def move(self, destination, activity_name="", engine_order=1.0, duration=None):
         """determine distance between origin and destination. 
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
 
-        origin_name = self.name if hasattr(self, "name") else "undefined"
-        destination_name = (
-            destination.name if hasattr(destination, "name") else "undefined"
-        )
-
-        message = message = "move activity {} of {} to {}".format(
+        origin_name = getattr(self, "name", "undefined")
+        destination_name = getattr(destination, "name", "undefined")
+        message = "move activity {} of {} to {}".format(
             activity_name, origin_name, destination_name
         )
-        
-        container_level = self.container.get_level() if hasattr(self, "container") else 0
+
         # Log the start event
         self.log_entry(
             message,
             self.env.now,
-            container_level,
+            self.get_container_level(),
             self.geometry,
             self.ActivityID,
             LogState.START,
@@ -1643,11 +1645,10 @@ class Movable(SimpyObject, Locatable):
         logger.debug("  duration: " + "%4.2f" % (sailing_duration / 3600) + " hrs")
 
         # Log the stop event
-        container_level = self.container.get_level() if hasattr(self, "container") else 0
         self.log_entry(
             message,
             self.env.now,
-            container_level,
+            self.get_container_level(),
             self.geometry,
             self.ActivityID,
             LogState.STOP,
@@ -2300,15 +2301,10 @@ class Processor(SimpyObject):
         #     subcycle_frequency = self.unloading_subcycle_frequency
         #     message = "unloading"
 
-        processor_name = self.name if hasattr(self, "name") else "undefined"
-        origin_name = origin.name if hasattr(origin, "name") else "undefined"
-        destination_name = (
-            destination.name if hasattr(destination, "name") else "undefined"
-        )
-
-        message = "move activity {} from {} to {} with ".format(
-            activity_name, origin_name, destination_name, processor_name
-        )
+        processor_name = getattr(self, "name", "undefined")
+        origin_name = getattr(origin, "name", "undefined")
+        destination_name = getattr(destination, "name", "undefined")
+        message = f"move activity {activity_name} transfer {id_} from {origin_name} to {destination_name} with {processor_name}"
 
         # Log the process for all parts
         for location in [origin, destination]:
