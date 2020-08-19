@@ -1613,8 +1613,8 @@ class Movable(SimpyObject, Locatable):
 
         origin_name = getattr(self, "name", "undefined")
         destination_name = getattr(destination, "name", "undefined")
-        message = "move activity {} of {} to {}".format(
-            activity_name, origin_name, destination_name
+        message = (
+            f"move activity {activity_name} of {origin_name} to {destination_name}"
         )
 
         # Log the start event
