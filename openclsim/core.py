@@ -1601,19 +1601,25 @@ class Movable(SimpyObject, Locatable):
         """Initialization"""
         self.v = v
 
-    def move(self, destination, activity_name = '', engine_order=1.0, duration=None):
+    def move(self, destination, activity_name="", engine_order=1.0, duration=None):
         """determine distance between origin and destination. 
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
 
-        message = message = "move activity {} of {} to {}".format(
-            activity_name, self.name, destination.name
+        origin_name = self.name if hasattr(self, "name") else "undefined"
+        destination_name = (
+            destination.name if hasattr(destination, "name") else "undefined"
         )
 
+        message = message = "move activity {} of {} to {}".format(
+            activity_name, origin_name, destination_name
+        )
+        
+        container_level = self.container.get_level() if hasattr(self, "container") else 0
         # Log the start event
         self.log_entry(
             message,
             self.env.now,
-            self.container.get_level(),
+            container_level,
             self.geometry,
             self.ActivityID,
             LogState.START,
@@ -1637,10 +1643,11 @@ class Movable(SimpyObject, Locatable):
         logger.debug("  duration: " + "%4.2f" % (sailing_duration / 3600) + " hrs")
 
         # Log the stop event
+        container_level = self.container.get_level() if hasattr(self, "container") else 0
         self.log_entry(
             message,
             self.env.now,
-            self.container.get_level(),
+            container_level,
             self.geometry,
             self.ActivityID,
             LogState.STOP,
@@ -2293,8 +2300,14 @@ class Processor(SimpyObject):
         #     subcycle_frequency = self.unloading_subcycle_frequency
         #     message = "unloading"
 
+        processor_name = self.name if hasattr(self, "name") else "undefined"
+        origin_name = origin.name if hasattr(origin, "name") else "undefined"
+        destination_name = (
+            destination.name if hasattr(destination, "name") else "undefined"
+        )
+
         message = "move activity {} from {} to {} with ".format(
-            activity_name, origin.name, destination.name, self.name
+            activity_name, origin_name, destination_name, processor_name
         )
 
         # Log the process for all parts
