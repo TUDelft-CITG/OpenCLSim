@@ -1601,12 +1601,31 @@ class Movable(SimpyObject, Locatable):
         """Initialization"""
         self.v = v
 
-    def move(self, destination, engine_order=1.0, duration=None):
+    def get_container_level(self):
+        if hasattr(self, "container"):
+            return self.container.get_level()
+        else:
+            return -1
+
+    def move(self, destination, activity_name="", engine_order=1.0, duration=None):
         """determine distance between origin and destination. 
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
 
+        origin_name = getattr(self, "name", "undefined")
+        destination_name = getattr(destination, "name", "undefined")
+        message = (
+            f"move activity {activity_name} of {origin_name} to {destination_name}"
+        )
+
         # Log the start event
-        self.log_sailing(log_state=LogState.START)
+        self.log_entry(
+            message,
+            self.env.now,
+            self.get_container_level(),
+            self.geometry,
+            self.ActivityID,
+            LogState.START,
+        )
 
         # Determine the sailing_duration
         if duration is not None:
@@ -1626,41 +1645,18 @@ class Movable(SimpyObject, Locatable):
         logger.debug("  duration: " + "%4.2f" % (sailing_duration / 3600) + " hrs")
 
         # Log the stop event
-        self.log_sailing(log_state=LogState.STOP)
+        self.log_entry(
+            message,
+            self.env.now,
+            self.get_container_level(),
+            self.geometry,
+            self.ActivityID,
+            LogState.STOP,
+        )
 
     @property
     def current_speed(self):
         return self.v
-
-    def log_sailing(self, log_state):
-        """ Log the start or stop of the sailing event """
-
-        if isinstance(self, HasContainer):
-            list_ = self.container.container_list
-            status = (
-                "filled"
-                if len(list_) > 0
-                and sum([self.container.get_level(id_) for id_ in list_]) > 0
-                else "empty"
-            )
-            self.log_entry(
-                "sailing {}".format(status),
-                self.env.now,
-                self.container.get_level(),
-                self.geometry,
-                self.ActivityID,
-                log_state,
-            )
-        else:
-            self.log_entry(
-                # "sailing {}".format(event),
-                "sailing",
-                self.env.now,
-                -1,
-                self.geometry,
-                self.ActivityID,
-                log_state,
-            )
 
     def sailing_duration(self, origin, destination, engine_order, verbose=True):
         """ Determine the sailing duration """
@@ -2256,7 +2252,14 @@ class Processor(SimpyObject):
 
     # noinspection PyUnresolvedReferences
     def process(
-        self, origin, amount, destination, id_="default", rate=None, duration=None
+        self,
+        origin,
+        amount,
+        destination,
+        id_="default",
+        rate=None,
+        duration=None,
+        activity_name="",
     ):
         """Moves content from ship to the site or from the site to the ship to ensure that the ship's container reaches
         the desired level. Yields the time it takes to process."""
@@ -2298,9 +2301,11 @@ class Processor(SimpyObject):
         #     subcycle_frequency = self.unloading_subcycle_frequency
         #     message = "unloading"
 
-        message = f"transfer {id_}"
-        if hasattr(destination, "name"):
-            message = message + f" to {destination.name}"
+        processor_name = getattr(self, "name", "undefined")
+        origin_name = getattr(origin, "name", "undefined")
+        destination_name = getattr(destination, "name", "undefined")
+        message = f"move activity {activity_name} transfer {id_} from {origin_name} to {destination_name} with {processor_name}"
+
         # Log the process for all parts
         for location in [origin, destination]:
             location.log_entry(
