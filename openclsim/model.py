@@ -359,31 +359,9 @@ class MoveActivity(GenericActivity):
             self.start()
 
     def start(self):
-        main_proc = partial(
-            self.move_process,
-            name=self.name,
-            destination=self.destination,
-            mover=self.mover,
-            requested_resources=self.requested_resources,
-            keep_resources=self.keep_resources,
-            activity=self,
-            duration=self.duration,
-        )
-        self.register_process(main_proc=main_proc, show=self.print)
+        self.register_process(main_proc=self.move_process, show=self.print)
 
-    def move_process(
-        self,
-        activity_log,
-        env,
-        mover,
-        destination,
-        name,
-        requested_resources,
-        keep_resources,
-        activity,
-        engine_order=1.0,
-        duration=None,
-    ):
+    def move_process(self, activity_log, env):
         """Returns a generator which can be added as a process to a simpy.Environment. In the process, a move will be made
         by the mover, moving it to the destination.
 
@@ -397,45 +375,44 @@ class MoveActivity(GenericActivity):
                     for example, engine_order=0.5 corresponds to sailing at 50% of max speed
         """
         message = "move activity {} of {} to {}".format(
-            name, mover.name, destination.name
+            self.name, self.mover.name, self.destination.name
         )
-        # if mover.resource not in requested_resources:
-        #    with mover.resource.request() as my_mover_turn:
-        #        yield my_mover_turn
-        yield from _request_resource(requested_resources, mover.resource)
+        yield from _request_resource(self.requested_resources, self.mover.resource)
 
         start_time = env.now
         args_data = {
             "env": env,
-            "mover": mover,
-            "origin": mover,
-            "destination": destination,
-            "engine_order": engine_order,
             "activity_log": activity_log,
             "message": message,
-            "activity": activity,
-            "duration": duration,
+            "activity": self,
         }
-        yield from activity.pre_process(args_data)
+        yield from self.pre_process(args_data)
 
         activity_log.log_entry(
-            message, env.now, -1, mover.geometry, activity_log.id, core.LogState.START
+            message,
+            env.now,
+            -1,
+            self.mover.geometry,
+            activity_log.id,
+            core.LogState.START,
         )
 
         start_mover = env.now
-        mover.ActivityID = activity_log.id
-        yield from mover.move(
-            destination=destination,
-            engine_order=engine_order,
-            duration=duration,
-            activity_name=name,
+        self.mover.ActivityID = activity_log.id
+        yield from self.mover.move(
+            destination=self.destination,
+            engine_order=1,
+            duration=self.duration,
+            activity_name=self.name,
         )
 
         args_data["start_preprocessing"] = start_time
         args_data["start_activity"] = start_mover
-        activity.post_process(**args_data)
+        self.post_process(**args_data)
 
-        _release_resource(requested_resources, mover.resource, keep_resources)
+        _release_resource(
+            self.requested_resources, self.mover.resource, self.keep_resources
+        )
 
         # work around for the event evaluation
         # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
@@ -444,7 +421,12 @@ class MoveActivity(GenericActivity):
         yield env.timeout(0)
 
         activity_log.log_entry(
-            message, env.now, -1, mover.geometry, activity_log.id, core.LogState.STOP
+            message,
+            env.now,
+            -1,
+            self.mover.geometry,
+            activity_log.id,
+            core.LogState.STOP,
         )
 
 
