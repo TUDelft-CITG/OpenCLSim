@@ -2,7 +2,7 @@ from functools import partial
 import openclsim.core as core
 import simpy
 import numpy as np
-from .BaseActivities import GenericActivity
+from .base_activities import GenericActivity
 
 
 def single_run_process(

@@ -1,6 +1,6 @@
 import openclsim.core as core
 import numpy as np
-from .BaseActivities import GenericActivity
+from .base_activities import GenericActivity
 
 
 class ShiftAmountActivity(GenericActivity):

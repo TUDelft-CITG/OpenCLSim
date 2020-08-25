@@ -1,5 +1,5 @@
 import openclsim.core as core
-from .BaseActivities import GenericActivity
+from .base_activities import GenericActivity
 
 
 class WhileActivity(GenericActivity):
