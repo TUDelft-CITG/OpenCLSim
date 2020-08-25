@@ -1,10 +1,10 @@
-from .BaseActivities import AbstractPluginClass, PluginActivity, GenericActivity
-from .MoveActivity import MoveActivity
-from .BasicActivity import BasicActivity
-from .SequentialActivity import SequentialActivity
-from .WhileActivity import WhileActivity
-from .RepeatActivity import RepeatActivity
-from .SingleRunProcess import single_run_process
+from .base_activities import AbstractPluginClass, PluginActivity, GenericActivity
+from .move_activity import MoveActivity
+from .basic_activity import BasicActivity
+from .sequential_activity import SequentialActivity
+from .while_activity import WhileActivity
+from .repeat_activity import RepeatActivity
+from .single_run_process import single_run_process
 
 __all__ = [
     "AbstractPluginClass",
