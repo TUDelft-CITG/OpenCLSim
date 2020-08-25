@@ -689,14 +689,14 @@ class WhileActivity(GenericActivity):
 
     def conditional_process(self, activity_log, env):
         """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
-        sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
-        of the sub_process, the conditional process will first complete the sub_process before finishing its own process.
+        self.sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
+        of the self.sub_process, the conditional process will first complete the self.sub_process before finishing its own process.
 
         activity_log: the core.Log object in which log_entries about the activities progress will be added.
         env: the simpy.Environment in which the process will be run
         condition_event: a simpy.Event object, when this event occurs, the conditional process will finish executing its current
                     run of its sub_processes and then finish
-        sub_process: an Iterable of methods which will be called with the activity_log and env parameters and should
+        self.sub_process: an Iterable of methods which will be called with the activity_log and env parameters and should
                     return a generator which could be added as a process to a simpy.Environment
                     the sub_processes will be executed sequentially, in the order in which they are given as long
                     as the stop_event has not occurred.
@@ -736,20 +736,22 @@ class WhileActivity(GenericActivity):
         )
         ii = 0
         while (not condition_event.processed) and ii < self.max_iterations:
-            # for sub_process_ in (proc for proc in [sub_process]):
+            # for sub_process_ in (proc for proc in [self.sub_process]):
             activity_log.log_entry(
-                f"sub process {sub_process.name}",
+                f"sub process {self.sub_process.name}",
                 env.now,
                 -1,
                 None,
                 activity_log.id,
                 core.LogState.START,
             )
-            sub_process.start()
-            yield from sub_process.call_main_proc(activity_log=activity_log, env=env)
-            sub_process.end()
+            self.sub_process.start()
+            yield from self.sub_process.call_main_proc(
+                activity_log=activity_log, env=env
+            )
+            self.sub_process.end()
             activity_log.log_entry(
-                f"sub process {sub_process.name}",
+                f"sub process {self.sub_process.name}",
                 env.now,
                 -1,
                 None,
