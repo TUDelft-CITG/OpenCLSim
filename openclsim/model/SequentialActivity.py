@@ -3,12 +3,15 @@ from .BaseActivities import GenericActivity
 
 
 class SequentialActivity(GenericActivity):
-    """The SequenceActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+    """The SequenceActivity Class forms a specific class.
+    This is for executing multiple activities in a dedicated order within a simulation.
     It is a structural activity, which does not require specific resources.
-    
-    sub_processes: a list of activities to be executed in the provided sequence.
-    start_event: the activity will start as soon as this event is triggered
-                 by default will be to start immediately
+
+    sub_processes: 
+        a list of activities to be executed in the provided sequence.
+    start_event: 
+        The activity will start as soon as this event is triggered
+        by default will be to start immediately
     """
 
     def __init__(self, sub_processes, show=False, *args, **kwargs):
