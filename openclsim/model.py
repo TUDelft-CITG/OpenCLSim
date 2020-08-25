@@ -1023,11 +1023,7 @@ class ShiftAmountActivity(GenericActivity):
                 continue
             all_available = True
 
-    def shift_amount_process(
-        self,
-        activity_log,
-        env,
-    ):
+    def shift_amount_process(self, activity_log, env):
         """Origin and Destination are of type HasContainer """
         assert self.processor.is_at(self.origin)
         assert self.destination.is_at(self.origin)
@@ -1085,7 +1081,12 @@ class ShiftAmountActivity(GenericActivity):
             yield from self.pre_process(args_data)
 
             activity_log.log_entry(
-                self.name, env.now, self.amount, None, activity_log.id, core.LogState.START
+                self.name,
+                env.now,
+                self.amount,
+                None,
+                activity_log.id,
+                core.LogState.START,
             )
 
             start_shift = env.now
@@ -1099,7 +1100,7 @@ class ShiftAmountActivity(GenericActivity):
                 ActivityID=activity_log.id,
                 duration=self.duration,
                 rate=rate,
-                self.id_=self.id_,
+                id_=self.id_,
                 verbose=verbose,
             )
 
@@ -1108,15 +1109,26 @@ class ShiftAmountActivity(GenericActivity):
             self.post_process(**args_data)
 
             activity_log.log_entry(
-                self.name, env.now, self.amount, None, activity_log.id, core.LogState.STOP
+                self.name,
+                env.now,
+                self.amount,
+                None,
+                activity_log.id,
+                core.LogState.STOP,
             )
 
             # release the unloader, self.destination and mover requests
-            _release_resource(resource_requests, self.destination.resource, self.keep_resources)
+            _release_resource(
+                resource_requests, self.destination.resource, self.keep_resources
+            )
             if self.origin.resource in resource_requests:
-                _release_resource(resource_requests, self.origin.resource, self.keep_resources)
+                _release_resource(
+                    resource_requests, self.origin.resource, self.keep_resources
+                )
             if self.processor.resource in resource_requests:
-                _release_resource(resource_requests, self.processor.resource, self.keep_resources)
+                _release_resource(
+                    resource_requests, self.processor.resource, self.keep_resources
+                )
 
             # work around for the event evaluation
             # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
@@ -1127,7 +1139,6 @@ class ShiftAmountActivity(GenericActivity):
             raise RuntimeError(
                 f"Attempting to shift content from an empty self.self.origin or to a full self.destination. ({all_amounts})"
             )
-
 
     def _move_mover(self, mover, origin, ActivityID, engine_order=1.0, verbose=False):
         """Calls the mover.move method, giving debug print statements when verbose is True."""
