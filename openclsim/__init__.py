@@ -2,6 +2,10 @@
 
 """Top-level package for OpenCLSim."""
 
+import openclsim.model as model
+
 __author__ = """Mark van Koningsveld"""
 __email__ = "M.vanKoningsveld@tudelft.nl"
 __version__ = "1.2.2"
+__all__ = ["model"]
+
