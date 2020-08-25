@@ -549,26 +549,9 @@ class SequentialActivity(GenericActivity):
             self.start()
 
     def start(self):
-        main_proc = partial(
-            self.sequential_process,
-            name=self.name,
-            sub_processes=self.sub_processes,
-            requested_resources=self.requested_resources,
-            keep_resources=self.keep_resources,
-            activity=self,
-        )
-        self.register_process(main_proc=main_proc, show=self.print)
+        self.register_process(main_proc=self.sequential_process, show=self.print)
 
-    def sequential_process(
-        self,
-        activity_log,
-        env,
-        sub_processes,
-        name,
-        requested_resources,
-        keep_resources,
-        activity,
-    ):
+    def sequential_process(self, activity_log, env):
         """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
         sub_processes will be executed sequentially in the order in which they are given.
 
@@ -578,29 +561,28 @@ class SequentialActivity(GenericActivity):
                     return a generator which could be added as a process to a simpy.Environment
                     the sub_processes will be executed sequentially, in the order in which they are given
         """
-        message = f"Sequence activity {name}"
+        message = f"Sequence activity {self.name}"
 
         start_time = env.now
         args_data = {
             "env": env,
             "activity_log": activity_log,
             "message": message,
-            "activity": activity,
-            "name": name,
+            "activity": self,
         }
-        yield from activity.pre_process(args_data)
+        yield from self.pre_process(args_data)
 
         start_sequence = env.now
 
         activity_log.log_entry(
-            f"sequential {name}",
+            f"sequential {self.name}",
             env.now,
             -1,
             None,
             activity_log.id,
             core.LogState.START,
         )
-        for sub_process in sub_processes:
+        for sub_process in self.sub_processes:
             if not sub_process.postpone_start:
                 raise Exception(
                     f"SequentialActivity requires all sub processes to have a postponed start. {sub_process.name} does not have attribute postpone_start."
@@ -633,10 +615,15 @@ class SequentialActivity(GenericActivity):
 
         args_data["start_preprocessing"] = start_time
         args_data["start_activity"] = start_sequence
-        activity.post_process(**args_data)
+        self.post_process(**args_data)
 
         activity_log.log_entry(
-            f"sequential {name}", env.now, -1, None, activity_log.id, core.LogState.STOP
+            f"sequential {self.name}",
+            env.now,
+            -1,
+            None,
+            activity_log.id,
+            core.LogState.STOP,
         )
 
 
