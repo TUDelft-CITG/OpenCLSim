@@ -441,11 +441,10 @@ class RepeatActivity(GenericActivity):
 
     def start(self):
         main_proc = partial(
-            conditional_process,
+            repeat_process,
             name=self.name,
-            condition_event=None,
             sub_process=self.sub_process,
-            max_iterations=self.repetitions,
+            repetitions=self.repetitions,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
             activity=self,
@@ -671,6 +670,78 @@ def conditional_process(
         None,
         activity_log.id,
         core.LogState.STOP,
+    )
+
+
+def repeat_process(
+    activity_log,
+    env,
+    repetitions,
+    sub_process,
+    name,
+    requested_resources,
+    keep_resources,
+    activity,
+):
+    message = f"Repeat activity {name}"
+
+    start_time = env.now
+    args_data = {
+        "env": env,
+        "activity_log": activity_log,
+        "message": message,
+        "activity": activity,
+        "sub_process": sub_process,
+        "repetitions": repetitions,
+        "name": name,
+        "keep_resources": keep_resources,
+    }
+    yield from activity.pre_process(args_data)
+
+    start_while = env.now
+
+    activity_log.log_entry(
+        f"repeat process {name}",
+        env.now,
+        -1,
+        None,
+        activity_log.id,
+        core.LogState.START,
+    )
+    ii = 0
+    while ii < repetitions:
+        activity_log.log_entry(
+            f"sub process {sub_process.name}",
+            env.now,
+            -1,
+            None,
+            activity_log.id,
+            core.LogState.START,
+        )
+        sub_process.start()
+        yield from sub_process.call_main_proc(activity_log=activity_log, env=env)
+        sub_process.end()
+        activity_log.log_entry(
+            f"sub process {sub_process.name}",
+            env.now,
+            -1,
+            None,
+            activity_log.id,
+            core.LogState.STOP,
+        )
+        # work around for the event evaluation
+        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+        # which will result in triggered but not processed events to be taken care of before further progressing
+        # maybe there is a better way of doing it, but his option works for now.
+        yield env.timeout(0)
+        ii = ii + 1
+
+    args_data["start_preprocessing"] = start_time
+    args_data["start_activity"] = start_while
+    activity.post_process(**args_data)
+
+    activity_log.log_entry(
+        f"repeat process {name}", env.now, -1, None, activity_log.id, core.LogState.STOP
     )
 
 
