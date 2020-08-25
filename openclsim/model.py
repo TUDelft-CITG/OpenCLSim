@@ -134,7 +134,7 @@ class GenericActivity(PluginActivity):
         )
         if start_event_instance is not None:
             main_proc = partial(
-                delayed_process,
+                self.delayed_process,
                 start_event=start_event_instance,
                 sub_processes=[main_proc],
                 additional_logs=additional_logs,
@@ -261,6 +261,72 @@ class GenericActivity(PluginActivity):
     def end(self):
         self.done_event.succeed()
 
+    def delayed_process(
+        self,
+        activity_log,
+        env,
+        start_event,
+        sub_processes,
+        requested_resources,
+        keep_resources,
+        additional_logs=[],
+    ):
+        """"Returns a generator which can be added as a process to a simpy.Environment. In the process the given
+        sub_processes will be executed after the given start_event occurs.
+
+        activity_log: the core.Log object in which log_entries about the activities progress will be added.
+        env: the simpy.Environment in which the process will be run
+        start_event: a simpy.Event object, when this event occurs the delayed process will start executing its sub_processes
+        sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
+                    return a generator which could be added as a process to a simpy.Environment
+                    the sub_processes will be executed sequentially, in the order in which they are given after the
+                    start_event occurs
+        """
+        if hasattr(start_event, "__call__"):
+            start_event = start_event()
+        activity_log.log_entry(
+            activity_log.name,
+            env.now,
+            -1,
+            None,
+            activity_log.id,
+            core.LogState.WAIT_START,
+        )
+        if isinstance(additional_logs, list) and len(additional_logs) > 0:
+            for log in additional_logs:
+                for sub_process in sub_processes:
+                    log.log_entry(
+                        activity_log.name,
+                        env.now,
+                        -1,
+                        None,
+                        activity_log.id,
+                        core.LogState.WAIT_START,
+                    )
+        yield start_event
+        activity_log.log_entry(
+            activity_log.name,
+            env.now,
+            -1,
+            None,
+            activity_log.id,
+            core.LogState.WAIT_STOP,
+        )
+        if isinstance(additional_logs, list) and len(additional_logs) > 0:
+            for log in additional_logs:
+                for sub_process in sub_processes:
+                    log.log_entry(
+                        activity_log.name,
+                        env.now,
+                        -1,
+                        None,
+                        activity_log.id,
+                        core.LogState.WAIT_STOP,
+                    )
+
+        for sub_process in sub_processes:
+            yield from sub_process(activity_log=activity_log, env=env)
+
 
 class MoveActivity(GenericActivity):
     """The MoveActivity Class forms a specific class for a single move activity within a simulation.
@@ -294,7 +360,7 @@ class MoveActivity(GenericActivity):
 
     def start(self):
         main_proc = partial(
-            move_process,
+            self.move_process,
             name=self.name,
             destination=self.destination,
             mover=self.mover,
@@ -304,6 +370,82 @@ class MoveActivity(GenericActivity):
             duration=self.duration,
         )
         self.register_process(main_proc=main_proc, show=self.print)
+
+    def move_process(
+        self,
+        activity_log,
+        env,
+        mover,
+        destination,
+        name,
+        requested_resources,
+        keep_resources,
+        activity,
+        engine_order=1.0,
+        duration=None,
+    ):
+        """Returns a generator which can be added as a process to a simpy.Environment. In the process, a move will be made
+        by the mover, moving it to the destination.
+
+        activity_log: the core.Log object in which log_entries about the activities progress will be added.
+        env: the simpy.Environment in which the process will be run
+        mover: moves from its current position to the destination
+            should inherit from core.Movable
+        destination: the location the mover will move to
+                    should inherit from core.Locatable
+        engine_order: optional parameter specifying at what percentage of the maximum speed the mover should sail.
+                    for example, engine_order=0.5 corresponds to sailing at 50% of max speed
+        """
+        message = "move activity {} of {} to {}".format(
+            name, mover.name, destination.name
+        )
+        # if mover.resource not in requested_resources:
+        #    with mover.resource.request() as my_mover_turn:
+        #        yield my_mover_turn
+        yield from _request_resource(requested_resources, mover.resource)
+
+        start_time = env.now
+        args_data = {
+            "env": env,
+            "mover": mover,
+            "origin": mover,
+            "destination": destination,
+            "engine_order": engine_order,
+            "activity_log": activity_log,
+            "message": message,
+            "activity": activity,
+            "duration": duration,
+        }
+        yield from activity.pre_process(args_data)
+
+        activity_log.log_entry(
+            message, env.now, -1, mover.geometry, activity_log.id, core.LogState.START
+        )
+
+        start_mover = env.now
+        mover.ActivityID = activity_log.id
+        yield from mover.move(
+            destination=destination,
+            engine_order=engine_order,
+            duration=duration,
+            activity_name=name,
+        )
+
+        args_data["start_preprocessing"] = start_time
+        args_data["start_activity"] = start_mover
+        activity.post_process(**args_data)
+
+        _release_resource(requested_resources, mover.resource, keep_resources)
+
+        # work around for the event evaluation
+        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+        # which will result in triggered but not processed events to be taken care of before further progressing
+        # maybe there is a better way of doing it, but his option works for now.
+        yield env.timeout(0)
+
+        activity_log.log_entry(
+            message, env.now, -1, mover.geometry, activity_log.id, core.LogState.STOP
+        )
 
 
 class BasicActivity(GenericActivity):
@@ -328,7 +470,7 @@ class BasicActivity(GenericActivity):
 
     def start(self):
         main_proc = partial(
-            basic_process,
+            self.basic_process,
             name=self.name,
             duration=self.duration,
             additional_logs=self.additional_logs,
@@ -339,6 +481,75 @@ class BasicActivity(GenericActivity):
         self.register_process(
             main_proc=main_proc, show=self.print, additional_logs=self.additional_logs
         )
+
+    def basic_process(
+        self,
+        activity_log,
+        env,
+        name,
+        duration,
+        requested_resources,
+        keep_resources,
+        activity,
+        additional_logs=[],
+    ):
+        """Returns a generator which can be added as a process to a simpy.Environment. The process will report the start of the 
+        activity, delay the execution for the provided duration, and finally report the completion of the activiy.
+
+        activity_log: the core.Log object in which log_entries about the activities progress will be added.
+        env: the simpy.Environment in which the process will be run
+        stop_event: a simpy.Event object, when this event occurs, the conditional process will finish executing its current
+                    run of its sub_processes and then finish
+        sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
+                    return a generator which could be added as a process to a simpy.Environment
+                    the sub_processes will be executed sequentially, in the order in which they are given as long
+                    as the stop_event has not occurred.
+        """
+        message = f"Basic activity {name}"
+
+        start_time = env.now
+        args_data = {
+            "env": env,
+            "activity_log": activity_log,
+            "message": message,
+            "activity": activity,
+            "duration": duration,
+            "name": name,
+            "additional_logs": additional_logs,
+        }
+        yield from activity.pre_process(args_data)
+
+        start_basic = env.now
+
+        activity_log.log_entry(
+            name, env.now, duration, None, activity_log.id, core.LogState.START
+        )
+        if isinstance(additional_logs, list) and len(additional_logs) > 0:
+            for log_item in additional_logs:
+                log_item.log_entry(
+                    name, env.now, duration, None, activity_log.id, core.LogState.START
+                )
+
+        yield env.timeout(duration)
+
+        args_data["start_preprocessing"] = start_time
+        args_data["start_activity"] = start_basic
+        activity.post_process(**args_data)
+
+        activity_log.log_entry(
+            name, env.now, duration, None, activity_log.id, core.LogState.STOP
+        )
+        if isinstance(additional_logs, list) and len(additional_logs) > 0:
+            for log_item in additional_logs:
+                log_item.log_entry(
+                    name, env.now, duration, None, activity_log.id, core.LogState.STOP
+                )
+
+        # work around for the event evaluation
+        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+        # which will result in triggered but not processed events to be taken care of before further progressing
+        # maybe there is a better way of doing it, but his option works for now.
+        yield env.timeout(0)
 
 
 class SequentialActivity(GenericActivity):
@@ -361,7 +572,7 @@ class SequentialActivity(GenericActivity):
 
     def start(self):
         main_proc = partial(
-            sequential_process,
+            self.sequential_process,
             name=self.name,
             sub_processes=self.sub_processes,
             requested_resources=self.requested_resources,
@@ -369,6 +580,86 @@ class SequentialActivity(GenericActivity):
             activity=self,
         )
         self.register_process(main_proc=main_proc, show=self.print)
+
+    def sequential_process(
+        self,
+        activity_log,
+        env,
+        sub_processes,
+        name,
+        requested_resources,
+        keep_resources,
+        activity,
+    ):
+        """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
+        sub_processes will be executed sequentially in the order in which they are given.
+
+        activity_log: the core.Log object in which log_entries about the activities progress will be added.
+        env: the simpy.Environment in which the process will be run
+        sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
+                    return a generator which could be added as a process to a simpy.Environment
+                    the sub_processes will be executed sequentially, in the order in which they are given
+        """
+        message = f"Sequence activity {name}"
+
+        start_time = env.now
+        args_data = {
+            "env": env,
+            "activity_log": activity_log,
+            "message": message,
+            "activity": activity,
+            "name": name,
+        }
+        yield from activity.pre_process(args_data)
+
+        start_sequence = env.now
+
+        activity_log.log_entry(
+            f"sequential {name}",
+            env.now,
+            -1,
+            None,
+            activity_log.id,
+            core.LogState.START,
+        )
+        for sub_process in sub_processes:
+            if not sub_process.postpone_start:
+                raise Exception(
+                    f"SequentialActivity requires all sub processes to have a postponed start. {sub_process.name} does not have attribute postpone_start."
+                )
+            activity_log.log_entry(
+                f"sub process {sub_process.name}",
+                env.now,
+                -1,
+                None,
+                activity_log.id,
+                core.LogState.START,
+            )
+            sub_process.start()
+            yield from sub_process.call_main_proc(activity_log=sub_process, env=env)
+            sub_process.end()
+
+            # work around for the event evaluation
+            # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+            # which will result in triggered but not processed events to be taken care of before further progressing
+            # maybe there is a better way of doing it, but his option works for now.
+            yield env.timeout(0)
+            activity_log.log_entry(
+                f"sub process {sub_process.name}",
+                env.now,
+                -1,
+                None,
+                activity_log.id,
+                core.LogState.STOP,
+            )
+
+        args_data["start_preprocessing"] = start_time
+        args_data["start_activity"] = start_sequence
+        activity.post_process(**args_data)
+
+        activity_log.log_entry(
+            f"sequential {name}", env.now, -1, None, activity_log.id, core.LogState.STOP
+        )
 
 
 class WhileActivity(GenericActivity):
@@ -398,7 +689,7 @@ class WhileActivity(GenericActivity):
 
     def start(self):
         main_proc = partial(
-            conditional_process,
+            self.conditional_process,
             name=self.name,
             sub_process=self.sub_process,
             condition_event=self.parse_expression(self.condition_event),
@@ -407,6 +698,108 @@ class WhileActivity(GenericActivity):
             activity=self,
         )
         self.register_process(main_proc=main_proc, show=self.print)
+
+    def conditional_process(
+        self,
+        activity_log,
+        env,
+        condition_event,
+        sub_process,
+        name,
+        requested_resources,
+        keep_resources,
+        activity,
+        max_iterations=1_000_000,
+    ):
+        """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
+        sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
+        of the sub_process, the conditional process will first complete the sub_process before finishing its own process.
+
+        activity_log: the core.Log object in which log_entries about the activities progress will be added.
+        env: the simpy.Environment in which the process will be run
+        condition_event: a simpy.Event object, when this event occurs, the conditional process will finish executing its current
+                    run of its sub_processes and then finish
+        sub_process: an Iterable of methods which will be called with the activity_log and env parameters and should
+                    return a generator which could be added as a process to a simpy.Environment
+                    the sub_processes will be executed sequentially, in the order in which they are given as long
+                    as the stop_event has not occurred.
+        """
+        message = f"While activity {name}"
+
+        start_time = env.now
+        args_data = {
+            "env": env,
+            "activity_log": activity_log,
+            "message": message,
+            "activity": activity,
+            "sub_process": sub_process,
+            "name": name,
+            "keep_resources": keep_resources,
+        }
+        yield from activity.pre_process(args_data)
+
+        start_while = env.now
+
+        if activity_log.log["Message"]:
+            if activity_log.log["Message"][
+                -1
+            ] == "delayed activity started" and hasattr(condition_event, "__call__"):
+                condition_event = condition_event()
+
+        if hasattr(condition_event, "__call__"):
+            condition_event = condition_event()
+        elif type(condition_event) == list:
+            condition_event = env.any_of(events=[event() for event in condition_event])
+
+        activity_log.log_entry(
+            f"conditional process {name}",
+            env.now,
+            -1,
+            None,
+            activity_log.id,
+            core.LogState.START,
+        )
+        ii = 0
+        while (not condition_event.processed) and ii < max_iterations:
+            # for sub_process_ in (proc for proc in [sub_process]):
+            activity_log.log_entry(
+                f"sub process {sub_process.name}",
+                env.now,
+                -1,
+                None,
+                activity_log.id,
+                core.LogState.START,
+            )
+            sub_process.start()
+            yield from sub_process.call_main_proc(activity_log=activity_log, env=env)
+            sub_process.end()
+            activity_log.log_entry(
+                f"sub process {sub_process.name}",
+                env.now,
+                -1,
+                None,
+                activity_log.id,
+                core.LogState.STOP,
+            )
+            # work around for the event evaluation
+            # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+            # which will result in triggered but not processed events to be taken care of before further progressing
+            # maybe there is a better way of doing it, but his option works for now.
+            yield env.timeout(0)
+            ii = ii + 1
+
+        args_data["start_preprocessing"] = start_time
+        args_data["start_activity"] = start_while
+        activity.post_process(**args_data)
+
+        activity_log.log_entry(
+            f"conditional process {name}",
+            env.now,
+            -1,
+            None,
+            activity_log.id,
+            core.LogState.STOP,
+        )
 
 
 class RepeatActivity(GenericActivity):
@@ -441,7 +834,7 @@ class RepeatActivity(GenericActivity):
 
     def start(self):
         main_proc = partial(
-            repeat_process,
+            self.repeat_process,
             name=self.name,
             sub_process=self.sub_process,
             repetitions=self.repetitions,
@@ -450,6 +843,83 @@ class RepeatActivity(GenericActivity):
             activity=self,
         )
         self.register_process(main_proc=main_proc, show=self.print)
+
+    def repeat_process(
+        self,
+        activity_log,
+        env,
+        repetitions,
+        sub_process,
+        name,
+        requested_resources,
+        keep_resources,
+        activity,
+    ):
+        message = f"Repeat activity {name}"
+
+        start_time = env.now
+        args_data = {
+            "env": env,
+            "activity_log": activity_log,
+            "message": message,
+            "activity": activity,
+            "sub_process": sub_process,
+            "repetitions": repetitions,
+            "name": name,
+            "keep_resources": keep_resources,
+        }
+        yield from activity.pre_process(args_data)
+
+        start_while = env.now
+
+        activity_log.log_entry(
+            f"repeat process {name}",
+            env.now,
+            -1,
+            None,
+            activity_log.id,
+            core.LogState.START,
+        )
+        ii = 0
+        while ii < repetitions:
+            activity_log.log_entry(
+                f"sub process {sub_process.name}",
+                env.now,
+                -1,
+                None,
+                activity_log.id,
+                core.LogState.START,
+            )
+            sub_process.start()
+            yield from sub_process.call_main_proc(activity_log=activity_log, env=env)
+            sub_process.end()
+            activity_log.log_entry(
+                f"sub process {sub_process.name}",
+                env.now,
+                -1,
+                None,
+                activity_log.id,
+                core.LogState.STOP,
+            )
+            # work around for the event evaluation
+            # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+            # which will result in triggered but not processed events to be taken care of before further progressing
+            # maybe there is a better way of doing it, but his option works for now.
+            yield env.timeout(0)
+            ii = ii + 1
+
+        args_data["start_preprocessing"] = start_time
+        args_data["start_activity"] = start_while
+        activity.post_process(**args_data)
+
+        activity_log.log_entry(
+            f"repeat process {name}",
+            env.now,
+            -1,
+            None,
+            activity_log.id,
+            core.LogState.STOP,
+        )
 
 
 class ShiftAmountActivity(GenericActivity):
@@ -499,7 +969,7 @@ class ShiftAmountActivity(GenericActivity):
 
     def start(self):
         main_proc = partial(
-            shift_amount_process,
+            self.shift_amount_process,
             name=self.name,
             processor=self.processor,
             origin=self.origin,
@@ -514,636 +984,259 @@ class ShiftAmountActivity(GenericActivity):
         )
         self.register_process(main_proc=main_proc, show=self.print)
 
+    def _request_resource_if_available(
+        self,
+        env,
+        resource_requests,
+        site,
+        processor,
+        amount,
+        kept_resource,
+        ActivityID,
+        id_="default",
+        engine_order=1.0,
+        verbose=False,
+    ):
+        all_available = False
+        while not all_available and amount > 0:
+            # yield until enough content and space available in origin and destination
+            yield env.all_of(events=[site.container.get_available(amount, id_)])
 
-def delayed_process(
-    activity_log,
-    env,
-    start_event,
-    sub_processes,
-    requested_resources,
-    keep_resources,
-    additional_logs=[],
-):
-    """"Returns a generator which can be added as a process to a simpy.Environment. In the process the given
-    sub_processes will be executed after the given start_event occurs.
-
-    activity_log: the core.Log object in which log_entries about the activities progress will be added.
-    env: the simpy.Environment in which the process will be run
-    start_event: a simpy.Event object, when this event occurs the delayed process will start executing its sub_processes
-    sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
-                   return a generator which could be added as a process to a simpy.Environment
-                   the sub_processes will be executed sequentially, in the order in which they are given after the
-                   start_event occurs
-    """
-    if hasattr(start_event, "__call__"):
-        start_event = start_event()
-    activity_log.log_entry(
-        activity_log.name, env.now, -1, None, activity_log.id, core.LogState.WAIT_START
-    )
-    if isinstance(additional_logs, list) and len(additional_logs) > 0:
-        for log in additional_logs:
-            for sub_process in sub_processes:
-                log.log_entry(
-                    activity_log.name,
-                    env.now,
-                    -1,
-                    None,
-                    activity_log.id,
-                    core.LogState.WAIT_START,
-                )
-    yield start_event
-    activity_log.log_entry(
-        activity_log.name, env.now, -1, None, activity_log.id, core.LogState.WAIT_STOP
-    )
-    if isinstance(additional_logs, list) and len(additional_logs) > 0:
-        for log in additional_logs:
-            for sub_process in sub_processes:
-                log.log_entry(
-                    activity_log.name,
-                    env.now,
-                    -1,
-                    None,
-                    activity_log.id,
-                    core.LogState.WAIT_STOP,
-                )
-
-    for sub_process in sub_processes:
-        yield from sub_process(activity_log=activity_log, env=env)
-
-
-def conditional_process(
-    activity_log,
-    env,
-    condition_event,
-    sub_process,
-    name,
-    requested_resources,
-    keep_resources,
-    activity,
-    max_iterations=1_000_000,
-):
-    """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
-    sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
-    of the sub_process, the conditional process will first complete the sub_process before finishing its own process.
-
-    activity_log: the core.Log object in which log_entries about the activities progress will be added.
-    env: the simpy.Environment in which the process will be run
-    condition_event: a simpy.Event object, when this event occurs, the conditional process will finish executing its current
-                run of its sub_processes and then finish
-    sub_process: an Iterable of methods which will be called with the activity_log and env parameters and should
-                   return a generator which could be added as a process to a simpy.Environment
-                   the sub_processes will be executed sequentially, in the order in which they are given as long
-                   as the stop_event has not occurred.
-    """
-    message = f"While activity {name}"
-
-    start_time = env.now
-    args_data = {
-        "env": env,
-        "activity_log": activity_log,
-        "message": message,
-        "activity": activity,
-        "sub_process": sub_process,
-        "name": name,
-        "keep_resources": keep_resources,
-    }
-    yield from activity.pre_process(args_data)
-
-    start_while = env.now
-
-    if activity_log.log["Message"]:
-        if activity_log.log["Message"][-1] == "delayed activity started" and hasattr(
-            condition_event, "__call__"
-        ):
-            condition_event = condition_event()
-
-    if hasattr(condition_event, "__call__"):
-        condition_event = condition_event()
-    elif type(condition_event) == list:
-        condition_event = env.any_of(events=[event() for event in condition_event])
-
-    activity_log.log_entry(
-        f"conditional process {name}",
-        env.now,
-        -1,
-        None,
-        activity_log.id,
-        core.LogState.START,
-    )
-    ii = 0
-    while (not condition_event.processed) and ii < max_iterations:
-        # for sub_process_ in (proc for proc in [sub_process]):
-        activity_log.log_entry(
-            f"sub process {sub_process.name}",
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.START,
-        )
-        sub_process.start()
-        yield from sub_process.call_main_proc(activity_log=activity_log, env=env)
-        sub_process.end()
-        activity_log.log_entry(
-            f"sub process {sub_process.name}",
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.STOP,
-        )
-        # work around for the event evaluation
-        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-        # which will result in triggered but not processed events to be taken care of before further progressing
-        # maybe there is a better way of doing it, but his option works for now.
-        yield env.timeout(0)
-        ii = ii + 1
-
-    args_data["start_preprocessing"] = start_time
-    args_data["start_activity"] = start_while
-    activity.post_process(**args_data)
-
-    activity_log.log_entry(
-        f"conditional process {name}",
-        env.now,
-        -1,
-        None,
-        activity_log.id,
-        core.LogState.STOP,
-    )
-
-
-def repeat_process(
-    activity_log,
-    env,
-    repetitions,
-    sub_process,
-    name,
-    requested_resources,
-    keep_resources,
-    activity,
-):
-    message = f"Repeat activity {name}"
-
-    start_time = env.now
-    args_data = {
-        "env": env,
-        "activity_log": activity_log,
-        "message": message,
-        "activity": activity,
-        "sub_process": sub_process,
-        "repetitions": repetitions,
-        "name": name,
-        "keep_resources": keep_resources,
-    }
-    yield from activity.pre_process(args_data)
-
-    start_while = env.now
-
-    activity_log.log_entry(
-        f"repeat process {name}",
-        env.now,
-        -1,
-        None,
-        activity_log.id,
-        core.LogState.START,
-    )
-    ii = 0
-    while ii < repetitions:
-        activity_log.log_entry(
-            f"sub process {sub_process.name}",
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.START,
-        )
-        sub_process.start()
-        yield from sub_process.call_main_proc(activity_log=activity_log, env=env)
-        sub_process.end()
-        activity_log.log_entry(
-            f"sub process {sub_process.name}",
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.STOP,
-        )
-        # work around for the event evaluation
-        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-        # which will result in triggered but not processed events to be taken care of before further progressing
-        # maybe there is a better way of doing it, but his option works for now.
-        yield env.timeout(0)
-        ii = ii + 1
-
-    args_data["start_preprocessing"] = start_time
-    args_data["start_activity"] = start_while
-    activity.post_process(**args_data)
-
-    activity_log.log_entry(
-        f"repeat process {name}", env.now, -1, None, activity_log.id, core.LogState.STOP
-    )
-
-
-def basic_process(
-    activity_log,
-    env,
-    name,
-    duration,
-    requested_resources,
-    keep_resources,
-    activity,
-    additional_logs=[],
-):
-    """Returns a generator which can be added as a process to a simpy.Environment. The process will report the start of the 
-    activity, delay the execution for the provided duration, and finally report the completion of the activiy.
-
-    activity_log: the core.Log object in which log_entries about the activities progress will be added.
-    env: the simpy.Environment in which the process will be run
-    stop_event: a simpy.Event object, when this event occurs, the conditional process will finish executing its current
-                run of its sub_processes and then finish
-    sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
-                   return a generator which could be added as a process to a simpy.Environment
-                   the sub_processes will be executed sequentially, in the order in which they are given as long
-                   as the stop_event has not occurred.
-    """
-    message = f"Basic activity {name}"
-
-    start_time = env.now
-    args_data = {
-        "env": env,
-        "activity_log": activity_log,
-        "message": message,
-        "activity": activity,
-        "duration": duration,
-        "name": name,
-        "additional_logs": additional_logs,
-    }
-    yield from activity.pre_process(args_data)
-
-    start_basic = env.now
-
-    activity_log.log_entry(
-        name, env.now, duration, None, activity_log.id, core.LogState.START
-    )
-    if isinstance(additional_logs, list) and len(additional_logs) > 0:
-        for log_item in additional_logs:
-            log_item.log_entry(
-                name, env.now, duration, None, activity_log.id, core.LogState.START
-            )
-
-    yield env.timeout(duration)
-
-    args_data["start_preprocessing"] = start_time
-    args_data["start_activity"] = start_basic
-    activity.post_process(**args_data)
-
-    activity_log.log_entry(
-        name, env.now, duration, None, activity_log.id, core.LogState.STOP
-    )
-    if isinstance(additional_logs, list) and len(additional_logs) > 0:
-        for log_item in additional_logs:
-            log_item.log_entry(
-                name, env.now, duration, None, activity_log.id, core.LogState.STOP
-            )
-
-    # work around for the event evaluation
-    # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-    # which will result in triggered but not processed events to be taken care of before further progressing
-    # maybe there is a better way of doing it, but his option works for now.
-    yield env.timeout(0)
-
-
-def _request_resource_if_available(
-    env,
-    resource_requests,
-    site,
-    processor,
-    amount,
-    kept_resource,
-    ActivityID,
-    id_="default",
-    engine_order=1.0,
-    verbose=False,
-):
-    all_available = False
-    while not all_available and amount > 0:
-        # yield until enough content and space available in origin and destination
-        yield env.all_of(events=[site.container.get_available(amount, id_)])
-
-        yield from _request_resource(resource_requests, processor.resource)
-        if site.container.get_level(id_) < amount:
-            # someone removed / added content while we were requesting the processor, so abort and wait for available
-            # space/content again
-            _release_resource(
-                resource_requests, processor.resource, kept_resource=kept_resource
-            )
-            continue
-
-        if not processor.is_at(site):
-            # todo have the processor move simultaneously with the mover by starting a different process for it?
-            yield from _move_mover(
-                processor,
-                site,
-                ActivityID=ActivityID,
-                engine_order=engine_order,
-                verbose=verbose,
-            )
+            yield from _request_resource(resource_requests, processor.resource)
             if site.container.get_level(id_) < amount:
-                # someone messed us up again, so return to waiting for space/content
+                # someone removed / added content while we were requesting the processor, so abort and wait for available
+                # space/content again
                 _release_resource(
                     resource_requests, processor.resource, kept_resource=kept_resource
                 )
                 continue
 
-        yield from _request_resource(resource_requests, site.resource)
-        if site.container.get_level(id_) < amount:
-            _release_resource(
-                resource_requests, processor.resource, kept_resource=kept_resource
-            )
-            _release_resource(
-                resource_requests, site.resource, kept_resource=kept_resource
-            )
-            continue
-        all_available = True
+            if not processor.is_at(site):
+                # todo have the processor move simultaneously with the mover by starting a different process for it?
+                yield from self._move_mover(
+                    processor,
+                    site,
+                    ActivityID=ActivityID,
+                    engine_order=engine_order,
+                    verbose=verbose,
+                )
+                if site.container.get_level(id_) < amount:
+                    # someone messed us up again, so return to waiting for space/content
+                    _release_resource(
+                        resource_requests,
+                        processor.resource,
+                        kept_resource=kept_resource,
+                    )
+                    continue
 
+            yield from _request_resource(resource_requests, site.resource)
+            if site.container.get_level(id_) < amount:
+                _release_resource(
+                    resource_requests, processor.resource, kept_resource=kept_resource
+                )
+                _release_resource(
+                    resource_requests, site.resource, kept_resource=kept_resource
+                )
+                continue
+            all_available = True
 
-def shift_amount_process(
-    activity_log,
-    env,
-    processor,
-    origin,
-    destination,
-    name,
-    duration,
-    activity,
-    amount=None,
-    requested_resources={},
-    keep_resources=[],
-    id_="default",
-    engine_order=1.0,
-    stop_reservation_waiting_event=None,
-    phase=None,
-):
-    """Origin and Destination are of type HasContainer """
-    assert processor.is_at(origin)
-    assert destination.is_at(origin)
+    def shift_amount_process(
+        self,
+        activity_log,
+        env,
+        processor,
+        origin,
+        destination,
+        name,
+        duration,
+        activity,
+        amount=None,
+        requested_resources={},
+        keep_resources=[],
+        id_="default",
+        engine_order=1.0,
+        stop_reservation_waiting_event=None,
+        phase=None,
+    ):
+        """Origin and Destination are of type HasContainer """
+        assert processor.is_at(origin)
+        assert destination.is_at(origin)
 
-    # if not isinstance(origin, core.HasContainer) or not isinstance(
-    #     destination, core.HasContainer
-    # ):
-    #     raise Exception("Invalide use of method shift_amount")
+        # if not isinstance(origin, core.HasContainer) or not isinstance(
+        #     destination, core.HasContainer
+        # ):
+        #     raise Exception("Invalide use of method shift_amount")
 
-    verbose = False
-    filling = 1.0
-    resource_requests = requested_resources
+        verbose = False
+        filling = 1.0
+        resource_requests = requested_resources
 
-    if not hasattr(activity_log, "processor"):
-        activity_log.processor = processor
-    if not hasattr(activity_log, "mover"):
-        activity_log.mover = origin
-    amount, all_amounts = processor.determine_processor_amount(
-        [origin], destination, amount, id_
-    )
-
-    if 0 != amount:
-
-        yield from _request_resource(resource_requests, destination.resource)
-
-        yield from _request_resource_if_available(
-            env,
-            resource_requests,
-            origin,
-            processor,
-            amount,
-            None,  # for now release all
-            activity_log.id,
-            id_,
-            engine_order,
-            verbose=False,
+        if not hasattr(activity_log, "processor"):
+            activity_log.processor = processor
+        if not hasattr(activity_log, "mover"):
+            activity_log.mover = origin
+        amount, all_amounts = processor.determine_processor_amount(
+            [origin], destination, amount, id_
         )
 
-        if duration is not None:
-            rate = None
-        elif duration is not None:
-            rate = processor.loading
+        if 0 != amount:
 
-        elif phase == "loading":
-            rate = processor.loading
-        elif phase == "unloading":
-            rate = processor.unloading
+            yield from _request_resource(resource_requests, destination.resource)
+
+            yield from self._request_resource_if_available(
+                env,
+                resource_requests,
+                origin,
+                processor,
+                amount,
+                None,  # for now release all
+                activity_log.id,
+                id_,
+                engine_order,
+                verbose=False,
+            )
+
+            if duration is not None:
+                rate = None
+            elif duration is not None:
+                rate = processor.loading
+
+            elif phase == "loading":
+                rate = processor.loading
+            elif phase == "unloading":
+                rate = processor.unloading
+            else:
+                raise RuntimeError(
+                    f"Both the pase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
+                )
+
+            start_time = env.now
+            args_data = {
+                "env": env,
+                "processor": processor,
+                "origin": origin,
+                "destination": destination,
+                "engine_order": engine_order,
+                "activity_log": activity_log,
+                "message": name,
+                "activity": activity,
+                "duration": duration,
+                "amount": amount,
+            }
+            yield from activity.pre_process(args_data)
+
+            activity_log.log_entry(
+                name, env.now, amount, None, activity_log.id, core.LogState.START
+            )
+
+            start_shift = env.now
+            yield from self._shift_amount(
+                env,
+                processor,
+                origin,
+                origin.container.get_level(id_) + amount,
+                destination,
+                activity_name=name,
+                ActivityID=activity_log.id,
+                duration=duration,
+                rate=rate,
+                id_=id_,
+                verbose=verbose,
+            )
+
+            args_data["start_preprocessing"] = start_time
+            args_data["start_activity"] = start_shift
+            activity.post_process(**args_data)
+
+            activity_log.log_entry(
+                name, env.now, amount, None, activity_log.id, core.LogState.STOP
+            )
+
+            # release the unloader, destination and mover requests
+            _release_resource(resource_requests, destination.resource, keep_resources)
+            if origin.resource in resource_requests:
+                _release_resource(resource_requests, origin.resource, keep_resources)
+            if processor.resource in resource_requests:
+                _release_resource(resource_requests, processor.resource, keep_resources)
+
+            # work around for the event evaluation
+            # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+            # which will result in triggered but not processed events to be taken care of before further progressing
+            # maybe there is a better way of doing it, but his option works for now.
+            yield env.timeout(0)
         else:
             raise RuntimeError(
-                f"Both the pase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
+                f"Attempting to shift content from an empty origin or to a full destination. ({all_amounts})"
             )
 
-        start_time = env.now
-        args_data = {
-            "env": env,
-            "processor": processor,
-            "origin": origin,
-            "destination": destination,
-            "engine_order": engine_order,
-            "activity_log": activity_log,
-            "message": name,
-            "activity": activity,
-            "duration": duration,
-            "amount": amount,
-        }
-        yield from activity.pre_process(args_data)
+    def _move_mover(self, mover, origin, ActivityID, engine_order=1.0, verbose=False):
+        """Calls the mover.move method, giving debug print statements when verbose is True."""
+        old_location = mover.geometry
 
-        activity_log.log_entry(
-            name, env.now, amount, None, activity_log.id, core.LogState.START
-        )
+        # Set ActivityID to mover
+        mover.ActivityID = ActivityID
+        yield from mover.move(origin, engine_order=engine_order)
 
-        start_shift = env.now
-        yield from _shift_amount(
-            env,
-            processor,
+        if verbose:
+            print("Moved:")
+            print(
+                "  object:      "
+                + mover.name
+                + " contains: "
+                + str(mover.container.get_level())
+            )
+            print(
+                "  from:        "
+                + format(old_location.x, "02.5f")
+                + " "
+                + format(old_location.y, "02.5f")
+            )
+            print(
+                "  to:          "
+                + format(mover.geometry.x, "02.5f")
+                + " "
+                + format(mover.geometry.y, "02.5f")
+            )
+
+    def _shift_amount(
+        self,
+        env,
+        processor,
+        origin,
+        desired_level,
+        destination,
+        ActivityID,
+        activity_name,
+        duration=None,
+        rate=None,
+        id_="default",
+        verbose=False,
+    ):
+        """Calls the processor.process method, giving debug print statements when verbose is True."""
+        amount = np.abs(origin.container.get_level(id_) - desired_level)
+        # Set ActivityID to processor and mover
+        processor.ActivityID = ActivityID
+        origin.ActivityID = ActivityID
+
+        # Check if loading or unloading
+
+        yield from processor.process(
             origin,
-            origin.container.get_level(id_) + amount,
+            amount,
             destination,
-            activity_name=name,
-            ActivityID=activity_log.id,
+            id_=id_,
             duration=duration,
             rate=rate,
-            id_=id_,
-            verbose=verbose,
+            activity_name=activity_name,
         )
 
-        args_data["start_preprocessing"] = start_time
-        args_data["start_activity"] = start_shift
-        activity.post_process(**args_data)
-
-        activity_log.log_entry(
-            name, env.now, amount, None, activity_log.id, core.LogState.STOP
-        )
-
-        # release the unloader, destination and mover requests
-        _release_resource(resource_requests, destination.resource, keep_resources)
-        if origin.resource in resource_requests:
-            _release_resource(resource_requests, origin.resource, keep_resources)
-        if processor.resource in resource_requests:
-            _release_resource(resource_requests, processor.resource, keep_resources)
-
-        # work around for the event evaluation
-        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-        # which will result in triggered but not processed events to be taken care of before further progressing
-        # maybe there is a better way of doing it, but his option works for now.
-        yield env.timeout(0)
-    else:
-        raise RuntimeError(
-            f"Attempting to shift content from an empty origin or to a full destination. ({all_amounts})"
-        )
-
-
-def sequential_process(
-    activity_log,
-    env,
-    sub_processes,
-    name,
-    requested_resources,
-    keep_resources,
-    activity,
-):
-    """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
-    sub_processes will be executed sequentially in the order in which they are given.
-
-    activity_log: the core.Log object in which log_entries about the activities progress will be added.
-    env: the simpy.Environment in which the process will be run
-    sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
-                   return a generator which could be added as a process to a simpy.Environment
-                   the sub_processes will be executed sequentially, in the order in which they are given
-    """
-    message = f"Sequence activity {name}"
-
-    start_time = env.now
-    args_data = {
-        "env": env,
-        "activity_log": activity_log,
-        "message": message,
-        "activity": activity,
-        "name": name,
-    }
-    yield from activity.pre_process(args_data)
-
-    start_sequence = env.now
-
-    activity_log.log_entry(
-        f"sequential {name}", env.now, -1, None, activity_log.id, core.LogState.START
-    )
-    for sub_process in sub_processes:
-        if not sub_process.postpone_start:
-            raise Exception(
-                f"SequentialActivity requires all sub processes to have a postponed start. {sub_process.name} does not have attribute postpone_start."
-            )
-        activity_log.log_entry(
-            f"sub process {sub_process.name}",
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.START,
-        )
-        sub_process.start()
-        yield from sub_process.call_main_proc(activity_log=sub_process, env=env)
-        sub_process.end()
-
-        # work around for the event evaluation
-        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-        # which will result in triggered but not processed events to be taken care of before further progressing
-        # maybe there is a better way of doing it, but his option works for now.
-        yield env.timeout(0)
-        activity_log.log_entry(
-            f"sub process {sub_process.name}",
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.STOP,
-        )
-
-    args_data["start_preprocessing"] = start_time
-    args_data["start_activity"] = start_sequence
-    activity.post_process(**args_data)
-
-    activity_log.log_entry(
-        f"sequential {name}", env.now, -1, None, activity_log.id, core.LogState.STOP
-    )
-
-
-def move_process(
-    activity_log,
-    env,
-    mover,
-    destination,
-    name,
-    requested_resources,
-    keep_resources,
-    activity,
-    engine_order=1.0,
-    duration=None,
-):
-    """Returns a generator which can be added as a process to a simpy.Environment. In the process, a move will be made
-    by the mover, moving it to the destination.
-
-    activity_log: the core.Log object in which log_entries about the activities progress will be added.
-    env: the simpy.Environment in which the process will be run
-    mover: moves from its current position to the destination
-           should inherit from core.Movable
-    destination: the location the mover will move to
-                 should inherit from core.Locatable
-    engine_order: optional parameter specifying at what percentage of the maximum speed the mover should sail.
-                  for example, engine_order=0.5 corresponds to sailing at 50% of max speed
-    """
-    message = "move activity {} of {} to {}".format(name, mover.name, destination.name)
-    # if mover.resource not in requested_resources:
-    #    with mover.resource.request() as my_mover_turn:
-    #        yield my_mover_turn
-    yield from _request_resource(requested_resources, mover.resource)
-
-    start_time = env.now
-    args_data = {
-        "env": env,
-        "mover": mover,
-        "origin": mover,
-        "destination": destination,
-        "engine_order": engine_order,
-        "activity_log": activity_log,
-        "message": message,
-        "activity": activity,
-        "duration": duration,
-    }
-    yield from activity.pre_process(args_data)
-
-    activity_log.log_entry(
-        message, env.now, -1, mover.geometry, activity_log.id, core.LogState.START
-    )
-
-    start_mover = env.now
-    mover.ActivityID = activity_log.id
-    yield from mover.move(
-        destination=destination,
-        engine_order=engine_order,
-        duration=duration,
-        activity_name=name,
-    )
-
-    args_data["start_preprocessing"] = start_time
-    args_data["start_activity"] = start_mover
-    activity.post_process(**args_data)
-
-    _release_resource(requested_resources, mover.resource, keep_resources)
-
-    # work around for the event evaluation
-    # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-    # which will result in triggered but not processed events to be taken care of before further progressing
-    # maybe there is a better way of doing it, but his option works for now.
-    yield env.timeout(0)
-
-    activity_log.log_entry(
-        message, env.now, -1, mover.geometry, activity_log.id, core.LogState.STOP
-    )
+        if verbose:
+            org_level = origin.container.get_level(id_)
+            dest_level = destination.container.get_level(id_)
+            print(f"Processed {amount} of {id_}:")
+            print(f"  by:          {processor.name}")
+            print(f"  origin        {origin.name}  contains: {org_level} of {id_}")
+            print(f"  destination:  {destination.name} contains: {dest_level} of {id_}")
 
 
 def _request_resource(requested_resources, resource):
@@ -1167,76 +1260,6 @@ def _release_resource(requested_resources, resource, kept_resource=None):
     if resource in requested_resources.keys():
         resource.release(requested_resources[resource])
         del requested_resources[resource]
-
-
-def _shift_amount(
-    env,
-    processor,
-    origin,
-    desired_level,
-    destination,
-    ActivityID,
-    activity_name,
-    duration=None,
-    rate=None,
-    id_="default",
-    verbose=False,
-):
-    """Calls the processor.process method, giving debug print statements when verbose is True."""
-    amount = np.abs(origin.container.get_level(id_) - desired_level)
-    # Set ActivityID to processor and mover
-    processor.ActivityID = ActivityID
-    origin.ActivityID = ActivityID
-
-    # Check if loading or unloading
-
-    yield from processor.process(
-        origin,
-        amount,
-        destination,
-        id_=id_,
-        duration=duration,
-        rate=rate,
-        activity_name=activity_name,
-    )
-
-    if verbose:
-        org_level = origin.container.get_level(id_)
-        dest_level = destination.container.get_level(id_)
-        print(f"Processed {amount} of {id_}:")
-        print(f"  by:          {processor.name}")
-        print(f"  origin        {origin.name}  contains: {org_level} of {id_}")
-        print(f"  destination:  {destination.name} contains: {dest_level} of {id_}")
-
-
-def _move_mover(mover, origin, ActivityID, engine_order=1.0, verbose=False):
-    """Calls the mover.move method, giving debug print statements when verbose is True."""
-    old_location = mover.geometry
-
-    # Set ActivityID to mover
-    mover.ActivityID = ActivityID
-    yield from mover.move(origin, engine_order=engine_order)
-
-    if verbose:
-        print("Moved:")
-        print(
-            "  object:      "
-            + mover.name
-            + " contains: "
-            + str(mover.container.get_level())
-        )
-        print(
-            "  from:        "
-            + format(old_location.x, "02.5f")
-            + " "
-            + format(old_location.y, "02.5f")
-        )
-        print(
-            "  to:          "
-            + format(mover.geometry.x, "02.5f")
-            + " "
-            + format(mover.geometry.y, "02.5f")
-        )
 
 
 def single_run_process(
