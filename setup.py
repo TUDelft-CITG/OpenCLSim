@@ -63,7 +63,7 @@ setup(
     include_package_data=True,
     keywords="OpenCLSim",
     name="openclsim",
-    packages=find_packages(include=["openclsim"]),
+    packages=find_packages("openclsim"),
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=tests_require,
