@@ -777,6 +777,7 @@ def basic_process(
         "activity": activity,
         "duration": duration,
         "name": name,
+        "additional_logs": additional_logs,
     }
     yield from activity.pre_process(args_data)
 
