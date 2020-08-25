@@ -672,7 +672,7 @@ class WhileActivity(GenericActivity):
     def __init__(self, sub_process, condition_event, show=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-
+        self.max_iterations = 1_000_000
         self.print = show
         self.sub_process = sub_process
         if not self.sub_process.postpone_start:
@@ -680,33 +680,14 @@ class WhileActivity(GenericActivity):
                 f"In While activity {self.name} the sub_process must have postpone_start=True"
             )
         self.condition_event = condition_event
+
         if not self.postpone_start:
             self.start()
 
     def start(self):
-        main_proc = partial(
-            self.conditional_process,
-            name=self.name,
-            sub_process=self.sub_process,
-            condition_event=self.parse_expression(self.condition_event),
-            requested_resources=self.requested_resources,
-            keep_resources=self.keep_resources,
-            activity=self,
-        )
-        self.register_process(main_proc=main_proc, show=self.print)
+        self.register_process(main_proc=self.conditional_process, show=self.print)
 
-    def conditional_process(
-        self,
-        activity_log,
-        env,
-        condition_event,
-        sub_process,
-        name,
-        requested_resources,
-        keep_resources,
-        activity,
-        max_iterations=1_000_000,
-    ):
+    def conditional_process(self, activity_log, env):
         """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
         sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
         of the sub_process, the conditional process will first complete the sub_process before finishing its own process.
@@ -720,19 +701,17 @@ class WhileActivity(GenericActivity):
                     the sub_processes will be executed sequentially, in the order in which they are given as long
                     as the stop_event has not occurred.
         """
-        message = f"While activity {name}"
+        message = f"While activity {self.name}"
+        condition_event = self.parse_expression(self.condition_event)
 
         start_time = env.now
         args_data = {
             "env": env,
             "activity_log": activity_log,
             "message": message,
-            "activity": activity,
-            "sub_process": sub_process,
-            "name": name,
-            "keep_resources": keep_resources,
+            "activity": self,
         }
-        yield from activity.pre_process(args_data)
+        yield from self.pre_process(args_data)
 
         start_while = env.now
 
@@ -748,7 +727,7 @@ class WhileActivity(GenericActivity):
             condition_event = env.any_of(events=[event() for event in condition_event])
 
         activity_log.log_entry(
-            f"conditional process {name}",
+            f"conditional process {self.name}",
             env.now,
             -1,
             None,
@@ -756,7 +735,7 @@ class WhileActivity(GenericActivity):
             core.LogState.START,
         )
         ii = 0
-        while (not condition_event.processed) and ii < max_iterations:
+        while (not condition_event.processed) and ii < self.max_iterations:
             # for sub_process_ in (proc for proc in [sub_process]):
             activity_log.log_entry(
                 f"sub process {sub_process.name}",
@@ -786,10 +765,10 @@ class WhileActivity(GenericActivity):
 
         args_data["start_preprocessing"] = start_time
         args_data["start_activity"] = start_while
-        activity.post_process(**args_data)
+        self.post_process(**args_data)
 
         activity_log.log_entry(
-            f"conditional process {name}",
+            f"conditional process {self.name}",
             env.now,
             -1,
             None,
@@ -829,47 +808,24 @@ class RepeatActivity(GenericActivity):
             self.start()
 
     def start(self):
-        main_proc = partial(
-            self.repeat_process,
-            name=self.name,
-            sub_process=self.sub_process,
-            repetitions=self.repetitions,
-            requested_resources=self.requested_resources,
-            keep_resources=self.keep_resources,
-            activity=self,
-        )
-        self.register_process(main_proc=main_proc, show=self.print)
+        self.register_process(main_proc=self.repeat_process, show=self.print)
 
-    def repeat_process(
-        self,
-        activity_log,
-        env,
-        repetitions,
-        sub_process,
-        name,
-        requested_resources,
-        keep_resources,
-        activity,
-    ):
-        message = f"Repeat activity {name}"
+    def repeat_process(self, activity_log, env):
+        message = f"Repeat activity {self.name}"
 
         start_time = env.now
         args_data = {
             "env": env,
             "activity_log": activity_log,
             "message": message,
-            "activity": activity,
-            "sub_process": sub_process,
-            "repetitions": repetitions,
-            "name": name,
-            "keep_resources": keep_resources,
+            "activity": self,
         }
-        yield from activity.pre_process(args_data)
+        yield from self.pre_process(args_data)
 
         start_while = env.now
 
         activity_log.log_entry(
-            f"repeat process {name}",
+            f"repeat process {self.name}",
             env.now,
             -1,
             None,
@@ -877,20 +833,22 @@ class RepeatActivity(GenericActivity):
             core.LogState.START,
         )
         ii = 0
-        while ii < repetitions:
+        while ii < self.repetitions:
             activity_log.log_entry(
-                f"sub process {sub_process.name}",
+                f"sub process {self.sub_process.name}",
                 env.now,
                 -1,
                 None,
                 activity_log.id,
                 core.LogState.START,
             )
-            sub_process.start()
-            yield from sub_process.call_main_proc(activity_log=activity_log, env=env)
-            sub_process.end()
+            self.sub_process.start()
+            yield from self.sub_process.call_main_proc(
+                activity_log=activity_log, env=env
+            )
+            self.sub_process.end()
             activity_log.log_entry(
-                f"sub process {sub_process.name}",
+                f"sub process {self.sub_process.name}",
                 env.now,
                 -1,
                 None,
@@ -906,10 +864,10 @@ class RepeatActivity(GenericActivity):
 
         args_data["start_preprocessing"] = start_time
         args_data["start_activity"] = start_while
-        activity.post_process(**args_data)
+        self.post_process(**args_data)
 
         activity_log.log_entry(
-            f"repeat process {name}",
+            f"repeat process {self.name}",
             env.now,
             -1,
             None,
