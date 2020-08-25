@@ -572,17 +572,31 @@ def delayed_process(
         yield from sub_process(activity_log=activity_log, env=env)
 
 
-def repeat_process(
+def conditional_process(
     activity_log,
     env,
-    repetitions,
+    condition_event,
     sub_process,
     name,
     requested_resources,
     keep_resources,
     activity,
+    max_iterations=1_000_000,
 ):
-    message = f"Repeat activity {name}"
+    """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
+    sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
+    of the sub_process, the conditional process will first complete the sub_process before finishing its own process.
+
+    activity_log: the core.Log object in which log_entries about the activities progress will be added.
+    env: the simpy.Environment in which the process will be run
+    condition_event: a simpy.Event object, when this event occurs, the conditional process will finish executing its current
+                run of its sub_processes and then finish
+    sub_process: an Iterable of methods which will be called with the activity_log and env parameters and should
+                   return a generator which could be added as a process to a simpy.Environment
+                   the sub_processes will be executed sequentially, in the order in which they are given as long
+                   as the stop_event has not occurred.
+    """
+    message = f"While activity {name}"
 
     start_time = env.now
     args_data = {
@@ -591,7 +605,6 @@ def repeat_process(
         "message": message,
         "activity": activity,
         "sub_process": sub_process,
-        "repetitions": repetitions,
         "name": name,
         "keep_resources": keep_resources,
     }
@@ -599,8 +612,19 @@ def repeat_process(
 
     start_while = env.now
 
+    if activity_log.log["Message"]:
+        if activity_log.log["Message"][-1] == "delayed activity started" and hasattr(
+            condition_event, "__call__"
+        ):
+            condition_event = condition_event()
+
+    if hasattr(condition_event, "__call__"):
+        condition_event = condition_event()
+    elif type(condition_event) == list:
+        condition_event = env.any_of(events=[event() for event in condition_event])
+
     activity_log.log_entry(
-        f"repeat process {name}",
+        f"conditional process {name}",
         env.now,
         -1,
         None,
@@ -608,7 +632,8 @@ def repeat_process(
         core.LogState.START,
     )
     ii = 0
-    while ii < repetitions:
+    while (not condition_event.processed) and ii < max_iterations:
+        # for sub_process_ in (proc for proc in [sub_process]):
         activity_log.log_entry(
             f"sub process {sub_process.name}",
             env.now,
@@ -640,7 +665,12 @@ def repeat_process(
     activity.post_process(**args_data)
 
     activity_log.log_entry(
-        f"repeat process {name}", env.now, -1, None, activity_log.id, core.LogState.STOP
+        f"conditional process {name}",
+        env.now,
+        -1,
+        None,
+        activity_log.id,
+        core.LogState.STOP,
     )
 
 
