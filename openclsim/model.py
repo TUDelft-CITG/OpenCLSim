@@ -945,7 +945,7 @@ class ShiftAmountActivity(GenericActivity):
         amount=None,
         id_="default",
         show=False,
-        phase=None,  # loading / unloading
+        phase=None,
         *args,
         **kwargs,
     ):
@@ -960,25 +960,12 @@ class ShiftAmountActivity(GenericActivity):
         self.id_ = id_
         self.print = show
         self.phase = phase
+
         if not self.postpone_start:
             self.start()
 
     def start(self):
-        main_proc = partial(
-            self.shift_amount_process,
-            name=self.name,
-            processor=self.processor,
-            origin=self.origin,
-            destination=self.destination,
-            amount=self.amount,
-            duration=self.duration,
-            id_=self.id_,
-            requested_resources=self.requested_resources,
-            keep_resources=self.keep_resources,
-            activity=self,
-            phase=self.phase,
-        )
-        self.register_process(main_proc=main_proc, show=self.print)
+        self.register_process(main_proc=self.shift_amount_process, show=self.print)
 
     def _request_resource_if_available(
         self,
@@ -1040,67 +1027,49 @@ class ShiftAmountActivity(GenericActivity):
         self,
         activity_log,
         env,
-        processor,
-        origin,
-        destination,
-        name,
-        duration,
-        activity,
-        amount=None,
-        requested_resources={},
-        keep_resources=[],
-        id_="default",
-        engine_order=1.0,
-        stop_reservation_waiting_event=None,
-        phase=None,
     ):
         """Origin and Destination are of type HasContainer """
-        assert processor.is_at(origin)
-        assert destination.is_at(origin)
-
-        # if not isinstance(origin, core.HasContainer) or not isinstance(
-        #     destination, core.HasContainer
-        # ):
-        #     raise Exception("Invalide use of method shift_amount")
+        assert self.processor.is_at(self.origin)
+        assert self.destination.is_at(self.origin)
 
         verbose = False
         filling = 1.0
-        resource_requests = requested_resources
+        resource_requests = self.requested_resources
 
         if not hasattr(activity_log, "processor"):
-            activity_log.processor = processor
+            activity_log.processor = self.processor
         if not hasattr(activity_log, "mover"):
-            activity_log.mover = origin
-        amount, all_amounts = processor.determine_processor_amount(
-            [origin], destination, amount, id_
+            activity_log.mover = self.self.origin
+        self.amount, all_amounts = self.processor.determine_processor_amount(
+            [self.origin], self.destination, self.amount, self.id_
         )
 
-        if 0 != amount:
+        if 0 != self.amount:
 
-            yield from _request_resource(resource_requests, destination.resource)
+            yield from _request_resource(resource_requests, self.destination.resource)
 
             yield from self._request_resource_if_available(
                 env,
                 resource_requests,
-                origin,
-                processor,
-                amount,
+                self.origin,
+                self.processor,
+                self.amount,
                 None,  # for now release all
                 activity_log.id,
-                id_,
-                engine_order,
+                self.id_,
+                1,
                 verbose=False,
             )
 
-            if duration is not None:
+            if self.duration is not None:
                 rate = None
-            elif duration is not None:
-                rate = processor.loading
+            elif self.duration is not None:
+                rate = self.processor.loading
 
-            elif phase == "loading":
-                rate = processor.loading
-            elif phase == "unloading":
-                rate = processor.unloading
+            elif self.phase == "loading":
+                rate = self.processor.loading
+            elif self.phase == "unloading":
+                rate = self.processor.unloading
             else:
                 raise RuntimeError(
                     f"Both the pase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
@@ -1109,51 +1078,45 @@ class ShiftAmountActivity(GenericActivity):
             start_time = env.now
             args_data = {
                 "env": env,
-                "processor": processor,
-                "origin": origin,
-                "destination": destination,
-                "engine_order": engine_order,
                 "activity_log": activity_log,
-                "message": name,
-                "activity": activity,
-                "duration": duration,
-                "amount": amount,
+                "message": self.name,
+                "activity": self,
             }
-            yield from activity.pre_process(args_data)
+            yield from self.pre_process(args_data)
 
             activity_log.log_entry(
-                name, env.now, amount, None, activity_log.id, core.LogState.START
+                self.name, env.now, self.amount, None, activity_log.id, core.LogState.START
             )
 
             start_shift = env.now
             yield from self._shift_amount(
                 env,
-                processor,
-                origin,
-                origin.container.get_level(id_) + amount,
-                destination,
-                activity_name=name,
+                self.processor,
+                self.origin,
+                self.origin.container.get_level(self.id_) + self.amount,
+                self.destination,
+                activity_name=self.name,
                 ActivityID=activity_log.id,
-                duration=duration,
+                duration=self.duration,
                 rate=rate,
-                id_=id_,
+                self.id_=self.id_,
                 verbose=verbose,
             )
 
             args_data["start_preprocessing"] = start_time
             args_data["start_activity"] = start_shift
-            activity.post_process(**args_data)
+            self.post_process(**args_data)
 
             activity_log.log_entry(
-                name, env.now, amount, None, activity_log.id, core.LogState.STOP
+                self.name, env.now, self.amount, None, activity_log.id, core.LogState.STOP
             )
 
-            # release the unloader, destination and mover requests
-            _release_resource(resource_requests, destination.resource, keep_resources)
-            if origin.resource in resource_requests:
-                _release_resource(resource_requests, origin.resource, keep_resources)
-            if processor.resource in resource_requests:
-                _release_resource(resource_requests, processor.resource, keep_resources)
+            # release the unloader, self.destination and mover requests
+            _release_resource(resource_requests, self.destination.resource, self.keep_resources)
+            if self.origin.resource in resource_requests:
+                _release_resource(resource_requests, self.origin.resource, self.keep_resources)
+            if self.processor.resource in resource_requests:
+                _release_resource(resource_requests, self.processor.resource, self.keep_resources)
 
             # work around for the event evaluation
             # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
@@ -1162,8 +1125,9 @@ class ShiftAmountActivity(GenericActivity):
             yield env.timeout(0)
         else:
             raise RuntimeError(
-                f"Attempting to shift content from an empty origin or to a full destination. ({all_amounts})"
+                f"Attempting to shift content from an empty self.self.origin or to a full self.destination. ({all_amounts})"
             )
+
 
     def _move_mover(self, mover, origin, ActivityID, engine_order=1.0, verbose=False):
         """Calls the mover.move method, giving debug print statements when verbose is True."""
