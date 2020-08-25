@@ -469,30 +469,13 @@ class BasicActivity(GenericActivity):
             self.start()
 
     def start(self):
-        main_proc = partial(
-            self.basic_process,
-            name=self.name,
-            duration=self.duration,
-            additional_logs=self.additional_logs,
-            requested_resources=self.requested_resources,
-            keep_resources=self.keep_resources,
-            activity=self,
-        )
         self.register_process(
-            main_proc=main_proc, show=self.print, additional_logs=self.additional_logs
+            main_proc=self.basic_process,
+            show=self.print,
+            additional_logs=self.additional_logs,
         )
 
-    def basic_process(
-        self,
-        activity_log,
-        env,
-        name,
-        duration,
-        requested_resources,
-        keep_resources,
-        activity,
-        additional_logs=[],
-    ):
+    def basic_process(self, activity_log, env):
         """Returns a generator which can be added as a process to a simpy.Environment. The process will report the start of the 
         activity, delay the execution for the provided duration, and finally report the completion of the activiy.
 
@@ -505,44 +488,57 @@ class BasicActivity(GenericActivity):
                     the sub_processes will be executed sequentially, in the order in which they are given as long
                     as the stop_event has not occurred.
         """
-        message = f"Basic activity {name}"
+        message = f"Basic activity {self.name}"
 
         start_time = env.now
         args_data = {
             "env": env,
             "activity_log": activity_log,
             "message": message,
-            "activity": activity,
-            "duration": duration,
-            "name": name,
-            "additional_logs": additional_logs,
+            "activity": self,
         }
-        yield from activity.pre_process(args_data)
+        yield from self.pre_process(args_data)
 
         start_basic = env.now
 
         activity_log.log_entry(
-            name, env.now, duration, None, activity_log.id, core.LogState.START
+            self.name,
+            env.now,
+            self.duration,
+            None,
+            activity_log.id,
+            core.LogState.START,
         )
-        if isinstance(additional_logs, list) and len(additional_logs) > 0:
-            for log_item in additional_logs:
+
+        if isinstance(self.additional_logs, list) and len(self.additional_logs) > 0:
+            for log_item in self.additional_logs:
                 log_item.log_entry(
-                    name, env.now, duration, None, activity_log.id, core.LogState.START
+                    self.name,
+                    env.now,
+                    self.duration,
+                    None,
+                    activity_log.id,
+                    core.LogState.START,
                 )
 
-        yield env.timeout(duration)
+        yield env.timeout(self.duration)
 
         args_data["start_preprocessing"] = start_time
         args_data["start_activity"] = start_basic
-        activity.post_process(**args_data)
+        self.post_process(**args_data)
 
         activity_log.log_entry(
-            name, env.now, duration, None, activity_log.id, core.LogState.STOP
+            self.name, env.now, self.duration, None, activity_log.id, core.LogState.STOP
         )
-        if isinstance(additional_logs, list) and len(additional_logs) > 0:
-            for log_item in additional_logs:
+        if isinstance(self.additional_logs, list) and len(self.additional_logs) > 0:
+            for log_item in self.additional_logs:
                 log_item.log_entry(
-                    name, env.now, duration, None, activity_log.id, core.LogState.STOP
+                    self.name,
+                    env.now,
+                    self.duration,
+                    None,
+                    activity_log.id,
+                    core.LogState.STOP,
                 )
 
         # work around for the event evaluation
