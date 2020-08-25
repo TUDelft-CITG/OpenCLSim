@@ -441,10 +441,11 @@ class RepeatActivity(GenericActivity):
 
     def start(self):
         main_proc = partial(
-            repeat_process,
+            conditional_process,
             name=self.name,
+            condition_event=None,
             sub_process=self.sub_process,
-            repetitions=self.repetitions,
+            max_iterations=self.repetitions,
             requested_resources=self.requested_resources,
             keep_resources=self.keep_resources,
             activity=self,
@@ -569,108 +570,6 @@ def delayed_process(
 
     for sub_process in sub_processes:
         yield from sub_process(activity_log=activity_log, env=env)
-
-
-def conditional_process(
-    activity_log,
-    env,
-    condition_event,
-    sub_process,
-    name,
-    requested_resources,
-    keep_resources,
-    activity,
-    max_iterations=1_000_000,
-):
-    """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
-    sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
-    of the sub_process, the conditional process will first complete the sub_process before finishing its own process.
-
-    activity_log: the core.Log object in which log_entries about the activities progress will be added.
-    env: the simpy.Environment in which the process will be run
-    condition_event: a simpy.Event object, when this event occurs, the conditional process will finish executing its current
-                run of its sub_processes and then finish
-    sub_process: an Iterable of methods which will be called with the activity_log and env parameters and should
-                   return a generator which could be added as a process to a simpy.Environment
-                   the sub_processes will be executed sequentially, in the order in which they are given as long
-                   as the stop_event has not occurred.
-    """
-    message = f"While activity {name}"
-
-    start_time = env.now
-    args_data = {
-        "env": env,
-        "activity_log": activity_log,
-        "message": message,
-        "activity": activity,
-        "sub_process": sub_process,
-        "name": name,
-        "keep_resources": keep_resources,
-    }
-    yield from activity.pre_process(args_data)
-
-    start_while = env.now
-
-    if activity_log.log["Message"]:
-        if activity_log.log["Message"][-1] == "delayed activity started" and hasattr(
-            condition_event, "__call__"
-        ):
-            condition_event = condition_event()
-
-    if hasattr(condition_event, "__call__"):
-        condition_event = condition_event()
-    elif type(condition_event) == list:
-        condition_event = env.any_of(events=[event() for event in condition_event])
-
-    activity_log.log_entry(
-        f"conditional process {name}",
-        env.now,
-        -1,
-        None,
-        activity_log.id,
-        core.LogState.START,
-    )
-    ii = 0
-    while (not condition_event.processed) and ii < max_iterations:
-        # for sub_process_ in (proc for proc in [sub_process]):
-        activity_log.log_entry(
-            f"sub process {sub_process.name}",
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.START,
-        )
-        sub_process.start()
-        yield from sub_process.call_main_proc(activity_log=activity_log, env=env)
-        sub_process.end()
-        activity_log.log_entry(
-            f"sub process {sub_process.name}",
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.STOP,
-        )
-        # work around for the event evaluation
-        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-        # which will result in triggered but not processed events to be taken care of before further progressing
-        # maybe there is a better way of doing it, but his option works for now.
-        yield env.timeout(0)
-        ii = ii + 1
-
-    args_data["start_preprocessing"] = start_time
-    args_data["start_activity"] = start_while
-    activity.post_process(**args_data)
-
-    activity_log.log_entry(
-        f"conditional process {name}",
-        env.now,
-        -1,
-        None,
-        activity_log.id,
-        core.LogState.STOP,
-    )
 
 
 def repeat_process(
