@@ -1035,7 +1035,7 @@ class ShiftAmountActivity(GenericActivity):
         if not hasattr(activity_log, "processor"):
             activity_log.processor = self.processor
         if not hasattr(activity_log, "mover"):
-            activity_log.mover = self.self.origin
+            activity_log.mover = self.origin
         self.amount, all_amounts = self.processor.determine_processor_amount(
             [self.origin], self.destination, self.amount, self.id_
         )
@@ -1137,7 +1137,7 @@ class ShiftAmountActivity(GenericActivity):
             yield env.timeout(0)
         else:
             raise RuntimeError(
-                f"Attempting to shift content from an empty self.self.origin or to a full self.destination. ({all_amounts})"
+                f"Attempting to shift content from an empty origin or to a full self.destination. ({all_amounts})"
             )
 
     def _move_mover(self, mover, origin, ActivityID, engine_order=1.0, verbose=False):
