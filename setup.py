@@ -63,11 +63,11 @@ setup(
     include_package_data=True,
     keywords="OpenCLSim",
     name="openclsim",
-    packages=find_packages(include=["openclsim"]),
+    packages=find_packages(),
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=tests_require,
     url="https://github.com/TUDelft-CITG/openclsim",
-    version="v1.3.0a26",
+    version="v1.3.0a27",
     zip_safe=False,
 )
