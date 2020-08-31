@@ -2304,7 +2304,7 @@ class Processor(SimpyObject):
         processor_name = getattr(self, "name", "undefined")
         origin_name = getattr(origin, "name", "undefined")
         destination_name = getattr(destination, "name", "undefined")
-        message = f"move activity {activity_name} transfer {id_} from {origin_name} to {destination_name} with {processor_name}"
+        message = f"Shift amount activity {activity_name} transfer {id_} from {origin_name} to {destination_name} with {processor_name}"
 
         # Log the process for all parts
         for location in [origin, destination]:
