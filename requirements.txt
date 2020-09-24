@@ -1,0 +1,7 @@
+jupyter
+pandas>=0.24.0
+numpy
+simpy
+shapely
+pyproj
+nose

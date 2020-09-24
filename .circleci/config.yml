@@ -1,0 +1,45 @@
+version: 2
+jobs:
+  build:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          name: Build and start container
+          command: docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
+
+      - run:
+          name: Install test environment
+          command: |
+            docker exec -it openclsim bash -c "pip install -r test-requirements.txt"
+            docker exec -it openclsim bash -c "pip install coverage coverage-badge"
+      
+      - run:
+          name: Run tests
+          command: |
+            docker exec -it openclsim bash -c "python setup.py test"
+            docker cp openclsim:/openclsim/htmlcov /tmp/artifacts
+      - run:
+          name: Build docs
+          command: |
+            docker exec -it openclsim bash -c "pip install sphinx"
+            docker exec -it openclsim bash -c "python setup.py docs"
+            docker cp openclsim:/OpenCLSim/docs/_build/html /tmp/artifacts/docs
+          
+      - run:
+          name: Generate coverage badge
+          command: |
+            docker exec -it openclsim bash -c "coverage-badge -o coverage.svg"
+            docker cp openclsim:/OpenCLSim/coverage.svg /tmp/artifacts/
+          
+      - store_artifacts:
+          path: /tmp/artifacts
+    
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
