@@ -5,4 +5,4 @@ services:
   main:
     command: bash -c "tail -f /dev/null"
     volumes:
-      - .:/
+      - .:/OPENCLSIM

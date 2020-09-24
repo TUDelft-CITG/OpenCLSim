@@ -8,4 +8,4 @@ services:
       context: .
     container_name: openclsim
     ports:
-      - 8889:8889
+      - 8888:8888

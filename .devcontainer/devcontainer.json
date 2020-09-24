@@ -5,7 +5,7 @@
         "docker-compose.dev.yml"
     ],
     "service": "main",
-    "workspaceFolder": "/openclsim",
+    "workspaceFolder": "/OPENCLSIM",
     "extensions": [
         "ms-python.python"
     ],

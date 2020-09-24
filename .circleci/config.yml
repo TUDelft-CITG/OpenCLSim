@@ -18,7 +18,7 @@ jobs:
           name: Run tests
           command: |
             docker exec -it openclsim bash -c "python setup.py test"
-            docker cp openclsim:/openclsim/htmlcov /tmp/artifacts
+            docker cp openclsim:/OPENCLSIM/htmlcov /tmp/artifacts
       - run:
           name: Build docs
           command: |
