@@ -1,6 +1,5 @@
 """Core of the simulation Package."""
 
-from .activity_counter import ActivityCounter
 from .container import HasContainer, HasMultiContainer
 from .events_container import EventsContainer
 from .identifiable import Identifiable
@@ -13,7 +12,6 @@ from .simpy_object import SimpyObject
 
 __all__ = [
     "basic",
-    "ActivityCounter",
     "HasContainer",
     "HasMultiContainer",
     "EventsContainer",
