@@ -34,8 +34,8 @@ class HasContainer(SimpyObject):
 
 
 class HasMultiContainer(HasContainer):
-    """Container class
-    A class which can represent information of objects of multiple types
+    """
+    A class which can represent information of objects of multiple types.
 
     store_capacity:  The number of different types of information can be stored. In this calss it is usually >1.
     initials: a list of dictionaries describing the id_ of the container, the level of the individual container and the capacity of the individual container.

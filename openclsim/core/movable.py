@@ -126,11 +126,13 @@ class ContainerDependentMovable(Movable, HasContainer):
 
 
 class MultiContainerDependentMovable(Movable, HasMultiContainer):
-    """MultiContainerDependentMovable class
+    """
+    MultiContainerDependentMovable class.
 
-    Used for objects that move with a speed dependent on the container level. 
+    Used for objects that move with a speed dependent on the container level.
     This movable is provided with a MultiContainer, thus can handle container containing different object.
-    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
+    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed
+    """
 
     def __init__(self, compute_v, *args, **kwargs):
         super().__init__(*args, **kwargs)
