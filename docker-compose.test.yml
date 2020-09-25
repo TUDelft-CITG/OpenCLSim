@@ -1,5 +1,5 @@
 # docker-compose -f docker-compose.yml -f .devcontainer/docker-compose.dev.yml up -d
-version: '3.0'
+version: '3.2'
 
 services:
   main:
