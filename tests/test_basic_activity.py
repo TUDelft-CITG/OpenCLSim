@@ -6,6 +6,8 @@ import simpy
 
 import openclsim.model as model
 
+from .test_utils import parse_log
+
 
 class TestBasicActivity:
     """Test class for the basic activity."""
@@ -105,5 +107,5 @@ class TestBasicActivity:
             "ActivityState": ["START", "START", "STOP", "STOP"],
         }
 
-        assert reporting_activity.log == benchmark_additional_log
-        assert activity.log == benchmark_activity
+        assert parse_log(reporting_activity.log) == benchmark_additional_log
+        assert parse_log(activity.log) == benchmark_activity
