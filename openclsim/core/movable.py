@@ -3,7 +3,7 @@ import logging
 
 import shapely.geometry
 
-from .container import HasContainer
+from .container import HasContainer, HasMultiContainer
 from .locatable import Locatable
 from .log import LogState
 from .simpy_object import SimpyObject
@@ -113,16 +113,37 @@ class ContainerDependentMovable(Movable, HasContainer):
         Velocity of the vessel when full
     """
 
-    def __init__(self, v_empty: float = None, v_full: float = None, *args, **kwargs):
+    def __init__(self, compute_v, *args, **kwargs):
         """Init of the containerdependent moveable."""
         super().__init__(*args, **kwargs)
-        v_full = v_full if v_full else 1
-        v_empty = v_empty if v_empty else 1
-
-        self.compute_v = lambda x: x * (v_full - v_empty) + v_empty
+        self.compute_v = compute_v
 
     @property
     def current_speed(self):
         return self.compute_v(
             self.container.get_level() / self.container.get_capacity()
         )
+
+
+class MultiContainerDependentMovable(Movable, HasMultiContainer):
+    """MultiContainerDependentMovable class
+
+    Used for objects that move with a speed dependent on the container level. 
+    This movable is provided with a MultiContainer, thus can handle container containing different object.
+    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed"""
+
+    def __init__(self, compute_v, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.compute_v = compute_v
+        self.conainter_ids = self.container.container_list
+
+    @property
+    def current_speed(self):
+        sum_level = 0
+        sum_capacity = 0
+        for id_ in self.container.container_list:
+            sum_level = self.container.get_level(id_)
+            sum_capacity = self.container.get_capacity(id_)
+        fill_degree = sum_level / sum_capacity
+        return self.compute_v(fill_degree)

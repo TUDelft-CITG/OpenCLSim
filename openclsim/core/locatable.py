@@ -14,10 +14,10 @@ class Locatable:
     lon : degrees
     """
 
-    def __init__(self, lat: float, lon: float, *args, **kwargs):
+    def __init__(self, geometry, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.geometry = shapely.geometry.Point(lon, lat)
+        self.geometry = geometry
         self.wgs84 = pyproj.Geod(ellps="WGS84")
 
     def is_at(self, locatable, tolerance=100):
