@@ -7,6 +7,8 @@ WORKDIR /OPENCLSIM
 RUN conda install numpy pandas nomkl pyproj
 
 RUN pip install --upgrade pip && \
+    pip install -r test-requirements.txt && \
+    pip install -r additional-requirements.txt && \
     pip install -e .
 
 EXPOSE 8887

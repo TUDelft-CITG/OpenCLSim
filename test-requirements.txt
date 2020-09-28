@@ -9,7 +9,7 @@ mypy
 pylama
 pylama_pylint
 black
-pytest
+pytest==6.0.2
 pytest-black
 pytest-cov
 pytest-isort
