@@ -72,7 +72,7 @@ def test_complex_synchronization():
         "sub_processes": sub_processes,
         "keep_resources": keep_resources,
     }
-    activity = model.SequentialActivity(**sequential_activity_data)
+    model.SequentialActivity(**sequential_activity_data)
 
     sub_processes2 = []
     basic_activity_data4 = {
@@ -117,7 +117,7 @@ def test_complex_synchronization():
         "sub_processes": (proc for proc in sub_processes2),
         "keep_resources": keep_resources,
     }
-    activity2 = model.SequentialActivity(**sequential_activity_data2)
+    model.SequentialActivity(**sequential_activity_data2)
 
     my_env.run()
 
