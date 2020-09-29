@@ -19,12 +19,13 @@ jobs:
           command: |
             docker exec -it openclsim bash -c "python setup.py test"
             docker cp openclsim:/OPENCLSIM/htmlcov /tmp/artifacts
-      - run:
-          name: Build docs
-          command: |
-            docker exec -it openclsim bash -c "pip install sphinx"
-            docker exec -it openclsim bash -c "python setup.py docs"
-            docker cp openclsim:/OpenCLSim/docs/_build/html /tmp/artifacts/docs
+
+      # - run:
+      #     name: Build docs
+      #     command: |
+      #       docker exec -it openclsim bash -c "pip install sphinx"
+      #       docker exec -it openclsim bash -c "python setup.py docs"
+      #       docker cp openclsim:/OpenCLSim/docs/_build/html /tmp/artifacts/docs
           
       - run:
           name: Generate coverage badge
