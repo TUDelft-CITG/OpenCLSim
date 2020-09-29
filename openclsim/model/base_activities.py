@@ -192,24 +192,19 @@ class GenericActivity(PluginActivity):
                             id_ = key_val["id_"]
                         state = key_val["state"]
                         obj = key_val["concept"]
-                        if isinstance(obj, core.HasContainer):
-                            if state == "full":
-                                if id_ is not None:
-                                    res.append(obj.container.get_full_event(id_=id_))
-                                else:
-                                    res.append(obj.container.get_full_event())
-                            elif state == "empty":
-                                if id_ is not None:
-                                    res.append(obj.container.get_empty_event(id_=id_))
-                                else:
-                                    res.append(obj.container.get_empty_event())
+                        if state == "full":
+                            if id_ is not None:
+                                res.append(obj.container.get_full_event(id_=id_))
                             else:
-                                raise Exception(
-                                    f"Unknown state {state} for a container event"
-                                )
+                                res.append(obj.container.get_full_event())
+                        elif state == "empty":
+                            if id_ is not None:
+                                res.append(obj.container.get_empty_event(id_=id_))
+                            else:
+                                res.append(obj.container.get_empty_event())
                         else:
                             raise Exception(
-                                f"Referneced concept in a container expression is not of type HasContainer, but of type {type(obj)}"
+                                f"Unknown state {state} for a container event"
                             )
                     elif key_val["type"] == "activity":
                         state = key_val["state"]
