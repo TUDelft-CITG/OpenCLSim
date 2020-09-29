@@ -14,4 +14,4 @@ RUN pip install --upgrade pip && \
 EXPOSE 8887
 
 CMD ["chmod", "700", "/OPENCLSIMssss/jupyter_notebook.sh"]
-RUN echo 'alias jn="bash ./jupyter_notebook.sh"' >> ~/.bashrc
+RUN echo 'alias jn="jupyter notebook --ip 0.0.0.0 --allow-root --no-browser --port=8887"' >> ~/.bashrc

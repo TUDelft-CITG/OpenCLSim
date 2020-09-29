@@ -4,3 +4,4 @@ simpy
 shapely
 pyproj
 nose
+plotly
