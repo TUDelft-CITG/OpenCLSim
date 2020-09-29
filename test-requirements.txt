@@ -18,3 +18,4 @@ pytest-mock
 sphinx >= 1.8.0
 pytest-datadir
 pytest-timeout
+sphinx_rtd_theme 
