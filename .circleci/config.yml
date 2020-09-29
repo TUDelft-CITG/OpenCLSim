@@ -27,14 +27,14 @@ jobs:
       #       docker exec -it openclsim bash -c "python setup.py docs"
       #       docker cp openclsim:/OpenCLSim/docs/_build/html /tmp/artifacts/docs
           
-      - run:
-          name: Generate coverage badge
-          command: |
-            docker exec -it openclsim bash -c "coverage-badge -o coverage.svg"
-            docker cp openclsim:/OpenCLSim/coverage.svg /tmp/artifacts/
+      # - run:
+      #     name: Generate coverage badge
+      #     command: |
+      #       docker exec -it openclsim bash -c "coverage-badge -o coverage.svg"
+      #       docker cp openclsim:/OpenCLSim/coverage.svg /tmp/artifacts/
           
-      - store_artifacts:
-          path: /tmp/artifacts
+      # - store_artifacts:
+      #     path: /tmp/artifacts
     
 workflows:
   version: 2
