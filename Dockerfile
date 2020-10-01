@@ -1,8 +1,8 @@
 # Start with docker image from anaconda
 FROM continuumio/miniconda3:4.6.14
 
-ADD . /OPENCLSIM
-WORKDIR /OPENCLSIM
+ADD . /OpenCLSim
+WORKDIR /OpenCLSim
 
 RUN conda install numpy pandas nomkl pyproj
 
@@ -13,5 +13,5 @@ RUN pip install --upgrade pip && \
 
 EXPOSE 8887
 
-CMD ["chmod", "700", "/OPENCLSIMssss/jupyter_notebook.sh"]
+CMD ["chmod", "700", "/OpenCLSim/jupyter_notebook.sh"]
 RUN echo 'alias jn="jupyter notebook --ip 0.0.0.0 --allow-root --no-browser --port=8887"' >> ~/.bashrc
