@@ -1,10 +1,14 @@
+"""Base classes for the openclsim activities."""
+
+
 import openclsim.core as core
+
 from .base_activities import GenericActivity
 
 
 class BasicActivity(GenericActivity):
-    """The BasicActivity Class is a generic class to describe an activity, which does not require any specific resource, 
-    but has a specific duration.
+    """
+    BasicActivity Class is a generic class to describe an activity, which does not require any specific resource, but has a specific duration.
 
     duration: time required to perform the described activity.
     additional_logs: list of other concepts, where the start and the stop of the basic activity should be recorded.
@@ -30,7 +34,10 @@ class BasicActivity(GenericActivity):
         )
 
     def basic_process(self, activity_log, env):
-        """Returns a generator which can be added as a process to a simpy.Environment. The process will report the start of the 
+        """
+        Return a generator which can be added as a process to a simpy.Environment.
+
+        The process will report the start of the
         activity, delay the execution for the provided duration, and finally report the completion of the activiy.
 
         activity_log: the core.Log object in which log_entries about the activities progress will be added.
@@ -100,4 +107,3 @@ class BasicActivity(GenericActivity):
         # which will result in triggered but not processed events to be taken care of before further progressing
         # maybe there is a better way of doing it, but his option works for now.
         yield env.timeout(0)
-

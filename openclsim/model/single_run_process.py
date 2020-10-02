@@ -1,7 +1,10 @@
+"""Single run activity for the simulation."""
+
+
 from .move_activity import MoveActivity
 from .sequential_activity import SequentialActivity
-from .while_activity import WhileActivity
 from .shift_amount_activity import ShiftAmountActivity
+from .while_activity import WhileActivity
 
 
 def single_run_process(
@@ -18,7 +21,7 @@ def single_run_process(
     requested_resources={},
     postpone_start=False,
 ):
-
+    """Single run activity for the simulation."""
     if stop_event == []:
         stop_event = [
             {

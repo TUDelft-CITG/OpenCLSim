@@ -1,14 +1,19 @@
-from functools import partial
-import openclsim.core as core
-import simpy
-import numpy as np
+"""Base classes for the openclsim activities."""
 
 from abc import ABC
+from functools import partial
+
+import simpy
+
+import openclsim.core as core
 
 
 class AbstractPluginClass(ABC):
-    """Abstract class used as the basis for all Classes implementing a plugin for a specific Activity. 
-    Instance checks will be performed on this class level."""
+    """
+    Abstract class used as the basis for all Classes implementing a plugin for a specific Activity.
+
+    Instance checks will be performed on this class level.
+    """
 
     def __init__(self):
         pass
@@ -34,9 +39,12 @@ class AbstractPluginClass(ABC):
 
 
 class PluginActivity(core.Identifiable, core.Log):
-    """"This is the base class for all activities which will provide a plugin mechanism. 
+    """
+    Base class for all activities which will provide a plugin mechanism.
+
     The plugin mechanism foresees that the plugin function pre_process is called before the activity is executed, while
-    the function post_process is called after the activity has been executed."""
+    the function post_process is called after the activity has been executed.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -60,7 +68,6 @@ class PluginActivity(core.Identifiable, core.Log):
             item["plugin"].post_process(*args, **kwargs)
 
     def delay_processing(self, env, delay_name, activity_log, waiting):
-        """Waiting must be a delay expressed in seconds"""
         activity_log.log_entry(
             delay_name, env.now, -1, None, activity_log.id, core.LogState.WAIT_START
         )
@@ -71,15 +78,17 @@ class PluginActivity(core.Identifiable, core.Log):
 
 
 class GenericActivity(PluginActivity):
-    """The GenericActivity Class forms a generic class which sets up all required mechanisms to control 
-    an activity by providing a start event. Since it is generic, a parameter of the initialization
+    """
+    The GenericActivity Class forms a generic class which sets up all required mechanisms to control an activity by providing a start event.
+
+    Since it is generic, a parameter of the initialization
     is the main process, which is provided by an inheriting class
     main_proc  : the main process to be executed
     start_event: the activity will start as soon as this event is triggered
                  by default will be to start immediately
     requested_resources: a call by refernce value to a dictionary of resources, which have been requested and not released yet.
     keep_resources: a list of resources, which should not be released at the end of the activity
-    postpone_start: if set to True, the activity will not be directly started in the simpy environment, 
+    postpone_start: if set to True, the activity will not be directly started in the simpy environment,
                 but will be started by a structrual activity, like sequential or while activity.
     """
 
@@ -124,7 +133,7 @@ class GenericActivity(PluginActivity):
         self.done_event = self.env.event()
 
         start_event = None
-        if self.start_event != None:
+        if self.start_event is not None:
             start_event = self.parse_expression(self.start_event)
         start_event_instance = start_event
         (
@@ -148,7 +157,7 @@ class GenericActivity(PluginActivity):
             )
 
     def parse_expression(self, expr):
-        """Parsing of the expression language used for start_events and conditional_events."""
+        """Methods for Parsing of the expression language used for start_events and conditional_events."""
         res = []
         if not isinstance(expr, list):
             raise Exception(
@@ -183,24 +192,19 @@ class GenericActivity(PluginActivity):
                             id_ = key_val["id_"]
                         state = key_val["state"]
                         obj = key_val["concept"]
-                        if isinstance(obj, core.HasContainer):
-                            if state == "full":
-                                if id_ != None:
-                                    res.append(obj.container.get_full_event(id_=id_))
-                                else:
-                                    res.append(obj.container.get_full_event())
-                            elif state == "empty":
-                                if id_ != None:
-                                    res.append(obj.container.get_empty_event(id_=id_))
-                                else:
-                                    res.append(obj.container.get_empty_event())
+                        if state == "full":
+                            if id_ is not None:
+                                res.append(obj.container.get_full_event(id_=id_))
                             else:
-                                raise Exception(
-                                    f"Unknown state {state} for a container event"
-                                )
+                                res.append(obj.container.get_full_event())
+                        elif state == "empty":
+                            if id_ is not None:
+                                res.append(obj.container.get_empty_event(id_=id_))
+                            else:
+                                res.append(obj.container.get_empty_event())
                         else:
                             raise Exception(
-                                f"Referneced concept in a container expression is not of type HasContainer, but of type {type(obj)}"
+                                f"Unknown state {state} for a container event"
                             )
                     elif key_val["type"] == "activity":
                         state = key_val["state"]
@@ -220,7 +224,7 @@ class GenericActivity(PluginActivity):
                             if "name" in self.registry:
                                 if key in self.registry["name"]:
                                     activity_ = self.registry["name"][key]
-                        if activity_ == None:
+                        if activity_ is None:
                             raise Exception(
                                 f"No activity found in ActivityExpression for id/name {key}"
                             )
@@ -271,7 +275,10 @@ class GenericActivity(PluginActivity):
         keep_resources,
         additional_logs=[],
     ):
-        """"Returns a generator which can be added as a process to a simpy.Environment. In the process the given
+        """
+        Return a generator which can be added as a process to a simpy environment.
+
+        In the process the given
         sub_processes will be executed after the given start_event occurs.
 
         activity_log: the core.Log object in which log_entries about the activities progress will be added.
@@ -328,16 +335,18 @@ class GenericActivity(PluginActivity):
             yield from sub_process(activity_log=activity_log, env=env)
 
     def _request_resource(self, requested_resources, resource):
-        """Requests the given resource and yields it.
-        """
+        """Request the given resource and yields it."""
         if resource not in requested_resources:
             requested_resources[resource] = resource.request()
             yield requested_resources[resource]
 
     def _release_resource(self, requested_resources, resource, kept_resource=None):
-        """Releases the given resource, provided it does not equal the kept_resource parameter.
-        Deletes the released resource from the requested_resources dictionary."""
-        if kept_resource != None:
+        """
+        Release the given resource, provided it does not equal the kept_resource parameter.
+
+        Deletes the released resource from the requested_resources dictionary.
+        """
+        if kept_resource is not None:
             if isinstance(kept_resource, list):
                 if resource in [item.resource for item in kept_resource]:
                     return
@@ -347,4 +356,3 @@ class GenericActivity(PluginActivity):
         if resource in requested_resources.keys():
             resource.release(requested_resources[resource])
             del requested_resources[resource]
-

@@ -1,13 +1,19 @@
+"""While activity for the simulation."""
+
+
 import openclsim.core as core
+
 from .base_activities import GenericActivity
 
 
 class WhileActivity(GenericActivity):
-    """The WhileActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+    """
+    WhileActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+
     The while activity is a structural activity, which does not require specific resources.
 
     sub_process: the sub_process which is executed in every iteration
-    condition_event: a condition event provided in the expression language which will stop the iteration as soon as the event is fulfilled.    
+    condition_event: a condition event provided in the expression language which will stop the iteration as soon as the event is fulfilled.
     start_event: the activity will start as soon as this event is triggered
                  by default will be to start immediately
     """
@@ -32,7 +38,10 @@ class WhileActivity(GenericActivity):
         self.register_process(main_proc=self.conditional_process, show=self.print)
 
     def conditional_process(self, activity_log, env):
-        """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
+        """
+        Return a generator which can be added as a process to a simpy.Environment.
+
+        In the process the given
         self.sub_process will be executed until the given condition_event occurs. If the condition_event occurs during the execution
         of the self.sub_process, the conditional process will first complete the self.sub_process before finishing its own process.
 

@@ -1,16 +1,23 @@
-import openclsim.core as core
+"""Shift amount activity for the simulation."""
+
+
 import numpy as np
+
+import openclsim.core as core
+
 from .base_activities import GenericActivity
 
 
 class ShiftAmountActivity(GenericActivity):
-    """The ShiftAmountActivity Class forms a specific class for shifting material from an origin to a destination.
+    """
+    ShiftAmountActivity Class forms a specific class for shifting material from an origin to a destination.
+
     It deals with a single origin container, destination container and a single processor
     to move substances from the origin to the destination. It will initiate and suspend processes
     according to a number of specified conditions. To run an activity after it has been initialized call env.run()
     on the Simpy environment with which it was initialized.
 
-    
+
     origin: container where the source objects are located.
     destination: container, where the objects are assigned to
     processor: resource responsible to implement the transfer.
@@ -109,12 +116,11 @@ class ShiftAmountActivity(GenericActivity):
             all_available = True
 
     def shift_amount_process(self, activity_log, env):
-        """Origin and Destination are of type HasContainer """
+        """Origin and Destination are of type HasContainer."""
         assert self.processor.is_at(self.origin)
         assert self.destination.is_at(self.origin)
 
         verbose = False
-        filling = 1.0
         resource_requests = self.requested_resources
 
         if not hasattr(activity_log, "processor"):
@@ -155,7 +161,7 @@ class ShiftAmountActivity(GenericActivity):
                 rate = self.processor.unloading
             else:
                 raise RuntimeError(
-                    f"Both the pase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
+                    "Both the pase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
                 )
 
             start_time = env.now
@@ -228,7 +234,7 @@ class ShiftAmountActivity(GenericActivity):
             )
 
     def _move_mover(self, mover, origin, ActivityID, engine_order=1.0, verbose=False):
-        """Calls the mover.move method, giving debug print statements when verbose is True."""
+        """Call the mover.move method, giving debug print statements when verbose is True."""
         old_location = mover.geometry
 
         # Set ActivityID to mover
@@ -270,7 +276,7 @@ class ShiftAmountActivity(GenericActivity):
         id_="default",
         verbose=False,
     ):
-        """Calls the processor.process method, giving debug print statements when verbose is True."""
+        """Call the processor.process method, giving debug print statements when verbose is True."""
         amount = np.abs(origin.container.get_level(id_) - desired_level)
         # Set ActivityID to processor and mover
         processor.ActivityID = ActivityID

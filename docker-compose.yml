@@ -1,9 +1,11 @@
-version: '3'
+version: '3.2'
 
 services:
   main:
-    build: .
+    image: openclsim_main:latest
+    build:
+      dockerfile: Dockerfile
+      context: .
     container_name: openclsim
-    # this helps with https://github.com/docker/compose/issues/3106
-    # also make sure to run docker compose with -f flag
-    command: sleep 9999d
+    ports:
+      - 8887:8887

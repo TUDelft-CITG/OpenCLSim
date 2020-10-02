@@ -1,18 +1,17 @@
 # Start with docker image from anaconda
-FROM continuumio/miniconda3
-
-# Install conda stuff first
-RUN conda install numpy pandas nomkl pyproj
-# Then install rest via pip
-RUN pip install pint Flask dill
+FROM continuumio/miniconda3:4.6.14
 
 ADD . /OpenCLSim
 WORKDIR /OpenCLSim
 
-# Install the application
-RUN pip install -e .
+RUN conda install numpy pandas nomkl pyproj
 
-# expose port 5000
-EXPOSE 5000
-# Serve on port 5000
-#CMD openclsim serve --port 5000
+RUN pip install --upgrade pip && \
+    pip install -r test-requirements.txt && \
+    pip install -r additional-requirements.txt && \
+    pip install -e .
+
+EXPOSE 8887
+
+RUN echo 'alias jn="jupyter notebook --ip 0.0.0.0 --allow-root --no-browser --port=8887"' >> ~/.bashrc
+CMD ["tail -f /dev/null"]

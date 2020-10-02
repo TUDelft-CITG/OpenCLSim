@@ -1,18 +1,22 @@
+"""Repeat activity for the simulation."""
+
 import openclsim.core as core
+
 from .base_activities import GenericActivity
 
 
 class RepeatActivity(GenericActivity):
-    """The RepeatActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+    """
+    RepeatActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+
     The while activity is a structural activity, which does not require specific resources.
 
     Parameters
     ----------
-
     sub_process
         the sub_process which is executed in every iteration
     repetitions
-        Number of times the subprocess is repeated    
+        Number of times the subprocess is repeated
     start_event
         the activity will start as soon as this event is triggered
         by default will be to start immediately
@@ -99,4 +103,3 @@ class RepeatActivity(GenericActivity):
             activity_log.id,
             core.LogState.STOP,
         )
-

@@ -1,12 +1,13 @@
-from .base_activities import AbstractPluginClass, PluginActivity, GenericActivity
-from .move_activity import MoveActivity
-from .basic_activity import BasicActivity
-from .sequential_activity import SequentialActivity
-from .while_activity import WhileActivity
-from .repeat_activity import RepeatActivity
-from .single_run_process import single_run_process
-from .shift_amount_activity import ShiftAmountActivity
+"""Directory for the simulation activities."""
 
+from .base_activities import AbstractPluginClass, GenericActivity, PluginActivity
+from .basic_activity import BasicActivity
+from .move_activity import MoveActivity
+from .repeat_activity import RepeatActivity
+from .sequential_activity import SequentialActivity
+from .shift_amount_activity import ShiftAmountActivity
+from .single_run_process import single_run_process
+from .while_activity import WhileActivity
 
 __all__ = [
     "AbstractPluginClass",

@@ -1,9 +1,14 @@
+"""Move activity for the simulation."""
+
 import openclsim.core as core
+
 from .base_activities import GenericActivity
 
 
 class MoveActivity(GenericActivity):
-    """The MoveActivity Class forms a specific class for a single move activity within a simulation.
+    """
+    MoveActivity Class forms a specific class for a single move activity within a simulation.
+
     It deals with a single origin container, destination container and a single combination of equipment
     to move substances from the origin to the destination. It will initiate and suspend processes
     according to a number of specified conditions. To run an activity after it has been initialized call env.run()
@@ -36,7 +41,10 @@ class MoveActivity(GenericActivity):
         self.register_process(main_proc=self.move_process, show=self.print)
 
     def move_process(self, activity_log, env):
-        """Returns a generator which can be added as a process to a simpy.Environment. In the process, a move will be made
+        """
+        Return a generator which can be added as a process to a simpy.Environment.
+
+        In the process, a move will be made
         by the mover, moving it to the destination.
 
         activity_log: the core.Log object in which log_entries about the activities progress will be added.

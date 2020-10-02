@@ -1,5 +1,3 @@
 [run]
 source = openclsim
-
-[report]
-omit = test*, .eggs*, openclsim/plot.py
+omit = openclsim/tests*

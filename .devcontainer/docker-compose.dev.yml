@@ -1,0 +1,8 @@
+# docker-compose -f docker-compose.yml -f .devcontainer/docker-compose.dev.yml up -d
+version: '3.2'
+
+services:
+  main:
+    command: bash -c "tail -f /dev/null"
+    volumes:
+      - .:/OPENCLSIM

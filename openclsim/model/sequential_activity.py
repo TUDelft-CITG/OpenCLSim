@@ -1,15 +1,20 @@
+"""Sequential activity for the simulation."""
+
 import openclsim.core as core
+
 from .base_activities import GenericActivity
 
 
 class SequentialActivity(GenericActivity):
-    """The SequenceActivity Class forms a specific class.
+    """
+    SequenceActivity Class forms a specific class.
+
     This is for executing multiple activities in a dedicated order within a simulation.
     It is a structural activity, which does not require specific resources.
 
-    sub_processes: 
+    sub_processes:
         a list of activities to be executed in the provided sequence.
-    start_event: 
+    start_event:
         The activity will start as soon as this event is triggered
         by default will be to start immediately
     """
@@ -27,7 +32,10 @@ class SequentialActivity(GenericActivity):
         self.register_process(main_proc=self.sequential_process, show=self.print)
 
     def sequential_process(self, activity_log, env):
-        """Returns a generator which can be added as a process to a simpy.Environment. In the process the given
+        """
+        Return a generator which can be added as a process to a simpy.Environment.
+
+        In the process the given
         sub_processes will be executed sequentially in the order in which they are given.
 
         activity_log: the core.Log object in which log_entries about the activities progress will be added.
