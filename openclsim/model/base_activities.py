@@ -65,7 +65,7 @@ class PluginActivity(core.Identifiable, core.Log):
     def post_process(self, *args, **kwargs):
         # iterating over all registered plugins for this activity calling post_process
         for item in self.plugins:
-            item["plugin"].post_process(*args, **kwargs)
+            yield from item["plugin"].post_process(*args, **kwargs)
 
     def delay_processing(self, env, delay_name, activity_log, waiting):
         activity_log.log_entry(
