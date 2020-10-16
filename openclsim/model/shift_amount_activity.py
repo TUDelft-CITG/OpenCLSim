@@ -199,7 +199,7 @@ class ShiftAmountActivity(GenericActivity):
 
             args_data["start_preprocessing"] = start_time
             args_data["start_activity"] = start_shift
-            self.post_process(**args_data)
+            yield from self.post_process(**args_data)
 
             activity_log.log_entry(
                 self.name,
