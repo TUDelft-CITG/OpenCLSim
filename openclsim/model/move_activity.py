@@ -90,7 +90,7 @@ class MoveActivity(GenericActivity):
 
         args_data["start_preprocessing"] = start_time
         args_data["start_activity"] = start_mover
-        self.post_process(**args_data)
+        yield from self.post_process(**args_data)
 
         self._release_resource(
             self.requested_resources, self.mover.resource, self.keep_resources

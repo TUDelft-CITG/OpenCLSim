@@ -100,7 +100,7 @@ class WeatherPluginActivity(model.AbstractPluginClass):
             else:
                 return activity.delay_processing(env, message, activity_log, 0)
         else:
-            return activity.delay_processing(env, message, activity_log, 0)
+            return {}
 
     def check_constraint(self, start_time):
         res = self.process_data(self.weather_criteria)

@@ -86,7 +86,7 @@ class BasicActivity(GenericActivity):
 
         args_data["start_preprocessing"] = start_time
         args_data["start_activity"] = start_basic
-        self.post_process(**args_data)
+        yield from self.post_process(**args_data)
 
         activity_log.log_entry(
             self.name, env.now, self.duration, None, activity_log.id, core.LogState.STOP

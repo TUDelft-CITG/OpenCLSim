@@ -120,7 +120,7 @@ class WhileActivity(GenericActivity):
 
         args_data["start_preprocessing"] = start_time
         args_data["start_activity"] = start_while
-        self.post_process(**args_data)
+        yield from self.post_process(**args_data)
 
         activity_log.log_entry(
             f"conditional process {self.name}",
