@@ -1,14 +1,15 @@
-[ ![Documentation](https://img.shields.io/badge/sphinx-documentation-informational.svg)](https://openclsim.readthedocs.io)
-[ ![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](https://github.com/TUDelft-CITG/OpenCLSim/blob/master/LICENSE.txt)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3251545.svg)](https://doi.org/10.5281/zenodo.3251545)
+[![Documentation](https://img.shields.io/badge/sphinx-documentation-informational.svg)](https://openclsim.readthedocs.io)
+[![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](https://github.com/TUDelft-CITG/OpenCLSim/blob/master/LICENSE.txt)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3730616.svg)](https://doi.org/10.5281/zenodo.3730616)
 
 [![CircleCI](https://circleci.com/gh/TUDelft-CITG/OpenCLSim.svg?style=svg&circle-token=fc95d870dc21fdf11e1ebc02f9defcd99212197a)](https://circleci.com/gh/TUDelft-CITG/OpenCLSim)
+[![Coverage](https://artifact-getter.herokuapp.com/get_coverage_badge?circle_url=https://circleci.com/gh/TUDelft-CITG/OpenCLSim&circle_token=3b00333d4fe20c813bd9bc81ce2e1d4f5fae987aoutput=str)](https://artifact-getter.herokuapp.com/get_coverage_report?circle_url=https://circleci.com/gh/TUDelft-CITG/OpenCLSim&circle_token=3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a)
 
 # OpenCLSim
 
 **Open** source **C**omplex **L**ogistics **Sim**ulation - Rule driven scheduling of cyclic activities for in-depth comparison of alternative operating strategies.
 
-Documentation can be found [here](https://openclsim.readthedocs.io).
+Documentation is found [here](https://openclsim.readthedocs.io).
 
 ## Installation
 

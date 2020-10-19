@@ -18,6 +18,7 @@ Welcome to OpenCLSim documentation! Please check the contents below for informat
    contributing
    authors
    history
+   version-conventions
 
 Indices and tables
 ==================
