@@ -128,9 +128,13 @@ class GenericActivity(PluginActivity):
         self.keep_resources = keep_resources
         self.done_event = self.env.event()
 
-    def register_process(self, main_proc, show=False, additional_logs=[]):
+    def register_process(self, main_proc, show=False, additional_logs=None):
         # replace the done event
         self.done_event = self.env.event()
+
+        # default to []
+        if additional_logs is None:
+            additional_logs = []
 
         start_event = None
         if self.start_event is not None:
