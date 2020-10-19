@@ -192,7 +192,7 @@ def test_calc_restrictions(
     # Process an amount of 3_600 from the location into the mover
     # This takes 3_600 seconds and should be able to start right away
     start = env.now
-    env.process(crane.process(site=location, ship=mover, desired_level=3_600))
+    env.process(crane.process(site=location, mover=mover, desired_level=3_600))
     env.run()
 
     np.testing.assert_almost_equal(env.now, start + 3_600)
@@ -215,7 +215,7 @@ def test_calc_restrictions(
         mover.depth_data[location.name].keys()
     )
 
-    env.process(crane.process(ship=mover, site=location, desired_level=0))
+    env.process(crane.process(mover=mover, site=location, desired_level=0))
     env.run()
 
     # There should be 3 hours of waiting, 1 hour of processing, so time should be start + 4 hours

@@ -300,9 +300,10 @@ def test_spill_requirement(env, LocationReq, Location, Processor, Soil):
         "geometry": location,  # The coordinates of the "to location"
         "capacity": 1_000,  # The capacity of the "to location"
         "level": 0,
+        "conditions": [condition_1],
     }  # The actual volume of the "to location"
 
-    to_site = Location(**data_to_site)
+    to_site = LocationReq(**data_to_site)
 
     # make the processor with source terms
     data_processor = {
