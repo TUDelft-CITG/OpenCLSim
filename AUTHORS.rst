@@ -34,4 +34,3 @@ Ongoing PhD work
 * `Frederik Vinke`_, 2019. **Climate proofing the inland water transport system in the Netherlands.** PhD thesis. Delft University of Technology, Civil Engineering and Geosciences, Hydraulic Engineering - Ports and Waterways. Delft, the Netherlands.
 
 .. _Frederik Vinke: https://repository.tudelft.nl
-

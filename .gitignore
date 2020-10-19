@@ -24,7 +24,6 @@ lib64/
 parts/
 sdist/
 var/
-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -44,13 +43,14 @@ htmlcov/
 .tox/
 .coverage
 .coverage.*
+coverage.svg
 .cache
 nosetests.xml
 coverage.xml
-*.cover
+*,cover
 .hypothesis/
-.pytest_cache/
-.vs/
+.mypy_cache
+.pytest_cache
 
 # Translations
 *.mo
@@ -73,7 +73,7 @@ docs/_build/
 # PyBuilder
 target/
 
-# Jupyter Notebook
+# IPython Notebook
 .ipynb_checkpoints
 
 # pyenv
@@ -82,44 +82,43 @@ target/
 # celery beat schedule file
 celerybeat-schedule
 
-# SageMath parsed files
-*.sage.py
-
-# dotenv
-.env
-
 # virtualenv
-.venv
 venv/
 ENV/
 
 # Spyder project settings
 .spyderproject
-.spyproject
 
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-
-# visual studio code
 .vscode/settings.json
 
-# test images
-**/result_images
+.pylint.d/
+faux_data
 
-# notebook results
-*.kml
-# Elastic Beanstalk Files
-.elasticbeanstalk/*
-!.elasticbeanstalk/*.cfg.yml
-!.elasticbeanstalk/*.global.yml
+# vue app
+.DS_Store
+node_modules
 
-# simulations stored by server
-shared/simulations
-app-Hydraulic-Infrastructure-Realisation
-.pypirc
+# local env files
+.env.local
+.env.*.local
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw*
+
+
+# data Files
+*.pkl
