@@ -1,0 +1,40 @@
+{
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "activity_id": {
+                "type": "string",
+                "format": "uuid"
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "ISO"
+            },
+            "message": {
+                "type": "string"
+            },
+            "value": {
+                "type": "number"
+            },
+            "geometry": {
+                "type": "array",
+                "items": {
+                    "type": "number"
+                },
+                "max-length": 2,
+                "min-length": 2
+            },
+            "activitystate": {
+                "type": "string",
+                "enum": [
+                    "START",
+                    "STOP",
+                    "WAIT_START",
+                    "WAIT_STOP",
+                    "UNKOWN"
+                ]
+            }
+        }
+    }
+}

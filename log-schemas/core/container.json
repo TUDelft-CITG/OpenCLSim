@@ -1,0 +1,11 @@
+{
+    "type": "object",
+    "properties": {
+        "level": {
+            "type": "number"
+        },
+        "capacity": {
+            "type": "number"
+        }
+    }
+}
