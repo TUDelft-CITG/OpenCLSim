@@ -49,7 +49,7 @@ class Log(SimpyObject):
         self, log, t, value, geometry_log, ActivityID, ActivityState=LogState.UNKNOWN
     ):
         self.log["Message"].append(log)
-        self.log["Timestamp"].append(datetime.datetime.fromtimestamp(t))
+        self.log["Timestamp"].append(datetime.datetime.utcfromtimestamp(t))
         self.log["Value"].append(value)
         self.log["Geometry"].append(geometry_log)
         self.log["ActivityID"].append(ActivityID)

@@ -16,12 +16,14 @@ class BasicActivity(GenericActivity):
                  by default will be to start immediately
     """
 
-    def __init__(self, duration, additional_logs=[], show=False, *args, **kwargs):
+    def __init__(self, duration, additional_logs=None, show=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
         self.print = show
         self.duration = duration
+        if additional_logs is None:
+            additional_logs = []
         self.additional_logs = additional_logs
         if not self.postpone_start:
             self.start()
