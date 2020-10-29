@@ -10,8 +10,6 @@ import openclsim.core as core
 import openclsim.model as model
 import openclsim.plugins as plugin
 
-from .test_utils import parse_log
-
 
 def test_weather():
     """Test function for weather plugin."""

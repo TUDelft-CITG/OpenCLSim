@@ -1,13 +1,10 @@
 """Test package."""
-import datetime
 
 import shapely.geometry
 import simpy
 
 import openclsim.core as core
 import openclsim.model as model
-
-from .test_utils import parse_log
 
 
 def test_mulitcontainer():
@@ -94,7 +91,7 @@ def test_mulitcontainer():
         "duration": 20,
         "postpone_start": False,
     }
-    activity = model.ShiftAmountActivity(**shift_amount_activity_loading_data)
+    model.ShiftAmountActivity(**shift_amount_activity_loading_data)
 
     my_env.run()
 

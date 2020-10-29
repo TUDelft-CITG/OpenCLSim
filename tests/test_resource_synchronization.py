@@ -1,13 +1,10 @@
 """Test package."""
-import datetime
 
 import shapely.geometry
 import simpy
 
 import openclsim.core as core
 import openclsim.model as model
-
-from .test_utils import parse_log
 
 
 def test_test_resource_synchronization():

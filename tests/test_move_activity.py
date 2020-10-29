@@ -1,14 +1,10 @@
 """Test package."""
 
-import datetime
-
 import shapely.geometry
 import simpy
 
 import openclsim.core as core
 import openclsim.model as model
-
-from .test_utils import parse_log
 
 
 def test_move_activity():
@@ -82,6 +78,6 @@ def test_move_activity():
         "mover": hopper,
         "destination": to_site,
     }
-    activity = model.MoveActivity(**move_activity_data)
+    model.MoveActivity(**move_activity_data)
 
     my_env.run()

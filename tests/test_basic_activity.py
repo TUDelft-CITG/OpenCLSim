@@ -1,12 +1,8 @@
 """Test package."""
 
-import datetime
-
 import simpy
 
 import openclsim.model as model
-
-from .test_utils import parse_log
 
 
 class TestBasicActivity:

@@ -1,15 +1,11 @@
 """Test package."""
 
-import datetime
-
 import shapely.geometry
 import simpy
 
 import openclsim.core as core
 import openclsim.model as model
 import openclsim.plugins as plugins
-
-from .test_utils import parse_log
 
 
 def test_delay_plugin():

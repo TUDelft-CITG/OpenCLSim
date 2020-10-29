@@ -1,5 +1,4 @@
 """Test package."""
-import datetime
 
 import simpy
 
@@ -32,6 +31,6 @@ def test_while_activity():
         "condition_event": [{"type": "activity", "name": "while", "state": "done"}],
         "postpone_start": False,
     }
-    while_activity = model.WhileActivity(**while_data)
+    model.WhileActivity(**while_data)
 
     my_env.run(until=50)
