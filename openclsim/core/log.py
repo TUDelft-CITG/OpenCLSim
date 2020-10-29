@@ -37,73 +37,31 @@ class Log(SimpyObject):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.log = {
-            "Message": [],
-            "Timestamp": [],
-            "Value": [],
-            "Geometry": [],
-            "ActivityID": [],
-            "ActivityState": [],
-        }
-
-    def log_entry(
-        self, log, t, value, geometry_log, ActivityID, ActivityState=LogState.UNKNOWN
-    ):
-        self.log["Message"].append(log)
-        self.log["Timestamp"].append(datetime.datetime.utcfromtimestamp(t))
-        self.log["Value"].append(value)
-        self.log["Geometry"].append(geometry_log)
-        self.log["ActivityID"].append(ActivityID)
-        self.log["ActivityState"].append(ActivityState.name)
-
-    def get_log_as_json(self):
-        json = []
-        for msg, t, value, geometry_log, act_state in zip(
-            self.log["Message"],
-            self.log["Timestamp"],
-            self.log["Value"],
-            self.log["Geometry"],
-            self.log["ActivityState"],
-        ):
-            json.append(
-                dict(
-                    type="Feature",
-                    geometry=shapely.geometry.mapping(geometry_log)
-                    if geometry_log is not None
-                    else "None",
-                    properties=dict(
-                        message=msg,
-                        time=time.mktime(t.timetuple()),
-                        value=value,
-                        state=act_state,
-                    ),
-                )
-            )
-        return json
-
-
-class NewLog(SimpyObject):
-    """
-    Log class to log the object activities.
-
-    log: log message [format: 'transfer activity' or 'move activity']
-    t: timestamp
-    value: a value can be logged as well
-    geometry: value from locatable (lat, lon)
-    ActivityState to explicate the meaning of the message
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        """Initialization"""
-        self.log = {
             "Timestamp": [],
             "ActivityID": [],
             "ActivityState": [],
             "ObjectState": [],
         }
 
-    def log_entry(self, t, ActivityID, object_state, ActivityState=LogState.UNKNOWN):
+    def log_entry(
+        self,
+        t,
+        ActivityID,
+        ActivityState=LogState.UNKNOWN,
+        message=None,
+    ):
+        object_state = self.get_state()
+        if message:
+            object_state["message"] = message
+
         self.log["Timestamp"].append(datetime.datetime.utcfromtimestamp(t))
         self.log["ActivityID"].append(ActivityID)
         self.log["ActivityState"].append(ActivityState.name)
         self.log["ObjectState"].append(object_state)
+
+    def get_state(self):
+        """Add an empty instance of the get state function so that it is always available."""
+        state = {}
+        if hasattr(super(), "get_state"):
+            state = super().get_state()
+        return state
