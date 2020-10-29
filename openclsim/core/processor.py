@@ -59,10 +59,7 @@ class Processor(SimpyObject):
         # Log the process for all parts
         for location in [origin, destination]:
             location.log_entry(
-                log=message,
                 t=location.env.now,
-                value=amount,
-                geometry_log=location.geometry,
                 ActivityID=self.ActivityID,
                 ActivityState=LogState.START,
             )
@@ -75,10 +72,7 @@ class Processor(SimpyObject):
 
         # Checkout single event
         self.log_entry(
-            message,
             self.env.now,
-            amount,
-            self.geometry,
             self.ActivityID,
             LogState.START,
         )
@@ -88,17 +82,12 @@ class Processor(SimpyObject):
         # Put the amount in the destination
         yield from self.check_possible_shift(origin, destination, amount, "put", id_)
 
-        self.log_entry(
-            message, self.env.now, amount, self.geometry, self.ActivityID, LogState.STOP
-        )
+        self.log_entry(self.env.now, self.ActivityID, LogState.STOP)
 
         # Log the process for all parts
         for location in [origin, destination]:
             location.log_entry(
-                log=message,
                 t=location.env.now,
-                value=amount,
-                geometry_log=location.geometry,
                 ActivityID=self.ActivityID,
                 ActivityState=LogState.STOP,
             )
@@ -126,20 +115,16 @@ class Processor(SimpyObject):
             # If the amount is not available in the origin, log waiting
             if start_time != end_time:
                 self.log_entry(
-                    log="waiting origin content",
+                    message="waiting origin content",
                     t=start_time,
-                    value=amount,
-                    geometry_log=self.geometry,
                     ActivityID=self.ActivityID,
-                    ActivityState=LogState.START,
+                    ActivityState=LogState.WAIT_START,
                 )
                 self.log_entry(
-                    log="waiting origin content",
+                    message="waiting origin content",
                     t=end_time,
-                    value=amount,
-                    geometry_log=self.geometry,
                     ActivityID=self.ActivityID,
-                    ActivityState=LogState.STOP,
+                    ActivityState=LogState.WAIT_STOP,
                 )
 
         elif activity == "put":
@@ -152,18 +137,14 @@ class Processor(SimpyObject):
             # If the amount is cannot be put in the destination, log waiting
             if start_time != end_time:
                 self.log_entry(
-                    log="waiting destination content",
+                    message="waiting destination content",
                     t=start_time,
-                    value=amount,
-                    geometry_log=self.geometry,
                     ActivityID=self.ActivityID,
                     ActivityState=LogState.START,
                 )
                 self.log_entry(
-                    log="waiting destination content",
+                    message="waiting destination content",
                     t=end_time,
-                    value=amount,
-                    geometry_log=self.geometry,
                     ActivityID=self.ActivityID,
                     ActivityState=LogState.STOP,
                 )
