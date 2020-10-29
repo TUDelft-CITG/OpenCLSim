@@ -71,12 +71,9 @@ class MoveActivity(GenericActivity):
         yield from self.pre_process(args_data)
 
         activity_log.log_entry(
-            message,
-            env.now,
-            -1,
-            self.mover.geometry,
-            activity_log.id,
-            core.LogState.START,
+            t=env.now,
+            ActivityID=activity_log.id,
+            ActivityState=core.LogState.START,
         )
 
         start_mover = env.now
@@ -103,10 +100,7 @@ class MoveActivity(GenericActivity):
         yield env.timeout(0)
 
         activity_log.log_entry(
-            message,
-            env.now,
-            -1,
-            self.mover.geometry,
-            activity_log.id,
-            core.LogState.STOP,
+            t=env.now,
+            ActivityID=activity_log.id,
+            ActivityState=core.LogState.STOP,
         )
