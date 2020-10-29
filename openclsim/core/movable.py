@@ -41,10 +41,6 @@ class Movable(SimpyObject, Locatable):
 
         Yield the time it takes to travel based on flow properties and load factor of the flow.
         """
-
-        origin_name = getattr(self, "name", "undefined")
-        destination_name = getattr(destination, "name", "undefined")
-
         # Log the start event
         self.log_entry(
             self.env.now,

@@ -24,24 +24,8 @@ class TestBasicActivity:
             "registry": registry,
             "duration": 14,
         }
-        activity = model.BasicActivity(**basic_activity_data)
+        model.BasicActivity(**basic_activity_data)
         my_env.run()
-        benchmark_result = {
-            "Message": ["Basic activity", "Basic activity"],
-            "Timestamp": [
-                datetime.datetime(1970, 1, 1, 0, 0),
-                datetime.datetime(1970, 1, 1, 0, 0, 14),
-            ],
-            "Value": [14, 14],
-            "Geometry": [None, None],
-            "ActivityID": [
-                "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
-                "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
-            ],
-            "ActivityState": ["START", "STOP"],
-        }
-
-        assert activity.log == benchmark_result
 
     def test_additional_logging(self):
         simulation_start = 0
@@ -66,46 +50,5 @@ class TestBasicActivity:
             "duration": 14,
             "additional_logs": [reporting_activity],
         }
-        activity = model.BasicActivity(**basic_activity_data)
+        model.BasicActivity(**basic_activity_data)
         my_env.run()
-
-        benchmark_activity = {
-            "Message": ["Basic activity", "Basic activity"],
-            "Timestamp": [
-                datetime.datetime(1970, 1, 1, 0, 0),
-                datetime.datetime(1970, 1, 1, 0, 0, 14),
-            ],
-            "Value": [14, 14],
-            "Geometry": [None, None],
-            "ActivityID": [
-                "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
-                "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
-            ],
-            "ActivityState": ["START", "STOP"],
-        }
-        benchmark_additional_log = {
-            "Message": [
-                "Reporting activity",
-                "Basic activity",
-                "Reporting activity",
-                "Basic activity",
-            ],
-            "Timestamp": [
-                datetime.datetime(1970, 1, 1, 0, 0),
-                datetime.datetime(1970, 1, 1, 0, 0),
-                datetime.datetime(1970, 1, 1, 0, 0),
-                datetime.datetime(1970, 1, 1, 0, 0, 14),
-            ],
-            "Value": [0, 14, 0, 14],
-            "Geometry": [None, None, None, None],
-            "ActivityID": [
-                "6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
-                "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
-                "6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
-                "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
-            ],
-            "ActivityState": ["START", "START", "STOP", "STOP"],
-        }
-
-        assert parse_log(reporting_activity.log) == benchmark_additional_log
-        assert parse_log(activity.log) == benchmark_activity

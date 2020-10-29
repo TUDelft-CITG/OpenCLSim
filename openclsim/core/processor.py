@@ -51,10 +51,6 @@ class Processor(SimpyObject):
         assert self.is_at(origin)
         assert destination.is_at(origin)
 
-        processor_name = getattr(self, "name", "undefined")
-        origin_name = getattr(origin, "name", "undefined")
-        destination_name = getattr(destination, "name", "undefined")
-
         # Log the process for all parts
         for location in [origin, destination]:
             location.log_entry(

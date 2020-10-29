@@ -63,51 +63,5 @@ def test_sequence():
         "registry": registry,
         "sub_processes": sub_processes,
     }
-    activity = model.SequentialActivity(**sequential_activity_data)
+    model.SequentialActivity(**sequential_activity_data)
     my_env.run()
-    benchmark = {
-        "Message": [
-            "sequential Sequential process",
-            "sub process Basic activity1",
-            "sub process Basic activity1",
-            "sub process Basic activity2",
-            "sub process Basic activity2",
-            "sub process Basic activity3",
-            "sub process Basic activity3",
-            "sequential Sequential process",
-        ],
-        "Timestamp": [
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0, 14),
-            datetime.datetime(1970, 1, 1, 0, 0, 14),
-            datetime.datetime(1970, 1, 1, 0, 0, 19),
-            datetime.datetime(1970, 1, 1, 0, 0, 19),
-            datetime.datetime(1970, 1, 1, 0, 3, 59),
-            datetime.datetime(1970, 1, 1, 0, 3, 59),
-        ],
-        "Value": [-1, -1, -1, -1, -1, -1, -1, -1],
-        "Geometry": [None, None, None, None, None, None, None, None],
-        "ActivityID": [
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-        ],
-        "ActivityState": [
-            "START",
-            "START",
-            "STOP",
-            "START",
-            "STOP",
-            "START",
-            "STOP",
-            "STOP",
-        ],
-    }
-
-    assert activity.log == benchmark
