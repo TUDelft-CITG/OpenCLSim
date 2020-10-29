@@ -69,11 +69,17 @@ class PluginActivity(core.Identifiable, core.Log):
 
     def delay_processing(self, env, delay_name, activity_log, waiting):
         activity_log.log_entry(
-            delay_name, env.now, -1, None, activity_log.id, core.LogState.WAIT_START
+            t=env.now,
+            ActivityID=activity_log.id,
+            ActivityState=core.LogState.WAIT_START,
+            message=delay_name,
         )
         yield env.timeout(waiting)
         activity_log.log_entry(
-            delay_name, env.now, -1, None, activity_log.id, core.LogState.WAIT_STOP
+            t=env.now,
+            ActivityID=activity_log.id,
+            ActivityState=core.LogState.WAIT_STOP,
+            message=delay_name,
         )
 
 
@@ -296,43 +302,31 @@ class GenericActivity(PluginActivity):
         if hasattr(start_event, "__call__"):
             start_event = start_event()
         activity_log.log_entry(
-            activity_log.name,
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.WAIT_START,
+            t=env.now,
+            ActivityID=activity_log.id,
+            ActivityState=core.LogState.WAIT_START,
         )
         if isinstance(additional_logs, list) and len(additional_logs) > 0:
             for log in additional_logs:
                 for sub_process in sub_processes:
                     log.log_entry(
-                        activity_log.name,
-                        env.now,
-                        -1,
-                        None,
-                        activity_log.id,
-                        core.LogState.WAIT_START,
+                        t=env.now,
+                        ActivityID=activity_log.id,
+                        ActivityState=core.LogState.WAIT_START,
                     )
         yield start_event
         activity_log.log_entry(
-            activity_log.name,
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.WAIT_STOP,
+            t=env.now,
+            ActivityID=activity_log.id,
+            ActivityState=core.LogState.WAIT_STOP,
         )
         if isinstance(additional_logs, list) and len(additional_logs) > 0:
             for log in additional_logs:
                 for sub_process in sub_processes:
                     log.log_entry(
-                        activity_log.name,
-                        env.now,
-                        -1,
-                        None,
-                        activity_log.id,
-                        core.LogState.WAIT_STOP,
+                        t=env.now,
+                        ActivityID=activity_log.id,
+                        ActivityState=core.LogState.WAIT_STOP,
                     )
 
         for sub_process in sub_processes:
