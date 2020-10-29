@@ -5,6 +5,7 @@ import random
 import pandas as pd
 import plotly.graph_objs as go
 from plotly.offline import init_notebook_mode, iplot
+
 from .log_dataframe import get_log_dataframe
 
 

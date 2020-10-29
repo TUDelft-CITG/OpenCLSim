@@ -1,6 +1,7 @@
 """Get the step chart of the container levels."""
 
 import matplotlib.pyplot as plt
+
 from .log_dataframe import get_log_dataframe
 
 
