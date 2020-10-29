@@ -5,6 +5,7 @@ import random
 import pandas as pd
 import plotly.graph_objs as go
 from plotly.offline import init_notebook_mode, iplot
+from .log_dataframe import get_log_dataframe
 
 
 def get_colors(n):
@@ -42,6 +43,7 @@ def vessel_planning(
     vessels, activities=None, colors=None, web=False, static=False, y_scale="text"
 ):
     """Create a plot of the planning of vessels."""
+    id_map = {ves.id: ves.name for ves in vessels}
 
     if activities is None:
         activities = []
@@ -59,13 +61,17 @@ def vessel_planning(
     names = []
     for vessel in vessels:
         if len(vessel.log["Timestamp"]) > 0:
-            df = pd.DataFrame(
-                {
-                    "log_string": vessel.log["ActivityID"],
-                    "activity_state": vessel.log["ActivityState"],
-                },
-                vessel.log["Timestamp"],
+            df = (
+                get_log_dataframe(vessel, vessels)
+                .rename(
+                    columns={
+                        "Activity": "log_string",
+                        "ActivityState": "activity_state",
+                    }
+                )
+                .set_index("Timestamp", drop=False)
             )
+
             dataframes.append(df)
             names.append(vessel.name)
 
@@ -74,6 +80,7 @@ def vessel_planning(
     # prepare traces for each of the activities
     traces = []
     for i, activity in enumerate(activities):
+        activity = id_map.get(activity, activity)
         x_combined = []
         y_combined = []
         for k, df in enumerate(dataframes):
