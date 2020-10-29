@@ -79,3 +79,31 @@ class Log(SimpyObject):
                 )
             )
         return json
+
+
+class NewLog(SimpyObject):
+    """
+    Log class to log the object activities.
+
+    log: log message [format: 'transfer activity' or 'move activity']
+    t: timestamp
+    value: a value can be logged as well
+    geometry: value from locatable (lat, lon)
+    ActivityState to explicate the meaning of the message
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.log = {
+            "Timestamp": [],
+            "ActivityID": [],
+            "ActivityState": [],
+            "ObjectState": [],
+        }
+
+    def log_entry(self, t, ActivityID, object_state, ActivityState=LogState.UNKNOWN):
+        self.log["Timestamp"].append(datetime.datetime.utcfromtimestamp(t))
+        self.log["ActivityID"].append(ActivityID)
+        self.log["ActivityState"].append(ActivityState.name)
+        self.log["ObjectState"].append(object_state)

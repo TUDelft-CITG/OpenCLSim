@@ -32,6 +32,14 @@ class HasContainer(SimpyObject):
         if capacity > 0:
             self.container.initialize(capacity=capacity, init=level)
 
+    def get_state(self):
+        state = {}
+        if hasattr(super(), "get_state"):
+            state = super().get_state()
+
+        state.update({"container level": self.container.get_level()})
+        return state
+
 
 class HasMultiContainer(HasContainer):
     """
@@ -44,3 +52,16 @@ class HasMultiContainer(HasContainer):
     def __init__(self, initials, store_capacity=10, *args, **kwargs):
         super().__init__(capacity=0, store_capacity=store_capacity, *args, **kwargs)
         self.container.initialize_container(initials)
+
+    def get_state(self):
+        state = {}
+        if hasattr(super(), "get_state"):
+            state = super().get_state()
+
+        state.update(
+            {
+                f"container level {container}": self.container.get_level(id_=container)
+                for container in self.container.container_list
+            }
+        )
+        return state
