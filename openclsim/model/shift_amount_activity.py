@@ -174,12 +174,9 @@ class ShiftAmountActivity(GenericActivity):
             yield from self.pre_process(args_data)
 
             activity_log.log_entry(
-                self.name,
-                env.now,
-                self.amount,
-                None,
-                activity_log.id,
-                core.LogState.START,
+                t=env.now,
+                ActivityID=activity_log.id,
+                ActivityState=core.LogState.START,
             )
 
             start_shift = env.now
@@ -202,12 +199,9 @@ class ShiftAmountActivity(GenericActivity):
             yield from self.post_process(**args_data)
 
             activity_log.log_entry(
-                self.name,
-                env.now,
-                self.amount,
-                None,
-                activity_log.id,
-                core.LogState.STOP,
+                t=env.now,
+                ActivityID=activity_log.id,
+                ActivityState=core.LogState.STOP,
             )
 
             # release the unloader, self.destination and mover requests
