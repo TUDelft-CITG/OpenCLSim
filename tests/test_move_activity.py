@@ -1,10 +1,14 @@
 """Test package."""
 
+import datetime
+
 import shapely.geometry
 import simpy
 
 import openclsim.core as core
 import openclsim.model as model
+
+from .test_utils import parse_log
 
 
 def test_move_activity():
@@ -78,6 +82,38 @@ def test_move_activity():
         "mover": hopper,
         "destination": to_site,
     }
-    model.MoveActivity(**move_activity_data)
+    activity = model.MoveActivity(**move_activity_data)
 
     my_env.run()
+
+    activity_benchmark = {
+        "Timestamp": [
+            datetime.datetime(1970, 1, 1, 0, 0),
+            datetime.datetime(1970, 1, 1, 0, 15, 42, 824591),
+        ],
+        "ActivityID": [
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+        ],
+        "ActivityState": ["START", "STOP"],
+        "ObjectState": [{}, {}],
+    }
+    hopper_benchmark = {
+        "Timestamp": [
+            datetime.datetime(1970, 1, 1, 0, 0),
+            datetime.datetime(1970, 1, 1, 0, 15, 42, 824591),
+        ],
+        "ActivityID": [
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+        ],
+        "ActivityState": ["START", "STOP"],
+        "ObjectState": [
+            {"geometry": (4.18055556, 52.18664444), "container level": 0.0},
+            {"geometry": (4.25222222, 52.11428333), "container level": 0.0},
+        ],
+    }
+
+    assert my_env.now == 942.8245912734186
+    assert parse_log(activity.log) == activity_benchmark
+    assert parse_log(hopper.log) == hopper_benchmark

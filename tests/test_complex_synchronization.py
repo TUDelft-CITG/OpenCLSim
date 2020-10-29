@@ -1,4 +1,5 @@
 """Test package."""
+import datetime
 
 import simpy
 
@@ -118,3 +119,64 @@ def test_complex_synchronization():
     model.SequentialActivity(**sequential_activity_data2)
 
     my_env.run()
+
+    benchmark = {
+        "Timestamp": [
+            datetime.datetime(1970, 1, 1, 0, 0),
+            datetime.datetime(1970, 1, 1, 0, 0),
+            datetime.datetime(1970, 1, 1, 0, 0),
+            datetime.datetime(1970, 1, 1, 0, 0),
+            datetime.datetime(1970, 1, 1, 0, 0, 1),
+            datetime.datetime(1970, 1, 1, 0, 0, 1),
+            datetime.datetime(1970, 1, 1, 0, 0, 14),
+            datetime.datetime(1970, 1, 1, 0, 0, 14),
+            datetime.datetime(1970, 1, 1, 0, 0, 24),
+            datetime.datetime(1970, 1, 1, 0, 0, 24),
+            datetime.datetime(1970, 1, 1, 0, 8, 21),
+            datetime.datetime(1970, 1, 1, 0, 8, 21),
+            datetime.datetime(1970, 1, 1, 0, 8, 21),
+            datetime.datetime(1970, 1, 1, 0, 8, 21),
+            datetime.datetime(1970, 1, 1, 0, 10, 21),
+            datetime.datetime(1970, 1, 1, 0, 12, 1),
+        ],
+        "ActivityID": [
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff5c",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5c",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5c",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5d",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff5c",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5d",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5d",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff5d",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff5d",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5d",
+        ],
+        "ActivityState": [
+            "START",
+            "START",
+            "START",
+            "STOP",
+            "STOP",
+            "START",
+            "STOP",
+            "START",
+            "STOP",
+            "WAIT_START",
+            "STOP",
+            "WAIT_STOP",
+            "START",
+            "START",
+            "STOP",
+            "STOP",
+        ],
+        "ObjectState": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
+    }
+
+    assert my_env.now == 721
+    assert reporting_activity.log == benchmark

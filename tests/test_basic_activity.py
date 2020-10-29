@@ -1,5 +1,7 @@
 """Test package."""
 
+import datetime
+
 import simpy
 
 import openclsim.model as model
@@ -22,6 +24,8 @@ class TestBasicActivity:
         }
         model.BasicActivity(**basic_activity_data)
         my_env.run()
+
+        assert my_env.now == 14
 
     def test_additional_logging(self):
         simulation_start = 0
@@ -46,5 +50,38 @@ class TestBasicActivity:
             "duration": 14,
             "additional_logs": [reporting_activity],
         }
-        model.BasicActivity(**basic_activity_data)
+        basic_activity = model.BasicActivity(**basic_activity_data)
         my_env.run()
+
+        report_benchmark = {
+            "Timestamp": [
+                datetime.datetime(1970, 1, 1, 0, 0),
+                datetime.datetime(1970, 1, 1, 0, 0),
+                datetime.datetime(1970, 1, 1, 0, 0),
+                datetime.datetime(1970, 1, 1, 0, 0, 14),
+            ],
+            "ActivityID": [
+                "6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
+                "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+                "6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
+                "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            ],
+            "ActivityState": ["START", "START", "STOP", "STOP"],
+            "ObjectState": [{}, {}, {}, {}],
+        }
+        basic_benchmark = {
+            "Timestamp": [
+                datetime.datetime(1970, 1, 1, 0, 0),
+                datetime.datetime(1970, 1, 1, 0, 0, 14),
+            ],
+            "ActivityID": [
+                "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+                "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            ],
+            "ActivityState": ["START", "STOP"],
+            "ObjectState": [{}, {}],
+        }
+
+        assert my_env.now == 14
+        assert reporting_activity.log == report_benchmark
+        assert basic_activity.log == basic_benchmark

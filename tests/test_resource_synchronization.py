@@ -1,10 +1,14 @@
 """Test package."""
 
+import datetime
+
 import shapely.geometry
 import simpy
 
 import openclsim.core as core
 import openclsim.model as model
+
+from .test_utils import parse_log
 
 
 def test_test_resource_synchronization():
@@ -177,4 +181,82 @@ def test_test_resource_synchronization():
     }
     model.WhileActivity(**while_data2)
 
+    benchmark = {
+        "Timestamp": [
+            datetime.datetime(1970, 1, 1, 0, 0),
+            datetime.datetime(1970, 1, 1, 0, 0, 20),
+            datetime.datetime(1970, 1, 1, 0, 0, 20),
+            datetime.datetime(1970, 1, 1, 0, 0, 40),
+            datetime.datetime(1970, 1, 1, 0, 0, 40),
+            datetime.datetime(1970, 1, 1, 0, 1),
+            datetime.datetime(1970, 1, 1, 0, 1),
+            datetime.datetime(1970, 1, 1, 0, 1, 20),
+            datetime.datetime(1970, 1, 1, 0, 1, 20),
+            datetime.datetime(1970, 1, 1, 0, 1, 40),
+            datetime.datetime(1970, 1, 1, 0, 1, 40),
+            datetime.datetime(1970, 1, 1, 0, 2),
+            datetime.datetime(1970, 1, 1, 0, 2),
+            datetime.datetime(1970, 1, 1, 0, 2, 20),
+            datetime.datetime(1970, 1, 1, 0, 2, 20),
+            datetime.datetime(1970, 1, 1, 0, 2, 40),
+        ],
+        "ActivityID": [
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "5dbbbdf7-4589-11e9-bf3b-b469212bff52",
+        ],
+        "ActivityState": [
+            "START",
+            "STOP",
+            "START",
+            "STOP",
+            "START",
+            "STOP",
+            "START",
+            "STOP",
+            "START",
+            "STOP",
+            "START",
+            "STOP",
+            "START",
+            "STOP",
+            "START",
+            "STOP",
+        ],
+        "ObjectState": [
+            {"container level": 8, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 7, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 7, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 6, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 6, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 5, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 5, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 4, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 4, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 3, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 3, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 2, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 2, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 1.0, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 1.0, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 0.0, "geometry": (4.18055556, 52.18664444)},
+        ],
+    }
+
     my_env.run()
+
+    assert my_env.now == 160
+    assert parse_log(from_site.log) == benchmark
