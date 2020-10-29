@@ -46,7 +46,7 @@ def vessel_planning(
     if activities is None:
         activities = []
         for obj in vessels:
-            activities.extend(set(obj.log["Message"]))
+            activities.extend(set(obj.log["ActivityID"]))
 
     if colors is None:
         C = get_colors(len(activities))
@@ -61,8 +61,7 @@ def vessel_planning(
         if len(vessel.log["Timestamp"]) > 0:
             df = pd.DataFrame(
                 {
-                    "log_value": vessel.log["Value"],
-                    "log_string": vessel.log["Message"],
+                    "log_string": vessel.log["ActivityID"],
                     "activity_state": vessel.log["ActivityState"],
                 },
                 vessel.log["Timestamp"],
