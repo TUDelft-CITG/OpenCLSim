@@ -50,10 +50,7 @@ class Movable(SimpyObject, Locatable):
 
         # Log the start event
         self.log_entry(
-            message,
             self.env.now,
-            self.get_container_level(),
-            self.geometry,
             self.ActivityID,
             LogState.START,
         )
@@ -77,10 +74,7 @@ class Movable(SimpyObject, Locatable):
 
         # Log the stop event
         self.log_entry(
-            message,
             self.env.now,
-            self.get_container_level(),
-            self.geometry,
             self.ActivityID,
             LogState.STOP,
         )
