@@ -1,9 +1,6 @@
 """Component to log the simulation objecs."""
 import datetime
-import time
 from enum import Enum
-
-import shapely.geometry
 
 from .simpy_object import SimpyObject
 
