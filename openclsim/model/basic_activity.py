@@ -66,7 +66,7 @@ class BasicActivity(GenericActivity):
 
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.START,
         )
 
@@ -74,7 +74,7 @@ class BasicActivity(GenericActivity):
             for log_item in self.additional_logs:
                 log_item.log_entry(
                     t=env.now,
-                    ActivityID=activity_log.id,
+                    activity_id=activity_log.id,
                     ActivityState=core.LogState.START,
                 )
 
@@ -85,13 +85,13 @@ class BasicActivity(GenericActivity):
         yield from self.post_process(**args_data)
 
         activity_log.log_entry(
-            t=env.now, ActivityID=activity_log.id, ActivityState=core.LogState.STOP
+            t=env.now, activity_id=activity_log.id, ActivityState=core.LogState.STOP
         )
         if isinstance(self.additional_logs, list) and len(self.additional_logs) > 0:
             for log_item in self.additional_logs:
                 log_item.log_entry(
                     t=env.now,
-                    ActivityID=activity_log.id,
+                    activity_id=activity_log.id,
                     ActivityState=core.LogState.STOP,
                 )
 

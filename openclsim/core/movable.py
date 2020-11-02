@@ -44,7 +44,7 @@ class Movable(SimpyObject, Locatable):
         # Log the start event
         self.log_entry(
             self.env.now,
-            self.ActivityID,
+            self.activity_id,
             LogState.START,
         )
 
@@ -68,7 +68,7 @@ class Movable(SimpyObject, Locatable):
         # Log the stop event
         self.log_entry(
             self.env.now,
-            self.ActivityID,
+            self.activity_id,
             LogState.STOP,
         )
 

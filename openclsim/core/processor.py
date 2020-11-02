@@ -55,7 +55,7 @@ class Processor(SimpyObject):
         for location in [origin, destination]:
             location.log_entry(
                 t=location.env.now,
-                ActivityID=self.ActivityID,
+                activity_id=self.activity_id,
                 ActivityState=LogState.START,
             )
 
@@ -68,7 +68,7 @@ class Processor(SimpyObject):
         # Checkout single event
         self.log_entry(
             self.env.now,
-            self.ActivityID,
+            self.activity_id,
             LogState.START,
         )
 
@@ -77,13 +77,13 @@ class Processor(SimpyObject):
         # Put the amount in the destination
         yield from self.check_possible_shift(origin, destination, amount, "put", id_)
 
-        self.log_entry(self.env.now, self.ActivityID, LogState.STOP)
+        self.log_entry(self.env.now, self.activity_id, LogState.STOP)
 
         # Log the process for all parts
         for location in [origin, destination]:
             location.log_entry(
                 t=location.env.now,
-                ActivityID=self.ActivityID,
+                activity_id=self.activity_id,
                 ActivityState=LogState.STOP,
             )
 
@@ -112,13 +112,13 @@ class Processor(SimpyObject):
                 self.log_entry(
                     message="waiting origin content",
                     t=start_time,
-                    ActivityID=self.ActivityID,
+                    activity_id=self.activity_id,
                     ActivityState=LogState.WAIT_START,
                 )
                 self.log_entry(
                     message="waiting origin content",
                     t=end_time,
-                    ActivityID=self.ActivityID,
+                    activity_id=self.activity_id,
                     ActivityState=LogState.WAIT_STOP,
                 )
 
@@ -134,13 +134,13 @@ class Processor(SimpyObject):
                 self.log_entry(
                     message="waiting destination content",
                     t=start_time,
-                    ActivityID=self.ActivityID,
+                    activity_id=self.activity_id,
                     ActivityState=LogState.START,
                 )
                 self.log_entry(
                     message="waiting destination content",
                     t=end_time,
-                    ActivityID=self.ActivityID,
+                    activity_id=self.activity_id,
                     ActivityState=LogState.STOP,
                 )
 

@@ -70,14 +70,14 @@ class PluginActivity(core.Identifiable, core.Log):
     def delay_processing(self, env, delay_name, activity_log, waiting):
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.WAIT_START,
             message=delay_name,
         )
         yield env.timeout(waiting)
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.WAIT_STOP,
             message=delay_name,
         )
@@ -303,7 +303,7 @@ class GenericActivity(PluginActivity):
             start_event = start_event()
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.WAIT_START,
         )
         if isinstance(additional_logs, list) and len(additional_logs) > 0:
@@ -311,13 +311,13 @@ class GenericActivity(PluginActivity):
                 for sub_process in sub_processes:
                     log.log_entry(
                         t=env.now,
-                        ActivityID=activity_log.id,
+                        activity_id=activity_log.id,
                         ActivityState=core.LogState.WAIT_START,
                     )
         yield start_event
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.WAIT_STOP,
         )
         if isinstance(additional_logs, list) and len(additional_logs) > 0:
@@ -325,7 +325,7 @@ class GenericActivity(PluginActivity):
                 for sub_process in sub_processes:
                     log.log_entry(
                         t=env.now,
-                        ActivityID=activity_log.id,
+                        activity_id=activity_log.id,
                         ActivityState=core.LogState.WAIT_STOP,
                     )
 

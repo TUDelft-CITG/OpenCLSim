@@ -72,12 +72,12 @@ class MoveActivity(GenericActivity):
 
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.START,
         )
 
         start_mover = env.now
-        self.mover.ActivityID = activity_log.id
+        self.mover.activity_id = activity_log.id
         yield from self.mover.move(
             destination=self.destination,
             engine_order=1,
@@ -101,6 +101,6 @@ class MoveActivity(GenericActivity):
 
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.STOP,
         )

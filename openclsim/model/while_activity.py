@@ -81,7 +81,7 @@ class WhileActivity(GenericActivity):
 
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.START,
         )
         ii = 0
@@ -89,7 +89,7 @@ class WhileActivity(GenericActivity):
             # for sub_process_ in (proc for proc in [self.sub_process]):
             activity_log.log_entry(
                 t=env.now,
-                ActivityID=activity_log.id,
+                activity_id=activity_log.id,
                 ActivityState=core.LogState.START,
             )
             self.sub_process.start()
@@ -99,7 +99,7 @@ class WhileActivity(GenericActivity):
             self.sub_process.end()
             activity_log.log_entry(
                 t=env.now,
-                ActivityID=activity_log.id,
+                activity_id=activity_log.id,
                 ActivityState=core.LogState.STOP,
             )
             # work around for the event evaluation
@@ -115,6 +115,6 @@ class WhileActivity(GenericActivity):
 
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.STOP,
         )

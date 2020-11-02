@@ -55,14 +55,14 @@ class RepeatActivity(GenericActivity):
 
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.START,
         )
         ii = 0
         while ii < self.repetitions:
             activity_log.log_entry(
                 t=env.now,
-                ActivityID=activity_log.id,
+                activity_id=activity_log.id,
                 ActivityState=core.LogState.START,
             )
             self.sub_process.start()
@@ -72,7 +72,7 @@ class RepeatActivity(GenericActivity):
             self.sub_process.end()
             activity_log.log_entry(
                 t=env.now,
-                ActivityID=activity_log.id,
+                activity_id=activity_log.id,
                 ActivityState=core.LogState.STOP,
             )
             # work around for the event evaluation
@@ -88,6 +88,6 @@ class RepeatActivity(GenericActivity):
 
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.STOP,
         )

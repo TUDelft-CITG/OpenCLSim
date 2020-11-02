@@ -67,7 +67,7 @@ class ShiftAmountActivity(GenericActivity):
         processor,
         amount,
         kept_resource,
-        ActivityID,
+        activity_id,
         id_="default",
         engine_order=1.0,
         verbose=False,
@@ -91,7 +91,7 @@ class ShiftAmountActivity(GenericActivity):
                 yield from self._move_mover(
                     processor,
                     site,
-                    ActivityID=ActivityID,
+                    activity_id=activity_id,
                     engine_order=engine_order,
                     verbose=verbose,
                 )
@@ -175,7 +175,7 @@ class ShiftAmountActivity(GenericActivity):
 
             activity_log.log_entry(
                 t=env.now,
-                ActivityID=activity_log.id,
+                activity_id=activity_log.id,
                 ActivityState=core.LogState.START,
             )
 
@@ -187,7 +187,7 @@ class ShiftAmountActivity(GenericActivity):
                 self.origin.container.get_level(self.id_) + self.amount,
                 self.destination,
                 activity_name=self.name,
-                ActivityID=activity_log.id,
+                activity_id=activity_log.id,
                 duration=self.duration,
                 rate=rate,
                 id_=self.id_,
@@ -200,7 +200,7 @@ class ShiftAmountActivity(GenericActivity):
 
             activity_log.log_entry(
                 t=env.now,
-                ActivityID=activity_log.id,
+                activity_id=activity_log.id,
                 ActivityState=core.LogState.STOP,
             )
 
@@ -227,12 +227,12 @@ class ShiftAmountActivity(GenericActivity):
                 f"Attempting to shift content from an empty origin or to a full self.destination. ({all_amounts})"
             )
 
-    def _move_mover(self, mover, origin, ActivityID, engine_order=1.0, verbose=False):
+    def _move_mover(self, mover, origin, activity_id, engine_order=1.0, verbose=False):
         """Call the mover.move method, giving debug print statements when verbose is True."""
         old_location = mover.geometry
 
-        # Set ActivityID to mover
-        mover.ActivityID = ActivityID
+        # Set activity_id to mover
+        mover.activity_id = activity_id
         yield from mover.move(origin, engine_order=engine_order)
 
         if verbose:
@@ -263,7 +263,7 @@ class ShiftAmountActivity(GenericActivity):
         origin,
         desired_level,
         destination,
-        ActivityID,
+        activity_id,
         activity_name,
         duration=None,
         rate=None,
@@ -272,9 +272,9 @@ class ShiftAmountActivity(GenericActivity):
     ):
         """Call the processor.process method, giving debug print statements when verbose is True."""
         amount = np.abs(origin.container.get_level(id_) - desired_level)
-        # Set ActivityID to processor and mover
-        processor.ActivityID = ActivityID
-        origin.ActivityID = ActivityID
+        # Set activity_id to processor and mover
+        processor.activity_id = activity_id
+        origin.activity_id = activity_id
 
         # Check if loading or unloading
 

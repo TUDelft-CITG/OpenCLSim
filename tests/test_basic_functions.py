@@ -54,7 +54,7 @@ def test_movable(env, geometry_a, locatable_a, locatable_b):
         pass
 
     movable = movable(env=env, geometry=geometry_a, v=10)
-    movable.ActivityID = "Test activity"
+    movable.activity_id = "Test activity"
     env.process(movable.move(locatable_b, activity_name="test"))
     env.run()
     assert movable.geometry.equals(locatable_b.geometry)
@@ -75,7 +75,7 @@ def test_container_dependent_movable(env, geometry_a, locatable_a, locatable_b):
         pass
 
     movable = movable(env=env, geometry=geometry_a, compute_v=compute_v, capacity=10)
-    movable.ActivityID = "Test activity"
+    movable.activity_id = "Test activity"
 
     move_and_test(env, locatable_b, movable, 20, 2.18)
 
@@ -107,7 +107,7 @@ def test_move_to_same_place(env, geometry_a, locatable_a):
         pass
 
     movable = movable(env=env, geometry=geometry_a, v=10)
-    movable.ActivityID = "Test activity"
+    movable.activity_id = "Test activity"
 
     env.process(movable.move(locatable_a, activity_name="test"))
     env.run()
@@ -151,7 +151,7 @@ def test_basic_processor(env, geometry_a):
         env=env, loading_rate=2, unloading_rate=2, geometry=geometry_a
     )
 
-    processor.ActivityID = "Test activity"
+    processor.activity_id = "Test activity"
 
     env.process(processor.process(source, 400, dest))
     env.run()

@@ -43,7 +43,7 @@ class Log(SimpyObject):
     def log_entry(
         self,
         t,
-        ActivityID,
+        activity_id,
         ActivityState=LogState.UNKNOWN,
         message=None,
     ):
@@ -52,7 +52,7 @@ class Log(SimpyObject):
             object_state["message"] = message
 
         self.log["Timestamp"].append(datetime.datetime.utcfromtimestamp(t))
-        self.log["ActivityID"].append(ActivityID)
+        self.log["ActivityID"].append(activity_id)
         self.log["ActivityState"].append(ActivityState.name)
         self.log["ObjectState"].append(object_state)
 

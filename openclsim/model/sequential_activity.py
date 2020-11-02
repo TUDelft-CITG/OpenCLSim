@@ -59,7 +59,7 @@ class SequentialActivity(GenericActivity):
 
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.START,
         )
         for sub_process in self.sub_processes:
@@ -69,7 +69,7 @@ class SequentialActivity(GenericActivity):
                 )
             activity_log.log_entry(
                 t=env.now,
-                ActivityID=activity_log.id,
+                activity_id=activity_log.id,
                 ActivityState=core.LogState.START,
             )
             sub_process.start()
@@ -83,7 +83,7 @@ class SequentialActivity(GenericActivity):
             yield env.timeout(0)
             activity_log.log_entry(
                 t=env.now,
-                ActivityID=activity_log.id,
+                activity_id=activity_log.id,
                 ActivityState=core.LogState.STOP,
             )
 
@@ -93,6 +93,6 @@ class SequentialActivity(GenericActivity):
 
         activity_log.log_entry(
             t=env.now,
-            ActivityID=activity_log.id,
+            activity_id=activity_log.id,
             ActivityState=core.LogState.STOP,
         )
