@@ -60,7 +60,7 @@ class SequentialActivity(GenericActivity):
         activity_log.log_entry(
             t=env.now,
             activity_id=activity_log.id,
-            ActivityState=core.LogState.START,
+            activity_state=core.LogState.START,
         )
         for sub_process in self.sub_processes:
             if not sub_process.postpone_start:
@@ -70,7 +70,7 @@ class SequentialActivity(GenericActivity):
             activity_log.log_entry(
                 t=env.now,
                 activity_id=activity_log.id,
-                ActivityState=core.LogState.START,
+                activity_state=core.LogState.START,
             )
             sub_process.start()
             yield from sub_process.call_main_proc(activity_log=sub_process, env=env)
@@ -84,7 +84,7 @@ class SequentialActivity(GenericActivity):
             activity_log.log_entry(
                 t=env.now,
                 activity_id=activity_log.id,
-                ActivityState=core.LogState.STOP,
+                activity_state=core.LogState.STOP,
             )
 
         args_data["start_preprocessing"] = start_time
@@ -94,5 +94,5 @@ class SequentialActivity(GenericActivity):
         activity_log.log_entry(
             t=env.now,
             activity_id=activity_log.id,
-            ActivityState=core.LogState.STOP,
+            activity_state=core.LogState.STOP,
         )

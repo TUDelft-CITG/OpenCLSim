@@ -73,7 +73,7 @@ class MoveActivity(GenericActivity):
         activity_log.log_entry(
             t=env.now,
             activity_id=activity_log.id,
-            ActivityState=core.LogState.START,
+            activity_state=core.LogState.START,
         )
 
         start_mover = env.now
@@ -102,5 +102,5 @@ class MoveActivity(GenericActivity):
         activity_log.log_entry(
             t=env.now,
             activity_id=activity_log.id,
-            ActivityState=core.LogState.STOP,
+            activity_state=core.LogState.STOP,
         )

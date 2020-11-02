@@ -56,7 +56,7 @@ class Processor(SimpyObject):
             location.log_entry(
                 t=location.env.now,
                 activity_id=self.activity_id,
-                ActivityState=LogState.START,
+                activity_state=LogState.START,
             )
 
         if rate is not None:
@@ -84,7 +84,7 @@ class Processor(SimpyObject):
             location.log_entry(
                 t=location.env.now,
                 activity_id=self.activity_id,
-                ActivityState=LogState.STOP,
+                activity_state=LogState.STOP,
             )
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
@@ -113,13 +113,13 @@ class Processor(SimpyObject):
                     message="waiting origin content",
                     t=start_time,
                     activity_id=self.activity_id,
-                    ActivityState=LogState.WAIT_START,
+                    activity_state=LogState.WAIT_START,
                 )
                 self.log_entry(
                     message="waiting origin content",
                     t=end_time,
                     activity_id=self.activity_id,
-                    ActivityState=LogState.WAIT_STOP,
+                    activity_state=LogState.WAIT_STOP,
                 )
 
         elif activity == "put":
@@ -135,13 +135,13 @@ class Processor(SimpyObject):
                     message="waiting destination content",
                     t=start_time,
                     activity_id=self.activity_id,
-                    ActivityState=LogState.START,
+                    activity_state=LogState.START,
                 )
                 self.log_entry(
                     message="waiting destination content",
                     t=end_time,
                     activity_id=self.activity_id,
-                    ActivityState=LogState.STOP,
+                    activity_state=LogState.STOP,
                 )
 
     def determine_processor_amount(

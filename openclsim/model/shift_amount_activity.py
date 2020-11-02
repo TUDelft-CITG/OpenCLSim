@@ -176,7 +176,7 @@ class ShiftAmountActivity(GenericActivity):
             activity_log.log_entry(
                 t=env.now,
                 activity_id=activity_log.id,
-                ActivityState=core.LogState.START,
+                activity_state=core.LogState.START,
             )
 
             start_shift = env.now
@@ -201,7 +201,7 @@ class ShiftAmountActivity(GenericActivity):
             activity_log.log_entry(
                 t=env.now,
                 activity_id=activity_log.id,
-                ActivityState=core.LogState.STOP,
+                activity_state=core.LogState.STOP,
             )
 
             # release the unloader, self.destination and mover requests

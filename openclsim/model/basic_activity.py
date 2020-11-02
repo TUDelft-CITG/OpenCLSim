@@ -67,7 +67,7 @@ class BasicActivity(GenericActivity):
         activity_log.log_entry(
             t=env.now,
             activity_id=activity_log.id,
-            ActivityState=core.LogState.START,
+            activity_state=core.LogState.START,
         )
 
         if isinstance(self.additional_logs, list) and len(self.additional_logs) > 0:
@@ -75,7 +75,7 @@ class BasicActivity(GenericActivity):
                 log_item.log_entry(
                     t=env.now,
                     activity_id=activity_log.id,
-                    ActivityState=core.LogState.START,
+                    activity_state=core.LogState.START,
                 )
 
         yield env.timeout(self.duration)
@@ -85,14 +85,14 @@ class BasicActivity(GenericActivity):
         yield from self.post_process(**args_data)
 
         activity_log.log_entry(
-            t=env.now, activity_id=activity_log.id, ActivityState=core.LogState.STOP
+            t=env.now, activity_id=activity_log.id, activity_state=core.LogState.STOP
         )
         if isinstance(self.additional_logs, list) and len(self.additional_logs) > 0:
             for log_item in self.additional_logs:
                 log_item.log_entry(
                     t=env.now,
                     activity_id=activity_log.id,
-                    ActivityState=core.LogState.STOP,
+                    activity_state=core.LogState.STOP,
                 )
 
         # work around for the event evaluation
