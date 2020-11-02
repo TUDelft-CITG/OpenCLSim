@@ -60,8 +60,11 @@ class HasMultiContainer(HasContainer):
 
         state.update(
             {
-                f"container level {container}": self.container.get_level(id_=container)
-                for container in self.container.container_list
+                "container level": {
+                    container: self.container.get_level(id_=container)
+                    for container in self.container.container_list
+                }
             }
         )
+
         return state

@@ -116,27 +116,19 @@ def test_mulitcontainer():
         "ObjectState": [
             {
                 "geometry": (4.18055556, 52.18664444),
-                "container level": 0,
-                "container level MP": 0,
-                "container level TP": 0,
+                "container level": {"TP": 0, "MP": 0},
             },
             {
                 "geometry": (4.18055556, 52.18664444),
-                "container level": 0,
-                "container level MP": 0,
-                "container level TP": 0,
+                "container level": {"TP": 0, "MP": 0},
             },
             {
                 "geometry": (4.18055556, 52.18664444),
-                "container level": 0,
-                "container level TP": 0,
-                "container level MP": 1,
+                "container level": {"TP": 0, "MP": 1},
             },
             {
                 "geometry": (4.18055556, 52.18664444),
-                "container level": 0,
-                "container level TP": 0,
-                "container level MP": 1,
+                "container level": {"TP": 0, "MP": 1},
             },
         ],
     }
@@ -164,15 +156,11 @@ def test_mulitcontainer():
         "ActivityState": ["START", "STOP"],
         "ObjectState": [
             {
-                "container level": 0,
-                "container level MP": 2,
-                "container level TP": 0,
+                "container level": {"TP": 0, "MP": 2},
                 "geometry": (4.18055556, 52.18664444),
             },
             {
-                "container level": 0,
-                "container level TP": 0,
-                "container level MP": 1,
+                "container level": {"TP": 0, "MP": 1},
                 "geometry": (4.18055556, 52.18664444),
             },
         ],
