@@ -65,17 +65,8 @@ def test_sequence():
     }
     activity = model.SequentialActivity(**sequential_activity_data)
     my_env.run()
+
     benchmark = {
-        "Message": [
-            "sequential Sequential process",
-            "sub process Basic activity1",
-            "sub process Basic activity1",
-            "sub process Basic activity2",
-            "sub process Basic activity2",
-            "sub process Basic activity3",
-            "sub process Basic activity3",
-            "sequential Sequential process",
-        ],
         "Timestamp": [
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 0),
@@ -86,8 +77,6 @@ def test_sequence():
             datetime.datetime(1970, 1, 1, 0, 3, 59),
             datetime.datetime(1970, 1, 1, 0, 3, 59),
         ],
-        "Value": [-1, -1, -1, -1, -1, -1, -1, -1],
-        "Geometry": [None, None, None, None, None, None, None, None],
         "ActivityID": [
             "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
             "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
@@ -108,6 +97,8 @@ def test_sequence():
             "STOP",
             "STOP",
         ],
+        "ObjectState": [{}, {}, {}, {}, {}, {}, {}, {}],
     }
 
+    assert my_env.now == 239
     assert activity.log == benchmark

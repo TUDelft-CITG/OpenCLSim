@@ -1,5 +1,4 @@
 """Test package."""
-
 import datetime
 
 import simpy
@@ -122,24 +121,6 @@ def test_complex_synchronization():
     my_env.run()
 
     benchmark = {
-        "Message": [
-            "Reporting activity",
-            "A Basic activity1",
-            "B Basic activity1",
-            "Reporting activity",
-            "B Basic activity1",
-            "B Basic activity2",
-            "A Basic activity1",
-            "A Basic activity2",
-            "A Basic activity2",
-            "A Basic activity3",
-            "B Basic activity2",
-            "A Basic activity3",
-            "A Basic activity3",
-            "B Basic activity3",
-            "B Basic activity3",
-            "A Basic activity3",
-        ],
         "Timestamp": [
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 0),
@@ -157,25 +138,6 @@ def test_complex_synchronization():
             datetime.datetime(1970, 1, 1, 0, 8, 21),
             datetime.datetime(1970, 1, 1, 0, 10, 21),
             datetime.datetime(1970, 1, 1, 0, 12, 1),
-        ],
-        "Value": [0, 14, 1, 0, 1, 500, 14, 10, 10, -1, 500, -1, 220, 120, 120, 220],
-        "Geometry": [
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
         ],
         "ActivityID": [
             "6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
@@ -213,5 +175,8 @@ def test_complex_synchronization():
             "STOP",
             "STOP",
         ],
+        "ObjectState": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
     }
+
+    assert my_env.now == 721
     assert reporting_activity.log == benchmark

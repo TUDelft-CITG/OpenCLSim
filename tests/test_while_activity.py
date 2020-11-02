@@ -1,4 +1,5 @@
 """Test package."""
+
 import datetime
 
 import simpy
@@ -37,23 +38,6 @@ def test_while_activity():
     my_env.run(until=50)
 
     benchmark = {
-        "Message": [
-            "conditional process while",
-            "sub process Basic activity",
-            "Basic activity",
-            "Basic activity",
-            "sub process Basic activity",
-            "sub process Basic activity",
-            "Basic activity",
-            "Basic activity",
-            "sub process Basic activity",
-            "sub process Basic activity",
-            "Basic activity",
-            "Basic activity",
-            "sub process Basic activity",
-            "sub process Basic activity",
-            "Basic activity",
-        ],
         "Timestamp": [
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 0),
@@ -70,24 +54,6 @@ def test_while_activity():
             datetime.datetime(1970, 1, 1, 0, 0, 42),
             datetime.datetime(1970, 1, 1, 0, 0, 42),
             datetime.datetime(1970, 1, 1, 0, 0, 42),
-        ],
-        "Value": [-1, -1, 14, 14, -1, -1, 14, 14, -1, -1, 14, 14, -1, -1, 14],
-        "Geometry": [
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
         ],
         "ActivityID": [
             "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
@@ -123,6 +89,8 @@ def test_while_activity():
             "START",
             "START",
         ],
+        "ObjectState": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
     }
 
+    assert my_env.now == 50
     assert while_activity.log == benchmark

@@ -51,20 +51,12 @@ class Processor(SimpyObject):
         assert self.is_at(origin)
         assert destination.is_at(origin)
 
-        processor_name = getattr(self, "name", "undefined")
-        origin_name = getattr(origin, "name", "undefined")
-        destination_name = getattr(destination, "name", "undefined")
-        message = f"Shift amount activity {activity_name} transfer {id_} from {origin_name} to {destination_name} with {processor_name}"
-
         # Log the process for all parts
         for location in [origin, destination]:
             location.log_entry(
-                log=message,
                 t=location.env.now,
-                value=amount,
-                geometry_log=location.geometry,
-                ActivityID=self.ActivityID,
-                ActivityState=LogState.START,
+                activity_id=self.activity_id,
+                activity_state=LogState.START,
             )
 
         if rate is not None:
@@ -75,11 +67,8 @@ class Processor(SimpyObject):
 
         # Checkout single event
         self.log_entry(
-            message,
             self.env.now,
-            amount,
-            self.geometry,
-            self.ActivityID,
+            self.activity_id,
             LogState.START,
         )
 
@@ -88,19 +77,14 @@ class Processor(SimpyObject):
         # Put the amount in the destination
         yield from self.check_possible_shift(origin, destination, amount, "put", id_)
 
-        self.log_entry(
-            message, self.env.now, amount, self.geometry, self.ActivityID, LogState.STOP
-        )
+        self.log_entry(self.env.now, self.activity_id, LogState.STOP)
 
         # Log the process for all parts
         for location in [origin, destination]:
             location.log_entry(
-                log=message,
                 t=location.env.now,
-                value=amount,
-                geometry_log=location.geometry,
-                ActivityID=self.ActivityID,
-                ActivityState=LogState.STOP,
+                activity_id=self.activity_id,
+                activity_state=LogState.STOP,
             )
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
@@ -126,20 +110,16 @@ class Processor(SimpyObject):
             # If the amount is not available in the origin, log waiting
             if start_time != end_time:
                 self.log_entry(
-                    log="waiting origin content",
+                    message="waiting origin content",
                     t=start_time,
-                    value=amount,
-                    geometry_log=self.geometry,
-                    ActivityID=self.ActivityID,
-                    ActivityState=LogState.START,
+                    activity_id=self.activity_id,
+                    activity_state=LogState.WAIT_START,
                 )
                 self.log_entry(
-                    log="waiting origin content",
+                    message="waiting origin content",
                     t=end_time,
-                    value=amount,
-                    geometry_log=self.geometry,
-                    ActivityID=self.ActivityID,
-                    ActivityState=LogState.STOP,
+                    activity_id=self.activity_id,
+                    activity_state=LogState.WAIT_STOP,
                 )
 
         elif activity == "put":
@@ -152,20 +132,16 @@ class Processor(SimpyObject):
             # If the amount is cannot be put in the destination, log waiting
             if start_time != end_time:
                 self.log_entry(
-                    log="waiting destination content",
+                    message="waiting destination content",
                     t=start_time,
-                    value=amount,
-                    geometry_log=self.geometry,
-                    ActivityID=self.ActivityID,
-                    ActivityState=LogState.START,
+                    activity_id=self.activity_id,
+                    activity_state=LogState.START,
                 )
                 self.log_entry(
-                    log="waiting destination content",
+                    message="waiting destination content",
                     t=end_time,
-                    value=amount,
-                    geometry_log=self.geometry,
-                    ActivityID=self.ActivityID,
-                    ActivityState=LogState.STOP,
+                    activity_id=self.activity_id,
+                    activity_state=LogState.STOP,
                 )
 
     def determine_processor_amount(

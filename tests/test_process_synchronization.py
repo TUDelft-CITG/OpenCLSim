@@ -6,6 +6,8 @@ import simpy
 
 import openclsim.model as model
 
+from .test_utils import parse_log
+
 
 def test_process_synchronization():
     """Test process synchronization."""
@@ -47,16 +49,6 @@ def test_process_synchronization():
     my_env.run()
 
     benchmark = {
-        "Message": [
-            "Reporting activity",
-            "Activity1",
-            "Activity2",
-            "Reporting activity",
-            "Activity1",
-            "Activity2",
-            "Activity2",
-            "Activity2",
-        ],
         "Timestamp": [
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 0),
@@ -67,8 +59,6 @@ def test_process_synchronization():
             datetime.datetime(1970, 1, 1, 0, 0, 14),
             datetime.datetime(1970, 1, 1, 0, 0, 44),
         ],
-        "Value": [0, 14, -1, 0, 14, -1, 30, 30],
-        "Geometry": [None, None, None, None, None, None, None, None],
         "ActivityID": [
             "6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
             "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
@@ -89,6 +79,8 @@ def test_process_synchronization():
             "START",
             "STOP",
         ],
+        "ObjectState": [{}, {}, {}, {}, {}, {}, {}, {}],
     }
 
-    assert reporting_activity.log == benchmark
+    assert parse_log(reporting_activity.log) == benchmark
+    assert my_env.now == 44

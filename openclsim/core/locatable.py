@@ -28,3 +28,11 @@ class Locatable:
         )
 
         return distance < tolerance
+
+    def get_state(self):
+        state = {}
+        if hasattr(super(), "get_state"):
+            state = super().get_state()
+
+        state.update({"geometry": self.geometry})
+        return state

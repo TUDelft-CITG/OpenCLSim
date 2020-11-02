@@ -38,22 +38,6 @@ def test_repeat_activity():
     my_env.run()
 
     benchmark = {
-        "Message": [
-            "repeat process repeat",
-            "sub process Basic activity",
-            "Basic activity",
-            "Basic activity",
-            "sub process Basic activity",
-            "sub process Basic activity",
-            "Basic activity",
-            "Basic activity",
-            "sub process Basic activity",
-            "sub process Basic activity",
-            "Basic activity",
-            "Basic activity",
-            "sub process Basic activity",
-            "repeat process repeat",
-        ],
         "Timestamp": [
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 0),
@@ -69,23 +53,6 @@ def test_repeat_activity():
             datetime.datetime(1970, 1, 1, 0, 0, 42),
             datetime.datetime(1970, 1, 1, 0, 0, 42),
             datetime.datetime(1970, 1, 1, 0, 0, 42),
-        ],
-        "Value": [-1, -1, 14, 14, -1, -1, 14, 14, -1, -1, 14, 14, -1, -1],
-        "Geometry": [
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
         ],
         "ActivityID": [
             "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
@@ -119,6 +86,8 @@ def test_repeat_activity():
             "STOP",
             "STOP",
         ],
+        "ObjectState": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
     }
 
+    assert my_env.now == 42
     assert repeat_activity.log == benchmark

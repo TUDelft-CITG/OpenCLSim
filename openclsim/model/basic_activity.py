@@ -16,12 +16,14 @@ class BasicActivity(GenericActivity):
                  by default will be to start immediately
     """
 
-    def __init__(self, duration, additional_logs=[], show=False, *args, **kwargs):
+    def __init__(self, duration, additional_logs=None, show=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
         self.print = show
         self.duration = duration
+        if additional_logs is None:
+            additional_logs = []
         self.additional_logs = additional_logs
         if not self.postpone_start:
             self.start()
@@ -63,23 +65,17 @@ class BasicActivity(GenericActivity):
         start_basic = env.now
 
         activity_log.log_entry(
-            self.name,
-            env.now,
-            self.duration,
-            None,
-            activity_log.id,
-            core.LogState.START,
+            t=env.now,
+            activity_id=activity_log.id,
+            activity_state=core.LogState.START,
         )
 
         if isinstance(self.additional_logs, list) and len(self.additional_logs) > 0:
             for log_item in self.additional_logs:
                 log_item.log_entry(
-                    self.name,
-                    env.now,
-                    self.duration,
-                    None,
-                    activity_log.id,
-                    core.LogState.START,
+                    t=env.now,
+                    activity_id=activity_log.id,
+                    activity_state=core.LogState.START,
                 )
 
         yield env.timeout(self.duration)
@@ -89,17 +85,14 @@ class BasicActivity(GenericActivity):
         yield from self.post_process(**args_data)
 
         activity_log.log_entry(
-            self.name, env.now, self.duration, None, activity_log.id, core.LogState.STOP
+            t=env.now, activity_id=activity_log.id, activity_state=core.LogState.STOP
         )
         if isinstance(self.additional_logs, list) and len(self.additional_logs) > 0:
             for log_item in self.additional_logs:
                 log_item.log_entry(
-                    self.name,
-                    env.now,
-                    self.duration,
-                    None,
-                    activity_log.id,
-                    core.LogState.STOP,
+                    t=env.now,
+                    activity_id=activity_log.id,
+                    activity_state=core.LogState.STOP,
                 )
 
         # work around for the event evaluation

@@ -86,39 +86,34 @@ def test_move_activity():
 
     my_env.run()
 
-    hopper_benchmark = {
-        "Message": [
-            "move activity Soil movement of Hopper 01 to Dumplocatie",
-            "move activity Soil movement of Hopper 01 to Dumplocatie",
-        ],
-        "Timestamp": [
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 15, 42, 824591),
-        ],
-        "Value": [0.0, 0.0],
-        "Geometry": [(4.18055556, 52.18664444), (4.25222222, 52.11428333)],
-        "ActivityID": [
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
-        ],
-        "ActivityState": ["START", "STOP"],
-    }
     activity_benchmark = {
-        "Message": [
-            "move activity Soil movement of Hopper 01 to Dumplocatie",
-            "move activity Soil movement of Hopper 01 to Dumplocatie",
-        ],
         "Timestamp": [
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 15, 42, 824591),
         ],
-        "Value": [-1, -1],
-        "Geometry": [(4.18055556, 52.18664444), (4.25222222, 52.11428333)],
         "ActivityID": [
             "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
             "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
         ],
         "ActivityState": ["START", "STOP"],
+        "ObjectState": [{}, {}],
     }
-    assert parse_log(hopper.log) == hopper_benchmark
+    hopper_benchmark = {
+        "Timestamp": [
+            datetime.datetime(1970, 1, 1, 0, 0),
+            datetime.datetime(1970, 1, 1, 0, 15, 42, 824591),
+        ],
+        "ActivityID": [
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+        ],
+        "ActivityState": ["START", "STOP"],
+        "ObjectState": [
+            {"geometry": (4.18055556, 52.18664444), "container level": 0.0},
+            {"geometry": (4.25222222, 52.11428333), "container level": 0.0},
+        ],
+    }
+
+    assert my_env.now == 942.8245912734186
     assert parse_log(activity.log) == activity_benchmark
+    assert parse_log(hopper.log) == hopper_benchmark

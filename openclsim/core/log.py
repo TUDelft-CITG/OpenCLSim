@@ -1,9 +1,6 @@
 """Component to log the simulation objecs."""
 import datetime
-import time
 from enum import Enum
-
-import shapely.geometry
 
 from .simpy_object import SimpyObject
 
@@ -37,45 +34,31 @@ class Log(SimpyObject):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.log = {
-            "Message": [],
             "Timestamp": [],
-            "Value": [],
-            "Geometry": [],
             "ActivityID": [],
             "ActivityState": [],
+            "ObjectState": [],
         }
 
     def log_entry(
-        self, log, t, value, geometry_log, ActivityID, ActivityState=LogState.UNKNOWN
+        self,
+        t,
+        activity_id,
+        activity_state=LogState.UNKNOWN,
+        message=None,
     ):
-        self.log["Message"].append(log)
-        self.log["Timestamp"].append(datetime.datetime.fromtimestamp(t))
-        self.log["Value"].append(value)
-        self.log["Geometry"].append(geometry_log)
-        self.log["ActivityID"].append(ActivityID)
-        self.log["ActivityState"].append(ActivityState.name)
+        object_state = self.get_state()
+        if message:
+            object_state["message"] = message
 
-    def get_log_as_json(self):
-        json = []
-        for msg, t, value, geometry_log, act_state in zip(
-            self.log["Message"],
-            self.log["Timestamp"],
-            self.log["Value"],
-            self.log["Geometry"],
-            self.log["ActivityState"],
-        ):
-            json.append(
-                dict(
-                    type="Feature",
-                    geometry=shapely.geometry.mapping(geometry_log)
-                    if geometry_log is not None
-                    else "None",
-                    properties=dict(
-                        message=msg,
-                        time=time.mktime(t.timetuple()),
-                        value=value,
-                        state=act_state,
-                    ),
-                )
-            )
-        return json
+        self.log["Timestamp"].append(datetime.datetime.utcfromtimestamp(t))
+        self.log["ActivityID"].append(activity_id)
+        self.log["ActivityState"].append(activity_state.name)
+        self.log["ObjectState"].append(object_state)
+
+    def get_state(self):
+        """Add an empty instance of the get state function so that it is always available."""
+        state = {}
+        if hasattr(super(), "get_state"):
+            state = super().get_state()
+        return state

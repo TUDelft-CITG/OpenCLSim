@@ -4,7 +4,10 @@
 def parse_log(log):
     """Parse the log into benchmarkable data."""
     new_log = log.copy()
-    new_log["Geometry"] = [
-        (L.x, L.y) if L is not None else None for L in log["Geometry"]
-    ]
+
+    for state in new_log["ObjectState"]:
+        if "geometry" in state.keys():
+            x, y = state["geometry"].xy
+            state["geometry"] = x[0], y[0]
+
     return new_log

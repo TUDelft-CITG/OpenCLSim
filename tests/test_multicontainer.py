@@ -1,4 +1,5 @@
 """Test package."""
+
 import datetime
 
 import shapely.geometry
@@ -98,30 +99,12 @@ def test_mulitcontainer():
 
     my_env.run()
 
-    assert hopper.container.get_level(id_="MP") == 1
-    assert hopper.container.get_level(id_="TP") == 0
-    assert from_site.container.get_level(id_="TP") == 0
-    assert from_site.container.get_level(id_="MP") == 1
-
     hopper_benchmark = {
-        "Message": [
-            "Shift amount activity Transfer MP transfer MP from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer MP transfer MP from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer MP transfer MP from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer MP transfer MP from Winlocatie to Hopper 01 with Hopper 01",
-        ],
         "Timestamp": [
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 0, 20),
             datetime.datetime(1970, 1, 1, 0, 0, 20),
-        ],
-        "Value": [1, 1, 1, 1],
-        "Geometry": [
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
         ],
         "ActivityID": [
             "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
@@ -130,39 +113,65 @@ def test_mulitcontainer():
             "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
         ],
         "ActivityState": ["START", "START", "STOP", "STOP"],
-    }
-    site_benchmark = {
-        "Message": [
-            "Shift amount activity Transfer MP transfer MP from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer MP transfer MP from Winlocatie to Hopper 01 with Hopper 01",
+        "ObjectState": [
+            {
+                "geometry": (4.18055556, 52.18664444),
+                "container level": {"TP": 0, "MP": 0},
+            },
+            {
+                "geometry": (4.18055556, 52.18664444),
+                "container level": {"TP": 0, "MP": 0},
+            },
+            {
+                "geometry": (4.18055556, 52.18664444),
+                "container level": {"TP": 0, "MP": 1},
+            },
+            {
+                "geometry": (4.18055556, 52.18664444),
+                "container level": {"TP": 0, "MP": 1},
+            },
         ],
-        "Timestamp": [
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0, 20),
-        ],
-        "Value": [1, 1],
-        "Geometry": [(4.18055556, 52.18664444), (4.18055556, 52.18664444)],
-        "ActivityID": [
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
-        ],
-        "ActivityState": ["START", "STOP"],
     }
     activity_benchmark = {
-        "Message": ["Transfer MP", "Transfer MP"],
         "Timestamp": [
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 0, 20),
         ],
-        "Value": [1, 1],
-        "Geometry": [None, None],
         "ActivityID": [
             "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
             "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
         ],
         "ActivityState": ["START", "STOP"],
+        "ObjectState": [{}, {}],
+    }
+    site_benchmark = {
+        "Timestamp": [
+            datetime.datetime(1970, 1, 1, 0, 0),
+            datetime.datetime(1970, 1, 1, 0, 0, 20),
+        ],
+        "ActivityID": [
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+        ],
+        "ActivityState": ["START", "STOP"],
+        "ObjectState": [
+            {
+                "container level": {"TP": 0, "MP": 2},
+                "geometry": (4.18055556, 52.18664444),
+            },
+            {
+                "container level": {"TP": 0, "MP": 1},
+                "geometry": (4.18055556, 52.18664444),
+            },
+        ],
     }
 
+    assert my_env.now == 20
+    assert hopper.container.get_level(id_="MP") == 1
+    assert hopper.container.get_level(id_="TP") == 0
+    assert from_site.container.get_level(id_="TP") == 0
+    assert from_site.container.get_level(id_="MP") == 1
+
     assert parse_log(hopper.log) == hopper_benchmark
-    assert parse_log(from_site.log) == site_benchmark
     assert parse_log(activity.log) == activity_benchmark
+    assert parse_log(from_site.log) == site_benchmark

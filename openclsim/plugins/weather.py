@@ -98,7 +98,7 @@ class WeatherPluginActivity(model.AbstractPluginClass):
                 waiting = determined_range[0] - t
                 return activity.delay_processing(env, message, activity_log, waiting)
             else:
-                return activity.delay_processing(env, message, activity_log, 0)
+                return {}
         else:
             return {}
 

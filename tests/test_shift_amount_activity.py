@@ -1,4 +1,5 @@
 """Test package."""
+
 import datetime
 
 import shapely.geometry
@@ -86,55 +87,24 @@ def test_shift_amount():
     my_env.run()
 
     activity_benchmark = {
-        "Message": ["Transfer MP", "Transfer MP"],
         "Timestamp": [
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 0, 10),
         ],
-        "Value": [2, 2],
-        "Geometry": [None, None],
         "ActivityID": [
             "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
             "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
         ],
         "ActivityState": ["START", "STOP"],
+        "ObjectState": [{}, {}],
     }
-    site_benchmark = {
-        "Message": [
-            "Shift amount activity Transfer MP transfer default from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer MP transfer default from Winlocatie to Hopper 01 with Hopper 01",
-        ],
-        "Timestamp": [
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0, 10),
-        ],
-        "Value": [2, 2],
-        "Geometry": [(4.18055556, 52.18664444), (4.18055556, 52.18664444)],
-        "ActivityID": [
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
-        ],
-        "ActivityState": ["START", "STOP"],
-    }
+
     hopper_benchmark = {
-        "Message": [
-            "Shift amount activity Transfer MP transfer default from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer MP transfer default from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer MP transfer default from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer MP transfer default from Winlocatie to Hopper 01 with Hopper 01",
-        ],
         "Timestamp": [
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 0, 10),
             datetime.datetime(1970, 1, 1, 0, 0, 10),
-        ],
-        "Value": [2, 2, 2, 2],
-        "Geometry": [
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
         ],
         "ActivityID": [
             "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
@@ -143,8 +113,31 @@ def test_shift_amount():
             "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
         ],
         "ActivityState": ["START", "START", "STOP", "STOP"],
+        "ObjectState": [
+            {"geometry": (4.18055556, 52.18664444), "container level": 0.0},
+            {"geometry": (4.18055556, 52.18664444), "container level": 0.0},
+            {"geometry": (4.18055556, 52.18664444), "container level": 2.0},
+            {"geometry": (4.18055556, 52.18664444), "container level": 2.0},
+        ],
     }
 
-    assert parse_log(activity.log) == activity_benchmark
-    assert parse_log(hopper.log) == hopper_benchmark
+    site_benchmark = {
+        "Timestamp": [
+            datetime.datetime(1970, 1, 1, 0, 0),
+            datetime.datetime(1970, 1, 1, 0, 0, 10),
+        ],
+        "ActivityID": [
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+        ],
+        "ActivityState": ["START", "STOP"],
+        "ObjectState": [
+            {"container level": 2, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 0, "geometry": (4.18055556, 52.18664444)},
+        ],
+    }
+
+    assert my_env.now == 10
     assert parse_log(from_site.log) == site_benchmark
+    assert parse_log(hopper.log) == hopper_benchmark
+    assert parse_log(activity.log) == activity_benchmark

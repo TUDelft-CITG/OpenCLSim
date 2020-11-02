@@ -58,12 +58,9 @@ class SequentialActivity(GenericActivity):
         start_sequence = env.now
 
         activity_log.log_entry(
-            f"sequential {self.name}",
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.START,
+            t=env.now,
+            activity_id=activity_log.id,
+            activity_state=core.LogState.START,
         )
         for sub_process in self.sub_processes:
             if not sub_process.postpone_start:
@@ -71,12 +68,9 @@ class SequentialActivity(GenericActivity):
                     f"SequentialActivity requires all sub processes to have a postponed start. {sub_process.name} does not have attribute postpone_start."
                 )
             activity_log.log_entry(
-                f"sub process {sub_process.name}",
-                env.now,
-                -1,
-                None,
-                activity_log.id,
-                core.LogState.START,
+                t=env.now,
+                activity_id=activity_log.id,
+                activity_state=core.LogState.START,
             )
             sub_process.start()
             yield from sub_process.call_main_proc(activity_log=sub_process, env=env)
@@ -88,12 +82,9 @@ class SequentialActivity(GenericActivity):
             # maybe there is a better way of doing it, but his option works for now.
             yield env.timeout(0)
             activity_log.log_entry(
-                f"sub process {sub_process.name}",
-                env.now,
-                -1,
-                None,
-                activity_log.id,
-                core.LogState.STOP,
+                t=env.now,
+                activity_id=activity_log.id,
+                activity_state=core.LogState.STOP,
             )
 
         args_data["start_preprocessing"] = start_time
@@ -101,10 +92,7 @@ class SequentialActivity(GenericActivity):
         yield from self.post_process(**args_data)
 
         activity_log.log_entry(
-            f"sequential {self.name}",
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.STOP,
+            t=env.now,
+            activity_id=activity_log.id,
+            activity_state=core.LogState.STOP,
         )

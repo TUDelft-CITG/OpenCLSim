@@ -68,8 +68,8 @@ class WhileActivity(GenericActivity):
 
         start_while = env.now
 
-        if activity_log.log["Message"]:
-            if activity_log.log["Message"][
+        if activity_log.log["Timestamp"]:
+            if activity_log.log["Timestamp"][
                 -1
             ] == "delayed activity started" and hasattr(condition_event, "__call__"):
                 condition_event = condition_event()
@@ -80,23 +80,17 @@ class WhileActivity(GenericActivity):
             condition_event = env.any_of(events=[event() for event in condition_event])
 
         activity_log.log_entry(
-            f"conditional process {self.name}",
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.START,
+            t=env.now,
+            activity_id=activity_log.id,
+            activity_state=core.LogState.START,
         )
         ii = 0
         while (not condition_event.processed) and ii < self.max_iterations:
             # for sub_process_ in (proc for proc in [self.sub_process]):
             activity_log.log_entry(
-                f"sub process {self.sub_process.name}",
-                env.now,
-                -1,
-                None,
-                activity_log.id,
-                core.LogState.START,
+                t=env.now,
+                activity_id=activity_log.id,
+                activity_state=core.LogState.START,
             )
             self.sub_process.start()
             yield from self.sub_process.call_main_proc(
@@ -104,12 +98,9 @@ class WhileActivity(GenericActivity):
             )
             self.sub_process.end()
             activity_log.log_entry(
-                f"sub process {self.sub_process.name}",
-                env.now,
-                -1,
-                None,
-                activity_log.id,
-                core.LogState.STOP,
+                t=env.now,
+                activity_id=activity_log.id,
+                activity_state=core.LogState.STOP,
             )
             # work around for the event evaluation
             # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
@@ -123,10 +114,7 @@ class WhileActivity(GenericActivity):
         yield from self.post_process(**args_data)
 
         activity_log.log_entry(
-            f"conditional process {self.name}",
-            env.now,
-            -1,
-            None,
-            activity_log.id,
-            core.LogState.STOP,
+            t=env.now,
+            activity_id=activity_log.id,
+            activity_state=core.LogState.STOP,
         )

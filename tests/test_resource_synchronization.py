@@ -1,4 +1,5 @@
 """Test package."""
+
 import datetime
 
 import shapely.geometry
@@ -180,27 +181,7 @@ def test_test_resource_synchronization():
     }
     model.WhileActivity(**while_data2)
 
-    my_env.run()
-
     benchmark = {
-        "Message": [
-            "Shift amount activity Transfer1 transfer default from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer1 transfer default from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer2 transfer default from Winlocatie to Hopper 02 with Hopper 02",
-            "Shift amount activity Transfer2 transfer default from Winlocatie to Hopper 02 with Hopper 02",
-            "Shift amount activity Transfer1 transfer default from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer1 transfer default from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer2 transfer default from Winlocatie to Hopper 02 with Hopper 02",
-            "Shift amount activity Transfer2 transfer default from Winlocatie to Hopper 02 with Hopper 02",
-            "Shift amount activity Transfer1 transfer default from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer1 transfer default from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer2 transfer default from Winlocatie to Hopper 02 with Hopper 02",
-            "Shift amount activity Transfer2 transfer default from Winlocatie to Hopper 02 with Hopper 02",
-            "Shift amount activity Transfer1 transfer default from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer1 transfer default from Winlocatie to Hopper 01 with Hopper 01",
-            "Shift amount activity Transfer2 transfer default from Winlocatie to Hopper 02 with Hopper 02",
-            "Shift amount activity Transfer2 transfer default from Winlocatie to Hopper 02 with Hopper 02",
-        ],
         "Timestamp": [
             datetime.datetime(1970, 1, 1, 0, 0),
             datetime.datetime(1970, 1, 1, 0, 0, 20),
@@ -218,25 +199,6 @@ def test_test_resource_synchronization():
             datetime.datetime(1970, 1, 1, 0, 2, 20),
             datetime.datetime(1970, 1, 1, 0, 2, 20),
             datetime.datetime(1970, 1, 1, 0, 2, 40),
-        ],
-        "Value": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.0, 1.0, 1.0, 1.0],
-        "Geometry": [
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
-            (4.18055556, 52.18664444),
         ],
         "ActivityID": [
             "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
@@ -274,6 +236,27 @@ def test_test_resource_synchronization():
             "START",
             "STOP",
         ],
+        "ObjectState": [
+            {"container level": 8, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 7, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 7, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 6, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 6, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 5, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 5, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 4, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 4, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 3, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 3, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 2, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 2, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 1.0, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 1.0, "geometry": (4.18055556, 52.18664444)},
+            {"container level": 0.0, "geometry": (4.18055556, 52.18664444)},
+        ],
     }
 
+    my_env.run()
+
+    assert my_env.now == 160
     assert parse_log(from_site.log) == benchmark

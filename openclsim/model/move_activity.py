@@ -71,16 +71,13 @@ class MoveActivity(GenericActivity):
         yield from self.pre_process(args_data)
 
         activity_log.log_entry(
-            message,
-            env.now,
-            -1,
-            self.mover.geometry,
-            activity_log.id,
-            core.LogState.START,
+            t=env.now,
+            activity_id=activity_log.id,
+            activity_state=core.LogState.START,
         )
 
         start_mover = env.now
-        self.mover.ActivityID = activity_log.id
+        self.mover.activity_id = activity_log.id
         yield from self.mover.move(
             destination=self.destination,
             engine_order=1,
@@ -103,10 +100,7 @@ class MoveActivity(GenericActivity):
         yield env.timeout(0)
 
         activity_log.log_entry(
-            message,
-            env.now,
-            -1,
-            self.mover.geometry,
-            activity_log.id,
-            core.LogState.STOP,
+            t=env.now,
+            activity_id=activity_log.id,
+            activity_state=core.LogState.STOP,
         )

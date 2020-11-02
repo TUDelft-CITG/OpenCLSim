@@ -1,3 +1,7 @@
+# results (created by tests)
+simulations
+static/simulations/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
