@@ -14,7 +14,7 @@ def get_step_chart(simulation_objects):
         container_list = obj.container.container_list
         for container in container_list:
             if container == "default":
-                y = list(df[f"container level"])
+                y = list(df["container level"])
             else:
                 y = [y[container] for y in list(df["container level"])]
 
