@@ -5,3 +5,4 @@ shapely
 pyproj
 nose
 plotly
+matplotlib
