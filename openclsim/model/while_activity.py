@@ -54,14 +54,12 @@ class WhileActivity(GenericActivity):
                     the sub_processes will be executed sequentially, in the order in which they are given as long
                     as the stop_event has not occurred.
         """
-        message = f"While activity {self.name}"
         condition_event = self.parse_expression(self.condition_event)
 
         start_time = env.now
         args_data = {
             "env": env,
             "activity_log": activity_log,
-            "message": message,
             "activity": self,
         }
         yield from self.pre_process(args_data)

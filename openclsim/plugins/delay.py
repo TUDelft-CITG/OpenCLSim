@@ -24,12 +24,14 @@ class DelayPlugin(model.AbstractPluginClass):
         )
 
     def post_process(
-        self, env, activity_log, message, activity, start_activity, *args, **kwargs
+        self, env, activity_log, activity, start_activity, *args, **kwargs
     ):
         if self.delay_factor is None:
             return {}
 
         activity_delay = (env.now - start_activity) * self.delay_factor
-        new_message = f"delay and downtime {message}"
+        activity_label = {"type": "plugin", "ref": "delay"}
 
-        return activity.delay_processing(env, new_message, activity_log, activity_delay)
+        return activity.delay_processing(
+            env, activity_label, activity_log, activity_delay
+        )

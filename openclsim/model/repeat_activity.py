@@ -40,13 +40,11 @@ class RepeatActivity(GenericActivity):
         self.register_process(main_proc=self.repeat_process, show=self.print)
 
     def repeat_process(self, activity_log, env):
-        message = f"Repeat activity {self.name}"
 
         start_time = env.now
         args_data = {
             "env": env,
             "activity_log": activity_log,
-            "message": message,
             "activity": self,
         }
         yield from self.pre_process(args_data)

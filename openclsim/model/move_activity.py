@@ -56,16 +56,12 @@ class MoveActivity(GenericActivity):
         engine_order: optional parameter specifying at what percentage of the maximum speed the mover should sail.
                     for example, engine_order=0.5 corresponds to sailing at 50% of max speed
         """
-        message = "move activity {} of {} to {}".format(
-            self.name, self.mover.name, self.destination.name
-        )
         yield from self._request_resource(self.requested_resources, self.mover.resource)
 
         start_time = env.now
         args_data = {
             "env": env,
             "activity_log": activity_log,
-            "message": message,
             "activity": self,
         }
         yield from self.pre_process(args_data)

@@ -17,6 +17,7 @@ def get_log_dataframe(simulation_object, activities=[]):
             ),
             pd.DataFrame(simulation_object.log).filter(["Timestamp", "ActivityState"]),
             pd.DataFrame(simulation_object.log["ObjectState"]),
+            pd.DataFrame(simulation_object.log["ActivityLabel"]),
         ],
         axis=1,
     )

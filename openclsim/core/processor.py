@@ -110,16 +110,22 @@ class Processor(SimpyObject):
             # If the amount is not available in the origin, log waiting
             if start_time != end_time:
                 self.log_entry(
-                    message="waiting origin content",
                     t=start_time,
                     activity_id=self.activity_id,
                     activity_state=LogState.WAIT_START,
+                    activity_label={
+                        "type": "subprocess",
+                        "ref": "waiting origin content",
+                    },
                 )
                 self.log_entry(
-                    message="waiting origin content",
                     t=end_time,
                     activity_id=self.activity_id,
                     activity_state=LogState.WAIT_STOP,
+                    activity_label={
+                        "type": "subprocess",
+                        "ref": "waiting origin content",
+                    },
                 )
 
         elif activity == "put":
@@ -132,16 +138,22 @@ class Processor(SimpyObject):
             # If the amount is cannot be put in the destination, log waiting
             if start_time != end_time:
                 self.log_entry(
-                    message="waiting destination content",
                     t=start_time,
                     activity_id=self.activity_id,
                     activity_state=LogState.START,
+                    activity_label={
+                        "type": "subprocess",
+                        "ref": "waiting destination content",
+                    },
                 )
                 self.log_entry(
-                    message="waiting destination content",
                     t=end_time,
                     activity_id=self.activity_id,
                     activity_state=LogState.STOP,
+                    activity_label={
+                        "type": "subprocess",
+                        "ref": "waiting destination content",
+                    },
                 )
 
     def determine_processor_amount(

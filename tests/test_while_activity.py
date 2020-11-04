@@ -6,6 +6,8 @@ import simpy
 
 import openclsim.model as model
 
+from .test_utils import test_log
+
 
 def test_while_activity():
     """Test the while activity."""
@@ -37,60 +39,5 @@ def test_while_activity():
 
     my_env.run(until=50)
 
-    benchmark = {
-        "Timestamp": [
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0, 14),
-            datetime.datetime(1970, 1, 1, 0, 0, 14),
-            datetime.datetime(1970, 1, 1, 0, 0, 14),
-            datetime.datetime(1970, 1, 1, 0, 0, 14),
-            datetime.datetime(1970, 1, 1, 0, 0, 28),
-            datetime.datetime(1970, 1, 1, 0, 0, 28),
-            datetime.datetime(1970, 1, 1, 0, 0, 28),
-            datetime.datetime(1970, 1, 1, 0, 0, 28),
-            datetime.datetime(1970, 1, 1, 0, 0, 42),
-            datetime.datetime(1970, 1, 1, 0, 0, 42),
-            datetime.datetime(1970, 1, 1, 0, 0, 42),
-            datetime.datetime(1970, 1, 1, 0, 0, 42),
-        ],
-        "ActivityID": [
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-        ],
-        "ActivityState": [
-            "START",
-            "START",
-            "START",
-            "STOP",
-            "STOP",
-            "START",
-            "START",
-            "STOP",
-            "STOP",
-            "START",
-            "START",
-            "STOP",
-            "STOP",
-            "START",
-            "START",
-        ],
-        "ObjectState": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
-    }
-
     assert my_env.now == 50
-    assert while_activity.log == benchmark
+    test_log(while_activity.log)

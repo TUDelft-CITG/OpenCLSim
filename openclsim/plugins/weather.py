@@ -85,7 +85,7 @@ class WeatherPluginActivity(model.AbstractPluginClass):
         self.weather_criteria = weather_criteria
         self.metocean_df = metocean_df
 
-    def pre_process(self, env, activity_log, message, activity, *args, **kwargs):
+    def pre_process(self, env, activity_log, activity, *args, **kwargs):
         if self.weather_criteria is not None:
             t = float(env.now)
             determined_range = self.check_constraint(start_time=t)
@@ -94,9 +94,11 @@ class WeatherPluginActivity(model.AbstractPluginClass):
                 raise AssertionError
 
             elif t < determined_range[0]:
-                message = message + " waiting on weather"
+                activity_label = {"type": "plugin", "ref": "waiting on weather"}
                 waiting = determined_range[0] - t
-                return activity.delay_processing(env, message, activity_log, waiting)
+                return activity.delay_processing(
+                    env, activity_label, activity_log, waiting
+                )
             else:
                 return {}
         else:

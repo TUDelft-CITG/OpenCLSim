@@ -37,57 +37,5 @@ def test_repeat_activity():
 
     my_env.run()
 
-    benchmark = {
-        "Timestamp": [
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0, 14),
-            datetime.datetime(1970, 1, 1, 0, 0, 14),
-            datetime.datetime(1970, 1, 1, 0, 0, 14),
-            datetime.datetime(1970, 1, 1, 0, 0, 14),
-            datetime.datetime(1970, 1, 1, 0, 0, 28),
-            datetime.datetime(1970, 1, 1, 0, 0, 28),
-            datetime.datetime(1970, 1, 1, 0, 0, 28),
-            datetime.datetime(1970, 1, 1, 0, 0, 28),
-            datetime.datetime(1970, 1, 1, 0, 0, 42),
-            datetime.datetime(1970, 1, 1, 0, 0, 42),
-            datetime.datetime(1970, 1, 1, 0, 0, 42),
-        ],
-        "ActivityID": [
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-        ],
-        "ActivityState": [
-            "START",
-            "START",
-            "START",
-            "STOP",
-            "STOP",
-            "START",
-            "START",
-            "STOP",
-            "STOP",
-            "START",
-            "START",
-            "STOP",
-            "STOP",
-            "STOP",
-        ],
-        "ObjectState": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
-    }
-
     assert my_env.now == 42
-    assert repeat_activity.log == benchmark
+    repeat_activity.log

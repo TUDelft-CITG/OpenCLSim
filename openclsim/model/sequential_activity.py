@@ -44,13 +44,11 @@ class SequentialActivity(GenericActivity):
                     return a generator which could be added as a process to a simpy.Environment
                     the sub_processes will be executed sequentially, in the order in which they are given
         """
-        message = f"Sequence activity {self.name}"
 
         start_time = env.now
         args_data = {
             "env": env,
             "activity_log": activity_log,
-            "message": message,
             "activity": self,
         }
         yield from self.pre_process(args_data)

@@ -168,7 +168,6 @@ class ShiftAmountActivity(GenericActivity):
             args_data = {
                 "env": env,
                 "activity_log": activity_log,
-                "message": self.name,
                 "activity": self,
             }
             yield from self.pre_process(args_data)
