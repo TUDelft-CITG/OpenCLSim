@@ -69,7 +69,7 @@ class RepeatActivity(GenericActivity):
             )
             self.sub_process.start()
             yield from self.sub_process.call_main_proc(
-                activity_log=activity_log, env=env
+                activity_log=activity_log.sub_process, env=env
             )
             self.sub_process.end()
             activity_log.log_entry(
