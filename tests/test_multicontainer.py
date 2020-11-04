@@ -8,7 +8,7 @@ import simpy
 import openclsim.core as core
 import openclsim.model as model
 
-from .test_utils import test_log
+from .test_utils import assert_log
 
 
 def test_mulitcontainer():
@@ -105,6 +105,6 @@ def test_mulitcontainer():
     assert from_site.container.get_level(id_="TP") == 0
     assert from_site.container.get_level(id_="MP") == 1
 
-    test_log(hopper.log)
-    test_log(activity.log)
-    test_log(from_site.log)
+    assert_log(hopper.log)
+    assert_log(activity.log)
+    assert_log(from_site.log)

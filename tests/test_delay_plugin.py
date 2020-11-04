@@ -9,7 +9,7 @@ import openclsim.core as core
 import openclsim.model as model
 import openclsim.plugins as plugins
 
-from .test_utils import test_log
+from .test_utils import assert_log
 
 
 def test_delay_plugin():
@@ -202,5 +202,5 @@ def test_delay_plugin():
     my_env.run()
 
     assert my_env.now == 6354.357654924601
-    test_log(while_activity.log)
-    test_log(hopper.log)
+    assert_log(while_activity.log)
+    assert_log(hopper.log)

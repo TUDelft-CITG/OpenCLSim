@@ -7,7 +7,7 @@ import simpy
 import openclsim.core as core
 import openclsim.model as model
 
-from .test_utils import test_log
+from .test_utils import assert_log
 
 
 def test_wraped_single_run():
@@ -91,6 +91,6 @@ def test_wraped_single_run():
 
     assert my_env.now == 13699.734162066252
 
-    test_log(hopper.log)
-    test_log(from_site.log)
-    test_log(to_site.log)
+    assert_log(hopper.log)
+    assert_log(from_site.log)
+    assert_log(to_site.log)

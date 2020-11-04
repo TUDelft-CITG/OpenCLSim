@@ -5,6 +5,7 @@ import datetime
 import simpy
 
 import openclsim.model as model
+from .test_utils import assert_log
 
 
 def test_repeat_activity():
@@ -38,4 +39,4 @@ def test_repeat_activity():
     my_env.run()
 
     assert my_env.now == 42
-    repeat_activity.log
+    assert_log(repeat_activity.log)

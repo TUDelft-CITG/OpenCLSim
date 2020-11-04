@@ -8,7 +8,7 @@ import simpy
 import openclsim.core as core
 import openclsim.model as model
 
-from .test_utils import test_log
+from .test_utils import assert_log
 
 
 def test_shift_amount():
@@ -87,6 +87,6 @@ def test_shift_amount():
     my_env.run()
 
     assert my_env.now == 10
-    test_log(from_site.log)
-    test_log(hopper.log)
-    test_log(activity.log)
+    assert_log(from_site.log)
+    assert_log(hopper.log)
+    assert_log(activity.log)

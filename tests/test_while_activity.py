@@ -6,7 +6,7 @@ import simpy
 
 import openclsim.model as model
 
-from .test_utils import test_log
+from .test_utils import assert_log
 
 
 def test_while_activity():
@@ -40,4 +40,4 @@ def test_while_activity():
     my_env.run(until=50)
 
     assert my_env.now == 50
-    test_log(while_activity.log)
+    assert_log(while_activity.log)

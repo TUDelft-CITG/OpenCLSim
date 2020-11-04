@@ -10,7 +10,7 @@ import openclsim.core as core
 import openclsim.model as model
 import openclsim.plugins as plugin
 
-from .test_utils import test_log
+from .test_utils import assert_log
 
 
 def test_weather():
@@ -216,5 +216,5 @@ def test_weather():
     my_env.run()
 
     assert my_env.now == 1262352685.6491823
-    test_log(hopper.log)
-    test_log(single_run[0].log)
+    assert_log(hopper.log)
+    assert_log(single_run[0].log)

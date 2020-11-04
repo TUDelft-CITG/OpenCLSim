@@ -8,7 +8,7 @@ import simpy
 import openclsim.core as core
 import openclsim.model as model
 
-from .test_utils import test_log
+from .test_utils import assert_log
 
 
 def test_test_resource_synchronization():
@@ -184,4 +184,4 @@ def test_test_resource_synchronization():
     my_env.run()
 
     assert my_env.now == 160
-    test_log(from_site.log)
+    assert_log(from_site.log)

@@ -5,7 +5,7 @@ import simpy
 
 import openclsim.model as model
 
-from .test_utils import test_log
+from .test_utils import assert_log
 
 
 def test_complex_synchronization():
@@ -123,4 +123,4 @@ def test_complex_synchronization():
     my_env.run()
 
     assert my_env.now == 721
-    test_log(reporting_activity.log)
+    assert_log(reporting_activity.log)

@@ -6,7 +6,7 @@ import simpy
 
 import openclsim.model as model
 
-from .test_utils import test_log
+from .test_utils import assert_log
 
 
 class TestBasicActivity:
@@ -56,5 +56,5 @@ class TestBasicActivity:
         my_env.run()
 
         assert my_env.now == 14
-        test_log(reporting_activity.log)
-        test_log(basic_activity.log)
+        assert_log(reporting_activity.log)
+        assert_log(basic_activity.log)

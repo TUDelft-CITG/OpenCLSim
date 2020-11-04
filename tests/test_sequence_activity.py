@@ -6,7 +6,7 @@ import simpy
 
 import openclsim.model as model
 
-from .test_utils import test_log
+from .test_utils import assert_log
 
 
 def test_sequence():
@@ -69,4 +69,4 @@ def test_sequence():
     my_env.run()
 
     assert my_env.now == 239
-    test_log(activity.log)
+    assert_log(activity.log)
