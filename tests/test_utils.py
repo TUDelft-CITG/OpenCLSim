@@ -1,11 +1,14 @@
 """Util functions for the tests."""
 import pandas as pd
+import numpoy as np
 
 
 def test_log(log):
     """Parse the new_log into benchmarkable data."""
     new_log = log.copy()
     length = len(new_log["Timestamp"])
+    df = pd.DataFrame(log).filter(["ActivityState"])
+    df["Timestamp"] = df["Timestamp"].astype(np.int64)
 
     assert isinstance(new_log["Timestamp"], list)
     assert isinstance(new_log["ActivityID"], list)
@@ -18,8 +21,6 @@ def test_log(log):
     assert len(new_log["ActivityState"]) == length
     assert len(new_log["ObjectState"]) == length
     assert len(new_log["ActivityLabel"]) == length
-
-    df = pd.DataFrame(log).filter(["ActivityState"])
 
     assert len(df[df["ActivityState"] == "START"]) == len(
         df[df["ActivityState"] == "STOP"]
@@ -35,6 +36,17 @@ def test_log(log):
             & (df["ActivityState"] != "STOP")
         ]
         == "UNKNOWN"
+    )
+
+    assert all(
+        np.array(df[df["ActivityState"] == "STOP"]["Timestamp"])
+        - np.array(df[df["ActivityState"] == "START"]["Timestamp"])
+        >= 0
+    )
+    assert all(
+        np.array(df[df["ActivityState"] == "WAIT_STOP"]["Timestamp"])
+        - np.array(df[df["ActivityState"] == "WAIT_START"]["Timestamp"])
+        >= 0
     )
 
     for state in new_log["ObjectState"]:
