@@ -1,6 +1,6 @@
 """Util functions for the tests."""
 import pandas as pd
-import numpoy as np
+import numpy as np
 
 
 def test_log(log):
