@@ -78,7 +78,12 @@ class MoveActivity(GenericActivity):
             destination=self.destination,
             engine_order=1,
             duration=self.duration,
-            activity_name=self.name,
+        )
+
+        activity_log.log_entry(
+            t=env.now,
+            activity_id=activity_log.id,
+            activity_state=core.LogState.STOP,
         )
 
         args_data["start_preprocessing"] = start_time
@@ -94,9 +99,3 @@ class MoveActivity(GenericActivity):
         # which will result in triggered but not processed events to be taken care of before further progressing
         # maybe there is a better way of doing it, but his option works for now.
         yield env.timeout(0)
-
-        activity_log.log_entry(
-            t=env.now,
-            activity_id=activity_log.id,
-            activity_state=core.LogState.STOP,
-        )

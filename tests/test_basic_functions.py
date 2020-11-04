@@ -55,10 +55,10 @@ def test_movable(env, geometry_a, locatable_a, locatable_b):
 
     movable = movable(env=env, geometry=geometry_a, v=10)
     movable.activity_id = "Test activity"
-    env.process(movable.move(locatable_b, activity_name="test"))
+    env.process(movable.move(locatable_b))
     env.run()
     assert movable.geometry.equals(locatable_b.geometry)
-    env.process(movable.move(locatable_a, activity_name="test"))
+    env.process(movable.move(locatable_a))
     env.run()
     assert movable.geometry.equals(locatable_a.geometry)
 
@@ -92,7 +92,7 @@ def test_container_dependent_movable(env, geometry_a, locatable_a, locatable_b):
 def move_and_test(env, destination, movable, expected_speed, expected_time):
     """Move and test."""
     start = env.now
-    env.process(movable.move(destination, activity_name="test"))
+    env.process(movable.move(destination))
     env.run()
     np.testing.assert_almost_equal(movable.current_speed, expected_speed)
     assert movable.geometry.equals(destination.geometry)
@@ -109,7 +109,7 @@ def test_move_to_same_place(env, geometry_a, locatable_a):
     movable = movable(env=env, geometry=geometry_a, v=10)
     movable.activity_id = "Test activity"
 
-    env.process(movable.move(locatable_a, activity_name="test"))
+    env.process(movable.move(locatable_a))
     env.run()
     assert movable.geometry.equals(locatable_a.geometry)
     assert env.now == env.epoch

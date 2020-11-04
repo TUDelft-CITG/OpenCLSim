@@ -62,6 +62,10 @@ class RepeatActivity(GenericActivity):
                 t=env.now,
                 activity_id=activity_log.id,
                 activity_state=core.LogState.START,
+                activity_label={
+                    "type": "subprocess",
+                    "ref": activity_log.id,
+                },
             )
             self.sub_process.start()
             yield from self.sub_process.call_main_proc(
@@ -72,6 +76,10 @@ class RepeatActivity(GenericActivity):
                 t=env.now,
                 activity_id=activity_log.id,
                 activity_state=core.LogState.STOP,
+                activity_label={
+                    "type": "subprocess",
+                    "ref": activity_log.id,
+                },
             )
             # work around for the event evaluation
             # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
@@ -80,12 +88,14 @@ class RepeatActivity(GenericActivity):
             yield env.timeout(0)
             ii = ii + 1
 
-        args_data["start_preprocessing"] = start_time
-        args_data["start_activity"] = start_while
-        yield from self.post_process(**args_data)
-
         activity_log.log_entry(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.STOP,
         )
+
+        args_data["start_preprocessing"] = start_time
+        args_data["start_activity"] = start_while
+        yield from self.post_process(**args_data)
+
+        yield env.timeout(0)
