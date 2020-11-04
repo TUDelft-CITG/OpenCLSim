@@ -30,7 +30,6 @@ class Processor(SimpyObject):
         id_="default",
         rate=None,
         duration=None,
-        activity_name=None,
     ):
         """
         Move content from ship to the site or from the site to the ship.

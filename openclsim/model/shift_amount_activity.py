@@ -186,7 +186,6 @@ class ShiftAmountActivity(GenericActivity):
             self.origin,
             self.origin.container.get_level(self.id_) + self.amount,
             self.destination,
-            activity_name=self.name,
             activity_id=activity_log.id,
             duration=self.duration,
             rate=rate,
@@ -259,7 +258,6 @@ class ShiftAmountActivity(GenericActivity):
         desired_level,
         destination,
         activity_id,
-        activity_name,
         duration=None,
         rate=None,
         id_="default",
@@ -280,7 +278,6 @@ class ShiftAmountActivity(GenericActivity):
             id_=id_,
             duration=duration,
             rate=rate,
-            activity_name=activity_name,
         )
 
         if verbose:
