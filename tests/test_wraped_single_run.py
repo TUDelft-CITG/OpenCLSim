@@ -1,6 +1,4 @@
 """Test package."""
-import datetime
-
 import shapely.geometry
 import simpy
 

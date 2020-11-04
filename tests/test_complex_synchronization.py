@@ -1,6 +1,4 @@
 """Test package."""
-import datetime
-
 import simpy
 
 import openclsim.model as model

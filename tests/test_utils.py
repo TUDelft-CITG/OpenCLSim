@@ -1,13 +1,13 @@
 """Util functions for the tests."""
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def assert_log(log):
     """Parse the new_log into benchmarkable data."""
     new_log = log.copy()
     length = len(new_log["Timestamp"])
-    df = pd.DataFrame(log).filter(["ActivityState"])
+    df = pd.DataFrame(log)
     df["Timestamp"] = df["Timestamp"].astype(np.int64)
 
     assert isinstance(new_log["Timestamp"], list)
