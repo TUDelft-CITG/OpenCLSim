@@ -18,14 +18,13 @@ class AbstractPluginClass(ABC):
     def __init__(self):
         pass
 
-    def pre_process(self, env, activity_log, message, activity, *args, **kwargs):
+    def pre_process(self, env, activity_log, activity, *args, **kwargs):
         return {}
 
     def post_process(
         self,
         env,
         activity_log,
-        message,
         activity,
         start_preprocessing,
         start_activity,
@@ -67,19 +66,19 @@ class PluginActivity(core.Identifiable, core.Log):
         for item in self.plugins:
             yield from item["plugin"].post_process(*args, **kwargs)
 
-    def delay_processing(self, env, delay_name, activity_log, waiting):
+    def delay_processing(self, env, activity_label, activity_log, waiting):
         activity_log.log_entry(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.WAIT_START,
-            message=delay_name,
+            activity_label=activity_label,
         )
         yield env.timeout(waiting)
         activity_log.log_entry(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.WAIT_STOP,
-            message=delay_name,
+            activity_label=activity_label,
         )
 
 

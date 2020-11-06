@@ -1,14 +1,12 @@
 """Test package."""
 
-import datetime
-
 import shapely.geometry
 import simpy
 
 import openclsim.core as core
 import openclsim.model as model
 
-from .test_utils import parse_log
+from .test_utils import assert_log
 
 
 def test_mulitcontainer():
@@ -99,79 +97,12 @@ def test_mulitcontainer():
 
     my_env.run()
 
-    hopper_benchmark = {
-        "Timestamp": [
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0, 20),
-            datetime.datetime(1970, 1, 1, 0, 0, 20),
-        ],
-        "ActivityID": [
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
-        ],
-        "ActivityState": ["START", "START", "STOP", "STOP"],
-        "ObjectState": [
-            {
-                "geometry": (4.18055556, 52.18664444),
-                "container level": {"TP": 0, "MP": 0},
-            },
-            {
-                "geometry": (4.18055556, 52.18664444),
-                "container level": {"TP": 0, "MP": 0},
-            },
-            {
-                "geometry": (4.18055556, 52.18664444),
-                "container level": {"TP": 0, "MP": 1},
-            },
-            {
-                "geometry": (4.18055556, 52.18664444),
-                "container level": {"TP": 0, "MP": 1},
-            },
-        ],
-    }
-    activity_benchmark = {
-        "Timestamp": [
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0, 20),
-        ],
-        "ActivityID": [
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
-        ],
-        "ActivityState": ["START", "STOP"],
-        "ObjectState": [{}, {}],
-    }
-    site_benchmark = {
-        "Timestamp": [
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0, 20),
-        ],
-        "ActivityID": [
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
-        ],
-        "ActivityState": ["START", "STOP"],
-        "ObjectState": [
-            {
-                "container level": {"TP": 0, "MP": 2},
-                "geometry": (4.18055556, 52.18664444),
-            },
-            {
-                "container level": {"TP": 0, "MP": 1},
-                "geometry": (4.18055556, 52.18664444),
-            },
-        ],
-    }
-
     assert my_env.now == 20
     assert hopper.container.get_level(id_="MP") == 1
     assert hopper.container.get_level(id_="TP") == 0
     assert from_site.container.get_level(id_="TP") == 0
     assert from_site.container.get_level(id_="MP") == 1
 
-    assert parse_log(hopper.log) == hopper_benchmark
-    assert parse_log(activity.log) == activity_benchmark
-    assert parse_log(from_site.log) == site_benchmark
+    assert_log(hopper.log)
+    assert_log(activity.log)
+    assert_log(from_site.log)

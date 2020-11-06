@@ -30,6 +30,7 @@ def get_segments(df, activity, y_val):
     """Extract 'start' and 'stop' of activities from log."""
     x = []
     y = []
+    start = 0
     for i in range(len(df)):
         if "START" in df["activity_state"][i] and df["log_string"][i] == activity:
             start = df.index[i]

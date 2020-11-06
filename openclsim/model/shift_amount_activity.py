@@ -131,101 +131,95 @@ class ShiftAmountActivity(GenericActivity):
             [self.origin], self.destination, self.amount, self.id_
         )
 
-        if 0 != self.amount:
-
-            yield from self._request_resource(
-                resource_requests, self.destination.resource
-            )
-
-            yield from self._request_resource_if_available(
-                env,
-                resource_requests,
-                self.origin,
-                self.processor,
-                self.amount,
-                None,  # for now release all
-                activity_log.id,
-                self.id_,
-                1,
-                verbose=False,
-            )
-
-            if self.duration is not None:
-                rate = None
-            elif self.duration is not None:
-                rate = self.processor.loading
-
-            elif self.phase == "loading":
-                rate = self.processor.loading
-            elif self.phase == "unloading":
-                rate = self.processor.unloading
-            else:
-                raise RuntimeError(
-                    "Both the pase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
-                )
-
-            start_time = env.now
-            args_data = {
-                "env": env,
-                "activity_log": activity_log,
-                "message": self.name,
-                "activity": self,
-            }
-            yield from self.pre_process(args_data)
-
-            activity_log.log_entry(
-                t=env.now,
-                activity_id=activity_log.id,
-                activity_state=core.LogState.START,
-            )
-
-            start_shift = env.now
-            yield from self._shift_amount(
-                env,
-                self.processor,
-                self.origin,
-                self.origin.container.get_level(self.id_) + self.amount,
-                self.destination,
-                activity_name=self.name,
-                activity_id=activity_log.id,
-                duration=self.duration,
-                rate=rate,
-                id_=self.id_,
-                verbose=verbose,
-            )
-
-            args_data["start_preprocessing"] = start_time
-            args_data["start_activity"] = start_shift
-            yield from self.post_process(**args_data)
-
-            activity_log.log_entry(
-                t=env.now,
-                activity_id=activity_log.id,
-                activity_state=core.LogState.STOP,
-            )
-
-            # release the unloader, self.destination and mover requests
-            self._release_resource(
-                resource_requests, self.destination.resource, self.keep_resources
-            )
-            if self.origin.resource in resource_requests:
-                self._release_resource(
-                    resource_requests, self.origin.resource, self.keep_resources
-                )
-            if self.processor.resource in resource_requests:
-                self._release_resource(
-                    resource_requests, self.processor.resource, self.keep_resources
-                )
-
-            # work around for the event evaluation
-            # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-            # which will result in triggered but not processed events to be taken care of before further progressing
-            # maybe there is a better way of doing it, but his option works for now.
-            yield env.timeout(0)
-        else:
+        if self.amount == 0:
             raise RuntimeError(
                 f"Attempting to shift content from an empty origin or to a full self.destination. ({all_amounts})"
             )
+
+        yield from self._request_resource(resource_requests, self.destination.resource)
+
+        yield from self._request_resource_if_available(
+            env,
+            resource_requests,
+            self.origin,
+            self.processor,
+            self.amount,
+            None,  # for now release all
+            activity_log.id,
+            self.id_,
+            1,
+            verbose=False,
+        )
+
+        if self.duration is not None:
+            rate = None
+        elif self.duration is not None:
+            rate = self.processor.loading
+
+        elif self.phase == "loading":
+            rate = self.processor.loading
+        elif self.phase == "unloading":
+            rate = self.processor.unloading
+        else:
+            raise RuntimeError(
+                "Both the pase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
+            )
+
+        start_time = env.now
+        args_data = {
+            "env": env,
+            "activity_log": activity_log,
+            "activity": self,
+        }
+        yield from self.pre_process(args_data)
+
+        activity_log.log_entry(
+            t=env.now,
+            activity_id=activity_log.id,
+            activity_state=core.LogState.START,
+        )
+
+        start_shift = env.now
+        yield from self._shift_amount(
+            env,
+            self.processor,
+            self.origin,
+            self.origin.container.get_level(self.id_) + self.amount,
+            self.destination,
+            activity_id=activity_log.id,
+            duration=self.duration,
+            rate=rate,
+            id_=self.id_,
+            verbose=verbose,
+        )
+
+        activity_log.log_entry(
+            t=env.now,
+            activity_id=activity_log.id,
+            activity_state=core.LogState.STOP,
+        )
+        args_data["start_preprocessing"] = start_time
+        args_data["start_activity"] = start_shift
+        yield from self.post_process(**args_data)
+
+        # release the unloader, self.destination and mover requests
+        self._release_resource(
+            resource_requests, self.destination.resource, self.keep_resources
+        )
+        if self.origin.resource in resource_requests:
+            self._release_resource(
+                resource_requests, self.origin.resource, self.keep_resources
+            )
+        if self.processor.resource in resource_requests:
+            self._release_resource(
+                resource_requests, self.processor.resource, self.keep_resources
+            )
+
+        # work around for the event evaluation
+        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+        # which will result in triggered but not processed events to be taken care of before further progressing
+        # maybe there is a better way of doing it, but his option works for now.
+        yield env.timeout(0)
 
     def _move_mover(self, mover, origin, activity_id, engine_order=1.0, verbose=False):
         """Call the mover.move method, giving debug print statements when verbose is True."""
@@ -264,7 +258,6 @@ class ShiftAmountActivity(GenericActivity):
         desired_level,
         destination,
         activity_id,
-        activity_name,
         duration=None,
         rate=None,
         id_="default",
@@ -285,7 +278,6 @@ class ShiftAmountActivity(GenericActivity):
             id_=id_,
             duration=duration,
             rate=rate,
-            activity_name=activity_name,
         )
 
         if verbose:

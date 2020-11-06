@@ -51,13 +51,11 @@ class BasicActivity(GenericActivity):
                     the sub_processes will be executed sequentially, in the order in which they are given as long
                     as the stop_event has not occurred.
         """
-        message = f"Basic activity {self.name}"
 
         start_time = env.now
         args_data = {
             "env": env,
             "activity_log": activity_log,
-            "message": message,
             "activity": self,
         }
         yield from self.pre_process(args_data)
@@ -80,10 +78,6 @@ class BasicActivity(GenericActivity):
 
         yield env.timeout(self.duration)
 
-        args_data["start_preprocessing"] = start_time
-        args_data["start_activity"] = start_basic
-        yield from self.post_process(**args_data)
-
         activity_log.log_entry(
             t=env.now, activity_id=activity_log.id, activity_state=core.LogState.STOP
         )
@@ -94,6 +88,10 @@ class BasicActivity(GenericActivity):
                     activity_id=activity_log.id,
                     activity_state=core.LogState.STOP,
                 )
+
+        args_data["start_preprocessing"] = start_time
+        args_data["start_activity"] = start_basic
+        yield from self.post_process(**args_data)
 
         # work around for the event evaluation
         # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events

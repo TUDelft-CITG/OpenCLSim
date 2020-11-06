@@ -35,7 +35,7 @@ class Movable(SimpyObject, Locatable):
         else:
             return -1
 
-    def move(self, destination, activity_name, engine_order=1.0, duration=None):
+    def move(self, destination, engine_order=1.0, duration=None):
         """
         Determine distance between origin and destination.
 

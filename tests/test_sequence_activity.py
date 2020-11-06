@@ -1,10 +1,10 @@
 """Test package."""
 
-import datetime
-
 import simpy
 
 import openclsim.model as model
+
+from .test_utils import assert_log
 
 
 def test_sequence():
@@ -66,39 +66,5 @@ def test_sequence():
     activity = model.SequentialActivity(**sequential_activity_data)
     my_env.run()
 
-    benchmark = {
-        "Timestamp": [
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0),
-            datetime.datetime(1970, 1, 1, 0, 0, 14),
-            datetime.datetime(1970, 1, 1, 0, 0, 14),
-            datetime.datetime(1970, 1, 1, 0, 0, 19),
-            datetime.datetime(1970, 1, 1, 0, 0, 19),
-            datetime.datetime(1970, 1, 1, 0, 3, 59),
-            datetime.datetime(1970, 1, 1, 0, 3, 59),
-        ],
-        "ActivityID": [
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-        ],
-        "ActivityState": [
-            "START",
-            "START",
-            "STOP",
-            "START",
-            "STOP",
-            "START",
-            "STOP",
-            "STOP",
-        ],
-        "ObjectState": [{}, {}, {}, {}, {}, {}, {}, {}],
-    }
-
     assert my_env.now == 239
-    assert activity.log == benchmark
+    assert_log(activity.log)
