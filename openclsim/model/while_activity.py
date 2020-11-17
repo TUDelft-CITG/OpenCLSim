@@ -160,7 +160,9 @@ class RepeatActivity(GenericActivity, ConditionProcessMixin):
                 f"In Repeat activity {self.name} the sub_process must have postpone_start=True"
             )
         self.max_iterations = repetitions
-        self.condition_event = []
+        self.condition_event = [
+            {"type": "activity", "state": "done", "name": self.name}
+        ]
         if not self.postpone_start:
             self.start()
 
