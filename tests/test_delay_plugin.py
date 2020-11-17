@@ -190,7 +190,7 @@ def test_delay_plugin():
         "name": "while",
         "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
         "registry": registry,
-        "sub_process": activity,
+        "sub_processes": [activity],
         "condition_event": expr,
         "postpone_start": False,
         "delay_percentage": 10,

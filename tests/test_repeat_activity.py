@@ -29,7 +29,7 @@ def test_repeat_activity():
         "name": "repeat",
         "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
         "registry": registry,
-        "sub_process": activity,
+        "sub_processes": [activity],
         "repetitions": 3,
         "postpone_start": False,
     }
