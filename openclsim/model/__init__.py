@@ -6,7 +6,7 @@ from .move_activity import MoveActivity
 from .sequential_activity import SequentialActivity
 from .shift_amount_activity import ShiftAmountActivity
 from .single_run_process import single_run_process
-from .while_activity import WhileActivity, RepeatActivity
+from .while_activity import RepeatActivity, WhileActivity
 
 __all__ = [
     "AbstractPluginClass",
