@@ -56,35 +56,34 @@ class ConditionProcessMixin:
         )
         ii = 0
         while (not condition_event.processed) and ii < self.max_iterations:
-            # for sub_process_ in (proc for proc in [self.sub_process]):
-            activity_log.log_entry(
-                t=env.now,
-                activity_id=activity_log.id,
-                activity_state=core.LogState.START,
-                activity_label={
-                    "type": "subprocess",
-                    "ref": activity_log.id,
-                },
-            )
-            self.sub_process.start()
-            yield from self.sub_process.call_main_proc(
-                activity_log=activity_log.sub_process, env=env
-            )
-            self.sub_process.end()
-            activity_log.log_entry(
-                t=env.now,
-                activity_id=activity_log.id,
-                activity_state=core.LogState.STOP,
-                activity_label={
-                    "type": "subprocess",
-                    "ref": activity_log.id,
-                },
-            )
-            # work around for the event evaluation
-            # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-            # which will result in triggered but not processed events to be taken care of before further progressing
-            # maybe there is a better way of doing it, but his option works for now.
-            yield env.timeout(0)
+            for sub_process in self.sub_processes:
+                activity_log.log_entry(
+                    t=env.now,
+                    activity_id=activity_log.id,
+                    activity_state=core.LogState.START,
+                    activity_label={
+                        "type": "subprocess",
+                        "ref": activity_log.id,
+                    },
+                )
+                sub_process.start()
+                yield from sub_process.call_main_proc(activity_log=sub_process, env=env)
+                sub_process.end()
+                activity_log.log_entry(
+                    t=env.now,
+                    activity_id=activity_log.id,
+                    activity_state=core.LogState.STOP,
+                    activity_label={
+                        "type": "subprocess",
+                        "ref": activity_log.id,
+                    },
+                )
+                # work around for the event evaluation
+                # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+                # which will result in triggered but not processed events to be taken care of before further progressing
+                # maybe there is a better way of doing it, but his option works for now.
+                yield env.timeout(0)
+
             ii = ii + 1
 
         activity_log.log_entry(
@@ -113,15 +112,16 @@ class WhileActivity(GenericActivity, ConditionProcessMixin):
     """
 
     #     activity_log, env, stop_event, sub_processes, requested_resources, keep_resources
-    def __init__(self, sub_process, condition_event, show=False, *args, **kwargs):
+    def __init__(self, sub_processes, condition_event, show=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.print = show
-        self.sub_process = sub_process
-        if not self.sub_process.postpone_start:
-            raise Exception(
-                f"In While activity {self.name} the sub_process must have postpone_start=True"
-            )
+        self.sub_processes = sub_processes
+        for sub_process in self.sub_processes:
+            if not sub_process.postpone_start:
+                raise Exception(
+                    f"In While activity {self.name} the sub_process must have postpone_start=True"
+                )
         self.condition_event = condition_event
         self.max_iterations = 1_000_000
 
@@ -149,16 +149,17 @@ class RepeatActivity(GenericActivity, ConditionProcessMixin):
         by default will be to start immediately
     """
 
-    def __init__(self, sub_process, repetitions: int, show=False, *args, **kwargs):
+    def __init__(self, sub_processes, repetitions: int, show=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
         self.print = show
-        self.sub_process = sub_process
-        if not self.sub_process.postpone_start:
-            raise Exception(
-                f"In Repeat activity {self.name} the sub_process must have postpone_start=True"
-            )
+        self.sub_processes = sub_processes
+        for sub_process in self.sub_processes:
+            if not sub_process.postpone_start:
+                raise Exception(
+                    f"In Repeat activity {self.name} the sub_process must have postpone_start=True"
+                )
         self.max_iterations = repetitions
         self.condition_event = [
             {"type": "activity", "state": "done", "name": self.name}

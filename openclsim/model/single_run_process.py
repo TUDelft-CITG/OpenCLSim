@@ -2,7 +2,6 @@
 
 
 from .move_activity import MoveActivity
-from .sequential_activity import SequentialActivity
 from .shift_amount_activity import ShiftAmountActivity
 from .while_activity import WhileActivity
 
@@ -75,22 +74,14 @@ def single_run_process(
         ),
     ]
 
-    activity = SequentialActivity(
-        env=env,
-        name=f"{name} sequence",
-        registry=registry,
-        sub_processes=single_run,
-        postpone_start=True,
-    )
-
     while_activity = WhileActivity(
         env=env,
         name=name,
         registry=registry,
-        sub_process=activity,
+        sub_processes=single_run,
         condition_event=stop_event,
         start_event=start_event,
         postpone_start=postpone_start,
     )
 
-    return single_run, activity, while_activity
+    return single_run, while_activity
