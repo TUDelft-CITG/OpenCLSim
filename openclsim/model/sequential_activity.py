@@ -25,11 +25,6 @@ class SequentialActivity(GenericActivity):
 
         self.print = show
         self.sub_processes = sub_processes
-        for sub_process in self.sub_processes:
-            if not sub_process.postpone_start:
-                raise Exception(
-                    f"In While activity {self.name} the sub_process must have postpone_start=True"
-                )
         if not self.postpone_start:
             self.start()
 
@@ -66,6 +61,10 @@ class SequentialActivity(GenericActivity):
             activity_state=core.LogState.START,
         )
         for sub_process in self.sub_processes:
+            if not sub_process.postpone_start:
+                raise Exception(
+                    f"SequentialActivity requires all sub processes to have a postponed start. {sub_process.name} does not have attribute postpone_start."
+                )
             activity_log.log_entry(
                 t=env.now,
                 activity_id=activity_log.id,
