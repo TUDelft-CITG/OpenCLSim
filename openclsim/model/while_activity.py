@@ -6,36 +6,8 @@ import openclsim.core as core
 from .base_activities import GenericActivity
 
 
-class WhileActivity(GenericActivity):
-    """
-    WhileActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
-
-    The while activity is a structural activity, which does not require specific resources.
-
-    sub_process: the sub_process which is executed in every iteration
-    condition_event: a condition event provided in the expression language which will stop the iteration as soon as the event is fulfilled.
-    start_event: the activity will start as soon as this event is triggered
-                 by default will be to start immediately
-    """
-
-    #     activity_log, env, stop_event, sub_processes, requested_resources, keep_resources
-    def __init__(self, sub_process, condition_event, show=False, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        """Initialization"""
-        self.max_iterations = 1_000_000
-        self.print = show
-        self.sub_process = sub_process
-        if not self.sub_process.postpone_start:
-            raise Exception(
-                f"In While activity {self.name} the sub_process must have postpone_start=True"
-            )
-        self.condition_event = condition_event
-
-        if not self.postpone_start:
-            self.start()
-
-    def start(self):
-        self.register_process(main_proc=self.conditional_process, show=self.print)
+class ConditionProcessMixin:
+    """Mixin for the condition process."""
 
     def conditional_process(self, activity_log, env):
         """
@@ -126,3 +98,71 @@ class WhileActivity(GenericActivity):
         yield from self.post_process(**args_data)
 
         yield env.timeout(0)
+
+
+class WhileActivity(GenericActivity, ConditionProcessMixin):
+    """
+    WhileActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+
+    The while activity is a structural activity, which does not require specific resources.
+
+    sub_process: the sub_process which is executed in every iteration
+    condition_event: a condition event provided in the expression language which will stop the iteration as soon as the event is fulfilled.
+    start_event: the activity will start as soon as this event is triggered
+                 by default will be to start immediately
+    """
+
+    #     activity_log, env, stop_event, sub_processes, requested_resources, keep_resources
+    def __init__(self, sub_process, condition_event, show=False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.print = show
+        self.sub_process = sub_process
+        if not self.sub_process.postpone_start:
+            raise Exception(
+                f"In While activity {self.name} the sub_process must have postpone_start=True"
+            )
+        self.condition_event = condition_event
+        self.max_iterations = 1_000_000
+
+        if not self.postpone_start:
+            self.start()
+
+    def start(self):
+        self.register_process(main_proc=self.conditional_process, show=self.print)
+
+
+class RepeatActivity(GenericActivity, ConditionProcessMixin):
+    """
+    RepeatActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+
+    The while activity is a structural activity, which does not require specific resources.
+
+    Parameters
+    ----------
+    sub_process
+        the sub_process which is executed in every iteration
+    repetitions
+        Number of times the subprocess is repeated
+    start_event
+        the activity will start as soon as this event is triggered
+        by default will be to start immediately
+    """
+
+    def __init__(self, sub_process, repetitions: int, show=False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+
+        self.print = show
+        self.sub_process = sub_process
+        if not self.sub_process.postpone_start:
+            raise Exception(
+                f"In Repeat activity {self.name} the sub_process must have postpone_start=True"
+            )
+        self.max_iterations = repetitions
+        self.condition_event = []
+        if not self.postpone_start:
+            self.start()
+
+    def start(self):
+        self.register_process(main_proc=self.conditional_process, show=self.print)
