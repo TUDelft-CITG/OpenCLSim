@@ -123,7 +123,7 @@ def test_test_resource_synchronization():
         "name": "while1",  # We are moving soil
         "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",  # For logging purposes
         "registry": registry,
-        "sub_process": seq_activity1,
+        "sub_processes": [seq_activity1],
         "condition_event": [
             {
                 "or": [
@@ -166,7 +166,7 @@ def test_test_resource_synchronization():
         "name": "while2",  # We are moving soil
         "ID": "5dbbbdf7-4589-11e9-bf3b-b469212bff5g",  # For logging purposes
         "registry": registry,
-        "sub_process": seq_activity2,
+        "sub_processes": [seq_activity2],
         "condition_event": [
             {
                 "or": [

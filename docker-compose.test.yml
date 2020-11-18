@@ -7,4 +7,4 @@ services:
     # but does not start the pyramid servers as these are not needed for testing
     command: bash -c "tail -f /dev/null"
     volumes:
-      - .:/OPENCLSIM
+      - .:/OpenCLSim

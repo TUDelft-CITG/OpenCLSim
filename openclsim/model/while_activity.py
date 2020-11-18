@@ -6,36 +6,8 @@ import openclsim.core as core
 from .base_activities import GenericActivity
 
 
-class WhileActivity(GenericActivity):
-    """
-    WhileActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
-
-    The while activity is a structural activity, which does not require specific resources.
-
-    sub_process: the sub_process which is executed in every iteration
-    condition_event: a condition event provided in the expression language which will stop the iteration as soon as the event is fulfilled.
-    start_event: the activity will start as soon as this event is triggered
-                 by default will be to start immediately
-    """
-
-    #     activity_log, env, stop_event, sub_processes, requested_resources, keep_resources
-    def __init__(self, sub_process, condition_event, show=False, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        """Initialization"""
-        self.max_iterations = 1_000_000
-        self.print = show
-        self.sub_process = sub_process
-        if not self.sub_process.postpone_start:
-            raise Exception(
-                f"In While activity {self.name} the sub_process must have postpone_start=True"
-            )
-        self.condition_event = condition_event
-
-        if not self.postpone_start:
-            self.start()
-
-    def start(self):
-        self.register_process(main_proc=self.conditional_process, show=self.print)
+class ConditionProcessMixin:
+    """Mixin for the condition process."""
 
     def conditional_process(self, activity_log, env):
         """
@@ -84,35 +56,34 @@ class WhileActivity(GenericActivity):
         )
         ii = 0
         while (not condition_event.processed) and ii < self.max_iterations:
-            # for sub_process_ in (proc for proc in [self.sub_process]):
-            activity_log.log_entry(
-                t=env.now,
-                activity_id=activity_log.id,
-                activity_state=core.LogState.START,
-                activity_label={
-                    "type": "subprocess",
-                    "ref": activity_log.id,
-                },
-            )
-            self.sub_process.start()
-            yield from self.sub_process.call_main_proc(
-                activity_log=activity_log.sub_process, env=env
-            )
-            self.sub_process.end()
-            activity_log.log_entry(
-                t=env.now,
-                activity_id=activity_log.id,
-                activity_state=core.LogState.STOP,
-                activity_label={
-                    "type": "subprocess",
-                    "ref": activity_log.id,
-                },
-            )
-            # work around for the event evaluation
-            # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-            # which will result in triggered but not processed events to be taken care of before further progressing
-            # maybe there is a better way of doing it, but his option works for now.
-            yield env.timeout(0)
+            for sub_process in self.sub_processes:
+                activity_log.log_entry(
+                    t=env.now,
+                    activity_id=activity_log.id,
+                    activity_state=core.LogState.START,
+                    activity_label={
+                        "type": "subprocess",
+                        "ref": activity_log.id,
+                    },
+                )
+                sub_process.start()
+                yield from sub_process.call_main_proc(activity_log=sub_process, env=env)
+                sub_process.end()
+                activity_log.log_entry(
+                    t=env.now,
+                    activity_id=activity_log.id,
+                    activity_state=core.LogState.STOP,
+                    activity_label={
+                        "type": "subprocess",
+                        "ref": activity_log.id,
+                    },
+                )
+                # work around for the event evaluation
+                # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
+                # which will result in triggered but not processed events to be taken care of before further progressing
+                # maybe there is a better way of doing it, but his option works for now.
+                yield env.timeout(0)
+
             ii = ii + 1
 
         activity_log.log_entry(
@@ -126,3 +97,75 @@ class WhileActivity(GenericActivity):
         yield from self.post_process(**args_data)
 
         yield env.timeout(0)
+
+
+class WhileActivity(GenericActivity, ConditionProcessMixin):
+    """
+    WhileActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+
+    The while activity is a structural activity, which does not require specific resources.
+
+    sub_process: the sub_process which is executed in every iteration
+    condition_event: a condition event provided in the expression language which will stop the iteration as soon as the event is fulfilled.
+    start_event: the activity will start as soon as this event is triggered
+                 by default will be to start immediately
+    """
+
+    #     activity_log, env, stop_event, sub_processes, requested_resources, keep_resources
+    def __init__(self, sub_processes, condition_event, show=False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.print = show
+        self.sub_processes = sub_processes
+        for sub_process in self.sub_processes:
+            if not sub_process.postpone_start:
+                raise Exception(
+                    f"In While activity {self.name} the sub_process must have postpone_start=True"
+                )
+        self.condition_event = condition_event
+        self.max_iterations = 1_000_000
+
+        if not self.postpone_start:
+            self.start()
+
+    def start(self):
+        self.register_process(main_proc=self.conditional_process, show=self.print)
+
+
+class RepeatActivity(GenericActivity, ConditionProcessMixin):
+    """
+    RepeatActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+
+    The while activity is a structural activity, which does not require specific resources.
+
+    Parameters
+    ----------
+    sub_process
+        the sub_process which is executed in every iteration
+    repetitions
+        Number of times the subprocess is repeated
+    start_event
+        the activity will start as soon as this event is triggered
+        by default will be to start immediately
+    """
+
+    def __init__(self, sub_processes, repetitions: int, show=False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+
+        self.print = show
+        self.sub_processes = sub_processes
+        for sub_process in self.sub_processes:
+            if not sub_process.postpone_start:
+                raise Exception(
+                    f"In Repeat activity {self.name} the sub_process must have postpone_start=True"
+                )
+        self.max_iterations = repetitions
+        self.condition_event = [
+            {"type": "activity", "state": "done", "name": self.name}
+        ]
+        if not self.postpone_start:
+            self.start()
+
+    def start(self):
+        self.register_process(main_proc=self.conditional_process, show=self.print)
