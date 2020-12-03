@@ -253,6 +253,9 @@ class GenericActivity(PluginActivity):
                     raise Exception(
                         f"Logical AND can not have an additional key next to it. {expr}"
                     )
+            elif isinstance(key_val, simpy.Event):
+                res.append(key_val)
+
         if len(res) > 1:
             return res
         elif len(res) == 1:

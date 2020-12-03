@@ -1,5 +1,5 @@
 """Sequential activity for the simulation."""
-
+import simpy
 import openclsim.core as core
 
 from .base_activities import GenericActivity
@@ -25,6 +25,29 @@ class SequentialActivity(GenericActivity):
 
         self.print = show
         self.sub_processes = sub_processes
+
+        self.start_sequence = simpy.Event(self.env)
+
+        for (i, sub_process) in enumerate(self.sub_processes):
+            if i == 0:
+                sub_process.start_event = [self.start_sequence]
+            else:
+                sub_process.start_event = [
+                    {
+                        "and": [
+                            sub_process.start_event,
+                            {
+                                "type": "activity",
+                                "state": "done",
+                                "name": self.sub_processes[i - 1].name,
+                            },
+                        ]
+                    }
+                ]
+
+            sub_process.postpone_start = False
+            sub_process.start()
+
         if not self.postpone_start:
             self.start()
 
@@ -60,11 +83,10 @@ class SequentialActivity(GenericActivity):
             activity_id=activity_log.id,
             activity_state=core.LogState.START,
         )
+
+        self.start_sequence.succeed()
+
         for sub_process in self.sub_processes:
-            if not sub_process.postpone_start:
-                raise Exception(
-                    f"SequentialActivity requires all sub processes to have a postponed start. {sub_process.name} does not have attribute postpone_start."
-                )
             activity_log.log_entry(
                 t=env.now,
                 activity_id=activity_log.id,
@@ -74,9 +96,17 @@ class SequentialActivity(GenericActivity):
                     "ref": activity_log.id,
                 },
             )
-            sub_process.start()
-            yield from sub_process.call_main_proc(activity_log=sub_process, env=env)
-            sub_process.end()
+
+            stop_event = self.parse_expression(
+                [
+                    {
+                        "type": "activity",
+                        "state": "done",
+                        "name": sub_process.name,
+                    }
+                ]
+            )
+            yield stop_event
 
             activity_log.log_entry(
                 t=env.now,
@@ -87,8 +117,6 @@ class SequentialActivity(GenericActivity):
                     "ref": activity_log.id,
                 },
             )
-
-            yield env.timeout(0)
 
         activity_log.log_entry(
             t=env.now,
