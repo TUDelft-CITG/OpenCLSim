@@ -26,6 +26,7 @@ class BasicActivity(GenericActivity):
             additional_logs = []
         self.additional_logs = additional_logs
         if not self.postpone_start:
+            print("start in init", self.name)
             self.start()
 
     def start(self):
