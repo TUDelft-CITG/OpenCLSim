@@ -109,23 +109,6 @@ class GenericActivity(PluginActivity):
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        if "name" not in registry:
-            registry["name"] = {}
-        if self.name not in registry["name"]:
-            l_ = []
-        else:
-            l_ = registry["name"][self.name]
-        l_.append(self)
-        registry["name"][self.name] = l_
-        if "id" not in registry:
-            registry["id"] = {}
-        if self.id not in registry["id"]:
-            l_ = []
-        else:
-            l_ = registry["id"][self.id]
-        l_.append(self)
-        registry["id"][self.id] = l_
-
         self.registry = registry
         self.postpone_start = postpone_start
         self.start_event = start_event
@@ -150,6 +133,8 @@ class GenericActivity(PluginActivity):
             if start_event is None or isinstance(start_event, simpy.Event)
             else self.env.all_of(events=start_event)
         )
+
+        print(self.id, start_event_instance)
         if start_event_instance is not None:
             main_proc = partial(
                 self.delayed_process,
@@ -164,6 +149,23 @@ class GenericActivity(PluginActivity):
             self.main_process = self.env.process(
                 self.main_proc(activity_log=self, env=self.env)
             )
+
+        if "name" not in self.registry:
+            self.registry["name"] = {}
+        if self.name not in self.registry["name"]:
+            l_ = []
+        else:
+            l_ = self.registry["name"][self.name]
+        l_.append(self)
+        self.registry["name"][self.name] = l_
+        if "id" not in self.registry:
+            self.registry["id"] = {}
+        if self.id not in self.registry["id"]:
+            l_ = []
+        else:
+            l_ = self.registry["id"][self.id]
+        l_.append(self)
+        self.registry["id"][self.id] = l_
 
     def parse_expression(self, expr):
         """Methods for Parsing of the expression language used for start_events and conditional_events."""
