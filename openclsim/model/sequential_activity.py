@@ -1,6 +1,6 @@
 """Sequential activity for the simulation."""
 import openclsim.core as core
-
+import simpy
 from .base_activities import GenericActivity
 
 
@@ -33,29 +33,33 @@ class SequentialActivity(GenericActivity):
                     f"In Sequence activity {self.name} the sub_process must have postpone_start=True"
                 )
 
-            if i == 0:
-                sub_process.start_event = [
-                    {"and": [sub_process.start_event, self.start_sequence]}
-                ]
+            start_event = sub_process.start_event
+            if isinstance(start_event, dict) or isinstance(start_event, simpy.Event):
+                start_event = [start_event]
+            if start_event is None:
+                start_event = []
+            if isinstance(start_event, list):
+                pass
             else:
-                sub_process.start_event = [
+                raise ValueError(f"{type(start_event)} is not a valid type.")
+
+            if i == 0:
+                start_event.append(self.start_sequence)
+                sub_process.start_event = [{"and": start_event}]
+            else:
+                start_event.append(
                     {
-                        "and": [
-                            sub_process.start_event,
-                            {
-                                "type": "activity",
-                                "state": "done",
-                                "name": self.sub_processes[i - 1].name,
-                            },
-                        ]
+                        "type": "activity",
+                        "state": "done",
+                        "name": self.sub_processes[i - 1].name,
                     }
-                ]
+                )
+                sub_process.start_event = [{"and": start_event}]
 
             sub_process.postpone_start = False
             sub_process.start()
 
         if not self.postpone_start:
-            print("start in init", self.name)
             self.start()
 
     def start(self):

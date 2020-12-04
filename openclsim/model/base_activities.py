@@ -134,7 +134,6 @@ class GenericActivity(PluginActivity):
             else self.env.all_of(events=start_event)
         )
 
-        print(self.id, start_event_instance)
         if start_event_instance is not None:
             main_proc = partial(
                 self.delayed_process,
@@ -168,101 +167,51 @@ class GenericActivity(PluginActivity):
         self.registry["id"][self.id] = l_
 
     def parse_expression(self, expr):
-        """Methods for Parsing of the expression language used for start_events and conditional_events."""
-        res = []
-        if not isinstance(expr, list):
-            raise Exception(
-                f"expression must be a list, but is {type(expr)}. Therefore it can not be parsed: {expr}"
-            )
-        for key_val in expr:
-            if isinstance(key_val, dict):
-                if "and" in key_val:
-                    partial_res = self.parse_expression(key_val["and"])
-                    self.env.timeout(0)
-                    if not isinstance(partial_res, list):
-                        partial_res = [partial_res]
-                    res.append(
-                        # self.env.all_of(events=[event() for event in partial_res])
-                        self.env.all_of(events=partial_res)
-                    )
-                    self.env.timeout(0)
-                elif "or" in key_val:
-                    partial_res = self.parse_expression(key_val["or"])
-                    self.env.timeout(0)
-                    if not isinstance(partial_res, list):
-                        partial_res = [partial_res]
-                    res.append(
-                        # self.env.any_of(events=[event() for event in partial_res])
-                        self.env.any_of(events=partial_res)
-                    )
-                    self.env.timeout(0)
-                elif "type" in key_val:
-                    if key_val["type"] == "container":
-                        id_ = None
-                        if "id_" in key_val:
-                            id_ = key_val["id_"]
-                        state = key_val["state"]
-                        obj = key_val["concept"]
-                        if state == "full":
-                            if id_ is not None:
-                                res.append(obj.container.get_full_event(id_=id_))
-                            else:
-                                res.append(obj.container.get_full_event())
-                        elif state == "empty":
-                            if id_ is not None:
-                                res.append(obj.container.get_empty_event(id_=id_))
-                            else:
-                                res.append(obj.container.get_empty_event())
-                        else:
-                            raise Exception(
-                                f"Unknown state {state} for a container event"
-                            )
-                    elif key_val["type"] == "activity":
-                        state = key_val["state"]
-                        if state != "done":
-                            raise Exception(
-                                f"Unknown state {state} in ActivityExpression."
-                            )
-                        activity_ = None
-                        key = "unknown"
-                        if "ID" in key_val:
-                            key = key_val["ID"]
-                            if "id" in self.registry:
-                                if key in self.registry["id"]:
-                                    activity_ = self.registry["id"][key]
-                        elif "name" in key_val:
-                            key = key_val["name"]
-                            if "name" in self.registry:
-                                if key in self.registry["name"]:
-                                    activity_ = self.registry["name"][key]
-                        if activity_ is None:
-                            raise Exception(
-                                f"No activity found in ActivityExpression for id/name {key}"
-                            )
-                        if isinstance(activity_, list):
-                            if len(activity_) == 1:
-                                res.append(activity_[0].get_done_event())
-                            else:
-                                res.extend(
-                                    [
-                                        activity_item.get_done_event()
-                                        for activity_item in activity_
-                                    ]
-                                )
-                        else:
-                            res.append(activity_[0].get_done_event())
-                else:
-                    raise Exception(
-                        f"Logical AND can not have an additional key next to it. {expr}"
-                    )
-            elif isinstance(key_val, simpy.Event):
-                res.append(key_val)
+        if isinstance(expr, simpy.Event):
+            return expr
+        if isinstance(expr, list):
+            return self.env.all_of([self.parse_expression(item) for item in expr])
+        if isinstance(expr, dict):
+            if "and" in expr:
+                return self.env.all_of(
+                    [self.parse_expression(item) for item in expr["and"]]
+                )
+            if "or" in expr:
+                return self.env.any_of(
+                    [self.parse_expression(item) for item in expr["or"]]
+                )
+            if expr.get("type") == "container":
+                id_ = expr.get("id_", "default")
+                obj = expr["concept"]
+                if expr["state"] == "full":
+                    return obj.container.get_full_event(id_=id_)
+                elif expr["state"] == "empty":
+                    return obj.container.get_empty_event(id_=id_)
+                raise ValueError
 
-        if len(res) > 1:
-            return res
-        elif len(res) == 1:
-            return res[0]
-        return res
+            if expr.get("type") == "activity":
+                if expr.get("state") != "done":
+                    raise ValueError(
+                        f"Unknown state {expr.get('state')} in ActivityExpression."
+                    )
+                key = expr.get("ID", expr.get("name"))
+                activity_ = self.registry.get("id", {}).get(
+                    key, self.registry.get("name", {}).get(key)
+                )
+
+                if activity_ is None:
+                    raise Exception(
+                        f"No activity found in ActivityExpression for id/name {key}"
+                    )
+                return self.env.all_of(
+                    [activity_item.get_done_event() for activity_item in activity_]
+                )
+
+            raise ValueError
+
+        raise ValueError(
+            f"{type(expr)} is not a valid input type. Valid input types are: simpy.Event, dict, and list"
+        )
 
     def get_done_event(self):
         if self.postpone_start:
