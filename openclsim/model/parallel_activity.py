@@ -112,7 +112,6 @@ class ParallelActivity(GenericActivity, StartSubProcesses):
                 is True
             ]
             for item in list(set(new_done) - set(done)):
-                print(item)
                 sub_process = next(
                     process for process in self.sub_processes if process.name == item
                 )

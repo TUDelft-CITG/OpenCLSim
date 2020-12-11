@@ -94,6 +94,10 @@ class ConditionProcessMixin:
 
         yield env.timeout(0)
 
+    def start(self):
+        self.start_sequential_subprocesses()
+        self.register_process(main_proc=self.conditional_process)
+
 
 class WhileActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
     """
@@ -122,10 +126,6 @@ class WhileActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
 
         if not self.postpone_start:
             self.start()
-
-    def start(self):
-        self.start_sequential_subprocesses()
-        self.register_process(main_proc=self.conditional_process)
 
 
 class RepeatActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
@@ -162,7 +162,3 @@ class RepeatActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
         ]
         if not self.postpone_start:
             self.start()
-
-    def start(self):
-        self.start_sequential_subprocesses()
-        self.register_process(main_proc=self.conditional_process)

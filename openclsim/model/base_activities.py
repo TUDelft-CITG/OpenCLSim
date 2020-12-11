@@ -265,6 +265,7 @@ class GenericActivity(PluginActivity):
         """
         if hasattr(start_event, "__call__"):
             start_event = start_event()
+
         activity_log.log_entry(
             t=env.now,
             activity_id=activity_log.id,
@@ -278,6 +279,7 @@ class GenericActivity(PluginActivity):
                         activity_id=activity_log.id,
                         activity_state=core.LogState.WAIT_START,
                     )
+
         yield start_event
         activity_log.log_entry(
             t=env.now,
