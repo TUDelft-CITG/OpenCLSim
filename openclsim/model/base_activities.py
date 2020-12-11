@@ -309,7 +309,7 @@ class GenericActivity(PluginActivity):
             del requested_resources[resource]
 
 
-class SequentialStartEventsTrigger:
+class StartSubProcesses:
     """Mixin for the activities that want to execute their sub_processes in sequence."""
 
     def start_sequential_subprocesses(self):

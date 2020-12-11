@@ -1,10 +1,10 @@
 """Sequential activity for the simulation."""
 import openclsim.core as core
 
-from .base_activities import GenericActivity, SequentialStartEventsTrigger
+from .base_activities import GenericActivity, StartSubProcesses
 
 
-class SequentialActivity(GenericActivity, SequentialStartEventsTrigger):
+class SequentialActivity(GenericActivity, StartSubProcesses):
     """
     SequenceActivity Class forms a specific class.
 
