@@ -128,11 +128,6 @@ class GenericActivity(PluginActivity):
         if self.start_event is not None:
             start_event = self.parse_expression(self.start_event)
         start_event_instance = start_event
-        (
-            start_event
-            if start_event is None or isinstance(start_event, simpy.Event)
-            else self.env.all_of(events=start_event)
-        )
 
         if start_event_instance is not None:
             main_proc = partial(
@@ -149,22 +144,9 @@ class GenericActivity(PluginActivity):
                 self.main_proc(activity_log=self, env=self.env)
             )
 
-        if "name" not in self.registry:
-            self.registry["name"] = {}
-        if self.name not in self.registry["name"]:
-            l_ = []
-        else:
-            l_ = self.registry["name"][self.name]
-        l_.append(self)
-        self.registry["name"][self.name] = l_
-        if "id" not in self.registry:
-            self.registry["id"] = {}
-        if self.id not in self.registry["id"]:
-            l_ = []
-        else:
-            l_ = self.registry["id"][self.id]
-        l_.append(self)
-        self.registry["id"][self.id] = l_
+        # add activity to the registry
+        self.registry.setdefault("name", {}).setdefault(self.name, []).append(self)
+        self.registry.setdefault("id", {}).setdefault(self.id, []).append(self)
 
     def parse_expression(self, expr):
         if isinstance(expr, simpy.Event):
