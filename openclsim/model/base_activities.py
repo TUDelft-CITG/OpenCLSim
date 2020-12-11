@@ -37,6 +37,60 @@ class AbstractPluginClass(ABC):
         pass
 
 
+class StartSubProcesses:
+    """Mixin for the activities that want to execute their sub_processes in sequence."""
+
+    def start_sequential_subprocesses(self):
+        self.start_sequence = self.env.event()
+
+        for (i, sub_process) in enumerate(self.sub_processes):
+            start_event = sub_process.start_event
+            if isinstance(start_event, dict) or isinstance(start_event, simpy.Event):
+                start_event = [start_event]
+            if start_event is None:
+                start_event = []
+            if isinstance(start_event, list):
+                pass
+            else:
+                raise ValueError(f"{type(start_event)} is not a valid type.")
+
+            if i == 0:
+                start_event.append(self.start_sequence)
+                sub_process.start_event = [{"and": start_event}]
+            else:
+                start_event.append(
+                    {
+                        "type": "activity",
+                        "state": "done",
+                        "name": self.sub_processes[i - 1].name,
+                    }
+                )
+                sub_process.start_event = [{"and": start_event}]
+
+            sub_process.postpone_start = False
+            sub_process.start()
+
+    def start_parallel_subprocesses(self):
+        self.start_parallel = self.env.event()
+
+        for (i, sub_process) in enumerate(self.sub_processes):
+            start_event = sub_process.start_event
+            if isinstance(start_event, dict) or isinstance(start_event, simpy.Event):
+                start_event = [start_event]
+            if start_event is None:
+                start_event = []
+            if isinstance(start_event, list):
+                pass
+            else:
+                raise ValueError(f"{type(start_event)} is not a valid type.")
+
+            start_event.append(self.start_parallel)
+            sub_process.start_event = [{"and": start_event}]
+
+            sub_process.postpone_start = False
+            sub_process.start()
+
+
 class PluginActivity(core.Identifiable, core.Log):
     """
     Base class for all activities which will provide a plugin mechanism.
@@ -49,12 +103,9 @@ class PluginActivity(core.Identifiable, core.Log):
         super().__init__(*args, **kwargs)
         self.plugins = list()
 
-    def get_priority(self, elem):
-        return elem["priority"]
-
     def register_plugin(self, plugin, priority=0):
         self.plugins.append({"priority": priority, "plugin": plugin})
-        self.plugins = sorted(self.plugins, key=self.get_priority)
+        self.plugins = sorted(self.plugins, key=lambda x: x["priority"])
 
     def pre_process(self, args_data):
         # iterating over all registered plugins for this activity calling pre_process
@@ -83,19 +134,7 @@ class PluginActivity(core.Identifiable, core.Log):
 
 
 class GenericActivity(PluginActivity):
-    """
-    The GenericActivity Class forms a generic class which sets up all required mechanisms to control an activity by providing a start event.
-
-    Since it is generic, a parameter of the initialization
-    is the main process, which is provided by an inheriting class
-    main_proc  : the main process to be executed
-    start_event: the activity will start as soon as this event is triggered
-                 by default will be to start immediately
-    requested_resources: a call by refernce value to a dictionary of resources, which have been requested and not released yet.
-    keep_resources: a list of resources, which should not be released at the end of the activity
-    postpone_start: if set to True, the activity will not be directly started in the simpy environment,
-                but will be started by a structrual activity, like sequential or while activity.
-    """
+    """The GenericActivity Class forms a generic class which sets up all activites."""
 
     def __init__(
         self,
@@ -120,10 +159,11 @@ class GenericActivity(PluginActivity):
         # replace the done event
         self.done_event = self.env.event()
 
-        start_event = None
-        if self.start_event is not None:
-            start_event = self.parse_expression(self.start_event)
-
+        start_event = (
+            None
+            if self.start_event is None
+            else self.parse_expression(self.start_event)
+        )
         if start_event is not None:
             main_proc = partial(
                 self.delayed_process,
@@ -190,10 +230,7 @@ class GenericActivity(PluginActivity):
     def get_done_event(self):
         if self.postpone_start:
             return self.done_event
-        elif hasattr(self, "main_process"):
-            return self.main_process
-        else:
-            return self.done_event
+        return getattr(self, "main_process", self.done_event)
 
     def call_main_proc(self, activity_log, env):
         res = self.main_proc(activity_log=activity_log, env=env)
@@ -281,57 +318,3 @@ class GenericActivity(PluginActivity):
         if resource in requested_resources.keys():
             resource.release(requested_resources[resource])
             del requested_resources[resource]
-
-
-class StartSubProcesses:
-    """Mixin for the activities that want to execute their sub_processes in sequence."""
-
-    def start_sequential_subprocesses(self):
-        self.start_sequence = self.env.event()
-
-        for (i, sub_process) in enumerate(self.sub_processes):
-            start_event = sub_process.start_event
-            if isinstance(start_event, dict) or isinstance(start_event, simpy.Event):
-                start_event = [start_event]
-            if start_event is None:
-                start_event = []
-            if isinstance(start_event, list):
-                pass
-            else:
-                raise ValueError(f"{type(start_event)} is not a valid type.")
-
-            if i == 0:
-                start_event.append(self.start_sequence)
-                sub_process.start_event = [{"and": start_event}]
-            else:
-                start_event.append(
-                    {
-                        "type": "activity",
-                        "state": "done",
-                        "name": self.sub_processes[i - 1].name,
-                    }
-                )
-                sub_process.start_event = [{"and": start_event}]
-
-            sub_process.postpone_start = False
-            sub_process.start()
-
-    def start_parallel_subprocesses(self):
-        self.start_parallel = self.env.event()
-
-        for (i, sub_process) in enumerate(self.sub_processes):
-            start_event = sub_process.start_event
-            if isinstance(start_event, dict) or isinstance(start_event, simpy.Event):
-                start_event = [start_event]
-            if start_event is None:
-                start_event = []
-            if isinstance(start_event, list):
-                pass
-            else:
-                raise ValueError(f"{type(start_event)} is not a valid type.")
-
-            start_event.append(self.start_parallel)
-            sub_process.start_event = [{"and": start_event}]
-
-            sub_process.postpone_start = False
-            sub_process.start()
