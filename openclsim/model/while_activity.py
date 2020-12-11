@@ -121,11 +121,11 @@ class WhileActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
         self.max_iterations = 1_000_000
 
         if not self.postpone_start:
-            self.start_sequential_subprocesses()
             self.start()
 
     def start(self):
-        self.register_process(main_proc=self.conditional_process, show=self.print)
+        self.start_sequential_subprocesses()
+        self.register_process(main_proc=self.conditional_process)
 
 
 class RepeatActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
@@ -165,4 +165,4 @@ class RepeatActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
 
     def start(self):
         self.start_sequential_subprocesses()
-        self.register_process(main_proc=self.conditional_process, show=self.print)
+        self.register_process(main_proc=self.conditional_process)

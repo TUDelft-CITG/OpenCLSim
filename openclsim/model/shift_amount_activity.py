@@ -57,7 +57,7 @@ class ShiftAmountActivity(GenericActivity):
             self.start()
 
     def start(self):
-        self.register_process(main_proc=self.shift_amount_process, show=self.print)
+        self.register_process(main_proc=self.shift_amount_process)
 
     def _request_resource_if_available(
         self,

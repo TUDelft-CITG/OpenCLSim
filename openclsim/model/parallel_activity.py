@@ -36,7 +36,7 @@ class ParallelActivity(GenericActivity, StartSubProcesses):
 
     def start(self):
         self.start_parallel_subprocesses()
-        self.register_process(main_proc=self.sequential_process, show=self.print)
+        self.register_process(main_proc=self.sequential_process)
 
     def sequential_process(self, activity_log, env):
         start_time = env.now

@@ -29,11 +29,7 @@ class BasicActivity(GenericActivity):
             self.start()
 
     def start(self):
-        self.register_process(
-            main_proc=self.basic_process,
-            show=self.print,
-            additional_logs=self.additional_logs,
-        )
+        self.register_process(main_proc=self.basic_process)
 
     def basic_process(self, activity_log, env):
         """

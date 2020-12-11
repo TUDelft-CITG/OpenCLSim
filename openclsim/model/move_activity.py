@@ -38,7 +38,7 @@ class MoveActivity(GenericActivity):
             self.start()
 
     def start(self):
-        self.register_process(main_proc=self.move_process, show=self.print)
+        self.register_process(main_proc=self.move_process)
 
     def move_process(self, activity_log, env):
         """

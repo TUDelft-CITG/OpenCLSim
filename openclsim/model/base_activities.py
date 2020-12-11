@@ -116,33 +116,25 @@ class GenericActivity(PluginActivity):
         self.keep_resources = keep_resources
         self.done_event = self.env.event()
 
-    def register_process(self, main_proc, show=False, additional_logs=None):
+    def register_process(self, main_proc):
         # replace the done event
         self.done_event = self.env.event()
-
-        # default to []
-        if additional_logs is None:
-            additional_logs = []
 
         start_event = None
         if self.start_event is not None:
             start_event = self.parse_expression(self.start_event)
-        start_event_instance = start_event
 
-        if start_event_instance is not None:
+        if start_event is not None:
             main_proc = partial(
                 self.delayed_process,
-                start_event=start_event_instance,
+                start_event=start_event,
                 sub_processes=[main_proc],
-                additional_logs=additional_logs,
+                additional_logs=getattr(self, "additional_logs", []),
                 requested_resources=self.requested_resources,
                 keep_resources=self.keep_resources,
             )
-        self.main_proc = main_proc
-        if not self.postpone_start:
-            self.main_process = self.env.process(
-                self.main_proc(activity_log=self, env=self.env)
-            )
+
+        self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
 
         # add activity to the registry
         self.registry.setdefault("name", {}).setdefault(self.name, []).append(self)
