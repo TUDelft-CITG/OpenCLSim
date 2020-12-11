@@ -4,7 +4,7 @@ import openclsim.core as core
 from .base_activities import GenericActivity, SequentialStartEventsTrigger
 
 
-class SequentialActivity(GenericActivity, SequentialStartEventsTrigger):
+class ParallelActivity(GenericActivity, SequentialStartEventsTrigger):
     """
     SequenceActivity Class forms a specific class.
 
@@ -35,7 +35,7 @@ class SequentialActivity(GenericActivity, SequentialStartEventsTrigger):
             self.start()
 
     def start(self):
-        self.start_sequential_subprocesses()
+        self.start_parallel_subprocesses()
         self.register_process(main_proc=self.sequential_process, show=self.print)
 
     def sequential_process(self, activity_log, env):
@@ -55,7 +55,7 @@ class SequentialActivity(GenericActivity, SequentialStartEventsTrigger):
             activity_state=core.LogState.START,
         )
 
-        self.start_sequence.succeed()
+        self.start_parallel.succeed()
 
         for sub_process in self.sub_processes:
             activity_log.log_entry(
@@ -67,27 +67,66 @@ class SequentialActivity(GenericActivity, SequentialStartEventsTrigger):
                     "ref": sub_process.id,
                 },
             )
-
-            stop_event = self.parse_expression(
+        stop_event = self.parse_expression(
+            [
+                {
+                    "and": [
+                        {
+                            "type": "activity",
+                            "state": "done",
+                            "name": sub_proc.name,
+                        }
+                        for sub_proc in self.sub_processes
+                    ]
+                }
+            ]
+        )
+        done = []
+        while not stop_event.triggered:
+            event_trigger = self.parse_expression(
                 [
                     {
-                        "type": "activity",
-                        "state": "done",
-                        "name": sub_process.name,
+                        "or": [
+                            {
+                                "type": "activity",
+                                "state": "done",
+                                "name": sub_proc.name,
+                            }
+                            for sub_proc in self.sub_processes
+                            if sub_proc.name not in done
+                        ]
                     }
                 ]
             )
-            yield stop_event
+            yield event_trigger
+            new_done = [
+                sub_proc.name
+                for sub_proc in self.sub_processes
+                if self.parse_expression(
+                    {
+                        "type": "activity",
+                        "state": "done",
+                        "name": sub_proc.name,
+                    }
+                ).triggered
+                is True
+            ]
+            for item in list(set(new_done) - set(done)):
+                print(item)
+                sub_process = next(
+                    process for process in self.sub_processes if process.name == item
+                )
+                activity_log.log_entry(
+                    t=env.now,
+                    activity_id=activity_log.id,
+                    activity_state=core.LogState.STOP,
+                    activity_label={
+                        "type": "subprocess",
+                        "ref": sub_process.id,
+                    },
+                )
 
-            activity_log.log_entry(
-                t=env.now,
-                activity_id=activity_log.id,
-                activity_state=core.LogState.STOP,
-                activity_label={
-                    "type": "subprocess",
-                    "ref": sub_process.id,
-                },
-            )
+            done = new_done
 
         activity_log.log_entry(
             t=env.now,

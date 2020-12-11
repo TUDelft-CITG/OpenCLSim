@@ -7,6 +7,7 @@ from .sequential_activity import SequentialActivity
 from .shift_amount_activity import ShiftAmountActivity
 from .single_run_process import single_run_process
 from .while_activity import RepeatActivity, WhileActivity
+from .parallel_activity import ParallelActivity
 
 __all__ = [
     "AbstractPluginClass",
@@ -19,4 +20,5 @@ __all__ = [
     "RepeatActivity",
     "single_run_process",
     "ShiftAmountActivity",
+    "ParallelActivity",
 ]

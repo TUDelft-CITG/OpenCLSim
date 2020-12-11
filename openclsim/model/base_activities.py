@@ -307,3 +307,57 @@ class GenericActivity(PluginActivity):
         if resource in requested_resources.keys():
             resource.release(requested_resources[resource])
             del requested_resources[resource]
+
+
+class SequentialStartEventsTrigger:
+    """Mixin for the activities that want to execute their sub_processes in sequence."""
+
+    def start_sequential_subprocesses(self):
+        self.start_sequence = self.env.event()
+
+        for (i, sub_process) in enumerate(self.sub_processes):
+            start_event = sub_process.start_event
+            if isinstance(start_event, dict) or isinstance(start_event, simpy.Event):
+                start_event = [start_event]
+            if start_event is None:
+                start_event = []
+            if isinstance(start_event, list):
+                pass
+            else:
+                raise ValueError(f"{type(start_event)} is not a valid type.")
+
+            if i == 0:
+                start_event.append(self.start_sequence)
+                sub_process.start_event = [{"and": start_event}]
+            else:
+                start_event.append(
+                    {
+                        "type": "activity",
+                        "state": "done",
+                        "name": self.sub_processes[i - 1].name,
+                    }
+                )
+                sub_process.start_event = [{"and": start_event}]
+
+            sub_process.postpone_start = False
+            sub_process.start()
+
+    def start_parallel_subprocesses(self):
+        self.start_parallel = self.env.event()
+
+        for (i, sub_process) in enumerate(self.sub_processes):
+            start_event = sub_process.start_event
+            if isinstance(start_event, dict) or isinstance(start_event, simpy.Event):
+                start_event = [start_event]
+            if start_event is None:
+                start_event = []
+            if isinstance(start_event, list):
+                pass
+            else:
+                raise ValueError(f"{type(start_event)} is not a valid type.")
+
+            start_event.append(self.start_parallel)
+            sub_process.start_event = [{"and": start_event}]
+
+            sub_process.postpone_start = False
+            sub_process.start()

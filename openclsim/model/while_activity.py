@@ -1,8 +1,8 @@
 """While activity for the simulation."""
 
 import openclsim.core as core
-import simpy
-from .base_activities import GenericActivity
+
+from .base_activities import GenericActivity, SequentialStartEventsTrigger
 
 
 class ConditionProcessMixin:
@@ -73,7 +73,7 @@ class ConditionProcessMixin:
                     },
                 )
 
-            if repetitions >= self.max_iterations:
+            if repetitions >= self.max_iterations or condition_event.processed is True:
                 break
             else:
                 repetitions += 1
@@ -95,7 +95,9 @@ class ConditionProcessMixin:
         yield env.timeout(0)
 
 
-class WhileActivity(GenericActivity, ConditionProcessMixin):
+class WhileActivity(
+    GenericActivity, ConditionProcessMixin, SequentialStartEventsTrigger
+):
     """
     WhileActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
 
@@ -116,22 +118,21 @@ class WhileActivity(GenericActivity, ConditionProcessMixin):
         """Initialization"""
         self.print = show
         self.sub_processes = sub_processes
-        for sub_process in self.sub_processes:
-            if not sub_process.postpone_start:
-                raise Exception(
-                    f"In While activity {self.name} the sub_process must have postpone_start=True"
-                )
+
         self.condition_event = condition_event
         self.max_iterations = 1_000_000
 
         if not self.postpone_start:
+            self.start_sequential_subprocesses()
             self.start()
 
     def start(self):
         self.register_process(main_proc=self.conditional_process, show=self.print)
 
 
-class RepeatActivity(GenericActivity, ConditionProcessMixin):
+class RepeatActivity(
+    GenericActivity, ConditionProcessMixin, SequentialStartEventsTrigger
+):
     """
     RepeatActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
 
@@ -153,39 +154,11 @@ class RepeatActivity(GenericActivity, ConditionProcessMixin):
         self.print = show
         self.sub_processes = sub_processes
 
-        self.start_sequence = self.env.event()
-
-        for (i, sub_process) in enumerate(self.sub_processes):
+        for sub_process in self.sub_processes:
             if not sub_process.postpone_start:
                 raise Exception(
                     f"In Sequence activity {self.name} the sub_process must have postpone_start=True"
                 )
-
-            start_event = sub_process.start_event
-            if isinstance(start_event, dict) or isinstance(start_event, simpy.Event):
-                start_event = [start_event]
-            if start_event is None:
-                start_event = []
-            if isinstance(start_event, list):
-                pass
-            else:
-                raise ValueError(f"{type(start_event)} is not a valid type.")
-
-            if i == 0:
-                start_event.append(self.start_sequence)
-                sub_process.start_event = [{"and": start_event}]
-            else:
-                start_event.append(
-                    {
-                        "type": "activity",
-                        "state": "done",
-                        "name": self.sub_processes[i - 1].name,
-                    }
-                )
-                sub_process.start_event = [{"and": start_event}]
-
-            sub_process.postpone_start = False
-            sub_process.start()
 
         self.max_iterations = repetitions
         self.condition_event = [
@@ -195,4 +168,5 @@ class RepeatActivity(GenericActivity, ConditionProcessMixin):
             self.start()
 
     def start(self):
+        self.start_sequential_subprocesses()
         self.register_process(main_proc=self.conditional_process, show=self.print)
