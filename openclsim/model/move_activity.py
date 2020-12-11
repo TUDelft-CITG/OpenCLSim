@@ -37,8 +37,8 @@ class MoveActivity(GenericActivity):
         if not self.postpone_start:
             self.start()
 
-    def start(self):
-        self.register_process(main_proc=self.move_process)
+    def start(self, log_wait=True):
+        self.register_process(main_proc=self.move_process, log_wait=log_wait)
 
     def move_process(self, activity_log, env):
         """

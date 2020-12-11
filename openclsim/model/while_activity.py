@@ -42,6 +42,23 @@ class ConditionProcessMixin:
         while True:
             self.start_sequence.succeed()
             for sub_process in self.sub_processes:
+                sub_process_start_event = self.parse_expression(sub_process.start_event)
+                if not sub_process_start_event.triggered:
+                    start_time = env.now
+                    yield sub_process_start_event
+                    print(sub_process.name, start_time, env.now, start_time < env.now)
+                    if start_time < env.now:
+                        sub_process.log_entry(
+                            t=start_time,
+                            activity_id=sub_process.id,
+                            activity_state=core.LogState.WAIT_START,
+                        )
+                        sub_process.log_entry(
+                            t=env.now,
+                            activity_id=sub_process.id,
+                            activity_state=core.LogState.WAIT_STOP,
+                        )
+
                 activity_log.log_entry(
                     t=env.now,
                     activity_id=activity_log.id,
@@ -73,6 +90,8 @@ class ConditionProcessMixin:
                     },
                 )
 
+                yield env.timeout(0)
+
             if repetitions >= self.max_iterations or condition_event.processed is True:
                 break
             else:
@@ -94,9 +113,9 @@ class ConditionProcessMixin:
 
         yield env.timeout(0)
 
-    def start(self):
+    def start(self, log_wait=True):
         self.start_sequential_subprocesses()
-        self.register_process(main_proc=self.conditional_process)
+        self.register_process(main_proc=self.conditional_process, log_wait=True)
 
 
 class WhileActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):

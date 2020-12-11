@@ -56,8 +56,8 @@ class ShiftAmountActivity(GenericActivity):
         if not self.postpone_start:
             self.start()
 
-    def start(self):
-        self.register_process(main_proc=self.shift_amount_process)
+    def start(self, log_wait=True):
+        self.register_process(main_proc=self.shift_amount_process, log_wait=log_wait)
 
     def _request_resource_if_available(
         self,

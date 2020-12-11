@@ -28,8 +28,8 @@ class BasicActivity(GenericActivity):
         if not self.postpone_start:
             self.start()
 
-    def start(self):
-        self.register_process(main_proc=self.basic_process)
+    def start(self, log_wait=True):
+        self.register_process(main_proc=self.basic_process, log_wait=log_wait)
 
     def basic_process(self, activity_log, env):
         """

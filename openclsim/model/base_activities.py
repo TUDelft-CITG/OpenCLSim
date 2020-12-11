@@ -68,7 +68,7 @@ class StartSubProcesses:
                 sub_process.start_event = [{"and": start_event}]
 
             sub_process.postpone_start = False
-            sub_process.start()
+            sub_process.start(log_wait=False)
 
     def start_parallel_subprocesses(self):
         self.start_parallel = self.env.event()
@@ -88,7 +88,7 @@ class StartSubProcesses:
             sub_process.start_event = [{"and": start_event}]
 
             sub_process.postpone_start = False
-            sub_process.start()
+            sub_process.start(log_wait=False)
 
 
 class PluginActivity(core.Identifiable, core.Log):
@@ -155,7 +155,7 @@ class GenericActivity(PluginActivity):
         self.keep_resources = keep_resources
         self.done_event = self.env.event()
 
-    def register_process(self, main_proc):
+    def register_process(self, main_proc, log_wait=True):
         # replace the done event
         self.done_event = self.env.event()
 
@@ -172,6 +172,7 @@ class GenericActivity(PluginActivity):
                 additional_logs=getattr(self, "additional_logs", []),
                 requested_resources=self.requested_resources,
                 keep_resources=self.keep_resources,
+                log_wait=log_wait,
             )
 
         self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
@@ -248,6 +249,7 @@ class GenericActivity(PluginActivity):
         requested_resources,
         keep_resources,
         additional_logs=[],
+        log_wait=True,
     ):
         """
         Return a generator which can be added as a process to a simpy environment.
@@ -266,34 +268,36 @@ class GenericActivity(PluginActivity):
         if hasattr(start_event, "__call__"):
             start_event = start_event()
 
-        activity_log.log_entry(
-            t=env.now,
-            activity_id=activity_log.id,
-            activity_state=core.LogState.WAIT_START,
-        )
-        if isinstance(additional_logs, list) and len(additional_logs) > 0:
-            for log in additional_logs:
-                for sub_process in sub_processes:
-                    log.log_entry(
-                        t=env.now,
-                        activity_id=activity_log.id,
-                        activity_state=core.LogState.WAIT_START,
-                    )
+        if log_wait:
+            activity_log.log_entry(
+                t=env.now,
+                activity_id=activity_log.id,
+                activity_state=core.LogState.WAIT_START,
+            )
+            if isinstance(additional_logs, list) and len(additional_logs) > 0:
+                for log in additional_logs:
+                    for sub_process in sub_processes:
+                        log.log_entry(
+                            t=env.now,
+                            activity_id=activity_log.id,
+                            activity_state=core.LogState.WAIT_START,
+                        )
 
         yield start_event
-        activity_log.log_entry(
-            t=env.now,
-            activity_id=activity_log.id,
-            activity_state=core.LogState.WAIT_STOP,
-        )
-        if isinstance(additional_logs, list) and len(additional_logs) > 0:
-            for log in additional_logs:
-                for sub_process in sub_processes:
-                    log.log_entry(
-                        t=env.now,
-                        activity_id=activity_log.id,
-                        activity_state=core.LogState.WAIT_STOP,
-                    )
+        if log_wait:
+            activity_log.log_entry(
+                t=env.now,
+                activity_id=activity_log.id,
+                activity_state=core.LogState.WAIT_STOP,
+            )
+            if isinstance(additional_logs, list) and len(additional_logs) > 0:
+                for log in additional_logs:
+                    for sub_process in sub_processes:
+                        log.log_entry(
+                            t=env.now,
+                            activity_id=activity_log.id,
+                            activity_state=core.LogState.WAIT_STOP,
+                        )
 
         for sub_process in sub_processes:
             yield from sub_process(activity_log=activity_log, env=env)
