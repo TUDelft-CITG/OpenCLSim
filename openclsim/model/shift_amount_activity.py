@@ -133,7 +133,7 @@ class ShiftAmountActivity(GenericActivity):
 
         if self.amount == 0:
             raise RuntimeError(
-                f"Attempting to shift content from an empty origin or to a full self.destination. ({all_amounts})"
+                f"Attempting to shift content from an empty origin ({self.origin.name}) or to a full destination ({self.destination.name}). ({all_amounts})"
             )
 
         yield from self._request_resource(resource_requests, self.destination.resource)
