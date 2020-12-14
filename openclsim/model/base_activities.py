@@ -215,7 +215,7 @@ class GenericActivity(PluginActivity):
                         f"No activity found in ActivityExpression for id/name {key}"
                     )
                 return self.env.all_of(
-                    [activity_item.get_done_event() for activity_item in activity_]
+                    [activity_item.main_process for activity_item in activity_]
                 )
 
             raise ValueError
@@ -223,11 +223,6 @@ class GenericActivity(PluginActivity):
         raise ValueError(
             f"{type(expr)} is not a valid input type. Valid input types are: simpy.Event, dict, and list"
         )
-
-    def get_done_event(self):
-        if self.postpone_start:
-            return self.done_event
-        return getattr(self, "main_process", self.done_event)
 
     def delayed_process(
         self,
