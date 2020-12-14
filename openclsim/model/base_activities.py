@@ -229,13 +229,6 @@ class GenericActivity(PluginActivity):
             return self.done_event
         return getattr(self, "main_process", self.done_event)
 
-    def call_main_proc(self, activity_log, env):
-        res = self.main_proc(activity_log=activity_log, env=env)
-        return res
-
-    def end(self):
-        self.done_event.succeed()
-
     def delayed_process(
         self,
         activity_log,
