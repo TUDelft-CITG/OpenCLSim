@@ -215,12 +215,6 @@ class ShiftAmountActivity(GenericActivity):
                 resource_requests, self.processor.resource, self.keep_resources
             )
 
-        # work around for the event evaluation
-        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-        # which will result in triggered but not processed events to be taken care of before further progressing
-        # maybe there is a better way of doing it, but his option works for now.
-        yield env.timeout(0)
-
     def _move_mover(self, mover, origin, activity_id, engine_order=1.0, verbose=False):
         """Call the mover.move method, giving debug print statements when verbose is True."""
         # Set activity_id to mover

@@ -89,8 +89,6 @@ class ConditionProcessMixin:
                     },
                 )
 
-                yield env.timeout(0)
-
             if repetitions >= self.max_iterations or condition_event.processed is True:
                 break
             else:
@@ -109,8 +107,6 @@ class ConditionProcessMixin:
         args_data["start_preprocessing"] = start_time
         args_data["start_activity"] = start_while
         yield from self.post_process(**args_data)
-
-        yield env.timeout(0)
 
     def start(self, log_wait=True):
         self.start_sequential_subprocesses()
