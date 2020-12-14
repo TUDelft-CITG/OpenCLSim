@@ -67,9 +67,6 @@ class StartSubProcesses:
                 )
                 sub_process.start_event = [{"and": start_event}]
 
-            sub_process.postpone_start = False
-            sub_process.start(log_wait=False)
-
     def start_parallel_subprocesses(self):
         self.start_parallel = self.env.event()
 
@@ -86,9 +83,6 @@ class StartSubProcesses:
 
             start_event.append(self.start_parallel)
             sub_process.start_event = [{"and": start_event}]
-
-            sub_process.postpone_start = False
-            sub_process.start(log_wait=False)
 
 
 class PluginActivity(core.Identifiable, core.Log):
@@ -155,7 +149,7 @@ class GenericActivity(PluginActivity):
         self.keep_resources = keep_resources
         self.done_event = self.env.event()
 
-    def register_process(self, main_proc, log_wait=True):
+    def register_process(self, log_wait=True):
         # replace the done event
         self.done_event = self.env.event()
 
@@ -164,6 +158,8 @@ class GenericActivity(PluginActivity):
             if self.start_event is None
             else self.parse_expression(self.start_event)
         )
+
+        main_proc = self.main_process_function
         if start_event is not None:
             main_proc = partial(
                 self.delayed_process,

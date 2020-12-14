@@ -53,12 +53,6 @@ class ShiftAmountActivity(GenericActivity):
         self.print = show
         self.phase = phase
 
-        if not self.postpone_start:
-            self.start()
-
-    def start(self, log_wait=True):
-        self.register_process(main_proc=self.shift_amount_process, log_wait=log_wait)
-
     def _request_resource_if_available(
         self,
         env,
@@ -115,7 +109,7 @@ class ShiftAmountActivity(GenericActivity):
                 continue
             all_available = True
 
-    def shift_amount_process(self, activity_log, env):
+    def main_process_function(self, activity_log, env):
         """Origin and Destination are of type HasContainer."""
         assert self.processor.is_at(self.origin)
         assert self.destination.is_at(self.origin)

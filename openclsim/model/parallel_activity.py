@@ -30,15 +30,9 @@ class ParallelActivity(GenericActivity, StartSubProcesses):
                 raise Exception(
                     f"In Sequence activity {self.name} the sub_process must have postpone_start=True"
                 )
-
-        if not self.postpone_start:
-            self.start()
-
-    def start(self, log_wait=True):
         self.start_parallel_subprocesses()
-        self.register_process(main_proc=self.sequential_process, log_wait=log_wait)
 
-    def sequential_process(self, activity_log, env):
+    def main_process_function(self, activity_log, env):
         start_time = env.now
         args_data = {
             "env": env,
