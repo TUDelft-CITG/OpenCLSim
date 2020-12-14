@@ -223,32 +223,9 @@ class ShiftAmountActivity(GenericActivity):
 
     def _move_mover(self, mover, origin, activity_id, engine_order=1.0, verbose=False):
         """Call the mover.move method, giving debug print statements when verbose is True."""
-        old_location = mover.geometry
-
         # Set activity_id to mover
         mover.activity_id = activity_id
         yield from mover.move(origin, engine_order=engine_order)
-
-        if verbose:
-            print("Moved:")
-            print(
-                "  object:      "
-                + mover.name
-                + " contains: "
-                + str(mover.container.get_level())
-            )
-            print(
-                "  from:        "
-                + format(old_location.x, "02.5f")
-                + " "
-                + format(old_location.y, "02.5f")
-            )
-            print(
-                "  to:          "
-                + format(mover.geometry.x, "02.5f")
-                + " "
-                + format(mover.geometry.y, "02.5f")
-            )
 
     def _shift_amount(
         self,
@@ -279,11 +256,3 @@ class ShiftAmountActivity(GenericActivity):
             duration=duration,
             rate=rate,
         )
-
-        if verbose:
-            org_level = origin.container.get_level(id_)
-            dest_level = destination.container.get_level(id_)
-            print(f"Processed {amount} of {id_}:")
-            print(f"  by:          {processor.name}")
-            print(f"  origin        {origin.name}  contains: {org_level} of {id_}")
-            print(f"  destination:  {destination.name} contains: {dest_level} of {id_}")

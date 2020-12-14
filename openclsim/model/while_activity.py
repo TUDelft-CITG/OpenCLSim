@@ -46,7 +46,6 @@ class ConditionProcessMixin:
                 if not sub_process_start_event.triggered:
                     start_time = env.now
                     yield sub_process_start_event
-                    print(sub_process.name, start_time, env.now, start_time < env.now)
                     if start_time < env.now:
                         sub_process.log_entry(
                             t=start_time,
@@ -99,7 +98,7 @@ class ConditionProcessMixin:
                 self.start_sequence = self.env.event()
 
                 for sub_process in self.sub_processes:
-                    sub_process.start()
+                    sub_process.start(log_wait=False)
 
         activity_log.log_entry(
             t=env.now,
@@ -115,7 +114,7 @@ class ConditionProcessMixin:
 
     def start(self, log_wait=True):
         self.start_sequential_subprocesses()
-        self.register_process(main_proc=self.conditional_process, log_wait=True)
+        self.register_process(main_proc=self.conditional_process, log_wait=log_wait)
 
 
 class WhileActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
