@@ -27,20 +27,6 @@ def test_test_resource_synchronization():
         ),
         {},
     )
-
-    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)
-
-    data_from_site = {
-        "env": my_env,
-        "name": "Winlocatie",
-        "ID": "6dbbbdf4-4589-11e9-a501-b469212bff5d",
-        "geometry": location_from_site,
-        "capacity": 10,
-        "level": 8,
-    }
-
-    from_site = Site(**data_from_site)
-
     TransportProcessingResource = type(
         "TransportProcessingResource",
         (
@@ -55,66 +41,70 @@ def test_test_resource_synchronization():
         {},
     )
 
-    def compute_v_provider(v_empty, v_full):
-        return lambda x: 10
+    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)
 
-    data_hopper1 = {
-        "env": my_env,
-        "name": "Hopper 01",
-        "ID": "6dbbbdf6-4589-11e9-95a2-b469212bff5b",
-        "geometry": location_from_site,
-        "loading_rate": 1,
-        "unloading_rate": 1,
-        "capacity": 4,
-        "compute_v": compute_v_provider(5, 4.5),
-    }
+    from_site = Site(
+        env=my_env,
+        name="Winlocatie",
+        ID="6dbbbdf4-4589-11e9-a501-b469212bff5d",
+        geometry=location_from_site,
+        capacity=10,
+        level=8,
+    )
 
-    hopper1 = TransportProcessingResource(**data_hopper1)
+    hopper1 = TransportProcessingResource(
+        env=my_env,
+        name="Hopper 01",
+        ID="6dbbbdf6-4589-11e9-95a2-b469212bff5b",
+        geometry=location_from_site,
+        loading_rate=1,
+        unloading_rate=1,
+        capacity=4,
+        compute_v=lambda x: 10,
+    )
 
-    data_hopper2 = {
-        "env": my_env,
-        "name": "Hopper 02",
-        "ID": "5dbbbdf6-4589-11e9-95a2-b469212bff5b",
-        "geometry": location_from_site,
-        "loading_rate": 1,
-        "unloading_rate": 1,
-        "capacity": 4,
-        "compute_v": compute_v_provider(5, 4.5),
-    }
-    hopper2 = TransportProcessingResource(**data_hopper2)
+    hopper2 = TransportProcessingResource(
+        env=my_env,
+        name="Hopper 02",
+        ID="5dbbbdf6-4589-11e9-95a2-b469212bff5b",
+        geometry=location_from_site,
+        loading_rate=1,
+        unloading_rate=1,
+        capacity=4,
+        compute_v=lambda x: 10,
+    )
 
     requested_resources1 = {}
-    shift_amount_activity_loading_data1 = {
-        "env": my_env,
-        "name": "Transfer1",
-        "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff52",
-        "registry": registry,
-        "processor": hopper1,
-        "origin": from_site,
-        "destination": hopper1,
-        "amount": 1,
-        "duration": 20,
-        "requested_resources": requested_resources1,
-    }
-    activity1 = model.ShiftAmountActivity(**shift_amount_activity_loading_data1)
+    activity1 = model.ShiftAmountActivity(
+        env=my_env,
+        name="Transfer1",
+        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+        registry=registry,
+        processor=hopper1,
+        origin=from_site,
+        destination=hopper1,
+        amount=1,
+        duration=20,
+        requested_resources=requested_resources1,
+    )
 
-    sequential_activity_data1 = {
-        "env": my_env,
-        "name": "Sequential process1",
-        "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-        "registry": registry,
-        "sub_processes": [activity1],
-        "requested_resources": requested_resources1,
-    }
-    seq_activity1 = model.SequentialActivity(**sequential_activity_data1)
+    seq_activity1 = model.SequentialActivity(
+        env=my_env,
+        name="Sequential process1",
+        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff60",
+        registry=registry,
+        sub_processes=[activity1],
+        requested_resources=requested_resources1,
+    )
 
-    while_data1 = {
-        "env": my_env,
-        "name": "while1",
-        "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-        "registry": registry,
-        "sub_processes": [seq_activity1],
-        "condition_event": [
+    while1 = model.WhileActivity(
+        env=my_env,
+        name="while1",
+        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
+        registry=registry,
+        sub_processes=[seq_activity1],
+        requested_resources=requested_resources1,
+        condition_event=[
             {
                 "or": [
                     {"type": "container", "concept": hopper1, "state": "full"},
@@ -122,39 +112,34 @@ def test_test_resource_synchronization():
                 ]
             }
         ],
-        "requested_resources": requested_resources1,
-    }
-    model.WhileActivity(**while_data1)
+    )
 
-    shift_amount_activity_loading_data2 = {
-        "env": my_env,
-        "name": "Transfer2",
-        "ID": "5dbbbdf7-4589-11e9-bf3b-b469212bff52",
-        "registry": registry,
-        "processor": hopper2,
-        "origin": from_site,
-        "destination": hopper2,
-        "amount": 1,
-        "duration": 20,
-    }
-    activity2 = model.ShiftAmountActivity(**shift_amount_activity_loading_data2)
+    activity2 = model.ShiftAmountActivity(
+        env=my_env,
+        name="Transfer2",
+        ID="5dbbbdf7-4589-11e9-bf3b-b469212bff52",
+        registry=registry,
+        processor=hopper2,
+        origin=from_site,
+        destination=hopper2,
+        amount=1,
+        duration=20,
+    )
 
-    sequential_activity_data2 = {
-        "env": my_env,
-        "name": "Sequential process2",
-        "ID": "5dbbbdf7-4589-11e9-bf3b-b469212bff60",
-        "registry": registry,
-        "sub_processes": [activity2],
-    }
-    seq_activity2 = model.SequentialActivity(**sequential_activity_data2)
-
-    while_data2 = {
-        "env": my_env,
-        "name": "while2",
-        "ID": "5dbbbdf7-4589-11e9-bf3b-b469212bff5g",
-        "registry": registry,
-        "sub_processes": [seq_activity2],
-        "condition_event": [
+    seq_activity2 = model.SequentialActivity(
+        env=my_env,
+        name="Sequential process2",
+        ID="5dbbbdf7-4589-11e9-bf3b-b469212bff60",
+        registry=registry,
+        sub_processes=[activity2],
+    )
+    while2 = model.WhileActivity(
+        env=my_env,
+        name="while2",
+        ID="5dbbbdf7-4589-11e9-bf3b-b469212bff5g",
+        registry=registry,
+        sub_processes=[seq_activity2],
+        condition_event=[
             {
                 "or": [
                     {"type": "container", "concept": hopper2, "state": "full"},
@@ -162,9 +147,9 @@ def test_test_resource_synchronization():
                 ]
             }
         ],
-    }
-    model.WhileActivity(**while_data2)
+    )
 
+    model.register_processes([while1, while2])
     my_env.run()
 
     assert my_env.now == 160

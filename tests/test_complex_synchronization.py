@@ -86,7 +86,7 @@ def test_complex_synchronization():
         ),
     ]
 
-    model.SequentialActivity(
+    B = model.SequentialActivity(
         env=my_env,
         name="B Sequential process",
         ID="5dbbbdf7-4589-11e9-bf3b-b469212bff60",
@@ -95,7 +95,7 @@ def test_complex_synchronization():
         keep_resources=keep_resources,
     )
 
-    model.SequentialActivity(
+    A = model.SequentialActivity(
         env=my_env,
         name="A Sequential process",
         ID="6dbbbdf7-4589-11e9-bf3b-b469212bff60",
@@ -104,6 +104,7 @@ def test_complex_synchronization():
         keep_resources=keep_resources,
     )
 
+    model.register_processes([A, B, reporting_activity])
     my_env.run()
 
     assert my_env.now == 721

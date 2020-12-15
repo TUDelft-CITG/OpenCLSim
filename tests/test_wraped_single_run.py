@@ -74,7 +74,7 @@ def test_wraped_single_run():
 
     hopper = TransportProcessingResource(**data_hopper)
 
-    model.single_run_process(
+    (single_run, while_activity) = model.single_run_process(
         name="single_run",
         registry={},
         env=my_env,
@@ -85,6 +85,7 @@ def test_wraped_single_run():
         unloader=hopper,
     )
 
+    model.register_processes([while_activity])
     my_env.run()
 
     assert my_env.now == 13699.734162066252

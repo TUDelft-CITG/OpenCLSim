@@ -44,7 +44,7 @@ class TestTriggers:
             sub_processes=[a, a2],
         )
 
-        model.SequentialActivity(
+        act1 = model.SequentialActivity(
             env=env,
             name="Sc",
             ID="Sc",
@@ -61,7 +61,7 @@ class TestTriggers:
             start_event=[{"name": "a", "type": "activity", "state": "done"}],
         )
 
-        model.SequentialActivity(
+        act2 = model.SequentialActivity(
             env=env,
             name="Sb",
             ID="Sb",
@@ -69,6 +69,7 @@ class TestTriggers:
             sub_processes=[b],
         )
 
+        model.register_processes([act1, act2])
         env.run()
 
         assert env.now == 12
@@ -109,7 +110,7 @@ class TestTriggers:
             repetitions=3,
         )
 
-        model.SequentialActivity(
+        act1 = model.SequentialActivity(
             env=env,
             name="Sc",
             ID="Sc",
@@ -126,7 +127,7 @@ class TestTriggers:
             start_event=[{"name": "a", "type": "activity", "state": "done"}],
         )
 
-        model.RepeatActivity(
+        act2 = model.RepeatActivity(
             env=env,
             name="Rb",
             ID="Rb",
@@ -135,6 +136,7 @@ class TestTriggers:
             repetitions=3,
         )
 
+        model.register_processes([act1, act2])
         env.run()
 
         assert env.now == 7.5
@@ -182,7 +184,7 @@ class TestTriggers:
             sub_processes=[a, a2, a3],
         )
 
-        model.SequentialActivity(
+        act1 = model.SequentialActivity(
             env=env,
             name="Sc",
             ID="Sc",
@@ -199,7 +201,7 @@ class TestTriggers:
             start_event=[{"name": "a", "type": "activity", "state": "done"}],
         )
 
-        model.SequentialActivity(
+        act2 = model.SequentialActivity(
             env=env,
             name="Sb",
             ID="Sb",
@@ -207,6 +209,7 @@ class TestTriggers:
             sub_processes=[b],
         )
 
+        model.register_processes([act1, act2])
         env.run()
 
         assert env.now == 14

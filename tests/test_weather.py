@@ -2,6 +2,7 @@
 
 import datetime
 
+import numpy as np
 import pandas as pd
 import shapely.geometry
 import simpy
@@ -18,8 +19,6 @@ def test_weather():
     simulation_start = datetime.datetime(2009, 1, 1)
     my_env = simpy.Environment(initial_time=simulation_start.timestamp())
     registry = {}
-
-    import numpy as np
 
     Site = type(
         "Site",
@@ -47,7 +46,10 @@ def test_weather():
 
     TestMoveActivity = type(
         "TestMoveActivity",
-        (plugin.HasWeatherPluginActivity, model.MoveActivity),
+        (
+            plugin.HasWeatherPluginActivity,
+            model.MoveActivity,  # the order is critical!
+        ),
         {},
     )
 
@@ -55,42 +57,35 @@ def test_weather():
         "TestShiftActivity",
         (
             plugin.HasWeatherPluginActivity,
-            model.ShiftAmountActivity,
+            model.ShiftAmountActivity,  # the order is critical!
         ),
         {},
     )
 
-    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)
-    location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)
+    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)  # lon, lat
+    location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)  # lon, lat
 
-    data_from_site = {
-        "env": my_env,
-        "name": "Winlocatie",
-        "geometry": location_from_site,
-        "capacity": 12,
-        "level": 12,
-    }
-
-    data_to_site = {
-        "env": my_env,
-        "name": "Dumplocatie",
-        "geometry": location_to_site,
-        "capacity": 12,
-        "level": 0,
-    }
-
-    from_site = Site(**data_from_site)
-    to_site = Site(**data_to_site)
-
-    data_hopper = {
-        "env": my_env,
-        "name": "Hopper 01",
-        "geometry": location_from_site,
-        "capacity": 4,
-        "compute_v": lambda x: 10,
-    }
-
-    hopper = TransportProcessingResource(**data_hopper)
+    from_site = Site(
+        env=my_env,
+        name="Winlocatie",
+        geometry=location_from_site,
+        capacity=120,
+        level=120,
+    )
+    to_site = Site(
+        env=my_env,
+        name="Dumplocatie",
+        geometry=location_to_site,
+        capacity=120,
+        level=0,
+    )
+    hopper = TransportProcessingResource(
+        env=my_env,
+        name="Hopper 01",
+        geometry=location_from_site,
+        capacity=4,
+        compute_v=lambda x: 10,
+    )
 
     metocean_df = pd.read_csv("./tests/data/unit_test_weather.csv")
     metocean_df = metocean_df.set_index(
@@ -111,103 +106,82 @@ def test_weather():
     metocean_df["ts"] = metocean_df.index.values.astype(float) / 1_000_000_000
 
     sailing_crit = plugin.WeatherCriterion(
-        **{
-            "name": "sailing_crit",
-            "condition": "Hs [m]",
-            "maximum": 6,
-            "window_length": 3600,
-        }
+        name="sailing_crit",
+        condition="Hs [m]",
+        maximum=6,
+        window_length=3600,
     )
 
     loading_crit = plugin.WeatherCriterion(
-        **{
-            "name": "loading_crit",
-            "condition": "Hs [m]",
-            "maximum": 4.5,
-            "window_length": 3600,
-        }
+        name="loading_crit",
+        condition="Hs [m]",
+        maximum=4.5,
+        window_length=3600,
     )
 
     single_run = [
         TestMoveActivity(
-            **{
-                "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff65",
-                "env": my_env,
-                "name": "Soil movement",
-                "registry": registry,
-                "mover": hopper,
-                "destination": from_site,
-                "metocean_criteria": sailing_crit,
-                "metocean_df": metocean_df,
-            }
+            env=my_env,
+            name="sailing empty",
+            registry=registry,
+            mover=hopper,
+            destination=from_site,
+            metocean_criteria=sailing_crit,
+            metocean_df=metocean_df,
         ),
         TestShiftActivity(
-            **{
-                "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff64",
-                "env": my_env,
-                "name": "Transfer MP",
-                "registry": registry,
-                "processor": hopper,
-                "origin": from_site,
-                "destination": hopper,
-                "amount": 4,
-                "duration": 3600,
-                "metocean_criteria": loading_crit,
-                "metocean_df": metocean_df,
-            }
+            env=my_env,
+            name="Loading",
+            registry=registry,
+            processor=hopper,
+            origin=from_site,
+            destination=hopper,
+            amount=4,
+            duration=3600,
+            metocean_criteria=loading_crit,
+            metocean_df=metocean_df,
         ),
         TestMoveActivity(
-            **{
-                "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff63",
-                "env": my_env,
-                "name": "Soil movement",
-                "registry": registry,
-                "mover": hopper,
-                "destination": to_site,
-                "metocean_criteria": sailing_crit,
-                "metocean_df": metocean_df,
-            }
+            env=my_env,
+            name="sailing full",
+            registry=registry,
+            mover=hopper,
+            destination=to_site,
+            metocean_criteria=sailing_crit,
+            metocean_df=metocean_df,
         ),
         TestShiftActivity(
-            **{
-                "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff62",
-                "env": my_env,
-                "name": "Transfer TP",
-                "registry": registry,
-                "processor": hopper,
-                "origin": hopper,
-                "destination": to_site,
-                "amount": 4,
-                "duration": 3600,
-                "metocean_criteria": loading_crit,
-                "metocean_df": metocean_df,
-            }
+            env=my_env,
+            name="unloading",
+            registry=registry,
+            processor=hopper,
+            origin=hopper,
+            destination=to_site,
+            amount=4,
+            duration=3600,
+            metocean_criteria=loading_crit,
+            metocean_df=metocean_df,
         ),
     ]
 
     activity = model.SequentialActivity(
-        **{
-            "env": my_env,
-            "name": "Single run process",
-            "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
-            "registry": registry,
-            "sub_processes": single_run,
-        }
+        env=my_env,
+        name="Single run process",
+        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff60",
+        registry=registry,
+        sub_processes=single_run,
     )
 
-    expr = [{"type": "container", "concept": to_site, "state": "full"}]
-    while_data = {
-        "env": my_env,
-        "name": "while",
-        "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff61",
-        "registry": registry,
-        "sub_processes": [activity],
-        "condition_event": expr,
-    }
-    model.WhileActivity(**while_data)
+    while_activity = model.WhileActivity(
+        env=my_env,
+        name="while",
+        registry=registry,
+        sub_processes=[activity],
+        condition_event=[{"type": "container", "concept": to_site, "state": "full"}],
+    )
 
-    my_env.run()
+    model.register_processes([while_activity])
+    assert my_env.now == 1230768000.0
 
-    assert my_env.now == 1262352685.6491823
     assert_log(hopper.log)
     assert_log(single_run[0].log)

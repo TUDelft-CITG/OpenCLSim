@@ -51,6 +51,7 @@ def test_parallel():
         sub_processes=sub_processes,
     )
 
+    model.register_processes([activity])
     env.run()
 
     assert env.now == 220
