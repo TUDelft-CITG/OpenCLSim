@@ -18,7 +18,6 @@ def test_parallel():
         name="Reporting activity",
         registry=registry,
         duration=0,
-        postpone_start=False,
     )
 
     sub_processes = [
@@ -27,7 +26,6 @@ def test_parallel():
             name="Basic activity1",
             registry=registry,
             duration=14,
-            postpone_start=True,
             additional_logs=[reporting_activity],
         ),
         model.BasicActivity(
@@ -36,7 +34,6 @@ def test_parallel():
             registry=registry,
             duration=5,
             additional_logs=[reporting_activity],
-            postpone_start=True,
         ),
         model.BasicActivity(
             env=env,
@@ -44,7 +41,6 @@ def test_parallel():
             registry=registry,
             duration=220,
             additional_logs=[reporting_activity],
-            postpone_start=True,
         ),
     ]
 
