@@ -19,7 +19,6 @@ def register_processes(processes):
     for process in processes:
         items.extend(get_subprocesses(process))
     items = list(set(items))
-    log_waits = [i in processes for i in items]
 
     for item in items:
         item.main_process = None
@@ -29,9 +28,9 @@ def register_processes(processes):
         unregistered_items = set(items) - set(registerd_items)
         if len(unregistered_items) == 0:
             break
-        for (idx, item) in enumerate(unregistered_items):
+        for item in unregistered_items:
             try:
-                item.register_process(log_waits[idx])
+                item.register_process()
                 registerd_items.append(item)
             except Exception as e:
                 logger.info(e)
