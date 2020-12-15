@@ -18,7 +18,7 @@ class TestBasicActivity:
         basic_activity_data = {
             "env": my_env,
             "name": "Basic activity",
-            "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+            "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
             "registry": registry,
             "duration": 14,
         }
@@ -35,10 +35,9 @@ class TestBasicActivity:
         reporting_activity_data = {
             "env": my_env,
             "name": "Reporting activity",
-            "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5k",  # For logging purposes
+            "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
             "registry": registry,
             "duration": 0,
-            "postpone_start": False,
         }
         reporting_activity = model.BasicActivity(**reporting_activity_data)
 
@@ -46,7 +45,7 @@ class TestBasicActivity:
             "env": my_env,
             "name": "Basic activity",
             "registry": registry,
-            "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
+            "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
             "duration": 14,
             "additional_logs": [reporting_activity],
         }

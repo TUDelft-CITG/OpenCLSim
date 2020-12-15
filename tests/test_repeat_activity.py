@@ -9,8 +9,6 @@ from .test_utils import assert_log
 
 def test_repeat_activity():
     """Test the repeat activity."""
-
-    # setup environment
     simulation_start = 0
     my_env = simpy.Environment(initial_time=simulation_start)
     registry = {}
@@ -20,7 +18,6 @@ def test_repeat_activity():
         "name": "Basic activity",
         "registry": registry,
         "duration": 14,
-        "postpone_start": True,
     }
     activity = model.BasicActivity(**basic_activity_data)
 
@@ -31,7 +28,6 @@ def test_repeat_activity():
         "registry": registry,
         "sub_processes": [activity],
         "repetitions": 3,
-        "postpone_start": False,
     }
     repeat_activity = model.RepeatActivity(**repeat_data)
 

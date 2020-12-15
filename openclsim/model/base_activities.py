@@ -133,7 +133,6 @@ class GenericActivity(PluginActivity):
     def __init__(
         self,
         registry,
-        postpone_start=False,
         start_event=None,
         requested_resources=dict(),
         keep_resources=list(),
@@ -143,7 +142,6 @@ class GenericActivity(PluginActivity):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.registry = registry
-        self.postpone_start = postpone_start
         self.start_event = start_event
         self.requested_resources = requested_resources
         self.keep_resources = keep_resources
@@ -152,6 +150,11 @@ class GenericActivity(PluginActivity):
     def register_process(self, log_wait=True):
         # replace the done event
         self.done_event = self.env.event()
+
+        if hasattr(self, "start_sequence") and self.start_sequence.triggered:
+            self.start_sequential_subprocesses()
+        if hasattr(self, "start_parallel") and self.start_parallel.triggered:
+            self.start_parallel_subprocesses()
 
         start_event = (
             None

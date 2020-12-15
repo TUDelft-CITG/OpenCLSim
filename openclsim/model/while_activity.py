@@ -3,6 +3,7 @@
 import openclsim.core as core
 
 from .base_activities import GenericActivity, StartSubProcesses
+from .helpers import register_processes
 
 
 class ConditionProcessMixin:
@@ -94,9 +95,7 @@ class ConditionProcessMixin:
             else:
                 repetitions += 1
                 self.start_sequence = self.env.event()
-
-                # for sub_process in self.sub_processes:
-                #     BUG: need to restart
+                register_processes(self.sub_processes)
 
         activity_log.log_entry(
             t=env.now,
@@ -158,13 +157,6 @@ class RepeatActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
 
         self.print = show
         self.sub_processes = sub_processes
-
-        for sub_process in self.sub_processes:
-            if not sub_process.postpone_start:
-                raise Exception(
-                    f"In Sequence activity {self.name} the sub_process must have postpone_start=True"
-                )
-
         self.max_iterations = repetitions
         self.condition_event = [
             {"type": "activity", "state": "done", "name": self.name}

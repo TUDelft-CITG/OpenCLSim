@@ -24,13 +24,6 @@ class SequentialActivity(GenericActivity, StartSubProcesses):
 
         self.print = show
         self.sub_processes = sub_processes
-
-        for sub_process in self.sub_processes:
-            if not sub_process.postpone_start:
-                raise Exception(
-                    f"In Sequence activity {self.name} the sub_process must have postpone_start=True"
-                )
-
         self.start_sequential_subprocesses()
 
     def main_process_function(self, activity_log, env):

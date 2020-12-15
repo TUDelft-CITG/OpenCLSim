@@ -16,7 +16,6 @@ def test_delay_plugin():
     my_env = simpy.Environment(initial_time=simulation_start)
     registry = {}
 
-    # The generic site class
     Site = type(
         "Site",
         (
@@ -71,7 +70,6 @@ def test_delay_plugin():
     def compute_v_provider(v_empty, v_full):
         return lambda x: 10
 
-    # TSHD variables
     data_hopper = {
         "env": my_env,
         "name": "Hopper 01",
@@ -114,7 +112,6 @@ def test_delay_plugin():
         "registry": registry,
         "mover": hopper,
         "destination": from_site,
-        "postpone_start": True,
         "delay_percentage": 10,
     }
     single_run.append(DelayMoveActivity(**move_activity_to_harbor_data))
@@ -129,7 +126,6 @@ def test_delay_plugin():
         "destination": hopper,
         "amount": 4,
         "duration": 10,
-        "postpone_start": True,
         "delay_percentage": 10,
     }
     single_run.append(DelayShiftActivity(**shift_amount_activity_loading_data))
@@ -141,7 +137,6 @@ def test_delay_plugin():
         "registry": registry,
         "mover": hopper,
         "destination": to_site,
-        "postpone_start": True,
         "delay_percentage": 10,
     }
     single_run.append(DelayMoveActivity(**move_activity_to_site_data))
@@ -156,7 +151,6 @@ def test_delay_plugin():
         "destination": to_site,
         "amount": 4,
         "duration": 10,
-        "postpone_start": True,
         "delay_percentage": 10,
     }
     single_run.append(DelayShiftActivity(**shift_amount_activity_unloading_data))
@@ -168,7 +162,6 @@ def test_delay_plugin():
         "registry": registry,
         "duration": 0,
         "additional_logs": [hopper],
-        "postpone_start": True,
         "delay_percentage": 10,
     }
     single_run.append(DelayBasicActivity(**basic_activity_data))
@@ -179,7 +172,6 @@ def test_delay_plugin():
         "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
         "registry": registry,
         "sub_processes": single_run,
-        "postpone_start": True,
         "delay_percentage": 10,
     }
     activity = DelaySequenceActivity(**sequential_activity_data)
@@ -192,7 +184,6 @@ def test_delay_plugin():
         "registry": registry,
         "sub_processes": [activity],
         "condition_event": expr,
-        "postpone_start": False,
         "delay_percentage": 10,
     }
     while_activity = DelayWhileActivity(**while_data)

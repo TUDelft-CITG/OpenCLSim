@@ -16,8 +16,8 @@ def test_move_activity():
     my_env = simpy.Environment(initial_time=simulation_start)
     registry = {}
 
-    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)  # lon, lat
-    location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)  # lon, lat
+    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)
+    location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)
 
     Site = type(
         "Site",

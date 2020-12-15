@@ -9,6 +9,8 @@ from .shift_amount_activity import ShiftAmountActivity
 from .single_run_process import single_run_process
 from .while_activity import RepeatActivity, WhileActivity
 
+from .helpers import register_processes, get_subprocesses
+
 __all__ = [
     "AbstractPluginClass",
     "PluginActivity",
@@ -21,4 +23,6 @@ __all__ = [
     "single_run_process",
     "ShiftAmountActivity",
     "ParallelActivity",
+    "register_processes",
+    "get_subprocesses",
 ]

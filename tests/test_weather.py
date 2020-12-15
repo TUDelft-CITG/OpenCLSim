@@ -15,7 +15,6 @@ from .test_utils import assert_log
 
 def test_weather():
     """Test function for weather plugin."""
-    # setup environment
     simulation_start = datetime.datetime(2009, 1, 1)
     my_env = simpy.Environment(initial_time=simulation_start.timestamp())
     registry = {}
@@ -48,7 +47,7 @@ def test_weather():
 
     TestMoveActivity = type(
         "TestMoveActivity",
-        (plugin.HasWeatherPluginActivity, model.MoveActivity),  # the order is critical!
+        (plugin.HasWeatherPluginActivity, model.MoveActivity),
         {},
     )
 
@@ -56,13 +55,13 @@ def test_weather():
         "TestShiftActivity",
         (
             plugin.HasWeatherPluginActivity,
-            model.ShiftAmountActivity,  # the order is critical!
+            model.ShiftAmountActivity,
         ),
         {},
     )
 
-    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)  # lon, lat
-    location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)  # lon, lat
+    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)
+    location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)
 
     data_from_site = {
         "env": my_env,
@@ -140,7 +139,6 @@ def test_weather():
                 "destination": from_site,
                 "metocean_criteria": sailing_crit,
                 "metocean_df": metocean_df,
-                "postpone_start": True,
             }
         ),
         TestShiftActivity(
@@ -154,7 +152,6 @@ def test_weather():
                 "destination": hopper,
                 "amount": 4,
                 "duration": 3600,
-                "postpone_start": True,
                 "metocean_criteria": loading_crit,
                 "metocean_df": metocean_df,
             }
@@ -169,7 +166,6 @@ def test_weather():
                 "destination": to_site,
                 "metocean_criteria": sailing_crit,
                 "metocean_df": metocean_df,
-                "postpone_start": True,
             }
         ),
         TestShiftActivity(
@@ -183,7 +179,6 @@ def test_weather():
                 "destination": to_site,
                 "amount": 4,
                 "duration": 3600,
-                "postpone_start": True,
                 "metocean_criteria": loading_crit,
                 "metocean_df": metocean_df,
             }
@@ -197,7 +192,6 @@ def test_weather():
             "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff60",
             "registry": registry,
             "sub_processes": single_run,
-            "postpone_start": True,
         }
     )
 
@@ -209,7 +203,6 @@ def test_weather():
         "registry": registry,
         "sub_processes": [activity],
         "condition_event": expr,
-        "postpone_start": False,
     }
     model.WhileActivity(**while_data)
 
