@@ -235,20 +235,7 @@ class GenericActivity(PluginActivity):
         keep_resources,
         additional_logs=[],
     ):
-        """
-        Return a generator which can be added as a process to a simpy environment.
-
-        In the process the given
-        sub_processes will be executed after the given start_event occurs.
-
-        activity_log: the core.Log object in which log_entries about the activities progress will be added.
-        env: the simpy.Environment in which the process will be run
-        start_event: a simpy.Event object, when this event occurs the delayed process will start executing its sub_processes
-        sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
-                    return a generator which could be added as a process to a simpy.Environment
-                    the sub_processes will be executed sequentially, in the order in which they are given after the
-                    start_event occurs
-        """
+        """Return a generator which can be added as a process to a simpy environment."""
         if hasattr(start_event, "__call__"):
             start_event = start_event()
 
