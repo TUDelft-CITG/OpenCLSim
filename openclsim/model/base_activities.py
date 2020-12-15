@@ -151,9 +151,9 @@ class GenericActivity(PluginActivity):
         # replace the events
         self.done_event = self.env.event()
         if hasattr(self, "start_sequence") and self.start_sequence.triggered:
-            self.start_sequential_subprocesses()
+            self.start_sequence = self.env.event()
         if hasattr(self, "start_parallel") and self.start_parallel.triggered:
-            self.start_parallel_subprocesses()
+            self.start_parallel = self.env.event()
 
         start_event = (
             None
