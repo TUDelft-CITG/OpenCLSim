@@ -46,46 +46,76 @@ class ParallelActivity(GenericActivity, RegisterSubProcesses):
 
         self.start_parallel.succeed()
 
-        stop_events = []
-        subprocess_ids = []
         for sub_process in self.sub_processes:
             activity_log.log_entry(
                 t=env.now,
                 activity_id=activity_log.id,
                 activity_state=core.LogState.START,
-                activity_label={"type": "subprocess", "ref": sub_process.id},
+                activity_label={
+                    "type": "subprocess",
+                    "ref": sub_process.id,
+                },
             )
 
-            stop_events.append(
-                self.parse_expression(
-                    {"type": "activity", "state": "done", "name": sub_process.name}
-                )
-            )
-            subprocess_ids.append(sub_process.id)
-
-        # wait until all stop events are triggered
-        while len(stop_events) > 0:
-            # wait until any stop event is triggered
+        stop_event = self.parse_expression(
+            [
+                {
+                    "and": [
+                        {
+                            "type": "activity",
+                            "state": "done",
+                            "name": sub_proc.name,
+                        }
+                        for sub_proc in self.sub_processes
+                    ]
+                }
+            ]
+        )
+        done = []
+        while not stop_event.triggered:
             event_trigger = self.parse_expression(
-                [{"or": [event for event in stop_events]}]
+                [
+                    {
+                        "or": [
+                            {
+                                "type": "activity",
+                                "state": "done",
+                                "name": sub_proc.name,
+                            }
+                            for sub_proc in self.sub_processes
+                            if sub_proc.name not in done
+                        ]
+                    }
+                ]
             )
             yield event_trigger
-            # add a log line for each triggered stop event and pop it
-            i = 0
-            while i < len(stop_events):
-                if stop_events[i].triggered is True:
-                    stop_events.pop(i)
-                    activity_log.log_entry(
-                        t=env.now,
-                        activity_id=activity_log.id,
-                        activity_state=core.LogState.STOP,
-                        activity_label={
-                            "type": "subprocess",
-                            "ref": subprocess_ids.pop(i),
-                        },
-                    )
-                else:
-                    i += 1
+            new_done = [
+                sub_proc.name
+                for sub_proc in self.sub_processes
+                if self.parse_expression(
+                    {
+                        "type": "activity",
+                        "state": "done",
+                        "name": sub_proc.name,
+                    }
+                ).triggered
+                is True
+            ]
+            for item in list(set(new_done) - set(done)):
+                sub_process = next(
+                    process for process in self.sub_processes if process.name == item
+                )
+                activity_log.log_entry(
+                    t=env.now,
+                    activity_id=activity_log.id,
+                    activity_state=core.LogState.STOP,
+                    activity_label={
+                        "type": "subprocess",
+                        "ref": sub_process.id,
+                    },
+                )
+
+            done = new_done
 
         activity_log.log_entry(
             t=env.now,
