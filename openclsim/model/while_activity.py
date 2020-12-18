@@ -2,7 +2,7 @@
 
 import openclsim.core as core
 
-from .base_activities import GenericActivity, StartSubProcesses
+from .base_activities import GenericActivity, RegisterSubProcesses
 from .helpers import register_processes
 
 
@@ -11,17 +11,6 @@ class ConditionProcessMixin:
 
     def main_process_function(self, activity_log, env):
         condition_event = self.parse_expression(self.condition_event)
-        if (
-            activity_log.log["Timestamp"]
-            and activity_log.log["Timestamp"][-1] == "delayed activity started"
-            and hasattr(condition_event, "__call__")
-        ):
-            condition_event = condition_event()
-
-        if hasattr(condition_event, "__call__"):
-            condition_event = condition_event()
-        elif type(condition_event) == list:
-            condition_event = env.any_of(events=[event() for event in condition_event])
 
         start_time = env.now
         args_data = {
@@ -78,7 +67,7 @@ class ConditionProcessMixin:
                 break
             else:
                 repetitions += 1
-                self.start_sequence = self.env.event()
+                self.register_subprocesses()
                 register_processes(self.sub_processes)
 
         activity_log.log_entry(
@@ -92,7 +81,7 @@ class ConditionProcessMixin:
         yield from self.post_process(**args_data)
 
 
-class WhileActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
+class WhileActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesses):
     """
     WhileActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
 
@@ -117,10 +106,11 @@ class WhileActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
         self.condition_event = condition_event
         self.max_iterations = 1_000_000
 
-        self.start_sequential_subprocesses()
+        self.register_subprocesses = self.register_sequential_subprocesses
+        self.register_subprocesses()
 
 
-class RepeatActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
+class RepeatActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesses):
     """
     RepeatActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
 
@@ -146,4 +136,5 @@ class RepeatActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
             {"type": "activity", "state": "done", "name": self.name}
         ]
 
-        self.start_sequential_subprocesses()
+        self.register_subprocesses = self.register_sequential_subprocesses
+        self.register_subprocesses()

@@ -36,10 +36,10 @@ class AbstractPluginClass(ABC):
         pass
 
 
-class StartSubProcesses:
+class RegisterSubProcesses:
     """Mixin for the activities that want to execute their sub_processes in sequence."""
 
-    def start_sequential_subprocesses(self):
+    def register_sequential_subprocesses(self):
         self.start_sequence = self.env.event()
 
         for (i, sub_process) in enumerate(self.sub_processes):
@@ -53,11 +53,18 @@ class StartSubProcesses:
                     "name": self.sub_processes[i - 1].name,
                 }
 
-    def start_parallel_subprocesses(self):
+        for sub_process in self.sub_processes:
+            if getattr(sub_process, "register_subprocesses", None) is not None:
+                sub_process.register_subprocesses()
+
+    def register_parallel_subprocesses(self):
         self.start_parallel = self.env.event()
 
         for (i, sub_process) in enumerate(self.sub_processes):
             sub_process.start_event_parent = self.start_parallel
+
+            if getattr(sub_process, "register_subprocesses", None) is not None:
+                sub_process.register_subprocesses()
 
 
 class PluginActivity(core.Identifiable, core.Log):
@@ -130,6 +137,7 @@ class GenericActivity(PluginActivity):
         if hasattr(self, "start_parallel") and self.start_parallel.triggered:
             self.start_parallel = self.env.event()
 
+        # add the activity withs start event to the simpy environment
         self.main_process = self.env.process(
             self.delayed_process(activity_log=self, env=self.env)
         )
