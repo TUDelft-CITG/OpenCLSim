@@ -1,7 +1,6 @@
 """Base classes for the openclsim activities."""
 
 from abc import ABC
-from functools import partial
 
 import simpy
 
@@ -44,45 +43,21 @@ class StartSubProcesses:
         self.start_sequence = self.env.event()
 
         for (i, sub_process) in enumerate(self.sub_processes):
-            start_event = sub_process.start_event
-            if isinstance(start_event, dict) or isinstance(start_event, simpy.Event):
-                start_event = [start_event]
-            if start_event is None:
-                start_event = []
-            if isinstance(start_event, list):
-                pass
-            else:
-                raise ValueError(f"{type(start_event)} is not a valid type.")
-
             if i == 0:
-                start_event.append(self.start_sequence)
-                sub_process.start_event = [{"and": start_event}]
+                sub_process.start_event_parent = self.start_sequence
+
             else:
-                start_event.append(
-                    {
-                        "type": "activity",
-                        "state": "done",
-                        "name": self.sub_processes[i - 1].name,
-                    }
-                )
-                sub_process.start_event = [{"and": start_event}]
+                sub_process.start_event_parent = {
+                    "type": "activity",
+                    "state": "done",
+                    "name": self.sub_processes[i - 1].name,
+                }
 
     def start_parallel_subprocesses(self):
         self.start_parallel = self.env.event()
 
         for (i, sub_process) in enumerate(self.sub_processes):
-            start_event = sub_process.start_event
-            if isinstance(start_event, dict) or isinstance(start_event, simpy.Event):
-                start_event = [start_event]
-            if start_event is None:
-                start_event = []
-            if isinstance(start_event, list):
-                pass
-            else:
-                raise ValueError(f"{type(start_event)} is not a valid type.")
-
-            start_event.append(self.start_parallel)
-            sub_process.start_event = [{"and": start_event}]
+            sub_process.start_event_parent = self.start_parallel
 
 
 class PluginActivity(core.Identifiable, core.Log):
@@ -155,24 +130,9 @@ class GenericActivity(PluginActivity):
         if hasattr(self, "start_parallel") and self.start_parallel.triggered:
             self.start_parallel = self.env.event()
 
-        start_event = (
-            None
-            if self.start_event is None
-            else self.parse_expression(self.start_event)
+        self.main_process = self.env.process(
+            self.delayed_process(activity_log=self, env=self.env)
         )
-
-        main_proc = self.main_process_function
-        if start_event is not None:
-            main_proc = partial(
-                self.delayed_process,
-                start_event=start_event,
-                sub_processes=[main_proc],
-                additional_logs=getattr(self, "additional_logs", []),
-                requested_resources=self.requested_resources,
-                keep_resources=self.keep_resources,
-            )
-
-        self.main_process = self.env.process(main_proc(activity_log=self, env=self.env))
 
         # add activity to the registry
         self.registry.setdefault("name", {}).setdefault(self.name, []).append(self)
@@ -229,47 +189,51 @@ class GenericActivity(PluginActivity):
         self,
         activity_log,
         env,
-        start_event,
-        sub_processes,
-        requested_resources,
-        keep_resources,
-        additional_logs=[],
     ):
         """Return a generator which can be added as a process to a simpy environment."""
-        if hasattr(start_event, "__call__"):
-            start_event = start_event()
-
-        activity_log.log_entry(
-            t=env.now,
-            activity_id=activity_log.id,
-            activity_state=core.LogState.WAIT_START,
+        additional_logs = getattr(self, "additional_logs", [])
+        start_event = (
+            None
+            if self.start_event is None
+            else self.parse_expression(self.start_event)
         )
-        if isinstance(additional_logs, list) and len(additional_logs) > 0:
-            for log in additional_logs:
-                for sub_process in sub_processes:
-                    log.log_entry(
-                        t=env.now,
-                        activity_id=activity_log.id,
-                        activity_state=core.LogState.WAIT_START,
-                    )
 
-        yield start_event
-        activity_log.log_entry(
-            t=env.now,
-            activity_id=activity_log.id,
-            activity_state=core.LogState.WAIT_STOP,
-        )
-        if isinstance(additional_logs, list) and len(additional_logs) > 0:
-            for log in additional_logs:
-                for sub_process in sub_processes:
-                    log.log_entry(
-                        t=env.now,
-                        activity_id=activity_log.id,
-                        activity_state=core.LogState.WAIT_STOP,
-                    )
+        start_event_parent = getattr(self, "start_event_parent", None)
+        if start_event_parent is not None:
+            yield self.parse_expression(start_event_parent)
 
-        for sub_process in sub_processes:
-            yield from sub_process(activity_log=activity_log, env=env)
+        start_time = env.now
+        if start_event is not None:
+            yield start_event
+
+        if env.now > start_time:
+            # log start
+            activity_log.log_entry(
+                t=start_time,
+                activity_id=activity_log.id,
+                activity_state=core.LogState.WAIT_START,
+            )
+            for log in additional_logs:
+                log.log_entry(
+                    t=start_time,
+                    activity_id=activity_log.id,
+                    activity_state=core.LogState.WAIT_START,
+                )
+
+            # log stop
+            activity_log.log_entry(
+                t=env.now,
+                activity_id=activity_log.id,
+                activity_state=core.LogState.WAIT_STOP,
+            )
+            for log in additional_logs:
+                log.log_entry(
+                    t=env.now,
+                    activity_id=activity_log.id,
+                    activity_state=core.LogState.WAIT_STOP,
+                )
+
+        yield from self.main_process_function(activity_log=self, env=self.env)
 
     def _request_resource(self, requested_resources, resource):
         """Request the given resource and yields it."""
