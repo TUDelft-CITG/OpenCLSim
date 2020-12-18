@@ -67,7 +67,7 @@ class ConditionProcessMixin:
                 break
             else:
                 repetitions += 1
-                self.start_sequence = self.env.event()
+                self.register_subprocesses()
                 register_processes(self.sub_processes)
 
         activity_log.log_entry(
@@ -106,7 +106,8 @@ class WhileActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesses
         self.condition_event = condition_event
         self.max_iterations = 1_000_000
 
-        self.register_sequential_subprocesses()
+        self.register_subprocesses = self.register_sequential_subprocesses
+        self.register_subprocesses()
 
 
 class RepeatActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesses):
@@ -135,4 +136,5 @@ class RepeatActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesse
             {"type": "activity", "state": "done", "name": self.name}
         ]
 
-        self.register_sequential_subprocesses()
+        self.register_subprocesses = self.register_sequential_subprocesses
+        self.register_subprocesses()

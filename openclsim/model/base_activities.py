@@ -53,11 +53,18 @@ class RegisterSubProcesses:
                     "name": self.sub_processes[i - 1].name,
                 }
 
+        for sub_process in self.sub_processes:
+            if getattr(sub_process, "register_subprocesses", None) is not None:
+                sub_process.register_subprocesses()
+
     def register_parallel_subprocesses(self):
         self.start_parallel = self.env.event()
 
         for (i, sub_process) in enumerate(self.sub_processes):
             sub_process.start_event_parent = self.start_parallel
+
+            if getattr(sub_process, "register_subprocesses", None) is not None:
+                sub_process.register_subprocesses()
 
 
 class PluginActivity(core.Identifiable, core.Log):

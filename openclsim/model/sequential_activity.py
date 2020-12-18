@@ -24,7 +24,8 @@ class SequentialActivity(GenericActivity, RegisterSubProcesses):
 
         self.print = show
         self.sub_processes = sub_processes
-        self.register_sequential_subprocesses()
+        self.register_subprocesses = self.register_sequential_subprocesses
+        self.register_subprocesses()
 
     def main_process_function(self, activity_log, env):
         start_time = env.now
