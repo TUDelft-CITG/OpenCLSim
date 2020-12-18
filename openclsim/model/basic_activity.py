@@ -25,13 +25,8 @@ class BasicActivity(GenericActivity):
         if additional_logs is None:
             additional_logs = []
         self.additional_logs = additional_logs
-        if not self.postpone_start:
-            self.start()
 
-    def start(self, log_wait=True):
-        self.register_process(main_proc=self.basic_process, log_wait=log_wait)
-
-    def basic_process(self, activity_log, env):
+    def main_process_function(self, activity_log, env):
         """
         Return a generator which can be added as a process to a simpy.Environment.
 

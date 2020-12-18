@@ -24,21 +24,9 @@ class SequentialActivity(GenericActivity, StartSubProcesses):
 
         self.print = show
         self.sub_processes = sub_processes
-
-        for sub_process in self.sub_processes:
-            if not sub_process.postpone_start:
-                raise Exception(
-                    f"In Sequence activity {self.name} the sub_process must have postpone_start=True"
-                )
-
-        if not self.postpone_start:
-            self.start()
-
-    def start(self, log_wait=True):
         self.start_sequential_subprocesses()
-        self.register_process(main_proc=self.sequential_process, log_wait=log_wait)
 
-    def sequential_process(self, activity_log, env):
+    def main_process_function(self, activity_log, env):
         start_time = env.now
         args_data = {
             "env": env,
@@ -58,23 +46,6 @@ class SequentialActivity(GenericActivity, StartSubProcesses):
         self.start_sequence.succeed()
 
         for sub_process in self.sub_processes:
-
-            sub_process_start_event = self.parse_expression(sub_process.start_event)
-            if not sub_process_start_event.triggered:
-                start_time = env.now
-                yield sub_process_start_event
-                if start_time < env.now:
-                    sub_process.log_entry(
-                        t=start_time,
-                        activity_id=sub_process.id,
-                        activity_state=core.LogState.WAIT_START,
-                    )
-                    sub_process.log_entry(
-                        t=env.now,
-                        activity_id=sub_process.id,
-                        activity_state=core.LogState.WAIT_STOP,
-                    )
-
             activity_log.log_entry(
                 t=env.now,
                 activity_id=activity_log.id,

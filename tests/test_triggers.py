@@ -19,7 +19,6 @@ class TestTriggers:
             name="a",
             registry=registry,
             duration=1,
-            postpone_start=True,
         )
         a2 = model.BasicActivity(
             ID="a2",
@@ -27,7 +26,6 @@ class TestTriggers:
             name="a2",
             registry=registry,
             duration=1,
-            postpone_start=True,
         )
 
         c = model.BasicActivity(
@@ -36,7 +34,6 @@ class TestTriggers:
             name="c",
             registry=registry,
             duration=1,
-            postpone_start=True,
         )
 
         Sa = model.SequentialActivity(
@@ -45,16 +42,14 @@ class TestTriggers:
             ID="Sa",
             registry=registry,
             sub_processes=[a, a2],
-            postpone_start=True,
         )
 
-        model.SequentialActivity(
+        act1 = model.SequentialActivity(
             env=env,
             name="Sc",
             ID="Sc",
             registry=registry,
             sub_processes=[c, Sa],
-            postpone_start=False,
         )
 
         b = model.BasicActivity(
@@ -63,19 +58,18 @@ class TestTriggers:
             name="b",
             registry=registry,
             duration=10,
-            postpone_start=True,
             start_event=[{"name": "a", "type": "activity", "state": "done"}],
         )
 
-        model.SequentialActivity(
+        act2 = model.SequentialActivity(
             env=env,
             name="Sb",
             ID="Sb",
             registry=registry,
             sub_processes=[b],
-            postpone_start=False,
         )
 
+        model.register_processes([act1, act2])
         env.run()
 
         assert env.now == 12
@@ -91,7 +85,6 @@ class TestTriggers:
             name="a",
             registry=registry,
             duration=1,
-            postpone_start=True,
         )
         a2 = model.BasicActivity(
             ID="a2",
@@ -99,7 +92,6 @@ class TestTriggers:
             name="a2",
             registry=registry,
             duration=1,
-            postpone_start=True,
         )
         c = model.BasicActivity(
             ID="c",
@@ -107,7 +99,6 @@ class TestTriggers:
             name="c",
             registry=registry,
             duration=1,
-            postpone_start=True,
         )
 
         Ra = model.RepeatActivity(
@@ -116,17 +107,15 @@ class TestTriggers:
             ID="Ra",
             registry=registry,
             sub_processes=[a, a2],
-            postpone_start=True,
             repetitions=3,
         )
 
-        model.SequentialActivity(
+        act1 = model.SequentialActivity(
             env=env,
             name="Sc",
             ID="Sc",
             registry=registry,
             sub_processes=[c, Ra],
-            postpone_start=False,
         )
 
         b = model.BasicActivity(
@@ -135,20 +124,19 @@ class TestTriggers:
             name="b",
             registry=registry,
             duration=1.5,
-            postpone_start=True,
             start_event=[{"name": "a", "type": "activity", "state": "done"}],
         )
 
-        model.RepeatActivity(
+        act2 = model.RepeatActivity(
             env=env,
             name="Rb",
             ID="Rb",
             registry=registry,
             sub_processes=[b],
-            postpone_start=False,
             repetitions=3,
         )
 
+        model.register_processes([act1, act2])
         env.run()
 
         assert env.now == 7.5
@@ -164,7 +152,6 @@ class TestTriggers:
             name="a",
             registry=registry,
             duration=3,
-            postpone_start=True,
         )
         a2 = model.BasicActivity(
             ID="a2",
@@ -172,7 +159,6 @@ class TestTriggers:
             name="a2",
             registry=registry,
             duration=2,
-            postpone_start=True,
         )
         a3 = model.BasicActivity(
             ID="a3",
@@ -180,7 +166,6 @@ class TestTriggers:
             name="a3",
             registry=registry,
             duration=5,
-            postpone_start=True,
         )
 
         c = model.BasicActivity(
@@ -189,7 +174,6 @@ class TestTriggers:
             name="c",
             registry=registry,
             duration=1,
-            postpone_start=True,
         )
 
         Pa = model.ParallelActivity(
@@ -198,16 +182,14 @@ class TestTriggers:
             ID="Pa",
             registry=registry,
             sub_processes=[a, a2, a3],
-            postpone_start=True,
         )
 
-        model.SequentialActivity(
+        act1 = model.SequentialActivity(
             env=env,
             name="Sc",
             ID="Sc",
             registry=registry,
             sub_processes=[c, Pa],
-            postpone_start=False,
         )
 
         b = model.BasicActivity(
@@ -216,19 +198,18 @@ class TestTriggers:
             name="b",
             registry=registry,
             duration=10,
-            postpone_start=True,
             start_event=[{"name": "a", "type": "activity", "state": "done"}],
         )
 
-        model.SequentialActivity(
+        act2 = model.SequentialActivity(
             env=env,
             name="Sb",
             ID="Sb",
             registry=registry,
             sub_processes=[b],
-            postpone_start=False,
         )
 
+        model.register_processes([act1, act2])
         env.run()
 
         assert env.now == 14

@@ -139,7 +139,6 @@ class Processor(
 @pytest.mark.skip
 def test_basic_processor(env, geometry_a):
     """Test basic processor."""
-    # move content from one container to another, then move some of it back again
     source = BasicStorageUnit(
         env=env, geometry=geometry_a, capacity=1000, level=1000, nr_resources=1
     )

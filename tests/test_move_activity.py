@@ -16,8 +16,8 @@ def test_move_activity():
     my_env = simpy.Environment(initial_time=simulation_start)
     registry = {}
 
-    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)  # lon, lat
-    location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)  # lon, lat
+    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)
+    location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)
 
     Site = type(
         "Site",
@@ -30,18 +30,6 @@ def test_move_activity():
         ),
         {},
     )
-
-    data_to_site = {
-        "env": my_env,
-        "name": "Dumplocatie",
-        "ID": "6dbbbdf5-4589-11e9-82b2-b469212bff5b",
-        "geometry": location_to_site,
-        "capacity": 10,
-        "level": 0,
-    }
-
-    to_site = Site(**data_to_site)
-
     TransportProcessingResource = type(
         "TransportProcessingResource",
         (
@@ -56,32 +44,34 @@ def test_move_activity():
         {},
     )
 
-    def compute_v_provider(v_empty, v_full):
-        return lambda x: 10
+    to_site = Site(
+        env=my_env,
+        name="Dumplocatie",
+        ID="6dbbbdf5-4589-11e9-82b2-b469212bff5b",
+        geometry=location_to_site,
+        capacity=10,
+        level=0,
+    )
+    hopper = TransportProcessingResource(
+        env=my_env,
+        name="Hopper 01",
+        ID="6dbbbdf6-4589-11e9-95a2-b469212bff5b",
+        geometry=location_from_site,
+        loading_rate=1,
+        unloading_rate=1,
+        capacity=5,
+        compute_v=lambda x: 10,
+    )
 
-    data_hopper = {
-        "env": my_env,
-        "name": "Hopper 01",
-        "ID": "6dbbbdf6-4589-11e9-95a2-b469212bff5b",
-        "geometry": location_from_site,
-        "loading_rate": 1,
-        "unloading_rate": 1,
-        "capacity": 5,
-        "compute_v": compute_v_provider(5, 4.5),
-    }
-
-    hopper = TransportProcessingResource(**data_hopper)
-
-    move_activity_data = {
-        "env": my_env,
-        "name": "Soil movement",
-        "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
-        "registry": registry,
-        "mover": hopper,
-        "destination": to_site,
-    }
-    activity = model.MoveActivity(**move_activity_data)
-
+    activity = model.MoveActivity(
+        env=my_env,
+        name="Soil movement",
+        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+        registry=registry,
+        mover=hopper,
+        destination=to_site,
+    )
+    model.register_processes([activity])
     my_env.run()
 
     assert my_env.now == 942.8245912734186

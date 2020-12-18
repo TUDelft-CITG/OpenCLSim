@@ -3,12 +3,13 @@
 import openclsim.core as core
 
 from .base_activities import GenericActivity, StartSubProcesses
+from .helpers import register_processes
 
 
 class ConditionProcessMixin:
     """Mixin for the condition process."""
 
-    def conditional_process(self, activity_log, env):
+    def main_process_function(self, activity_log, env):
         condition_event = self.parse_expression(self.condition_event)
         if (
             activity_log.log["Timestamp"]
@@ -42,22 +43,6 @@ class ConditionProcessMixin:
         while True:
             self.start_sequence.succeed()
             for sub_process in self.sub_processes:
-                sub_process_start_event = self.parse_expression(sub_process.start_event)
-                if not sub_process_start_event.triggered:
-                    start_time = env.now
-                    yield sub_process_start_event
-                    if start_time < env.now:
-                        sub_process.log_entry(
-                            t=start_time,
-                            activity_id=sub_process.id,
-                            activity_state=core.LogState.WAIT_START,
-                        )
-                        sub_process.log_entry(
-                            t=env.now,
-                            activity_id=sub_process.id,
-                            activity_state=core.LogState.WAIT_STOP,
-                        )
-
                 activity_log.log_entry(
                     t=env.now,
                     activity_id=activity_log.id,
@@ -94,9 +79,7 @@ class ConditionProcessMixin:
             else:
                 repetitions += 1
                 self.start_sequence = self.env.event()
-
-                for sub_process in self.sub_processes:
-                    sub_process.start(log_wait=False)
+                register_processes(self.sub_processes)
 
         activity_log.log_entry(
             t=env.now,
@@ -107,10 +90,6 @@ class ConditionProcessMixin:
         args_data["start_preprocessing"] = start_time
         args_data["start_activity"] = start_while
         yield from self.post_process(**args_data)
-
-    def start(self, log_wait=True):
-        self.start_sequential_subprocesses()
-        self.register_process(main_proc=self.conditional_process, log_wait=log_wait)
 
 
 class WhileActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
@@ -138,8 +117,7 @@ class WhileActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
         self.condition_event = condition_event
         self.max_iterations = 1_000_000
 
-        if not self.postpone_start:
-            self.start()
+        self.start_sequential_subprocesses()
 
 
 class RepeatActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
@@ -163,16 +141,9 @@ class RepeatActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
 
         self.print = show
         self.sub_processes = sub_processes
-
-        for sub_process in self.sub_processes:
-            if not sub_process.postpone_start:
-                raise Exception(
-                    f"In Sequence activity {self.name} the sub_process must have postpone_start=True"
-                )
-
         self.max_iterations = repetitions
         self.condition_event = [
             {"type": "activity", "state": "done", "name": self.name}
         ]
-        if not self.postpone_start:
-            self.start()
+
+        self.start_sequential_subprocesses()

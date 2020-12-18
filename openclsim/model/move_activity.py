@@ -34,13 +34,8 @@ class MoveActivity(GenericActivity):
         self.mover = mover
         self.duration = duration
         self.print = show
-        if not self.postpone_start:
-            self.start()
 
-    def start(self, log_wait=True):
-        self.register_process(main_proc=self.move_process, log_wait=log_wait)
-
-    def move_process(self, activity_log, env):
+    def main_process_function(self, activity_log, env):
         """
         Return a generator which can be added as a process to a simpy.Environment.
 

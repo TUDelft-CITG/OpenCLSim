@@ -18,7 +18,6 @@ def single_run_process(
     start_event=None,
     stop_event=[],
     requested_resources={},
-    postpone_start=False,
 ):
     """Single run activity for the simulation."""
     if stop_event == []:
@@ -36,7 +35,6 @@ def single_run_process(
             env=env,
             registry=registry,
             requested_resources=requested_resources,
-            postpone_start=True,
             name=f"{name} sailing empty",
             mover=mover,
             destination=origin,
@@ -45,7 +43,6 @@ def single_run_process(
             env=env,
             registry=registry,
             requested_resources=requested_resources,
-            postpone_start=True,
             phase="loading",
             name=f"{name} loading",
             processor=loader,
@@ -56,7 +53,6 @@ def single_run_process(
             env=env,
             registry=registry,
             requested_resources=requested_resources,
-            postpone_start=True,
             name=f"{name} sailing filled",
             mover=mover,
             destination=destination,
@@ -67,7 +63,6 @@ def single_run_process(
             requested_resources=requested_resources,
             phase="unloading",
             name=f"{name} unloading",
-            postpone_start=True,
             processor=unloader,
             origin=mover,
             destination=destination,
@@ -81,7 +76,6 @@ def single_run_process(
         sub_processes=single_run,
         condition_event=stop_event,
         start_event=start_event,
-        postpone_start=postpone_start,
     )
 
     return single_run, while_activity
