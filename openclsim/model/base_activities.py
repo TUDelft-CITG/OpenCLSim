@@ -1,13 +1,14 @@
 """Base classes for the openclsim activities."""
 
-from abc import ABC
+from abc import ABC, abstractmethod
+
 
 import simpy
 
 import openclsim.core as core
 
 
-class AbstractPluginClass(ABC):
+class AbstractPluginClass:
     """
     Abstract class used as the basis for all Classes implementing a plugin for a specific Activity.
 
@@ -102,7 +103,7 @@ class PluginActivity(core.Identifiable, core.Log):
         )
 
 
-class GenericActivity(PluginActivity):
+class GenericActivity(ABC, PluginActivity):
     """The GenericActivity Class forms a generic class which sets up all activites."""
 
     def __init__(
@@ -258,3 +259,7 @@ class GenericActivity(PluginActivity):
         if resource in requested_resources.keys():
             resource.release(requested_resources[resource])
             del requested_resources[resource]
+
+    @abstractmethod
+    def main_process_function(self):
+        pass
