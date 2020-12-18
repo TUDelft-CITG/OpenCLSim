@@ -2,7 +2,7 @@
 
 import openclsim.core as core
 
-from .base_activities import GenericActivity, StartSubProcesses
+from .base_activities import GenericActivity, RegisterSubProcesses
 from .helpers import register_processes
 
 
@@ -81,7 +81,7 @@ class ConditionProcessMixin:
         yield from self.post_process(**args_data)
 
 
-class WhileActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
+class WhileActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesses):
     """
     WhileActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
 
@@ -106,10 +106,10 @@ class WhileActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
         self.condition_event = condition_event
         self.max_iterations = 1_000_000
 
-        self.start_sequential_subprocesses()
+        self.register_sequential_subprocesses()
 
 
-class RepeatActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
+class RepeatActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesses):
     """
     RepeatActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
 
@@ -135,4 +135,4 @@ class RepeatActivity(GenericActivity, ConditionProcessMixin, StartSubProcesses):
             {"type": "activity", "state": "done", "name": self.name}
         ]
 
-        self.start_sequential_subprocesses()
+        self.register_sequential_subprocesses()

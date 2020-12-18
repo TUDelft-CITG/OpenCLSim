@@ -4,21 +4,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def get_subprocesses(item):
+def get_subprocesses(items):
     """Get a list of all the activities an their subprocesses recursively."""
-    items = [item]
-    sub_items = getattr(item, "sub_processes", [])
-    for i in sub_items:
-        items.extend(get_subprocesses(i))
+    if not isinstance(items, list):
+        items = [items]
+    for item in items:
+        items.extend(getattr(item, "sub_processes", []))
     return items
 
 
 def register_processes(processes):
     """Register all the processes iteratively."""
-    items = []
-    for process in processes:
-        items.extend(get_subprocesses(process))
-    items = list(set(items))
+    items = list(set(get_subprocesses(processes)))
 
     for item in items:
         item.main_process = None

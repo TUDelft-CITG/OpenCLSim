@@ -1,10 +1,10 @@
 """Sequential activity for the simulation."""
 import openclsim.core as core
 
-from .base_activities import GenericActivity, StartSubProcesses
+from .base_activities import GenericActivity, RegisterSubProcesses
 
 
-class SequentialActivity(GenericActivity, StartSubProcesses):
+class SequentialActivity(GenericActivity, RegisterSubProcesses):
     """
     SequenceActivity Class forms a specific class.
 
@@ -24,7 +24,7 @@ class SequentialActivity(GenericActivity, StartSubProcesses):
 
         self.print = show
         self.sub_processes = sub_processes
-        self.start_sequential_subprocesses()
+        self.register_sequential_subprocesses()
 
     def main_process_function(self, activity_log, env):
         start_time = env.now

@@ -1,18 +1,18 @@
-"""Sequential activity for the simulation."""
+"""Parallel activity for the simulation."""
 import openclsim.core as core
 
-from .base_activities import GenericActivity, StartSubProcesses
+from .base_activities import GenericActivity, RegisterSubProcesses
 
 
-class ParallelActivity(GenericActivity, StartSubProcesses):
+class ParallelActivity(GenericActivity, RegisterSubProcesses):
     """
-    SequenceActivity Class forms a specific class.
+    ParallelActivity Class forms a specific class.
 
     This is for executing multiple activities in a dedicated order within a simulation.
     It is a structural activity, which does not require specific resources.
 
     sub_processes:
-        a list of activities to be executed in the provided sequence.
+        a list of activities to be executed in Parallel.
     start_event:
         The activity will start as soon as this event is triggered
         by default will be to start immediately
@@ -24,7 +24,7 @@ class ParallelActivity(GenericActivity, StartSubProcesses):
 
         self.print = show
         self.sub_processes = sub_processes
-        self.start_parallel_subprocesses()
+        self.register_parallel_subprocesses()
 
     def main_process_function(self, activity_log, env):
         start_time = env.now
@@ -35,7 +35,7 @@ class ParallelActivity(GenericActivity, StartSubProcesses):
         }
         yield from self.pre_process(args_data)
 
-        start_sequence = env.now
+        start_time_parallel = env.now
 
         activity_log.log_entry(
             t=env.now,
@@ -45,76 +45,46 @@ class ParallelActivity(GenericActivity, StartSubProcesses):
 
         self.start_parallel.succeed()
 
+        stop_events = []
+        subprocess_ids = []
         for sub_process in self.sub_processes:
             activity_log.log_entry(
                 t=env.now,
                 activity_id=activity_log.id,
                 activity_state=core.LogState.START,
-                activity_label={
-                    "type": "subprocess",
-                    "ref": sub_process.id,
-                },
+                activity_label={"type": "subprocess", "ref": sub_process.id},
             )
 
-        stop_event = self.parse_expression(
-            [
-                {
-                    "and": [
-                        {
-                            "type": "activity",
-                            "state": "done",
-                            "name": sub_proc.name,
-                        }
-                        for sub_proc in self.sub_processes
-                    ]
-                }
-            ]
-        )
-        done = []
-        while not stop_event.triggered:
+            stop_events.append(
+                self.parse_expression(
+                    {"type": "activity", "state": "done", "name": sub_process.name}
+                )
+            )
+            subprocess_ids.append(sub_process.id)
+
+        # wait until all stop events are triggered
+        while len(stop_events) > 0:
+            # wait until any stop event is triggered
             event_trigger = self.parse_expression(
-                [
-                    {
-                        "or": [
-                            {
-                                "type": "activity",
-                                "state": "done",
-                                "name": sub_proc.name,
-                            }
-                            for sub_proc in self.sub_processes
-                            if sub_proc.name not in done
-                        ]
-                    }
-                ]
+                [{"or": [event for event in stop_events]}]
             )
             yield event_trigger
-            new_done = [
-                sub_proc.name
-                for sub_proc in self.sub_processes
-                if self.parse_expression(
-                    {
-                        "type": "activity",
-                        "state": "done",
-                        "name": sub_proc.name,
-                    }
-                ).triggered
-                is True
-            ]
-            for item in list(set(new_done) - set(done)):
-                sub_process = next(
-                    process for process in self.sub_processes if process.name == item
-                )
-                activity_log.log_entry(
-                    t=env.now,
-                    activity_id=activity_log.id,
-                    activity_state=core.LogState.STOP,
-                    activity_label={
-                        "type": "subprocess",
-                        "ref": sub_process.id,
-                    },
-                )
-
-            done = new_done
+            # add a log line for each triggered stop event and pop it
+            i = 0
+            while i < len(stop_events):
+                if stop_events[i].triggered is True:
+                    stop_events.pop(i)
+                    activity_log.log_entry(
+                        t=env.now,
+                        activity_id=activity_log.id,
+                        activity_state=core.LogState.STOP,
+                        activity_label={
+                            "type": "subprocess",
+                            "ref": subprocess_ids.pop(i),
+                        },
+                    )
+                else:
+                    i += 1
 
         activity_log.log_entry(
             t=env.now,
@@ -123,5 +93,5 @@ class ParallelActivity(GenericActivity, StartSubProcesses):
         )
 
         args_data["start_preprocessing"] = start_time
-        args_data["start_activity"] = start_sequence
+        args_data["start_activity"] = start_time_parallel
         yield from self.post_process(**args_data)

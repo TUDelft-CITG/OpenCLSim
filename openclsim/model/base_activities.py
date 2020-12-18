@@ -36,10 +36,10 @@ class AbstractPluginClass(ABC):
         pass
 
 
-class StartSubProcesses:
+class RegisterSubProcesses:
     """Mixin for the activities that want to execute their sub_processes in sequence."""
 
-    def start_sequential_subprocesses(self):
+    def register_sequential_subprocesses(self):
         self.start_sequence = self.env.event()
 
         for (i, sub_process) in enumerate(self.sub_processes):
@@ -53,7 +53,7 @@ class StartSubProcesses:
                     "name": self.sub_processes[i - 1].name,
                 }
 
-    def start_parallel_subprocesses(self):
+    def register_parallel_subprocesses(self):
         self.start_parallel = self.env.event()
 
         for (i, sub_process) in enumerate(self.sub_processes):
