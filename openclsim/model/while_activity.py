@@ -11,17 +11,6 @@ class ConditionProcessMixin:
 
     def main_process_function(self, activity_log, env):
         condition_event = self.parse_expression(self.condition_event)
-        if (
-            activity_log.log["Timestamp"]
-            and activity_log.log["Timestamp"][-1] == "delayed activity started"
-            and hasattr(condition_event, "__call__")
-        ):
-            condition_event = condition_event()
-
-        if hasattr(condition_event, "__call__"):
-            condition_event = condition_event()
-        elif type(condition_event) == list:
-            condition_event = env.any_of(events=[event() for event in condition_event])
 
         start_time = env.now
         args_data = {

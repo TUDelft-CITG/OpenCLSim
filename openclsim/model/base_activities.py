@@ -130,6 +130,7 @@ class GenericActivity(PluginActivity):
         if hasattr(self, "start_parallel") and self.start_parallel.triggered:
             self.start_parallel = self.env.event()
 
+        # add the activity withs start event to the simpy environment
         self.main_process = self.env.process(
             self.delayed_process(activity_log=self, env=self.env)
         )
