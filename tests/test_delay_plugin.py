@@ -167,5 +167,7 @@ def test_delay_plugin():
     my_env.run()
 
     assert my_env.now == 6354.357654924601
-    assert_log(while_activity.log)
-    assert_log(hopper.log)
+    assert_log(while_activity)
+    assert_log(hopper)
+    assert_log(from_site)
+    assert_log(to_site)

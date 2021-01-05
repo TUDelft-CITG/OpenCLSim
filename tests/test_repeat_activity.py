@@ -32,4 +32,4 @@ def test_repeat_activity():
     my_env.run()
 
     assert my_env.now == 42
-    assert_log(repeat_activity.log)
+    assert_log(repeat_activity)

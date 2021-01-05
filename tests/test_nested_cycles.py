@@ -211,10 +211,4 @@ def test_nested_cycles():
     my_env.run()
 
     assert my_env.now == 132000
-
-    for activity in [
-        *single_run,
-        *loading_subcycle_processes,
-        *unloading_subcycle_processes,
-    ]:
-        assert_log(activity.log)
+    assert_log(while_activity)

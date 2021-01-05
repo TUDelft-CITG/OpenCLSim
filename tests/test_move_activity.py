@@ -75,5 +75,6 @@ def test_move_activity():
     my_env.run()
 
     assert my_env.now == 942.8245912734186
-    assert_log(activity.log)
-    assert_log(hopper.log)
+    assert_log(activity)
+    assert_log(hopper)
+    assert_log(to_site)

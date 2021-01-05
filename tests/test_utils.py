@@ -3,11 +3,11 @@ import numpy as np
 import pandas as pd
 
 
-def assert_log(log):
+def assert_log(simulation_object):
     """Parse the new_log into benchmarkable data."""
-    new_log = log.copy()
+    new_log = simulation_object.log.copy()
     length = len(new_log["Timestamp"])
-    df = pd.DataFrame(log)
+    df = pd.DataFrame(new_log)
     df["Timestamp"] = df["Timestamp"].astype(np.int64)
 
     assert isinstance(new_log["Timestamp"], list)
@@ -59,5 +59,8 @@ def assert_log(log):
     str_df["count"] = str_df.groupby(cols)[cols[0]].transform("size")
     str_df = str_df.drop_duplicates().reset_index(drop=True).fillna(1.0)
     assert all(str_df["count"] == 1)
+
+    for sub_process in getattr(simulation_object, "sub_processes", []):
+        assert_log(sub_process)
 
     return new_log

@@ -108,4 +108,6 @@ def test_complex_synchronization():
     my_env.run()
 
     assert my_env.now == 721
-    assert_log(reporting_activity.log)
+    assert_log(reporting_activity)
+    assert_log(A)
+    assert_log(B)

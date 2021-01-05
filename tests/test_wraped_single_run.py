@@ -90,6 +90,7 @@ def test_wraped_single_run():
 
     assert my_env.now == 13699.734162066252
 
-    assert_log(hopper.log)
-    assert_log(from_site.log)
-    assert_log(to_site.log)
+    assert_log(hopper)
+    assert_log(from_site)
+    assert_log(to_site)
+    assert_log(while_activity)

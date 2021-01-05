@@ -153,4 +153,6 @@ def test_test_resource_synchronization():
     my_env.run()
 
     assert my_env.now == 160
-    assert_log(from_site.log)
+    assert_log(from_site)
+    assert_log(while1)
+    assert_log(while2)

@@ -55,4 +55,4 @@ def test_sequence():
     my_env.run()
 
     assert my_env.now == 239
-    assert_log(activity.log)
+    assert_log(activity)

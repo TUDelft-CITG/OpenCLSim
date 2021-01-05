@@ -55,5 +55,5 @@ def test_parallel():
     env.run()
 
     assert env.now == 220
-    assert_log(activity.log)
-    assert_log(reporting_activity.log)
+    assert_log(activity)
+    assert_log(reporting_activity)

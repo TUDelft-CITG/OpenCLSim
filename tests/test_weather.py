@@ -183,5 +183,5 @@ def test_weather():
     model.register_processes([while_activity])
     assert my_env.now == 1230768000.0
 
-    assert_log(hopper.log)
-    assert_log(single_run[0].log)
+    assert_log(hopper)
+    assert_log(while_activity)

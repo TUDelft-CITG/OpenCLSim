@@ -92,6 +92,6 @@ def test_mulitcontainer():
     assert from_site.container.get_level(id_="TP") == 0
     assert from_site.container.get_level(id_="MP") == 1
 
-    assert_log(hopper.log)
-    assert_log(activity.log)
-    assert_log(from_site.log)
+    assert_log(hopper)
+    assert_log(activity)
+    assert_log(from_site)

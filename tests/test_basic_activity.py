@@ -45,11 +45,11 @@ class TestBasicActivity:
             registry=registry,
             ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
             duration=14,
-            additional_logs=[reporting_activity, reporting_activity],
+            additional_logs=[reporting_activity],
         )
         model.register_processes([basic_activity])
         my_env.run()
 
         assert my_env.now == 14
-        assert_log(reporting_activity.log)
-        assert_log(basic_activity.log)
+        assert_log(reporting_activity)
+        assert_log(basic_activity)

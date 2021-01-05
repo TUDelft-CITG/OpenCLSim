@@ -38,4 +38,6 @@ def test_process_synchronization():
     my_env.run()
 
     assert my_env.now == 44
-    assert_log(reporting_activity.log)
+    assert_log(act1)
+    assert_log(act2)
+    assert_log(reporting_activity)
