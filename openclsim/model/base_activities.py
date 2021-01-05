@@ -54,7 +54,7 @@ class RegisterSubProcesses:
                 }
 
         for sub_process in self.sub_processes:
-            if getattr(sub_process, "register_subprocesses", None) is not None:
+            if hasattr(sub_process, "register_subprocesses"):
                 sub_process.register_subprocesses()
 
     def register_parallel_subprocesses(self):
@@ -63,7 +63,7 @@ class RegisterSubProcesses:
         for (i, sub_process) in enumerate(self.sub_processes):
             sub_process.start_event_parent = self.start_parallel
 
-            if getattr(sub_process, "register_subprocesses", None) is not None:
+            if hasattr(sub_process, "register_subprocesses"):
                 sub_process.register_subprocesses()
 
 
@@ -206,9 +206,8 @@ class GenericActivity(PluginActivity):
             else self.parse_expression(self.start_event)
         )
 
-        start_event_parent = getattr(self, "start_event_parent", None)
-        if start_event_parent is not None:
-            yield self.parse_expression(start_event_parent)
+        if hasattr(self, "start_event_parent"):
+            yield self.parse_expression(self.start_event_parent)
 
         start_time = env.now
         if start_event is not None:
