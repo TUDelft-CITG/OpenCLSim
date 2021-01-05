@@ -52,7 +52,7 @@ class Processor(SimpyObject):
         assert destination.is_at(origin)
 
         # Log the process for all parts
-        for location in [origin, destination]:
+        for location in set([self, origin, destination]):
             location.log_entry(
                 t=location.env.now,
                 activity_id=self.activity_id,
@@ -64,23 +64,13 @@ class Processor(SimpyObject):
             amount = min(amount, new_amount)
 
         yield from self.check_possible_shift(origin, destination, amount, "get", id_)
-
-        # # Checkout single event
-        self.log_entry(
-            self.env.now,
-            self.activity_id,
-            LogState.START,
-        )
-
         yield self.env.timeout(duration)
 
         # Put the amount in the destination
         yield from self.check_possible_shift(origin, destination, amount, "put", id_)
 
-        self.log_entry(self.env.now, self.activity_id, LogState.STOP)
-
         # Log the process for all parts
-        for location in [origin, destination]:
+        for location in set([self, origin, destination]):
             location.log_entry(
                 t=location.env.now,
                 activity_id=self.activity_id,
