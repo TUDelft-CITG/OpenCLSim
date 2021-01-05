@@ -53,12 +53,6 @@ class ShiftAmountActivity(GenericActivity):
         self.print = show
         self.phase = phase
 
-        if not self.postpone_start:
-            self.start()
-
-    def start(self):
-        self.register_process(main_proc=self.shift_amount_process, show=self.print)
-
     def _request_resource_if_available(
         self,
         env,
@@ -115,7 +109,7 @@ class ShiftAmountActivity(GenericActivity):
                 continue
             all_available = True
 
-    def shift_amount_process(self, activity_log, env):
+    def main_process_function(self, activity_log, env):
         """Origin and Destination are of type HasContainer."""
         assert self.processor.is_at(self.origin)
         assert self.destination.is_at(self.origin)
@@ -133,7 +127,7 @@ class ShiftAmountActivity(GenericActivity):
 
         if self.amount == 0:
             raise RuntimeError(
-                f"Attempting to shift content from an empty origin or to a full self.destination. ({all_amounts})"
+                f"Attempting to shift content from an empty origin ({self.origin.name}) or to a full destination ({self.destination.name}). ({all_amounts})"
             )
 
         yield from self._request_resource(resource_requests, self.destination.resource)
@@ -215,40 +209,11 @@ class ShiftAmountActivity(GenericActivity):
                 resource_requests, self.processor.resource, self.keep_resources
             )
 
-        # work around for the event evaluation
-        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-        # which will result in triggered but not processed events to be taken care of before further progressing
-        # maybe there is a better way of doing it, but his option works for now.
-        yield env.timeout(0)
-
     def _move_mover(self, mover, origin, activity_id, engine_order=1.0, verbose=False):
         """Call the mover.move method, giving debug print statements when verbose is True."""
-        old_location = mover.geometry
-
         # Set activity_id to mover
         mover.activity_id = activity_id
         yield from mover.move(origin, engine_order=engine_order)
-
-        if verbose:
-            print("Moved:")
-            print(
-                "  object:      "
-                + mover.name
-                + " contains: "
-                + str(mover.container.get_level())
-            )
-            print(
-                "  from:        "
-                + format(old_location.x, "02.5f")
-                + " "
-                + format(old_location.y, "02.5f")
-            )
-            print(
-                "  to:          "
-                + format(mover.geometry.x, "02.5f")
-                + " "
-                + format(mover.geometry.y, "02.5f")
-            )
 
     def _shift_amount(
         self,
@@ -270,7 +235,6 @@ class ShiftAmountActivity(GenericActivity):
         origin.activity_id = activity_id
 
         # Check if loading or unloading
-
         yield from processor.process(
             origin,
             amount,
@@ -279,11 +243,3 @@ class ShiftAmountActivity(GenericActivity):
             duration=duration,
             rate=rate,
         )
-
-        if verbose:
-            org_level = origin.container.get_level(id_)
-            dest_level = destination.container.get_level(id_)
-            print(f"Processed {amount} of {id_}:")
-            print(f"  by:          {processor.name}")
-            print(f"  origin        {origin.name}  contains: {org_level} of {id_}")
-            print(f"  destination:  {destination.name} contains: {dest_level} of {id_}")

@@ -15,14 +15,14 @@ class TestBasicActivity:
         my_env = simpy.Environment(initial_time=simulation_start)
         registry = {}
 
-        basic_activity_data = {
-            "env": my_env,
-            "name": "Basic activity",
-            "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
-            "registry": registry,
-            "duration": 14,
-        }
-        model.BasicActivity(**basic_activity_data)
+        act = model.BasicActivity(
+            env=my_env,
+            name="Basic activity",
+            ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            registry=registry,
+            duration=14,
+        )
+        model.register_processes([act])
         my_env.run()
 
         assert my_env.now == 14
@@ -32,27 +32,24 @@ class TestBasicActivity:
         my_env = simpy.Environment(initial_time=simulation_start)
         registry = {}
 
-        reporting_activity_data = {
-            "env": my_env,
-            "name": "Reporting activity",
-            "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5k",  # For logging purposes
-            "registry": registry,
-            "duration": 0,
-            "postpone_start": False,
-        }
-        reporting_activity = model.BasicActivity(**reporting_activity_data)
-
-        basic_activity_data = {
-            "env": my_env,
-            "name": "Basic activity",
-            "registry": registry,
-            "ID": "6dbbbdf7-4589-11e9-bf3b-b469212bff5b",  # For logging purposes
-            "duration": 14,
-            "additional_logs": [reporting_activity],
-        }
-        basic_activity = model.BasicActivity(**basic_activity_data)
+        reporting_activity = model.BasicActivity(
+            env=my_env,
+            name="Reporting activity",
+            ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
+            registry=registry,
+            duration=0,
+        )
+        basic_activity = model.BasicActivity(
+            env=my_env,
+            name="Basic activity",
+            registry=registry,
+            ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            duration=14,
+            additional_logs=[reporting_activity],
+        )
+        model.register_processes([basic_activity])
         my_env.run()
 
         assert my_env.now == 14
-        assert_log(reporting_activity.log)
-        assert_log(basic_activity.log)
+        assert_log(reporting_activity)
+        assert_log(basic_activity)

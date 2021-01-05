@@ -29,12 +29,6 @@ class Movable(SimpyObject, Locatable):
         """Initialization"""
         self.v = v
 
-    def get_container_level(self):
-        if hasattr(self, "container"):
-            return self.container.get_level()
-        else:
-            return -1
-
     def move(self, destination, engine_order=1.0, duration=None):
         """
         Determine distance between origin and destination.

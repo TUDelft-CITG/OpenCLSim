@@ -1,6 +1,7 @@
 """Component to process with the simulation objecs."""
 import logging
 
+from .container import HasContainer
 from .log import Log, LogState
 from .resource import HasResource
 from .simpy_object import SimpyObject
@@ -38,10 +39,10 @@ class Processor(SimpyObject):
         Yields the time it takes to process.
         """
 
-        # assert isinstance(origin, HasContainer) or isinstance(origin, HasContainer)
-        # assert isinstance(destination, HasContainer) or isinstance(
-        #     destination, HasContainer
-        # )
+        assert isinstance(origin, HasContainer) or isinstance(origin, HasContainer)
+        assert isinstance(destination, HasContainer) or isinstance(
+            destination, HasContainer
+        )
         assert isinstance(origin, HasResource)
         assert isinstance(destination, HasResource)
         assert isinstance(self, Log)
@@ -51,7 +52,7 @@ class Processor(SimpyObject):
         assert destination.is_at(origin)
 
         # Log the process for all parts
-        for location in [origin, destination]:
+        for location in set([self, origin, destination]):
             location.log_entry(
                 t=location.env.now,
                 activity_id=self.activity_id,
@@ -63,23 +64,13 @@ class Processor(SimpyObject):
             amount = min(amount, new_amount)
 
         yield from self.check_possible_shift(origin, destination, amount, "get", id_)
-
-        # Checkout single event
-        self.log_entry(
-            self.env.now,
-            self.activity_id,
-            LogState.START,
-        )
-
         yield self.env.timeout(duration)
 
         # Put the amount in the destination
         yield from self.check_possible_shift(origin, destination, amount, "put", id_)
 
-        self.log_entry(self.env.now, self.activity_id, LogState.STOP)
-
         # Log the process for all parts
-        for location in [origin, destination]:
+        for location in set([self, origin, destination]):
             location.log_entry(
                 t=location.env.now,
                 activity_id=self.activity_id,
@@ -139,7 +130,7 @@ class Processor(SimpyObject):
                 self.log_entry(
                     t=start_time,
                     activity_id=self.activity_id,
-                    activity_state=LogState.START,
+                    activity_state=LogState.WAIT_START,
                     activity_label={
                         "type": "subprocess",
                         "ref": "waiting destination content",
@@ -148,7 +139,7 @@ class Processor(SimpyObject):
                 self.log_entry(
                     t=end_time,
                     activity_id=self.activity_id,
-                    activity_state=LogState.STOP,
+                    activity_state=LogState.WAIT_STOP,
                     activity_label={
                         "type": "subprocess",
                         "ref": "waiting destination content",

@@ -1,7 +1,6 @@
 """Base classes for the openclsim activities."""
 
 from abc import ABC
-from functools import partial
 
 import simpy
 
@@ -37,6 +36,37 @@ class AbstractPluginClass(ABC):
         pass
 
 
+class RegisterSubProcesses:
+    """Mixin for the activities that want to execute their sub_processes in sequence."""
+
+    def register_sequential_subprocesses(self):
+        self.start_sequence = self.env.event()
+
+        for (i, sub_process) in enumerate(self.sub_processes):
+            if i == 0:
+                sub_process.start_event_parent = self.start_sequence
+
+            else:
+                sub_process.start_event_parent = {
+                    "type": "activity",
+                    "state": "done",
+                    "name": self.sub_processes[i - 1].name,
+                }
+
+        for sub_process in self.sub_processes:
+            if hasattr(sub_process, "register_subprocesses"):
+                sub_process.register_subprocesses()
+
+    def register_parallel_subprocesses(self):
+        self.start_parallel = self.env.event()
+
+        for (i, sub_process) in enumerate(self.sub_processes):
+            sub_process.start_event_parent = self.start_parallel
+
+            if hasattr(sub_process, "register_subprocesses"):
+                sub_process.register_subprocesses()
+
+
 class PluginActivity(core.Identifiable, core.Log):
     """
     Base class for all activities which will provide a plugin mechanism.
@@ -49,12 +79,9 @@ class PluginActivity(core.Identifiable, core.Log):
         super().__init__(*args, **kwargs)
         self.plugins = list()
 
-    def get_priority(self, elem):
-        return elem["priority"]
-
     def register_plugin(self, plugin, priority=0):
         self.plugins.append({"priority": priority, "plugin": plugin})
-        self.plugins = sorted(self.plugins, key=self.get_priority)
+        self.plugins = sorted(self.plugins, key=lambda x: x["priority"])
 
     def pre_process(self, args_data):
         # iterating over all registered plugins for this activity calling pre_process
@@ -83,24 +110,11 @@ class PluginActivity(core.Identifiable, core.Log):
 
 
 class GenericActivity(PluginActivity):
-    """
-    The GenericActivity Class forms a generic class which sets up all required mechanisms to control an activity by providing a start event.
-
-    Since it is generic, a parameter of the initialization
-    is the main process, which is provided by an inheriting class
-    main_proc  : the main process to be executed
-    start_event: the activity will start as soon as this event is triggered
-                 by default will be to start immediately
-    requested_resources: a call by refernce value to a dictionary of resources, which have been requested and not released yet.
-    keep_resources: a list of resources, which should not be released at the end of the activity
-    postpone_start: if set to True, the activity will not be directly started in the simpy environment,
-                but will be started by a structrual activity, like sequential or while activity.
-    """
+    """The GenericActivity Class forms a generic class which sets up all activites."""
 
     def __init__(
         self,
         registry,
-        postpone_start=False,
         start_event=None,
         requested_resources=dict(),
         keep_resources=list(),
@@ -109,227 +123,132 @@ class GenericActivity(PluginActivity):
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        if "name" not in registry:
-            registry["name"] = {}
-        if self.name not in registry["name"]:
-            l_ = []
-        else:
-            l_ = registry["name"][self.name]
-        l_.append(self)
-        registry["name"][self.name] = l_
-        if "id" not in registry:
-            registry["id"] = {}
-        if self.id not in registry["id"]:
-            l_ = []
-        else:
-            l_ = registry["id"][self.id]
-        l_.append(self)
-        registry["id"][self.id] = l_
-
         self.registry = registry
-        self.postpone_start = postpone_start
         self.start_event = start_event
         self.requested_resources = requested_resources
         self.keep_resources = keep_resources
         self.done_event = self.env.event()
 
-    def register_process(self, main_proc, show=False, additional_logs=None):
-        # replace the done event
+    def register_process(self):
+        # replace the events
         self.done_event = self.env.event()
+        if hasattr(self, "start_sequence") and self.start_sequence.triggered:
+            self.start_sequence = self.env.event()
+        if hasattr(self, "start_parallel") and self.start_parallel.triggered:
+            self.start_parallel = self.env.event()
 
-        # default to []
-        if additional_logs is None:
-            additional_logs = []
-
-        start_event = None
-        if self.start_event is not None:
-            start_event = self.parse_expression(self.start_event)
-        start_event_instance = start_event
-        (
-            start_event
-            if start_event is None or isinstance(start_event, simpy.Event)
-            else self.env.all_of(events=start_event)
+        # add the activity withs start event to the simpy environment
+        self.main_process = self.env.process(
+            self.delayed_process(activity_log=self, env=self.env)
         )
-        if start_event_instance is not None:
-            main_proc = partial(
-                self.delayed_process,
-                start_event=start_event_instance,
-                sub_processes=[main_proc],
-                additional_logs=additional_logs,
-                requested_resources=self.requested_resources,
-                keep_resources=self.keep_resources,
-            )
-        self.main_proc = main_proc
-        if not self.postpone_start:
-            self.main_process = self.env.process(
-                self.main_proc(activity_log=self, env=self.env)
-            )
+
+        # add activity to the registry
+        self.registry.setdefault("name", {}).setdefault(self.name, set()).add(self)
+        self.registry.setdefault("id", {}).setdefault(self.id, set()).add(self)
 
     def parse_expression(self, expr):
-        """Methods for Parsing of the expression language used for start_events and conditional_events."""
-        res = []
-        if not isinstance(expr, list):
-            raise Exception(
-                f"expression must be a list, but is {type(expr)}. Therefore it can not be parsed: {expr}"
-            )
-        for key_val in expr:
-            if isinstance(key_val, dict):
-                if "and" in key_val:
-                    partial_res = self.parse_expression(key_val["and"])
-                    self.env.timeout(0)
-                    if not isinstance(partial_res, list):
-                        partial_res = [partial_res]
-                    res.append(
-                        # self.env.all_of(events=[event() for event in partial_res])
-                        self.env.all_of(events=partial_res)
+        if isinstance(expr, simpy.Event):
+            return expr
+        if isinstance(expr, list):
+            return self.env.all_of([self.parse_expression(item) for item in expr])
+        if isinstance(expr, dict):
+            if "and" in expr:
+                return self.env.all_of(
+                    [self.parse_expression(item) for item in expr["and"]]
+                )
+            if "or" in expr:
+                return self.env.any_of(
+                    [self.parse_expression(item) for item in expr["or"]]
+                )
+            if expr.get("type") == "container":
+                id_ = expr.get("id_", "default")
+                obj = expr["concept"]
+                if expr["state"] == "full":
+                    return obj.container.get_full_event(id_=id_)
+                elif expr["state"] == "empty":
+                    return obj.container.get_empty_event(id_=id_)
+                raise ValueError
+
+            if expr.get("type") == "activity":
+                if expr.get("state") != "done":
+                    raise ValueError(
+                        f"Unknown state {expr.get('state')} in ActivityExpression."
                     )
-                    self.env.timeout(0)
-                elif "or" in key_val:
-                    partial_res = self.parse_expression(key_val["or"])
-                    self.env.timeout(0)
-                    if not isinstance(partial_res, list):
-                        partial_res = [partial_res]
-                    res.append(
-                        # self.env.any_of(events=[event() for event in partial_res])
-                        self.env.any_of(events=partial_res)
-                    )
-                    self.env.timeout(0)
-                elif "type" in key_val:
-                    if key_val["type"] == "container":
-                        id_ = None
-                        if "id_" in key_val:
-                            id_ = key_val["id_"]
-                        state = key_val["state"]
-                        obj = key_val["concept"]
-                        if state == "full":
-                            if id_ is not None:
-                                res.append(obj.container.get_full_event(id_=id_))
-                            else:
-                                res.append(obj.container.get_full_event())
-                        elif state == "empty":
-                            if id_ is not None:
-                                res.append(obj.container.get_empty_event(id_=id_))
-                            else:
-                                res.append(obj.container.get_empty_event())
-                        else:
-                            raise Exception(
-                                f"Unknown state {state} for a container event"
-                            )
-                    elif key_val["type"] == "activity":
-                        state = key_val["state"]
-                        if state != "done":
-                            raise Exception(
-                                f"Unknown state {state} in ActivityExpression."
-                            )
-                        activity_ = None
-                        key = "unknown"
-                        if "ID" in key_val:
-                            key = key_val["ID"]
-                            if "id" in self.registry:
-                                if key in self.registry["id"]:
-                                    activity_ = self.registry["id"][key]
-                        elif "name" in key_val:
-                            key = key_val["name"]
-                            if "name" in self.registry:
-                                if key in self.registry["name"]:
-                                    activity_ = self.registry["name"][key]
-                        if activity_ is None:
-                            raise Exception(
-                                f"No activity found in ActivityExpression for id/name {key}"
-                            )
-                        if isinstance(activity_, list):
-                            if len(activity_) == 1:
-                                res.append(activity_[0].get_done_event())
-                            else:
-                                res.extend(
-                                    [
-                                        activity_item.get_done_event()
-                                        for activity_item in activity_
-                                    ]
-                                )
-                        else:
-                            res.append(activity_[0].get_done_event())
-                else:
+                key = expr.get("ID", expr.get("name"))
+                activity_ = self.registry.get("id", {}).get(
+                    key, self.registry.get("name", {}).get(key)
+                )
+
+                if activity_ is None:
                     raise Exception(
-                        f"Logical AND can not have an additional key next to it. {expr}"
+                        f"No activity found in ActivityExpression for id/name {key}"
                     )
-        if len(res) > 1:
-            return res
-        elif len(res) == 1:
-            return res[0]
-        return res
+                return self.env.all_of(
+                    [activity_item.main_process for activity_item in activity_]
+                )
 
-    def get_done_event(self):
-        if self.postpone_start:
-            return self.done_event
-        elif hasattr(self, "main_process"):
-            return self.main_process
-        else:
-            return self.done_event
+            raise ValueError
 
-    def call_main_proc(self, activity_log, env):
-        res = self.main_proc(activity_log=activity_log, env=env)
-        return res
-
-    def end(self):
-        self.done_event.succeed()
+        raise ValueError(
+            f"{type(expr)} is not a valid input type. Valid input types are: simpy.Event, dict, and list"
+        )
 
     def delayed_process(
         self,
         activity_log,
         env,
-        start_event,
-        sub_processes,
-        requested_resources,
-        keep_resources,
-        additional_logs=[],
     ):
-        """
-        Return a generator which can be added as a process to a simpy environment.
-
-        In the process the given
-        sub_processes will be executed after the given start_event occurs.
-
-        activity_log: the core.Log object in which log_entries about the activities progress will be added.
-        env: the simpy.Environment in which the process will be run
-        start_event: a simpy.Event object, when this event occurs the delayed process will start executing its sub_processes
-        sub_processes: an Iterable of methods which will be called with the activity_log and env parameters and should
-                    return a generator which could be added as a process to a simpy.Environment
-                    the sub_processes will be executed sequentially, in the order in which they are given after the
-                    start_event occurs
-        """
-        if hasattr(start_event, "__call__"):
-            start_event = start_event()
-        activity_log.log_entry(
-            t=env.now,
-            activity_id=activity_log.id,
-            activity_state=core.LogState.WAIT_START,
+        """Return a generator which can be added as a process to a simpy environment."""
+        additional_logs = getattr(self, "additional_logs", [])
+        start_event = (
+            None
+            if self.start_event is None
+            else self.parse_expression(self.start_event)
         )
-        if isinstance(additional_logs, list) and len(additional_logs) > 0:
-            for log in additional_logs:
-                for sub_process in sub_processes:
-                    log.log_entry(
-                        t=env.now,
-                        activity_id=activity_log.id,
-                        activity_state=core.LogState.WAIT_START,
-                    )
-        yield start_event
-        activity_log.log_entry(
-            t=env.now,
-            activity_id=activity_log.id,
-            activity_state=core.LogState.WAIT_STOP,
-        )
-        if isinstance(additional_logs, list) and len(additional_logs) > 0:
-            for log in additional_logs:
-                for sub_process in sub_processes:
-                    log.log_entry(
-                        t=env.now,
-                        activity_id=activity_log.id,
-                        activity_state=core.LogState.WAIT_STOP,
-                    )
 
-        for sub_process in sub_processes:
-            yield from sub_process(activity_log=activity_log, env=env)
+        if hasattr(self, "start_event_parent"):
+            yield self.parse_expression(self.start_event_parent)
+
+        start_time = env.now
+        if start_event is not None:
+            yield start_event
+
+        if env.now > start_time:
+            # log start
+            activity_log.log_entry(
+                t=start_time,
+                activity_id=activity_log.id,
+                activity_state=core.LogState.WAIT_START,
+            )
+            for log in additional_logs:
+                log.log_entry(
+                    t=start_time,
+                    activity_id=activity_log.id,
+                    activity_state=core.LogState.WAIT_START,
+                    activity_label={
+                        "type": "additional log",
+                        "ref": self.id,
+                    },
+                )
+
+            # log stop
+            activity_log.log_entry(
+                t=env.now,
+                activity_id=activity_log.id,
+                activity_state=core.LogState.WAIT_STOP,
+            )
+            for log in additional_logs:
+                log.log_entry(
+                    t=env.now,
+                    activity_id=activity_log.id,
+                    activity_state=core.LogState.WAIT_STOP,
+                    activity_label={
+                        "type": "additional log",
+                        "ref": self.id,
+                    },
+                )
+
+        yield from self.main_process_function(activity_log=self, env=self.env)
 
     def _request_resource(self, requested_resources, resource):
         """Request the given resource and yields it."""

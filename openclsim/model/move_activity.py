@@ -34,13 +34,8 @@ class MoveActivity(GenericActivity):
         self.mover = mover
         self.duration = duration
         self.print = show
-        if not self.postpone_start:
-            self.start()
 
-    def start(self):
-        self.register_process(main_proc=self.move_process, show=self.print)
-
-    def move_process(self, activity_log, env):
+    def main_process_function(self, activity_log, env):
         """
         Return a generator which can be added as a process to a simpy.Environment.
 
@@ -93,9 +88,3 @@ class MoveActivity(GenericActivity):
         self._release_resource(
             self.requested_resources, self.mover.resource, self.keep_resources
         )
-
-        # work around for the event evaluation
-        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-        # which will result in triggered but not processed events to be taken care of before further progressing
-        # maybe there is a better way of doing it, but his option works for now.
-        yield env.timeout(0)

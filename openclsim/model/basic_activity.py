@@ -25,17 +25,8 @@ class BasicActivity(GenericActivity):
         if additional_logs is None:
             additional_logs = []
         self.additional_logs = additional_logs
-        if not self.postpone_start:
-            self.start()
 
-    def start(self):
-        self.register_process(
-            main_proc=self.basic_process,
-            show=self.print,
-            additional_logs=self.additional_logs,
-        )
-
-    def basic_process(self, activity_log, env):
+    def main_process_function(self, activity_log, env):
         """
         Return a generator which can be added as a process to a simpy.Environment.
 
@@ -74,6 +65,10 @@ class BasicActivity(GenericActivity):
                     t=env.now,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.START,
+                    activity_label={
+                        "type": "additional log",
+                        "ref": self.id,
+                    },
                 )
 
         yield env.timeout(self.duration)
@@ -87,14 +82,12 @@ class BasicActivity(GenericActivity):
                     t=env.now,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.STOP,
+                    activity_label={
+                        "type": "additional log",
+                        "ref": self.id,
+                    },
                 )
 
         args_data["start_preprocessing"] = start_time
         args_data["start_activity"] = start_basic
         yield from self.post_process(**args_data)
-
-        # work around for the event evaluation
-        # this delay of 0 time units ensures that the simpy environment gets a chance to evaluate events
-        # which will result in triggered but not processed events to be taken care of before further progressing
-        # maybe there is a better way of doing it, but his option works for now.
-        yield env.timeout(0)

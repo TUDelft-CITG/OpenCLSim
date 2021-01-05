@@ -62,14 +62,15 @@ def vessel_planning(
     names = []
     for vessel in vessels:
         if len(vessel.log["Timestamp"]) > 0:
+            df = get_log_dataframe(vessel, vessels).rename(
+                columns={
+                    "Activity": "log_string",
+                    "ActivityState": "activity_state",
+                }
+            )
             df = (
-                get_log_dataframe(vessel, vessels)
-                .rename(
-                    columns={
-                        "Activity": "log_string",
-                        "ActivityState": "activity_state",
-                    }
-                )
+                df.drop(df[df.activity_state == "WAIT_START"].index)
+                .drop(df[df.activity_state == "WAIT_STOP"].index)
                 .set_index("Timestamp", drop=False)
             )
 

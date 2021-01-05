@@ -10,7 +10,7 @@ from .test_utils import assert_log
 
 def test_wraped_single_run():
     """Test wraped single run."""
-    # setup environment
+
     simulation_start = 0
     my_env = simpy.Environment(initial_time=simulation_start)
 
@@ -40,8 +40,8 @@ def test_wraped_single_run():
         {},
     )
 
-    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)  # lon, lat
-    location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)  # lon, lat
+    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)
+    location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)
 
     data_from_site = {
         "env": my_env,
@@ -74,7 +74,7 @@ def test_wraped_single_run():
 
     hopper = TransportProcessingResource(**data_hopper)
 
-    model.single_run_process(
+    (single_run, while_activity) = model.single_run_process(
         name="single_run",
         registry={},
         env=my_env,
@@ -85,10 +85,12 @@ def test_wraped_single_run():
         unloader=hopper,
     )
 
+    model.register_processes([while_activity])
     my_env.run()
 
     assert my_env.now == 13699.734162066252
 
-    assert_log(hopper.log)
-    assert_log(from_site.log)
-    assert_log(to_site.log)
+    assert_log(hopper)
+    assert_log(from_site)
+    assert_log(to_site)
+    assert_log(while_activity)
