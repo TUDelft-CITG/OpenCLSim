@@ -54,4 +54,10 @@ def assert_log(log):
             x, y = state["geometry"].xy
             state["geometry"] = x[0], y[0]
 
+    str_df = df.astype(str)
+    cols = list(str_df.keys())
+    str_df["count"] = str_df.groupby(cols)[cols[0]].transform("size")
+    str_df = str_df.drop_duplicates().reset_index(drop=True).fillna(1.0)
+    assert all(str_df["count"] == 1)
+
     return new_log
