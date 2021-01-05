@@ -68,7 +68,8 @@ class ConditionProcessMixin:
             else:
                 repetitions += 1
                 self.register_subprocesses()
-                register_processes(self.sub_processes)
+                for sub_process in self.sub_processes:
+                    register_processes(sub_process)
 
         activity_log.log_entry(
             t=env.now,
