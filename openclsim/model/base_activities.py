@@ -143,8 +143,10 @@ class GenericActivity(PluginActivity):
         )
 
         # add activity to the registry
-        self.registry.setdefault("name", {}).setdefault(self.name, []).append(self)
-        self.registry.setdefault("id", {}).setdefault(self.id, []).append(self)
+        if self not in self.registry.get("name", {}).get(self.name, []):
+            self.registry.setdefault("name", {}).setdefault(self.name, []).append(self)
+        if self not in self.registry.get("id", {}).get(self.id, []):
+            self.registry.setdefault("id", {}).setdefault(self.id, []).append(self)
 
     def parse_expression(self, expr):
         if isinstance(expr, simpy.Event):
