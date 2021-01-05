@@ -235,7 +235,6 @@ class ShiftAmountActivity(GenericActivity):
         origin.activity_id = activity_id
 
         # Check if loading or unloading
-
         yield from processor.process(
             origin,
             amount,

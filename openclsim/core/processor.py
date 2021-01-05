@@ -65,7 +65,7 @@ class Processor(SimpyObject):
 
         yield from self.check_possible_shift(origin, destination, amount, "get", id_)
 
-        # Checkout single event
+        # # Checkout single event
         self.log_entry(
             self.env.now,
             self.activity_id,
@@ -140,7 +140,7 @@ class Processor(SimpyObject):
                 self.log_entry(
                     t=start_time,
                     activity_id=self.activity_id,
-                    activity_state=LogState.START,
+                    activity_state=LogState.WAIT_START,
                     activity_label={
                         "type": "subprocess",
                         "ref": "waiting destination content",
@@ -149,7 +149,7 @@ class Processor(SimpyObject):
                 self.log_entry(
                     t=end_time,
                     activity_id=self.activity_id,
-                    activity_state=LogState.STOP,
+                    activity_state=LogState.WAIT_STOP,
                     activity_label={
                         "type": "subprocess",
                         "ref": "waiting destination content",
