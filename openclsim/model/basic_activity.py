@@ -65,6 +65,10 @@ class BasicActivity(GenericActivity):
                     t=env.now,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.START,
+                    activity_label={
+                        "type": "additional log",
+                        "ref": self.id,
+                    },
                 )
 
         yield env.timeout(self.duration)
@@ -78,6 +82,10 @@ class BasicActivity(GenericActivity):
                     t=env.now,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.STOP,
+                    activity_label={
+                        "type": "additional log",
+                        "ref": self.id,
+                    },
                 )
 
         args_data["start_preprocessing"] = start_time

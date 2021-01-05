@@ -227,6 +227,10 @@ class GenericActivity(PluginActivity):
                     t=start_time,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.WAIT_START,
+                    activity_label={
+                        "type": "additional log",
+                        "ref": self.id,
+                    },
                 )
 
             # log stop
@@ -240,6 +244,10 @@ class GenericActivity(PluginActivity):
                     t=env.now,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.WAIT_STOP,
+                    activity_label={
+                        "type": "additional log",
+                        "ref": self.id,
+                    },
                 )
 
         yield from self.main_process_function(activity_log=self, env=self.env)
