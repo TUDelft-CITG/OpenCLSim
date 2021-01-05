@@ -8,6 +8,10 @@ def get_subprocesses(items):
     """Get a list of all the activities an their subprocesses recursively."""
     if not isinstance(items, list):
         items = [items]
+    else:
+        # This creates a new list with the same items.
+        items = [i for i in items]
+
     for item in items:
         items.extend(getattr(item, "sub_processes", []))
     return items

@@ -67,9 +67,12 @@ class ConditionProcessMixin:
                 break
             else:
                 repetitions += 1
+
+                # Reset the sequential start events of the subprocesses
                 self.register_subprocesses()
-                for sub_process in self.sub_processes:
-                    register_processes(sub_process)
+
+                # Re-add the activities to the simpy environment
+                register_processes(self.sub_processes)
 
         activity_log.log_entry(
             t=env.now,
