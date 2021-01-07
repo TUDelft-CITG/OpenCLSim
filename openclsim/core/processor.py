@@ -26,11 +26,9 @@ class Processor(SimpyObject):
     def process(
         self,
         origin,
-        amount,
         destination,
+        shiftamount_fcn,
         id_="default",
-        rate=None,
-        duration=None,
     ):
         """
         Move content from ship to the site or from the site to the ship.
@@ -59,13 +57,11 @@ class Processor(SimpyObject):
                 activity_state=LogState.START,
             )
 
-        if rate is not None:
-            duration, new_amount = rate(origin, destination, amount)
-            amount = min(amount, new_amount)
+        duration, amount = shiftamount_fcn(origin, destination)
 
+        # Get the amount from the origin
         yield from self.check_possible_shift(origin, destination, amount, "get", id_)
         yield self.env.timeout(duration)
-
         # Put the amount in the destination
         yield from self.check_possible_shift(origin, destination, amount, "put", id_)
 

@@ -1,7 +1,7 @@
 """Shift amount activity for the simulation."""
 
 
-import numpy as np
+from functools import partial
 
 import openclsim.core as core
 
@@ -125,15 +125,14 @@ class ShiftAmountActivity(GenericActivity):
         yield from self._request_resource(resource_requests, self.destination.resource)
 
         yield from self._request_resource_if_available(
-            env,
-            resource_requests,
-            self.origin,
-            self.processor,
-            amount,
-            None,  # for now release all
-            activity_log.id,
-            self.id_,
-            1,
+            env=env,
+            resource_requests=resource_requests,
+            site=self.origin,
+            processor=self.processor,
+            amount=amount,
+            kept_resource=None,  # for now release all
+            activity_id=activity_log.id,
+            id_=self.id_,
         )
 
         start_time = env.now
@@ -153,7 +152,7 @@ class ShiftAmountActivity(GenericActivity):
         start_shift = env.now
         yield from self._shift_amount(
             env,
-            self.origin.container.get_level(self.id_) + amount,
+            amount,
             activity_id=activity_log.id,
         )
 
@@ -186,31 +185,28 @@ class ShiftAmountActivity(GenericActivity):
     def _shift_amount(
         self,
         env,
-        desired_level,
+        amount,
         activity_id,
     ):
-        amount = np.abs(self.origin.container.get_level(self.id_) - desired_level)
         self.processor.activity_id = activity_id
         self.origin.activity_id = activity_id
 
-        rate = self._get_shiftamount_fcn(amount)
+        shiftamount_fcn = self._get_shiftamount_fcn(amount)
 
         yield from self.processor.process(
-            self.origin,
-            amount,
-            self.destination,
+            origin=self.origin,
+            destination=self.destination,
             id_=self.id_,
-            duration=self.duration,
-            rate=rate,
+            shiftamount_fcn=shiftamount_fcn,
         )
 
     def _get_shiftamount_fcn(self, amount):
         if self.duration is not None:
-            return lambda *args, **kwargs: (self.duration, amount)
+            return lambda origin, destination: (self.duration, amount)
         elif self.phase == "loading":
-            return self.processor.loading
+            return partial(self.processor.loading, amount=amount)
         elif self.phase == "unloading":
-            return self.processor.unloading
+            return partial(self.processor.unloading, amount=amount)
         else:
             raise RuntimeError(
                 "Both the phase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
