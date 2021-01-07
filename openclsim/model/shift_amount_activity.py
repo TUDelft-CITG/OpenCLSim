@@ -136,20 +136,6 @@ class ShiftAmountActivity(GenericActivity):
             1,
         )
 
-        if self.duration is not None:
-            rate = None
-        elif self.duration is not None:
-            rate = self.processor.loading
-
-        elif self.phase == "loading":
-            rate = self.processor.loading
-        elif self.phase == "unloading":
-            rate = self.processor.unloading
-        else:
-            raise RuntimeError(
-                "Both the pase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
-            )
-
         start_time = env.now
         args_data = {
             "env": env,
@@ -169,7 +155,6 @@ class ShiftAmountActivity(GenericActivity):
             env,
             self.origin.container.get_level(self.id_) + amount,
             activity_id=activity_log.id,
-            rate=rate,
         )
 
         activity_log.log_entry(
@@ -203,11 +188,12 @@ class ShiftAmountActivity(GenericActivity):
         env,
         desired_level,
         activity_id,
-        rate=None,
     ):
         amount = np.abs(self.origin.container.get_level(self.id_) - desired_level)
         self.processor.activity_id = activity_id
         self.origin.activity_id = activity_id
+
+        rate = self._get_shiftamount_fcn(amount)
 
         yield from self.processor.process(
             self.origin,
@@ -218,9 +204,9 @@ class ShiftAmountActivity(GenericActivity):
             rate=rate,
         )
 
-    def _get_shiftamount_fcn(self):
+    def _get_shiftamount_fcn(self, amount):
         if self.duration is not None:
-            return lambda *args, **kwargs: self.duration
+            return lambda *args, **kwargs: (self.duration, amount)
         elif self.phase == "loading":
             return self.processor.loading
         elif self.phase == "unloading":
