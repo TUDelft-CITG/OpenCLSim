@@ -64,7 +64,6 @@ class ShiftAmountActivity(GenericActivity):
         activity_id,
         id_="default",
         engine_order=1.0,
-        verbose=False,
     ):
         all_available = False
         while not all_available and amount > 0:
@@ -87,7 +86,6 @@ class ShiftAmountActivity(GenericActivity):
                     site,
                     activity_id=activity_id,
                     engine_order=engine_order,
-                    verbose=verbose,
                 )
                 if site.container.get_level(id_) < amount:
                     # someone messed us up again, so return to waiting for space/content
@@ -114,21 +112,15 @@ class ShiftAmountActivity(GenericActivity):
         assert self.processor.is_at(self.origin)
         assert self.destination.is_at(self.origin)
 
-        verbose = False
         resource_requests = self.requested_resources
 
         if not hasattr(activity_log, "processor"):
             activity_log.processor = self.processor
         if not hasattr(activity_log, "mover"):
             activity_log.mover = self.origin
-        self.amount, all_amounts = self.processor.determine_processor_amount(
-            [self.origin], self.destination, self.amount, self.id_
+        amount = self.processor.determine_processor_amount(
+            self.origin, self.destination, self.amount, self.id_
         )
-
-        if self.amount == 0:
-            raise RuntimeError(
-                f"Attempting to shift content from an empty origin ({self.origin.name}) or to a full destination ({self.destination.name}). ({all_amounts})"
-            )
 
         yield from self._request_resource(resource_requests, self.destination.resource)
 
@@ -137,12 +129,11 @@ class ShiftAmountActivity(GenericActivity):
             resource_requests,
             self.origin,
             self.processor,
-            self.amount,
+            amount,
             None,  # for now release all
             activity_log.id,
             self.id_,
             1,
-            verbose=False,
         )
 
         if self.duration is not None:
@@ -176,15 +167,9 @@ class ShiftAmountActivity(GenericActivity):
         start_shift = env.now
         yield from self._shift_amount(
             env,
-            self.processor,
-            self.origin,
-            self.origin.container.get_level(self.id_) + self.amount,
-            self.destination,
+            self.origin.container.get_level(self.id_) + amount,
             activity_id=activity_log.id,
-            duration=self.duration,
             rate=rate,
-            id_=self.id_,
-            verbose=verbose,
         )
 
         activity_log.log_entry(
@@ -209,37 +194,38 @@ class ShiftAmountActivity(GenericActivity):
                 resource_requests, self.processor.resource, self.keep_resources
             )
 
-    def _move_mover(self, mover, origin, activity_id, engine_order=1.0, verbose=False):
-        """Call the mover.move method, giving debug print statements when verbose is True."""
-        # Set activity_id to mover
+    def _move_mover(self, mover, origin, activity_id, engine_order=1.0):
         mover.activity_id = activity_id
         yield from mover.move(origin, engine_order=engine_order)
 
     def _shift_amount(
         self,
         env,
-        processor,
-        origin,
         desired_level,
-        destination,
         activity_id,
-        duration=None,
         rate=None,
-        id_="default",
-        verbose=False,
     ):
-        """Call the processor.process method, giving debug print statements when verbose is True."""
-        amount = np.abs(origin.container.get_level(id_) - desired_level)
-        # Set activity_id to processor and mover
-        processor.activity_id = activity_id
-        origin.activity_id = activity_id
+        amount = np.abs(self.origin.container.get_level(self.id_) - desired_level)
+        self.processor.activity_id = activity_id
+        self.origin.activity_id = activity_id
 
-        # Check if loading or unloading
-        yield from processor.process(
-            origin,
+        yield from self.processor.process(
+            self.origin,
             amount,
-            destination,
-            id_=id_,
-            duration=duration,
+            self.destination,
+            id_=self.id_,
+            duration=self.duration,
             rate=rate,
         )
+
+    def _get_shiftamount_fcn(self):
+        if self.duration is not None:
+            return lambda *args, **kwargs: self.duration
+        elif self.phase == "loading":
+            return self.processor.loading
+        elif self.phase == "unloading":
+            return self.processor.unloading
+        else:
+            raise RuntimeError(
+                "Both the phase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
+            )

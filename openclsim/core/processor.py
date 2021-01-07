@@ -148,44 +148,31 @@ class Processor(SimpyObject):
 
     def determine_processor_amount(
         self,
-        origins,
+        origin,
         destination,
         amount=None,
         id_="default",
-        loader=None,
-        unloader=None,
-        filling=1,
     ):
         """Determine the maximum amount that can be carried."""
+        dest_cont = destination.container
+        destination_max_amount = dest_cont.get_capacity(id_) - dest_cont.get_level(id_)
+        if destination_max_amount <= 0:
+            raise ValueError(
+                f"Attempting to shift content to a full destination (name: {destination.name}, container_id: {id_}, capacity: {dest_cont.get_capacity(id_)} level: {dest_cont.get_level(id_)})."
+            )
 
-        # Determine the basic amount that should be transported
-        all_amounts = {}
-        all_amounts.update(
-            {
-                "origin." + origin.id: origin.container.get_level(id_)
-                for origin in origins
-            }
-        )
-        all_amounts[
-            "destination." + destination.id
-        ] = destination.container.get_capacity(id_) - destination.container.get_level(
-            id_
-        )
+        org_cont = origin.container
+        origin_max_amount = org_cont.get_level(id_)
+        if origin_max_amount <= 0:
+            raise ValueError(
+                f"Attempting to shift content from an empty origin (name: {origin.name}, container_id: {id_}, capacity: {org_cont.get_capacity(id_)} level: {org_cont.get_level(id_)})."
+            )
 
-        origin_requested = 0
-        destination_requested = 0
-
-        for key in all_amounts.keys():
-            if "origin." in key:
-                origin_requested += all_amounts[key]
-            else:
-                destination_requested += all_amounts[key]
-
-        amount_ = min(origin_requested, destination_requested)
+        new_amount = min(origin_max_amount, destination_max_amount)
         if amount is not None:
-            amount_ = min(amount_, amount)
+            new_amount = min(amount, new_amount)
 
-        return amount_, all_amounts
+        return new_amount
 
 
 class LoadingFunction:
