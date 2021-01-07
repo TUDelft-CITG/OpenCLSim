@@ -77,8 +77,6 @@ class Processor(SimpyObject):
                 activity_state=LogState.STOP,
             )
 
-        logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
-
     def check_possible_shift(
         self, origin, destination, amount, activity, id_="default"
     ):

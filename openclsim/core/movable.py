@@ -56,9 +56,6 @@ class Movable(SimpyObject, Locatable):
         # Set mover geometry to destination geometry
         self.geometry = shapely.geometry.asShape(destination.geometry)
 
-        # Debug logs
-        logger.debug("  duration: " + "%4.2f" % (sailing_duration / 3600) + " hrs")
-
         # Log the stop event
         self.log_entry(
             self.env.now,
