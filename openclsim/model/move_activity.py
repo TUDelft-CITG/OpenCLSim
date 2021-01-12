@@ -27,13 +27,23 @@ class MoveActivity(GenericActivity):
                  by default will be to start immediately
     """
 
-    def __init__(self, mover, destination, duration=None, show=False, *args, **kwargs):
+    def __init__(
+        self,
+        mover,
+        destination,
+        duration=None,
+        show=False,
+        engine_order=None,
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.destination = destination
         self.mover = mover
         self.duration = duration
         self.print = show
+        self.engine_order = engine_order if engine_order else 1
 
     def main_process_function(self, activity_log, env):
         """
@@ -71,7 +81,7 @@ class MoveActivity(GenericActivity):
         self.mover.activity_id = activity_log.id
         yield from self.mover.move(
             destination=self.destination,
-            engine_order=1,
+            engine_order=self.engine_order,
             duration=self.duration,
         )
 
