@@ -33,7 +33,7 @@ class MoveActivity(GenericActivity):
         destination,
         duration=None,
         show=False,
-        engine_order=None,
+        engine_order=1,
         *args,
         **kwargs
     ):
@@ -43,7 +43,7 @@ class MoveActivity(GenericActivity):
         self.mover = mover
         self.duration = duration
         self.print = show
-        self.engine_order = engine_order if engine_order else 1
+        self.engine_order = engine_order
 
     def main_process_function(self, activity_log, env):
         """
