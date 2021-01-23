@@ -40,7 +40,7 @@ def get_segments(df, activity, y_val):
     return x, y
 
 
-def vessel_planning(
+def get_gantt_chart(
     vessels, activities=None, colors=None, web=False, static=False, y_scale="text"
 ):
     """Create a plot of the planning of vessels."""
@@ -108,7 +108,7 @@ def vessel_planning(
         timestamps.extend(log)
 
     layout = go.Layout(
-        title="Vessel planning",
+        title="GANTT Chart",
         hovermode="closest",
         legend=dict(x=0, y=-0.2, orientation="h"),
         xaxis=dict(
@@ -117,7 +117,7 @@ def vessel_planning(
             range=[min(timestamps), max(timestamps)],
         ),
         yaxis=dict(
-            title="Vessels",
+            title="Activities",
             titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
         ),
     )
