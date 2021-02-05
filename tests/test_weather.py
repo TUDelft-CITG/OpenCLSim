@@ -87,7 +87,7 @@ def test_weather():
         compute_v=lambda x: 10,
     )
 
-    metocean_df = pd.read_csv("./tests/data/unit_test_weather.csv")
+    metocean_df = pd.read_csv("./data/unit_test_weather.csv")
     metocean_df = metocean_df.set_index(
         pd.to_datetime(metocean_df["Time"], dayfirst=True)
     )
