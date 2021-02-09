@@ -14,7 +14,6 @@ import openclsim.plugins as plugin
 
 from .test_utils import assert_log
 
-parent = Path(__file__).resolve().parent
 
 def test_weather():
     """Test function for weather plugin."""
@@ -88,6 +87,8 @@ def test_weather():
         capacity=4,
         compute_v=lambda x: 10,
     )
+
+    parent = Path(__file__).resolve().parent
 
     metocean_df = pd.read_csv(parent / "data" / "unit_test_weather.csv")
     metocean_df = metocean_df.set_index(
