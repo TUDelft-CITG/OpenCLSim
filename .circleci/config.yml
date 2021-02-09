@@ -13,11 +13,11 @@ jobs:
           command: |
             docker exec -it openclsim bash -c "pip install -r test-requirements.txt"
             docker exec -it openclsim bash -c "pip install coverage coverage-badge"
-      
+
       - run:
           name: Run tests
           command: |
-            docker exec -it openclsim bash -c "python setup.py test"
+            docker exec -it openclsim bash -c "py.test"
             docker cp openclsim:/OpenCLSim/htmlcov /tmp/artifacts
 
       # - run:
@@ -26,16 +26,16 @@ jobs:
       #       docker exec -it openclsim bash -c "pip install sphinx"
       #       docker exec -it openclsim bash -c "python setup.py docs"
       #       docker cp openclsim:/OpenCLSim/docs/_build/html /tmp/artifacts/docs
-          
+
       - run:
           name: Generate coverage badge
           command: |
             docker exec -it openclsim bash -c "coverage-badge -o coverage.svg"
             docker cp openclsim:/OpenCLSim/coverage.svg /tmp/artifacts/
-          
+
       - store_artifacts:
           path: /tmp/artifacts
-    
+
 workflows:
   version: 2
   build:
