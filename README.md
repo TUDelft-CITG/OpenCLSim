@@ -2,7 +2,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](https://github.com/TUDelft-CITG/OpenCLSim/blob/master/LICENSE.txt)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3730615.svg)](https://doi.org/10.5281/zenodo.3730615)
 
-[![TUDelft-CITG](https://circleci.com/gh/TUDelft-CITG/OpenCLSim.svg?style=shield&circle-token=8a2277cb22d45abc42e24bb24c8fb60810bafde3)](https://circleci.com/gh/TUDelft-CITG/OpenCLSim)
+[![TUDelft-CITG](https://circleci.com/gh/TUDelft-CITG/OpenCLSim.svg?style=shield&circle-token=fc95d870dc21fdf11e1ebc02f9defcd99212197a)](https://circleci.com/gh/TUDelft-CITG/OpenCLSim)
 [![Coverage](https://artifact-getter.herokuapp.com/get_coverage_badge?circle_url=https://circleci.com/gh/TUDelft-CITG/OpenCLSim&circle_token=3b00333d4fe20c813bd9bc81ce2e1d4f5fae987aoutput=str)](https://artifact-getter.herokuapp.com/get_coverage_report?circle_url=https://circleci.com/gh/TUDelft-CITG/OpenCLSim&circle_token=3b00333d4fe20c813bd9bc81ce2e1d4f5fae987a)
 
 # OpenCLSim
