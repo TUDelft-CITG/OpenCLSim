@@ -4,9 +4,10 @@ FROM continuumio/miniconda3:4.6.14
 ADD . /OpenCLSim
 WORKDIR /OpenCLSim
 
-RUN conda install numpy pandas nomkl pyproj
+RUN conda install numpy pandas nomkl pyproj shapely setuptools
 
 RUN pip install --upgrade pip && \
+    pip install -r requirements.txt && \
     pip install -r test-requirements.txt && \
     pip install -r additional-requirements.txt && \
     pip install -e .
