@@ -22,6 +22,7 @@ import datetime, time
 import copy
 import numpy as np
 import pandas as pd
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -157,22 +158,6 @@ class EventsContainer(simpy.Container):
         self._put_available_events[amount] = new_event
         return new_event
 
-    def get_empty_event(self, start_event=False):
-        if not start_event:
-            return self.empty_event
-        elif start_event.processed:
-            return self.empty_event
-        else:
-            return self._env.event()
-
-    def get_full_event(self, start_event=False):
-        if not start_event:
-            return self.full_event
-        elif start_event.processed:
-            return self.full_event
-        else:
-            return self._env.event()
-
     @property
     def empty_event(self):
         return self.put_available(self.capacity)
@@ -253,7 +238,7 @@ class EnergyUse(SimpyObject):
         self.energy_use_unloading = energy_use_unloading
 
 
-class HasCosts:
+class HasCosts(SimpyObject):
     """
     Add cost properties to objects
     """
@@ -450,13 +435,7 @@ class HasSpill(SimpyObject):
         m_op = mover.sigma_o * m_o
         mover.m_r = m_h - m_o
 
-        processor.log_entry(
-            "fines released",
-            self.env.now,
-            m_d + m_op,
-            self.geometry,
-            processor.ActivityID,
-        )
+        processor.log_entry("fines released", self.env.now, m_d + m_op, self.geometry)
 
         return m_d + m_op
 
@@ -468,7 +447,6 @@ class HasSpill(SimpyObject):
                 self.env.now,
                 mover.m_r * processor.sigma_p,
                 self.geometry,
-                processor.ActivityID,
             )
 
         return mover.m_r * processor.sigma_p
@@ -574,7 +552,7 @@ class HasSoil:
         """Remove soil from self."""
 
         # If soil is a mover, the mover should be initialized with an empty soil dict after emptying
-        if isinstance(self, Movable) and 0 == self.container.level:
+        if isinstance(self, Movable) and volume == self.container.level:
             removed_soil = list(self.soil.items())[0]
 
             self.soil = {}
@@ -726,6 +704,7 @@ class HasWeather:
         self.waveheight = waveheight_column
         self.waveperiod = waveperiod_column
         self.waterlevel = waterlevel_column
+        # self.navigationdepth = navigationdepth_column
         self.waterdepth = "Water depth"
 
         if bed:
@@ -776,16 +755,14 @@ class HasWorkabilityCriteria:
                             )
                         )
 
-            self.work_restrictions[location.name][criterion.event_name] = np.array(
+            self.work_restrictions[location.name][criterion.condition] = np.array(
                 ranges
             )
 
-    def check_weather_restriction(self, location, event):
+    def check_weather_restriction(self, location, amount):
         waiting = []
 
         if location.name not in self.work_restrictions.keys():
-            self.calc_work_restrictions(location)
-        elif event not in self.work_restrictions[location.name].keys():
             self.calc_work_restrictions(location)
 
         for criterion in sorted(self.work_restrictions[location.name].keys()):
@@ -807,19 +784,11 @@ class HasWorkabilityCriteria:
 
         if waiting:
             self.log_entry(
-                "waiting for weather start",
-                self.env.now,
-                waiting,
-                self.geometry,
-                self.ActivityID,
+                "waiting for weather start", self.env.now, waiting, self.geometry
             )
             yield self.env.timeout(np.max(waiting))
             self.log_entry(
-                "waiting for weather stop",
-                self.env.now,
-                waiting,
-                self.geometry,
-                self.ActivityID,
+                "waiting for weather stop", self.env.now, waiting, self.geometry
             )
 
 
@@ -827,17 +796,13 @@ class WorkabilityCriterion:
     """WorkabilityCriterion class
 
     Used to add limits to vessels (and therefore acitivities)
-    event_name: name of the event for which this criterion applies
     condition: column name of the metocean data (Hs, Tp, etc.)
-    minimum: minimum value
     maximum: maximum value
     window_length: minimal length of the window (minutes)"""
 
     def __init__(
         self,
-        event_name,
         condition,
-        minimum=math.inf * -1,
         maximum=math.inf,
         window_length=datetime.timedelta(minutes=60),
         *args,
@@ -845,14 +810,12 @@ class WorkabilityCriterion:
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.event_name = event_name
         self.condition = condition
-        self.minimum = minimum
         self.maximum = maximum
         self.window_length = window_length
 
 
-class HasDepthRestriction:
+class HasDepthRestriction(SimpyObject):
     """HasDepthRestriction class
 
     Used to add depth limits to vessels
@@ -868,21 +831,22 @@ class HasDepthRestriction:
     def __init__(
         self,
         compute_draught,
+        waves,
         ukc,
-        waves=None,
         filling=None,
         min_filling=None,
         max_filling=None,
         *args,
         **kwargs
     ):
+
         super().__init__(*args, **kwargs)
         """Initialization"""
 
         # Information required to determine whether vessel can access an area
         self.compute_draught = compute_draught
+        # self.waves = waves
         self.ukc = ukc
-        self.waves = waves
 
         # Information require to self-select filling degree
         if min_filling is not None and max_filling is not None:
@@ -917,10 +881,8 @@ class HasDepthRestriction:
             # Determine characteristics based on filling
             draught = self.compute_draught(filling_degree)
             duration = datetime.timedelta(
-                seconds=processor.unloading(
-                    self,
-                    location,
-                    self.container.level - filling_degree * self.container.capacity,
+                seconds=processor.unloading_func(
+                    self.container.level, filling_degree * self.container.capacity
                 )
             )
 
@@ -1027,7 +989,6 @@ class HasDepthRestriction:
                 self.env.now,
                 -1,
                 self.geometry,
-                self.ActivityID,
             )
             waiting = 0
 
@@ -1046,33 +1007,21 @@ class HasDepthRestriction:
 
         if waiting != 0:
             self.log_entry(
-                "waiting for tide start",
-                self.env.now,
-                waiting,
-                self.geometry,
-                self.ActivityID,
+                "waiting for tide start", self.env.now, waiting, self.geometry
             )
             yield self.env.timeout(waiting)
             self.log_entry(
-                "waiting for tide stop",
-                self.env.now,
-                waiting,
-                self.geometry,
-                self.ActivityID,
+                "waiting for tide stop", self.env.now, waiting, self.geometry
             )
 
     def calc_required_depth(self, draught, wave_height):
         required_depth = np.nan
 
-        if self.waves:
-            for i, wave in enumerate(self.waves):
-                if wave_height <= wave:
-                    required_depth = self.ukc[i] + draught
+        for i, wave in enumerate(self.waves):
+            if wave_height <= wave:
+                required_depth = self.ukc + draught
 
-            return required_depth
-
-        else:
-            return self.ukc + draught
+        return required_depth
 
     def check_optimal_filling(self, loader, unloader, origin, destination):
         # Calculate depth restrictions
@@ -1082,16 +1031,7 @@ class HasDepthRestriction:
             if isinstance(destination, HasWeather):
                 self.calc_depth_restrictions(destination, unloader)
 
-        elif (
-            origin.name not in self.depth_data.keys()
-            or destination.name not in self.depth_data.keys()
-        ):
-            if isinstance(origin, HasWeather):
-                self.calc_depth_restrictions(origin, loader)
-            if isinstance(destination, HasWeather):
-                self.calc_depth_restrictions(destination, unloader)
-
-        # If a filling degee has been specified
+        # If a filling degree has been specified
         if self.filling is not None:
             return self.filling * self.container.capacity / 100
 
@@ -1108,20 +1048,17 @@ class HasDepthRestriction:
 
                 if len(ranges) != 0:
                     # Determine length of cycle
-                    loading = loader.loading(
-                        origin,
-                        destination,
-                        filling * self.container.capacity - self.container.level,
-                        False,
+                    loading = loader.loading_func(
+                        self.container.level, filling * self.container.capacity
                     )
 
                     orig = shapely.geometry.asShape(origin.geometry)
                     dest = shapely.geometry.asShape(destination.geometry)
                     _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
-                    sailing_full = distance / self.compute_v(0)
+                    sailing_empty = distance / self.compute_v(0)
                     sailing_full = distance / self.compute_v(filling)
 
-                    duration = sailing_full + loading + sailing_full
+                    duration = sailing_full + loading + sailing_empty
 
                     # Determine waiting time
                     t = datetime.datetime.fromtimestamp(self.env.now + duration)
@@ -1168,7 +1105,7 @@ class Routeable:
     if the optimization_type == 'time' then the fastest path is calculated by halem
     if the optimization_type == 'cost' then the cheapest path is calculated by halem
     if the optimization_type == 'space' then the shortest path is calculated by halem
-    Optimize_Route == False the route is determind by v = s/t 
+    Optimize_Route == False the route is determined by v = s/t
     """
 
     def __init__(
@@ -1176,6 +1113,7 @@ class Routeable:
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
+
         self.route = route
         self.optimize_route = optimize_route
         self.optimization_type = optimization_type
@@ -1217,12 +1155,9 @@ class Movable(SimpyObject, Locatable):
                     self.env.now,
                     self.container.level,
                     self.geometry,
-                    self.ActivityID,
                 )
             else:
-                self.log_entry(
-                    "sailing start", self.env.now, -1, self.geometry, self.ActivityID
-                )
+                self.log_entry("sailing start", self.env.now, -1, self.geometry)
 
         """determine distance between origin and destination. 
         Yield the time it takes to travel based on flow properties and load factor of the flow."""
@@ -1258,18 +1193,15 @@ class Movable(SimpyObject, Locatable):
                     self.env.now,
                     self.container.level,
                     self.geometry,
-                    self.ActivityID,
                 )
             else:
-                self.log_entry(
-                    "sailing stop", self.env.now, -1, self.geometry, self.ActivityID
-                )
+                self.log_entry("sailing stop", self.env.now, -1, self.geometry)
 
     @property
     def current_speed(self):
         return self.v
 
-    def get_distance(self, origin, destination, verbose=True):
+    def get_distance(self, origin, destination):
         if not isinstance(self, Routeable):
             orig = shapely.geometry.asShape(self.geometry)
             dest = shapely.geometry.asShape(destination.geometry)
@@ -1284,6 +1216,8 @@ class Movable(SimpyObject, Locatable):
             geom = nx.get_node_attributes(self.env.FG, "geometry")
             dista = 0
             for node in geom:
+                # if origin.geometry.x == geom[node].x and origin.geometry.y == geom[node].y:
+                #    origin = node
                 if origin.x == geom[node].x and origin.y == geom[node].y:
                     origin = node
                     break
@@ -1291,7 +1225,7 @@ class Movable(SimpyObject, Locatable):
             if destination.name in list(self.env.FG.nodes):
                 route = nx.dijkstra_path(self.env.FG, origin, destination.name)
             else:
-                for node in self.env.FG.nodes(data=True):
+                for node in self.env.FG.nodes(data = True):
                     if node[1]["name"] == destination.name:
                         destination = node[0]
                         break
@@ -1321,13 +1255,9 @@ class Movable(SimpyObject, Locatable):
 
                     for i in range(path.shape[0]):
                         dest_temp = shapely.geometry.Point(path[i])
-                        self.log_entry(
-                            "Sailing", time[i + 1], 0, dest_temp, self.ActivityID
-                        )
+                        self.log_entry("Sailing", time[i + 1], 0, dest_temp)
                         if i + 2 == path.shape[0]:
-                            self.log_entry(
-                                "Sailing", time[i + 1], 0, dest_temp, self.ActivityID
-                            )
+                            self.log_entry("Sailing", time[i + 1], 0, dest_temp)
                             break
 
                     sailtimeb = time[-1] - time[0]
@@ -1337,10 +1267,7 @@ class Movable(SimpyObject, Locatable):
                     distb = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)[2]
                     sailtimeb = distb / self.current_speed
 
-                if verbose:
-                    self.log_entry(
-                        "Sailing", self.env.now + sailtimeb, 0, dest, self.ActivityID
-                    )
+                self.log_entry("Sailing", self.env.now + sailtimeb, 0, dest)
 
                 dista += distb
                 sailtime += sailtimeb
@@ -1348,7 +1275,7 @@ class Movable(SimpyObject, Locatable):
                 if node[0] + 2 == len(route):
                     break
 
-            return dista, (dista / sailtime)
+        return dista, (dista / sailtime)
 
     def energy_use(self, distance, speed):
         if isinstance(self, EnergyUse):
@@ -1361,9 +1288,7 @@ class Movable(SimpyObject, Locatable):
                 filling = self.container.level / self.container.capacity
 
             energy = self.energy_use_sailing(distance, speed, filling)
-            self.log_entry(
-                message, self.env.now, energy, self.geometry, self.ActivityID
-            )
+            self.log_entry(message, self.env.now, energy, self.geometry)
 
 
 class ContainerDependentMovable(Movable, HasContainer):
@@ -1380,6 +1305,7 @@ class ContainerDependentMovable(Movable, HasContainer):
 
     @property
     def current_speed(self):
+
         return self.compute_v(self.container.level / self.container.capacity)
 
 
@@ -1405,21 +1331,14 @@ class Log(SimpyObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.log = {
-            "Message": [],
-            "Timestamp": [],
-            "Value": [],
-            "Geometry": [],
-            "ActivityID": [],
-        }
+        self.log = {"Message": [], "Timestamp": [], "Value": [], "Geometry": []}
 
-    def log_entry(self, log, t, value, geometry_log, ActivityID):
+    def log_entry(self, log, t, value, geometry_log):
         """Log"""
         self.log["Message"].append(log)
         self.log["Timestamp"].append(datetime.datetime.fromtimestamp(t))
         self.log["Value"].append(value)
         self.log["Geometry"].append(geometry_log)
-        self.log["ActivityID"].append(ActivityID)
 
     def get_log_as_json(self):
         json = []
@@ -1447,12 +1366,11 @@ class LoadingFunction:
     """
     Create a loading function and add it a processor.
     This is a generic and easy to read function, you can create your own LoadingFunction class and add this as a mixin.
-
     loading_rate: the rate at which units are loaded per second
     load_manoeuvring: the time it takes to manoeuvring in minutes
     """
 
-    def __init__(self, loading_rate, load_manoeuvring=0, *args, **kwargs):
+    def __init__(self, loading_rate, load_manoeuvring = 0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.loading_rate = loading_rate
@@ -1461,15 +1379,15 @@ class LoadingFunction:
     def loading(self, origin, destination, amount):
         """
         Determine the duration based on an amount that is given as input with processing.
-        The origin an destination are also part of the input, because other functions might be dependent on the location.
+        The origin and destination are also part of the input, because other functions might be dependent on the location.
         """
 
         if not hasattr(self.loading_rate, "__call__"):
             return amount / self.loading_rate + self.load_manoeuvring * 60
         else:
             return (
-                self.loading_rate(self.container.level, self.container.level + amount)
-                + self.load_manoeuvring * 60
+                    self.loading_rate(self.container.level, self.container.level + amount)
+                    + self.load_manoeuvring * 60
             )
 
 
@@ -1477,12 +1395,11 @@ class UnloadingFunction:
     """
     Create an unloading function and add it a processor.
     This is a generic and easy to read function, you can create your own LoadingFunction class and add this as a mixin.
-
     unloading_rate: the rate at which units are loaded per second
     unload_manoeuvring: the time it takes to manoeuvring in minutes
     """
 
-    def __init__(self, unloading_rate, unload_manoeuvring=0, *args, **kwargs):
+    def __init__(self, unloading_rate, unload_manoeuvring = 0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.unloading_rate = unloading_rate
@@ -1495,11 +1412,11 @@ class UnloadingFunction:
         """
 
         if not hasattr(self.unloading_rate, "__call__"):
-            return amount / self.unloading_rate + self.load_manoeuvring * 60
+            return amount / self.unloading_rate + self.unload_manoeuvring * 60
         else:
             return (
-                self.unloading_rate(self.container.level, self.container.level - amount)
-                + self.load_manoeuvring * 60
+                    self.unloading_rate(self.container.level, self.container.level - amount)
+                    + self.unload_manoeuvring * 60
             )
 
 
@@ -1518,7 +1435,7 @@ class LoadingSubcycle:
             raise AssertionError("The subcycle table has to be a Pandas DataFrame")
         else:
             if "EventName" not in list(
-                self.loading_subcycle.columns
+                    self.loading_subcycle.columns
             ) or "Duration" not in list(self.loading_subcycle.columns):
                 raise AssertionError(
                     "The subcycle table should specify events and durations with the columnnames EventName and Duration respectively."
@@ -1540,7 +1457,7 @@ class UnloadingSubcycle:
             raise AssertionError("The subcycle table has to be a Pandas DataFrame")
         else:
             if "EventName" not in list(
-                self.unloading_subcycle.columns
+                    self.unloading_subcycle.columns
             ) or "Duration" not in list(self.unloading_subcycle.columns):
                 raise AssertionError(
                     "The subcycle table should specify events and durations with the columnnames EventName and Duration respectively."
@@ -1549,10 +1466,9 @@ class UnloadingSubcycle:
 
 class Processor(SimpyObject):
     """Processor class
+    Adds the loading and unloading components and checks for possible downtime.
 
-    Adds the loading and unloading components and checks for possible downtime. 
-    
-    If the processor class is used to allow "loading" or "unloading" the mixins "LoadingFunction" and "UnloadingFunction" should be added as well. 
+    If the processor class is used to allow "loading" or "unloading" the mixins "LoadingFunction" and "UnloadingFunction" should be added as well.
     If no functions are used a subcycle should be used, which is possible with the mixins "LoadingSubcycle" and "UnloadingSubcycle".
     """
 
@@ -1560,12 +1476,14 @@ class Processor(SimpyObject):
         super().__init__(*args, **kwargs)
         """Initialization"""
 
+        message = "{} has no (un)loading(_subcycle) attribute".format(self)
         assert (
-            hasattr(self, "loading")
-            or hasattr(self, "unloading")
-            or hasattr(self, "loading_subcycle")
-            or hasattr(self, "unloading_subcycle")
-        )
+                hasattr(self, "loading")
+                or hasattr(self, "unloading")
+
+                or hasattr(self, "loading_subcycle")
+                or hasattr(self, "unloading_subcycle")
+        ), message
 
         # Inherit the (un)loading functions
         if not hasattr(self, "loading"):
@@ -1612,10 +1530,6 @@ class Processor(SimpyObject):
         if rate:
             duration = rate(origin, destination, amount)
 
-            yield from self.check_possible_downtime(
-                origin, destination, duration, ship, site, desired_level, amount
-            )
-
         elif type(subcycle) == pd.core.frame.DataFrame:
             duration = 0
 
@@ -1636,23 +1550,32 @@ class Processor(SimpyObject):
                 t=start_time,
                 value=amount,
                 geometry_log=self.geometry,
-                activityID=self.ActivityID,
             )
             self.log_entry(
                 log="waiting origin content stop",
                 t=end_time,
                 value=amount,
                 geometry_log=self.geometry,
-                activityID=self.ActivityID,
             )
 
         # Checkout the time
         origin.log_entry(
-            "unloading start", self.env.now, amount, self.geometry, self.ActivityID
+            "unloading start",
+            self.env.now,
+            origin.container.level,
+            self.geometry,
         )
         destination.log_entry(
-            "loading start", self.env.now, amount, self.geometry, self.ActivityID
+            "loading start",
+            self.env.now,
+            destination.container.level,
+            self.geometry,
         )
+
+        if self != origin and self != destination:
+            self.log_entry(
+                "loading start", self.env.now, 0, self.geometry
+            )
 
         # Check out the time
         yield self.env.timeout(duration)
@@ -1667,11 +1590,22 @@ class Processor(SimpyObject):
         self.computeEnergy(duration, origin, destination)
 
         origin.log_entry(
-            "unloading stop", self.env.now, amount, self.geometry, self.ActivityID
+            "unloading stop",
+            self.env.now,
+            origin.container.level + amount,
+            self.geometry,
         )
         destination.log_entry(
-            "loading stop", self.env.now, amount, self.geometry, self.ActivityID
+            "loading stop",
+            self.env.now,
+            destination.container.level + amount,
+            self.geometry,
         )
+
+        if self != origin and self != destination:
+            self.log_entry(
+                "loading stop", self.env.now, amount, self.geometry
+            )
 
         start_time = self.env.now
         yield destination.container.put(amount)
@@ -1682,38 +1616,15 @@ class Processor(SimpyObject):
                 t=start_time,
                 value=amount,
                 geometry_log=self.geometry,
-                activityID=self.ActivityID,
             )
             self.log_entry(
                 log="waiting destination content stop",
                 t=end_time,
                 value=amount,
                 geometry_log=self.geometry,
-                activityID=self.ActivityID,
             )
 
         logger.debug("  process:        " + "%4.2f" % (duration / 3600) + " hrs")
-
-    def check_possible_downtime(
-        self, origin, destination, duration, ship, site, desired_level, amount
-    ):
-        # Activity can only start if environmental conditions allow it
-        time = 0
-
-        # Waiting event should be combined to check if all conditions allow starting
-        while time != self.env.now:
-            time = self.env.now
-
-            # Check weather
-            yield from self.checkWeather(origin, destination, duration)
-
-            # Check tide
-            yield from self.checkTide(
-                ship=ship, site=site, desired_level=desired_level, duration=duration
-            )
-
-            # Check spill
-            yield from self.checkSpill(origin, destination, amount)
 
     def computeEnergy(self, duration, origin, destination):
         """
@@ -1732,14 +1643,12 @@ class Processor(SimpyObject):
             if isinstance(self, EnergyUse):
                 energy = self.energy_use_unloading(duration)
                 message = "Energy use unloading"
-                self.log_entry(
-                    message, self.env.now, energy, self.geometry, self.ActivityID
-                )
+                self.log_entry(message, self.env.now, energy, self.geometry)
             if isinstance(destination, EnergyUse):
                 energy = destination.energy_use_loading(duration)
                 message = "Energy use loading"
                 destination.log_entry(
-                    message, self.env.now, energy, destination.geometry, self.ActivityID
+                    message, self.env.now, energy, destination.geometry
                 )
 
         # If self == destination --> loading
@@ -1747,35 +1656,27 @@ class Processor(SimpyObject):
             if isinstance(self, EnergyUse):
                 energy = self.energy_use_loading(duration)
                 message = "Energy use loading"
-                self.log_entry(
-                    message, self.env.now, energy, self.geometry, self.ActivityID
-                )
+                self.log_entry(message, self.env.now, energy, self.geometry)
             if isinstance(origin, EnergyUse):
                 energy = origin.energy_use_unloading(duration)
                 message = "Energy use unloading"
-                origin.log_entry(
-                    message, self.env.now, energy, origin.geometry, self.ActivityID
-                )
+                origin.log_entry(message, self.env.now, energy, origin.geometry)
 
         # If self != origin and self != destination --> processing
         else:
             if isinstance(self, EnergyUse):
                 energy = self.energy_use_loading(duration)
                 message = "Energy use loading"
-                self.log_entry(
-                    message, self.env.now, energy, self.geometry, self.ActivityID
-                )
+                self.log_entry(message, self.env.now, energy, self.geometry)
             if isinstance(origin, EnergyUse):
                 energy = origin.energy_use_unloading(duration)
                 message = "Energy use unloading"
-                origin.log_entry(
-                    message, self.env.now, energy, origin.geometry, self.ActivityID
-                )
+                origin.log_entry(message, self.env.now, energy, origin.geometry)
             if isinstance(destination, EnergyUse):
                 energy = destination.energy_use_loading(duration)
                 message = "Energy use loading"
                 destination.log_entry(
-                    message, self.env.now, energy, destination.geometry, self.ActivityID
+                    message, self.env.now, energy, destination.geometry
                 )
 
     def checkSpill(self, origin, destination, amount):
@@ -1806,19 +1707,11 @@ class Processor(SimpyObject):
 
                 if 0 < waiting:
                     self.log_entry(
-                        "waiting for spill start",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
+                        "waiting for spill start", self.env.now, 0, self.geometry
                     )
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry(
-                        "waiting for spill stop",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
+                        "waiting for spill stop", self.env.now, 0, self.geometry
                     )
 
         # If self == destination --> origin is a retrieval location
@@ -1835,19 +1728,11 @@ class Processor(SimpyObject):
 
                 if 0 < waiting:
                     self.log_entry(
-                        "waiting for spill start",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
+                        "waiting for spill start", self.env.now, 0, self.geometry
                     )
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry(
-                        "waiting for spill stop",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
+                        "waiting for spill stop", self.env.now, 0, self.geometry
                     )
 
         # If self != origin and self != destination --> processing
@@ -1864,19 +1749,11 @@ class Processor(SimpyObject):
 
                 if 0 < waiting:
                     self.log_entry(
-                        "waiting for spill start",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
+                        "waiting for spill start", self.env.now, 0, self.geometry
                     )
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry(
-                        "waiting for spill stop",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
+                        "waiting for spill stop", self.env.now, 0, self.geometry
                     )
 
             elif (
@@ -1891,23 +1768,16 @@ class Processor(SimpyObject):
 
                 if 0 < waiting:
                     self.log_entry(
-                        "waiting for spill start",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
+                        "waiting for spill start", self.env.now, 0, self.geometry
                     )
                     yield self.env.timeout(waiting - self.env.now)
                     self.log_entry(
-                        "waiting for spill stop",
-                        self.env.now,
-                        0,
-                        self.geometry,
-                        self.ActivityID,
+                        "waiting for spill stop", self.env.now, 0, self.geometry
                     )
 
+
     def checkTide(self, ship, site, desired_level, duration):
-        if hasattr(ship, "calc_depth_restrictions") and isinstance(site, HasWeather):
+        if isinstance(ship, HasDepthRestriction) and isinstance(site, HasWeather):
             max_level = max(ship.container.level, desired_level)
             fill_degree = max_level / ship.container.capacity
             yield from ship.check_depth_restriction(site, fill_degree, duration)
@@ -2003,7 +1873,7 @@ class Processor(SimpyObject):
 
 
 class DictEncoder(json.JSONEncoder):
-    """serialize a simpy openclsim object to json"""
+    """serialize a simpy digital_twin object to json"""
 
     def default(self, o):
         result = {}
