@@ -13,17 +13,25 @@ Documentation is found [here](https://openclsim.readthedocs.io).
 
 ## Installation
 
-To install OpenCLSim, run this command in your terminal:
+To install OpenCLSim, run this command in your terminal. This is the preferred method to install OpenCLSim, as it will always install the most recent stable release. In general you want to install python software in a virtual environment, either using [anaconda](https://docs.anaconda.com/anaconda/install/) or through python's default [virtual environment](https://docs.python.org/3/tutorial/venv.html).
 
 ``` bash
 pip install openclsim
 ```
 
-This is the preferred method to install OpenCLSim, as it will always install the most recent stable release.
+Make sure you also install the  dependencies, which are recorded in the file `requirements.txt`.
+If you have an anaconda setup, you can use the following command:
 
-If you don not have [pip](https://pip.pypa.io) installed, this [Python installation guide](http://docs.python-guide.org/en/latest/starting/installation/) can guide you through the process.
+``` bash
+conda install --file requirements.txt
+```
 
-You can read the [documentation](https://openclsim.readthedocs.io/en/latest/installation.html) for other installation methods.
+If you are using a pip based environment, you can install the requirements with pip:
+``` bash
+pip install -r requirements.txt
+```
+
+If you do not have [pip](https://pip.pypa.io) installed, this [Python installation guide](http://docs.python-guide.org/en/latest/starting/installation/) can guide you through the process. You can read the [documentation](https://openclsim.readthedocs.io/en/latest/installation.html) for other installation methods.
 
 ## Examples
 
