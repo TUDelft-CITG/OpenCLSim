@@ -163,7 +163,14 @@ class GenericActivity(PluginActivity):
             if expr.get("type") == "container":
                 id_ = expr.get("id_", "default")
                 obj = expr["concept"]
-                if expr["state"] == "full":
+                if (
+                    expr.get("opp") in ["gt", "ge", "lt", "le"]
+                    and expr.get("level") is not None
+                ):
+                    return obj.container.get_container_event(
+                        expr["level"], expr["opp"], id_=id_
+                    )
+                elif expr["state"] == "full":
                     return obj.container.get_full_event(id_=id_)
                 elif expr["state"] == "empty":
                     return obj.container.get_empty_event(id_=id_)
