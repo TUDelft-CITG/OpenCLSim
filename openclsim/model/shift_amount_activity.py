@@ -196,3 +196,17 @@ class ShiftAmountActivity(GenericActivity):
             raise RuntimeError(
                 "Both the phase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
             )
+
+    def make_container_reservation(self):
+        amount = self.processor.determine_reservation_amout(
+            self.origin, self.destination, amount=self.amount, id_=self.id_
+        )
+
+        yield from self.origin.container.get(
+            amount=amount,
+            id_=f"{self.id_}_reservations",
+        )
+        yield from self.destination.container.put(
+            amount=amount,
+            id_=f"{self.id_}_reservations",
+        )

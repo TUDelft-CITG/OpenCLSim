@@ -206,6 +206,10 @@ class GenericActivity(PluginActivity):
         env,
     ):
         """Return a generator which can be added as a process to a simpy environment."""
+        # Make container reservations
+        if hasattr(self, "make_container_reservation"):
+            yield from self.make_container_reservation()
+
         additional_logs = getattr(self, "additional_logs", [])
         start_event = (
             None

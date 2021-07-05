@@ -168,6 +168,11 @@ class Processor(SimpyObject):
 
         return new_amount
 
+    def determine_reservation_amout(
+        self, origin, destination, amount=None, id_="default"
+    ):
+        return amount if amount else 0
+
 
 class LoadingFunction:
     """

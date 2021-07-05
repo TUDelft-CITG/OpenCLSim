@@ -17,23 +17,39 @@ class EventsContainer(simpy.FilterStore):
     """
 
     def __init__(self, env, store_capacity: int = 1, *args, **kwargs):
-        super().__init__(env, capacity=store_capacity)
+        super().__init__(env, capacity=store_capacity * 2)
         self._env = env
         self._container_events = {}
 
     def initialize_container(self, initials):
         """Initialize method used for MultiContainers."""
+
         for item in initials:
             assert "id" in item
             assert "capacity" in item
             assert "level" in item
-            super().put(item)
+
+            container_item = {
+                "id": item["id"],
+                "capacity": item["capacity"],
+                "level": item["level"],
+            }
+            reservation_item = {
+                "id": f"{item['id']}_reservations",
+                "capacity": item["capacity"],
+                "level": item["level"],
+            }
+
+            super().put(container_item)
+            super().put(reservation_item)
 
     @property
     def container_list(self):
         container_ids = []
         if len(self.items) > 0:
-            container_ids = [item["id"] for item in self.items]
+            container_ids = [
+                item["id"] for item in self.items if "_reservations" not in item["id"]
+            ]
         return container_ids
 
     def get_capacity(self, id_="default"):
@@ -98,4 +114,13 @@ class EventsContainer(simpy.FilterStore):
         store_status["level"] = store_status["level"] - amount
         get_event = super().put(store_status)
         yield get_event
+        self.update_container_events()
+
+    def clear_reservations(self, amount, id_="default"):
+        reservation_status = (
+            super().get(lambda state: state["id"] == f"{id_}_reservations").value
+        )
+        reservation_status["level"] = self.get_level(id_)
+        event = super().put(reservation_status)
+        yield event
         self.update_container_events()
