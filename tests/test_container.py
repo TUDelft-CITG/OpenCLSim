@@ -9,7 +9,7 @@ def test_put_available():
     """Test put available."""
     env = simpy.Environment()
     container = core.EventsContainer(env=env)
-    container.initialize(capacity=10, init=5)
+    container.initialize_container([{"id": "default", "capacity": 10, "level": 5}])
 
     def process():
         at_most_5 = container.put_available(5)
@@ -38,7 +38,7 @@ def test_get_available():
     """Test get available."""
     env = simpy.Environment()
     container = core.EventsContainer(env=env)
-    container.initialize(capacity=10, init=5)
+    container.initialize_container([{"id": "default", "capacity": 10, "level": 5}])
 
     def process():
         at_least_5 = container.get_available(5)
@@ -71,7 +71,7 @@ def test_empty_full_events():
     """
     env = simpy.Environment()
     container = core.EventsContainer(env=env)
-    container.initialize(capacity=10, init=5)
+    container.initialize_container([{"id": "default", "capacity": 10, "level": 5}])
 
     def process():
         empty_event = container.empty_event

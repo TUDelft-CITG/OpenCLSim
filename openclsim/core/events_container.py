@@ -20,10 +20,6 @@ class EventsContainer(simpy.FilterStore):
         self._get_available_events = {}
         self._put_available_events = {}
 
-    def initialize(self, init=0, capacity=0):
-        """Initialize method is a convenience method for backwards compatibility reasons."""
-        self.put(init, capacity)
-
     def initialize_container(self, initials):
         """Initialize method used for MultiContainers."""
         for item in initials:
