@@ -88,7 +88,7 @@ class Processor(SimpyObject):
 
             # Shift amounts in containers
             start_time = self.env.now
-            yield origin.container.get(amount, id_)
+            yield from origin.container.get(amount, id_)
             end_time = self.env.now
 
             # If the amount is not available in the origin, log waiting
@@ -116,7 +116,7 @@ class Processor(SimpyObject):
 
             # Shift amounts in containers
             start_time = self.env.now
-            yield destination.container.put(amount, id_=id_)
+            yield from destination.container.put(amount, id_=id_)
             end_time = self.env.now
 
             # If the amount is cannot be put in the destination, log waiting

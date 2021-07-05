@@ -63,7 +63,7 @@ class ConditionProcessMixin:
                     },
                 )
 
-            if repetitions >= self.max_iterations or condition_event.processed is True:
+            if repetitions >= self.max_iterations or condition_event.triggered is True:
                 break
             else:
                 repetitions += 1

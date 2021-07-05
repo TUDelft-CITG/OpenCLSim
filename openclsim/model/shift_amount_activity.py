@@ -63,7 +63,19 @@ class ShiftAmountActivity(GenericActivity):
         while not all_available and amount > 0:
             # yield until enough content and space available in origin and destination
             yield env.all_of(
-                events=[self.origin.container.get_available(amount, self.id_)]
+                events=[
+                    self.origin.container.get_container_event(
+                        level=amount,
+                        opp="ge",
+                        id_=self.id_,
+                    ),
+                    self.destination.container.get_container_event(
+                        level=self.destination.container.get_capacity(self.id_)
+                        - amount,
+                        opp="le",
+                        id_=self.id_,
+                    ),
+                ]
             )
 
             yield from self._request_resource(
