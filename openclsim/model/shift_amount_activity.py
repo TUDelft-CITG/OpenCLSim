@@ -53,14 +53,25 @@ class ShiftAmountActivity(GenericActivity):
         self.print = show
         self.phase = phase
 
-    def _request_resource_if_available(
-        self,
-        env,
-        amount,
-        activity_id,
-    ):
+    def main_process_function(self, activity_log, env):
+        """Origin and Destination are of type HasContainer."""
+        assert self.processor.is_at(self.origin)
+        assert self.destination.is_at(self.origin)
+
+        yield from self._request_resource(
+            self.requested_resources, self.destination.resource
+        )
+
+        amount = self.processor.determine_processor_amount(
+            self.origin, self.destination, self.amount, self.id_
+        )
+
         all_available = False
         while not all_available and amount > 0:
+            amount = self.processor.determine_processor_amount(
+                self.origin, self.destination, self.amount, self.id_
+            )
+
             # yield until enough content and space available in origin and destination
             yield env.all_of(
                 events=[
@@ -104,25 +115,6 @@ class ShiftAmountActivity(GenericActivity):
                 )
                 continue
             all_available = True
-
-    def main_process_function(self, activity_log, env):
-        """Origin and Destination are of type HasContainer."""
-        assert self.processor.is_at(self.origin)
-        assert self.destination.is_at(self.origin)
-
-        amount = self.processor.determine_processor_amount(
-            self.origin, self.destination, self.amount, self.id_
-        )
-
-        yield from self._request_resource(
-            self.requested_resources, self.destination.resource
-        )
-
-        yield from self._request_resource_if_available(
-            env=env,
-            amount=amount,
-            activity_id=activity_log.id,
-        )
 
         start_time = env.now
         args_data = {
@@ -202,7 +194,6 @@ class ShiftAmountActivity(GenericActivity):
         self.reserved_amount = self.processor.determine_reservation_amout(
             self.origin, self.destination, amount=self.amount, id_=self.id_
         )
-        print(f"{self.name} reserved {self.reserved_amount}")
 
         yield from self.origin.container.get(
             amount=self.reserved_amount,

@@ -104,9 +104,6 @@ class Processor(SimpyObject):
 
         start_time = self.env.now
         # Shift amounts in containers
-        print(
-            f"{obj.name} {activity} {amount}, {reserved_amount} {amount == reserved_amount}"
-        )
         yield from method(
             amount,
             id_,
