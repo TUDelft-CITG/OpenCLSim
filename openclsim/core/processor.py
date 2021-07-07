@@ -28,6 +28,7 @@ class Processor(SimpyObject):
         origin,
         destination,
         shiftamount_fcn,
+        reserved_amount,
         id_="default",
     ):
         """
@@ -60,10 +61,24 @@ class Processor(SimpyObject):
         duration, amount = shiftamount_fcn(origin, destination)
 
         # Get the amount from the origin
-        yield from self.check_possible_shift(origin, destination, amount, "get", id_)
+        yield from self.check_possible_shift(
+            origin=origin,
+            destination=destination,
+            amount=amount,
+            activity="get",
+            reserved_amount=reserved_amount,
+            id_=id_,
+        )
         yield self.env.timeout(duration)
         # Put the amount in the destination
-        yield from self.check_possible_shift(origin, destination, amount, "put", id_)
+        yield from self.check_possible_shift(
+            origin=origin,
+            destination=destination,
+            amount=amount,
+            activity="put",
+            reserved_amount=reserved_amount,
+            id_=id_,
+        )
 
         # Log the process for all parts
         for location in set([self, origin, destination]):
@@ -74,7 +89,7 @@ class Processor(SimpyObject):
             )
 
     def check_possible_shift(
-        self, origin, destination, amount, activity, id_="default"
+        self, origin, destination, amount, activity, reserved_amount, id_="default"
     ):
         """
         Check if all the material is available.
@@ -83,62 +98,46 @@ class Processor(SimpyObject):
         yield a put or get. Time will move forward until the amount can be
         retrieved from the origin or placed into the destination.
         """
+        obj_map = {"get": origin, "put": destination}
+        obj = obj_map[activity]
+        method = getattr(obj.container, activity)
 
-        if activity == "get":
+        start_time = self.env.now
+        # Shift amounts in containers
+        print(
+            f"{obj.name} {activity} {amount}, {reserved_amount} {amount == reserved_amount}"
+        )
+        yield from method(
+            amount,
+            id_,
+        )
+        # Corrent the container reservation with the actual amount
+        yield from method(
+            amount - reserved_amount,
+            f"{id_}_reservations",
+        )
+        end_time = self.env.now
 
-            # Shift amounts in containers
-            start_time = self.env.now
-            yield from origin.container.get(amount, id_)
-            end_time = self.env.now
-
-            # If the amount is not available in the origin, log waiting
-            if start_time != end_time:
-                self.log_entry(
-                    t=start_time,
-                    activity_id=self.activity_id,
-                    activity_state=LogState.WAIT_START,
-                    activity_label={
-                        "type": "subprocess",
-                        "ref": "waiting origin content",
-                    },
-                )
-                self.log_entry(
-                    t=end_time,
-                    activity_id=self.activity_id,
-                    activity_state=LogState.WAIT_STOP,
-                    activity_label={
-                        "type": "subprocess",
-                        "ref": "waiting origin content",
-                    },
-                )
-
-        elif activity == "put":
-
-            # Shift amounts in containers
-            start_time = self.env.now
-            yield from destination.container.put(amount, id_=id_)
-            end_time = self.env.now
-
-            # If the amount is cannot be put in the destination, log waiting
-            if start_time != end_time:
-                self.log_entry(
-                    t=start_time,
-                    activity_id=self.activity_id,
-                    activity_state=LogState.WAIT_START,
-                    activity_label={
-                        "type": "subprocess",
-                        "ref": "waiting destination content",
-                    },
-                )
-                self.log_entry(
-                    t=end_time,
-                    activity_id=self.activity_id,
-                    activity_state=LogState.WAIT_STOP,
-                    activity_label={
-                        "type": "subprocess",
-                        "ref": "waiting destination content",
-                    },
-                )
+        # If the amount is not available in the origin, log waiting
+        if start_time != end_time:
+            self.log_entry(
+                t=start_time,
+                activity_id=self.activity_id,
+                activity_state=LogState.WAIT_START,
+                activity_label={
+                    "type": "subprocess",
+                    "ref": f"waiting {obj.name} content",
+                },
+            )
+            self.log_entry(
+                t=end_time,
+                activity_id=self.activity_id,
+                activity_state=LogState.WAIT_STOP,
+                activity_label={
+                    "type": "subprocess",
+                    "ref": f"waiting {obj.name} content",
+                },
+            )
 
     def determine_processor_amount(
         self,

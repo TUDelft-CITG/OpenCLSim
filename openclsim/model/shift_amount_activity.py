@@ -181,8 +181,9 @@ class ShiftAmountActivity(GenericActivity):
         yield from self.processor.process(
             origin=self.origin,
             destination=self.destination,
-            id_=self.id_,
             shiftamount_fcn=shiftamount_fcn,
+            reserved_amount=self.reserved_amount,
+            id_=self.id_,
         )
 
     def _get_shiftamount_fcn(self, amount):
@@ -198,15 +199,16 @@ class ShiftAmountActivity(GenericActivity):
             )
 
     def make_container_reservation(self):
-        amount = self.processor.determine_reservation_amout(
+        self.reserved_amount = self.processor.determine_reservation_amout(
             self.origin, self.destination, amount=self.amount, id_=self.id_
         )
+        print(f"{self.name} reserved {self.reserved_amount}")
 
         yield from self.origin.container.get(
-            amount=amount,
+            amount=self.reserved_amount,
             id_=f"{self.id_}_reservations",
         )
         yield from self.destination.container.put(
-            amount=amount,
+            amount=self.reserved_amount,
             id_=f"{self.id_}_reservations",
         )
