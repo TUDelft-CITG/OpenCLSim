@@ -10,8 +10,6 @@ class ConditionProcessMixin:
     """Mixin for the condition process."""
 
     def main_process_function(self, activity_log, env):
-        condition_event = self.parse_expression(self.condition_event)
-
         start_time = env.now
         args_data = {
             "env": env,
@@ -63,6 +61,7 @@ class ConditionProcessMixin:
                     },
                 )
 
+            condition_event = self.parse_expression(self.condition_event)
             if repetitions >= self.max_iterations or condition_event.triggered is True:
                 break
             else:
