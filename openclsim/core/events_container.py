@@ -28,6 +28,7 @@ class EventsContainer(simpy.FilterStore):
             assert "id" in item
             assert "capacity" in item
             assert "level" in item
+            assert "_reservations" not in item["id"]
 
             container_item = {
                 "id": item["id"],
@@ -82,7 +83,7 @@ class EventsContainer(simpy.FilterStore):
         current_level = self.get_level(id_)
         event_status = getattr(py_opp, opp)(current_level, level)
 
-        if not event or not event_status and event.triggered:
+        if not event or not (event_status and event.triggered):
             # If event_status is still correct keep it otherwise overwrite it.
             self._container_events[(id_, level, opp)] = self._env.event()
 
@@ -106,21 +107,17 @@ class EventsContainer(simpy.FilterStore):
         store_status = super().get(lambda state: state["id"] == id_).value
         store_status["level"] = store_status["level"] + amount
         put_event = super().put(store_status)
+        put_event.callbacks.append(self._callback)
+
         yield put_event
-        self.update_container_events()
 
     def get(self, amount, id_="default"):
         store_status = super().get(lambda state: state["id"] == id_).value
         store_status["level"] = store_status["level"] - amount
         get_event = super().put(store_status)
-        yield get_event
-        self.update_container_events()
+        get_event.callbacks.append(self._callback)
 
-    def clear_reservations(self, amount, id_="default"):
-        reservation_status = (
-            super().get(lambda state: state["id"] == f"{id_}_reservations").value
-        )
-        reservation_status["level"] = self.get_level(id_)
-        event = super().put(reservation_status)
-        yield event
+        yield get_event
+
+    def _callback(self, event, id_="default"):
         self.update_container_events()
