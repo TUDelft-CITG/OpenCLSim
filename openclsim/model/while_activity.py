@@ -65,11 +65,11 @@ class ConditionProcessMixin:
             # We check both the static and reactive event. If a event is triggered
             # and after that defused the event is overwritten and not longer reactive.
             # Since we cannot defuse simpy events we have to use this workaround.
-            reactive_condition_event = self.parse_expression(self.condition_event)
+
             if (
                 repetitions >= self.max_iterations
                 or static_condition_event.triggered is True
-                or reactive_condition_event.triggered is True
+                or self.parse_expression(self.condition_event).triggered is True
             ):
                 break
             else:
@@ -80,7 +80,6 @@ class ConditionProcessMixin:
 
                 # Re-add the activities to the simpy environment
                 register_processes(self.sub_processes)
-
         activity_log.log_entry(
             t=env.now,
             activity_id=activity_log.id,

@@ -77,13 +77,13 @@ class ShiftAmountActivity(GenericActivity):
                 events=[
                     self.origin.container.get_container_event(
                         level=amount,
-                        opp="ge",
+                        operator="ge",
                         id_=self.id_,
                     ),
                     self.destination.container.get_container_event(
                         level=self.destination.container.get_capacity(self.id_)
                         - amount,
-                        opp="le",
+                        operator="le",
                         id_=self.id_,
                     ),
                 ]
@@ -195,11 +195,11 @@ class ShiftAmountActivity(GenericActivity):
             self.origin, self.destination, amount=self.amount, id_=self.id_
         )
 
-        yield from self.origin.container.get(
+        self.destination.container.put(
             amount=self.reserved_amount,
             id_=f"{self.id_}_reservations",
         )
-        yield from self.destination.container.put(
+        self.origin.container.get(
             amount=self.reserved_amount,
             id_=f"{self.id_}_reservations",
         )

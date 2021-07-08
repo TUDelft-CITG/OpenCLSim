@@ -28,7 +28,7 @@ class EventsContainer(simpy.FilterStore):
             assert "id" in item
             assert "capacity" in item
             assert "level" in item
-            assert "_reservations" not in item["id"]
+            assert not item["id"].endswith("_reservations")
 
             container_item = {
                 "id": item["id"],
@@ -46,12 +46,11 @@ class EventsContainer(simpy.FilterStore):
 
     @property
     def container_list(self):
-        container_ids = []
-        if len(self.items) > 0:
-            container_ids = [
-                item["id"] for item in self.items if "_reservations" not in item["id"]
-            ]
-        return container_ids
+        return [
+            item["id"]
+            for item in self.items
+            if not item["id"].endswith("_reservations")
+        ]
 
     def get_capacity(self, id_="default"):
         if self.items is None:
@@ -69,37 +68,45 @@ class EventsContainer(simpy.FilterStore):
             return res[0]
         return 0
 
-    def get_container_event(self, level, opp, id_="default"):
-        assert opp in [
+    def get_container_event(self, level, operator, id_="default"):
+        assert operator in [
             "gt",
             "ge",
             "lt",
             "le",
-        ], f"Chosen operator ({opp}) is not supported please choose from: 'gt', 'ge', 'lt', 'le'"
+        ], f"Chosen operator ({operator}) is not supported please choose from: 'gt', 'ge', 'lt', 'le'"
 
-        self._container_events.setdefault((id_, level, opp), self._env.event())
+        self._container_events.setdefault((id_, level, operator), self._env.event())
 
-        event = self._container_events.get((id_, level, opp))
+        event = self._container_events.get((id_, level, operator))
         current_level = self.get_level(id_)
-        event_status = getattr(py_opp, opp)(current_level, level)
+        event_status = getattr(py_opp, operator)(current_level, level)
 
         if not event or (not event_status and event.triggered):
             # If event_status is still correct keep it otherwise overwrite it.
-            self._container_events[(id_, level, opp)] = self._env.event()
+            self._container_events[(id_, level, operator)] = self._env.event()
 
         self.update_container_events()
-        return self._container_events[(id_, level, opp)]
+        return self._container_events[(id_, level, operator)]
 
     def get_empty_event(self, id_="default"):
-        return self.get_container_event(0, "le", id_)
+        return self.get_container_event(
+            level=0,
+            operator="le",
+            id_=id_,
+        )
 
     def get_full_event(self, id_="default"):
-        return self.get_container_event(self.get_capacity(id_), "ge", id_)
+        return self.get_container_event(
+            level=self.get_capacity(id_),
+            operator="ge",
+            id_=id_,
+        )
 
     def update_container_events(self):
-        for (id_, level, opp), event in self._container_events.items():
+        for (id_, level, operator), event in self._container_events.items():
             current_level = self.get_level(id_)
-            event_status = getattr(py_opp, opp)(current_level, level)
+            event_status = getattr(py_opp, operator)(current_level, level)
             if event_status and not event.triggered:
                 event.succeed()
 
@@ -109,7 +116,7 @@ class EventsContainer(simpy.FilterStore):
         put_event = super().put(store_status)
         put_event.callbacks.append(self._callback)
 
-        yield put_event
+        return put_event
 
     def get(self, amount, id_="default"):
         store_status = super().get(lambda state: state["id"] == id_).value
@@ -117,7 +124,7 @@ class EventsContainer(simpy.FilterStore):
         get_event = super().put(store_status)
         get_event.callbacks.append(self._callback)
 
-        yield get_event
+        return get_event
 
     def _callback(self, event, id_="default"):
         self.update_container_events()
