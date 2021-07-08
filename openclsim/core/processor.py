@@ -167,7 +167,14 @@ class Processor(SimpyObject):
     def determine_reservation_amout(
         self, origin, destination, amount=None, id_="default"
     ):
-        return amount if amount else 0
+        return (
+            amount
+            if amount
+            else min(
+                origin.container.get_capacity(id_),
+                destination.container.get_capacity(id_),
+            )
+        )
 
 
 class LoadingFunction:
