@@ -12,24 +12,24 @@ def test_put_available():
     container.initialize_container([{"id": "default", "capacity": 10, "level": 5}])
 
     def process():
-        at_most_5 = container.get_container_event(level=5, opp="le")
-        at_most_6 = container.get_container_event(level=6, opp="le")
-        at_most_3 = container.get_container_event(level=3, opp="le")
+        at_most_5 = container.get_container_event(level=5, operator="le")
+        at_most_6 = container.get_container_event(level=6, operator="le")
+        at_most_3 = container.get_container_event(level=3, operator="le")
 
         assert at_most_5.triggered, "a"
         assert at_most_6.triggered, "b"
         assert not at_most_3.triggered, "c"
 
         yield from container.get(1)
-        at_most_3 = container.get_container_event(level=3, opp="le")
+        at_most_3 = container.get_container_event(level=3, operator="le")
         assert not at_most_3.triggered, "d"
 
         yield from container.put(1)
-        at_most_3 = container.get_container_event(level=3, opp="le")
+        at_most_3 = container.get_container_event(level=3, operator="le")
         assert not at_most_3.triggered, "e"
 
         yield from container.get(2)
-        at_most_3 = container.get_container_event(level=3, opp="le")
+        at_most_3 = container.get_container_event(level=3, operator="le")
         assert at_most_3.triggered, "f"
 
     env.process(process())
@@ -43,9 +43,9 @@ def test_get_available():
     container.initialize_container([{"id": "default", "capacity": 10, "level": 5}])
 
     def process():
-        at_least_5 = container.get_container_event(level=5, opp="ge")
-        at_least_4 = container.get_container_event(level=4, opp="ge")
-        at_least_7 = container.get_container_event(level=7, opp="ge")
+        at_least_5 = container.get_container_event(level=5, operator="ge")
+        at_least_4 = container.get_container_event(level=4, operator="ge")
+        at_least_7 = container.get_container_event(level=7, operator="ge")
 
         assert at_least_5.triggered, "a"
         assert at_least_4.triggered, "b"

@@ -77,13 +77,13 @@ class ShiftAmountActivity(GenericActivity):
                 events=[
                     self.origin.container.get_container_event(
                         level=amount,
-                        opp="ge",
+                        operator="ge",
                         id_=self.id_,
                     ),
                     self.destination.container.get_container_event(
                         level=self.destination.container.get_capacity(self.id_)
                         - amount,
-                        opp="le",
+                        operator="le",
                         id_=self.id_,
                     ),
                 ]
