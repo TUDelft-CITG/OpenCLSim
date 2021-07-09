@@ -28,7 +28,7 @@ class EventsContainer(simpy.FilterStore):
             assert "id" in item
             assert "capacity" in item
             assert "level" in item
-            assert "_reservations" not in item["id"]
+            assert not item["id"].endswith("_reservations")
 
             container_item = {
                 "id": item["id"],
@@ -46,12 +46,11 @@ class EventsContainer(simpy.FilterStore):
 
     @property
     def container_list(self):
-        container_ids = []
-        if len(self.items) > 0:
-            container_ids = [
-                item["id"] for item in self.items if "_reservations" not in item["id"]
-            ]
-        return container_ids
+        return [
+            item["id"]
+            for item in self.items
+            if not item["id"].endswith("_reservations")
+        ]
 
     def get_capacity(self, id_="default"):
         if self.items is None:
