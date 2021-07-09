@@ -8,7 +8,7 @@ from .log_dataframe import get_log_dataframe
 def get_step_chart(simulation_objects):
     """Get the step chart of the container levels."""
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(14, 7))
     for obj in simulation_objects:
         df = get_log_dataframe(obj)
         container_list = obj.container.container_list
@@ -21,7 +21,7 @@ def get_step_chart(simulation_objects):
             plt.plot(
                 list(df["Timestamp"]),
                 y,
-                label=f"{obj.name}{container}",
+                label=f"{obj.name} {container}",
             )
     plt.legend()
     return fig

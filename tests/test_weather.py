@@ -1,6 +1,7 @@
 """Test application for the weather plugin."""
 
 import datetime
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -87,7 +88,9 @@ def test_weather():
         compute_v=lambda x: 10,
     )
 
-    metocean_df = pd.read_csv("./tests/data/unit_test_weather.csv")
+    parent = Path(__file__).resolve().parent
+
+    metocean_df = pd.read_csv(parent / "data" / "unit_test_weather.csv")
     metocean_df = metocean_df.set_index(
         pd.to_datetime(metocean_df["Time"], dayfirst=True)
     )
@@ -181,7 +184,10 @@ def test_weather():
     )
 
     model.register_processes([while_activity])
-    assert my_env.now == 1230768000.0
+    my_env.run()
+    duration = my_env.now - simulation_start.timestamp()
+
+    assert duration > 0, "duration should be > 0"
 
     assert_log(hopper)
     assert_log(while_activity)
