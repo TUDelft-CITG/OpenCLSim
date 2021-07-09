@@ -79,13 +79,16 @@ def test_container_dependent_movable(env, geometry_a, locatable_a, locatable_b):
 
     move_and_test(env, locatable_b, movable, 20, 2.18)
 
-    movable.container.put(2)
+    env.process(movable.container.put(2))
+    env.run()
     move_and_test(env, locatable_a, movable, 18, 2.42)
 
-    movable.container.put(8)
+    env.process(movable.container.put(8))
+    env.run()
     move_and_test(env, locatable_b, movable, 10, 4.36)
 
-    movable.container.get(10)
+    env.process(movable.container.get(10))
+    env.run()
     move_and_test(env, locatable_a, movable, 20, 2.18)
 
 

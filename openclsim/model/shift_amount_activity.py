@@ -53,17 +53,40 @@ class ShiftAmountActivity(GenericActivity):
         self.print = show
         self.phase = phase
 
-    def _request_resource_if_available(
-        self,
-        env,
-        amount,
-        activity_id,
-    ):
+    def main_process_function(self, activity_log, env):
+        """Origin and Destination are of type HasContainer."""
+        assert self.processor.is_at(self.origin)
+        assert self.destination.is_at(self.origin)
+
+        yield from self._request_resource(
+            self.requested_resources, self.destination.resource
+        )
+
+        amount = self.processor.determine_processor_amount(
+            self.origin, self.destination, self.amount, self.id_
+        )
+
         all_available = False
         while not all_available and amount > 0:
+            amount = self.processor.determine_processor_amount(
+                self.origin, self.destination, self.amount, self.id_
+            )
+
             # yield until enough content and space available in origin and destination
             yield env.all_of(
-                events=[self.origin.container.get_available(amount, self.id_)]
+                events=[
+                    self.origin.container.get_container_event(
+                        level=amount,
+                        operator="ge",
+                        id_=self.id_,
+                    ),
+                    self.destination.container.get_container_event(
+                        level=self.destination.container.get_capacity(self.id_)
+                        - amount,
+                        operator="le",
+                        id_=self.id_,
+                    ),
+                ]
             )
 
             yield from self._request_resource(
@@ -92,25 +115,6 @@ class ShiftAmountActivity(GenericActivity):
                 )
                 continue
             all_available = True
-
-    def main_process_function(self, activity_log, env):
-        """Origin and Destination are of type HasContainer."""
-        assert self.processor.is_at(self.origin)
-        assert self.destination.is_at(self.origin)
-
-        amount = self.processor.determine_processor_amount(
-            self.origin, self.destination, self.amount, self.id_
-        )
-
-        yield from self._request_resource(
-            self.requested_resources, self.destination.resource
-        )
-
-        yield from self._request_resource_if_available(
-            env=env,
-            amount=amount,
-            activity_id=activity_log.id,
-        )
 
         start_time = env.now
         args_data = {
@@ -169,8 +173,9 @@ class ShiftAmountActivity(GenericActivity):
         yield from self.processor.process(
             origin=self.origin,
             destination=self.destination,
-            id_=self.id_,
             shiftamount_fcn=shiftamount_fcn,
+            reserved_amount=self.reserved_amount,
+            id_=self.id_,
         )
 
     def _get_shiftamount_fcn(self, amount):
@@ -184,3 +189,17 @@ class ShiftAmountActivity(GenericActivity):
             raise RuntimeError(
                 "Both the phase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
             )
+
+    def make_container_reservation(self):
+        self.reserved_amount = self.processor.determine_reservation_amout(
+            self.origin, self.destination, amount=self.amount, id_=self.id_
+        )
+
+        yield from self.origin.container.get(
+            amount=self.reserved_amount,
+            id_=f"{self.id_}_reservations",
+        )
+        yield from self.destination.container.put(
+            amount=self.reserved_amount,
+            id_=f"{self.id_}_reservations",
+        )
