@@ -104,12 +104,12 @@ class Processor(SimpyObject):
 
         start_time = self.env.now
         # Shift amounts in containers
-        yield from method(
+        yield method(
             amount,
             id_,
         )
         # Corrent the container reservation with the actual amount
-        yield from method(
+        yield method(
             amount - reserved_amount,
             f"{id_}_reservations",
         )

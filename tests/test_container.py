@@ -20,15 +20,15 @@ def test_put_available():
         assert at_most_6.triggered, "b"
         assert not at_most_3.triggered, "c"
 
-        yield from container.get(1)
+        yield container.get(1)
         at_most_3 = container.get_container_event(level=3, operator="le")
         assert not at_most_3.triggered, "d"
 
-        yield from container.put(1)
+        yield container.put(1)
         at_most_3 = container.get_container_event(level=3, operator="le")
         assert not at_most_3.triggered, "e"
 
-        yield from container.get(2)
+        yield container.get(2)
         at_most_3 = container.get_container_event(level=3, operator="le")
         assert at_most_3.triggered, "f"
 
@@ -51,13 +51,13 @@ def test_get_available():
         assert at_least_4.triggered, "b"
         assert not at_least_7.triggered, "c"
 
-        yield from container.put(1)
+        yield container.put(1)
         assert not at_least_7.triggered, "d"
 
-        yield from container.get(1)
+        yield container.get(1)
         assert not at_least_7.triggered, "e"
 
-        yield from container.put(2)
+        yield container.put(2)
         assert at_least_7.triggered, "f"
 
     env.process(process())
@@ -81,14 +81,14 @@ def test_empty_full_events():
         assert not empty_event.triggered, "a"
         assert not full_event.triggered, "b"
 
-        yield from container.get(5)
+        yield container.get(5)
         assert empty_event.triggered, "c"
         assert not full_event.triggered, "d"
 
         empty_event = container.get_empty_event()
         assert empty_event.triggered, "e"
 
-        yield from container.put(10)
+        yield container.put(10)
         empty_event = container.get_empty_event()
         assert full_event.triggered, "f"
         assert not empty_event.triggered, "g"
@@ -96,12 +96,12 @@ def test_empty_full_events():
         full_event = container.get_full_event()
         assert full_event.triggered, "h"
 
-        yield from container.get(5)
+        yield container.get(5)
         full_event = container.get_full_event()
         assert not full_event.triggered, "i"
         assert not empty_event.triggered, "j"
 
-        yield from container.get(5)
+        yield container.get(5)
         assert empty_event.triggered, "k"
 
     env.process(process())

@@ -41,10 +41,17 @@ def get_segments(df, activity, y_val):
 
 
 def get_gantt_chart(
-    vessels, activities=None, colors=None, web=False, static=False, y_scale="text"
+    vessels,
+    activities=None,
+    id_map=None,
+    colors=None,
+    web=False,
+    static=False,
+    y_scale="text",
 ):
     """Create a plot of the planning of vessels."""
-    id_map = {ves.id: ves.name for ves in vessels}
+    id_map = id_map if id_map else {}
+    act_map = {ves.id: ves.name for ves in vessels}
 
     if activities is None:
         activities = []
@@ -78,11 +85,10 @@ def get_gantt_chart(
             names.append(vessel.name)
 
     df = dataframes[0]
-
     # prepare traces for each of the activities
     traces = []
     for i, activity in enumerate(activities):
-        activity = id_map.get(activity, activity)
+        activity = act_map.get(activity, activity)
         x_combined = []
         y_combined = []
         for k, df in enumerate(dataframes):
@@ -92,7 +98,7 @@ def get_gantt_chart(
             y_combined.extend(y)
         traces.append(
             go.Scatter(
-                name=activity,
+                name=id_map.get(activity, activity),
                 x=x_combined,
                 y=y_combined,
                 mode="lines",

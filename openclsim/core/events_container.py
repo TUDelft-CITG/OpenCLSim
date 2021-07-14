@@ -116,7 +116,7 @@ class EventsContainer(simpy.FilterStore):
         put_event = super().put(store_status)
         put_event.callbacks.append(self._callback)
 
-        yield put_event
+        return put_event
 
     def get(self, amount, id_="default"):
         store_status = super().get(lambda state: state["id"] == id_).value
@@ -124,7 +124,7 @@ class EventsContainer(simpy.FilterStore):
         get_event = super().put(store_status)
         get_event.callbacks.append(self._callback)
 
-        yield get_event
+        return get_event
 
     def _callback(self, event, id_="default"):
         self.update_container_events()

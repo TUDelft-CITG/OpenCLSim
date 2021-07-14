@@ -116,13 +116,18 @@ class GenericActivity(PluginActivity):
         self,
         registry,
         start_event=None,
-        requested_resources=dict(),
-        keep_resources=list(),
+        requested_resources=None,
+        keep_resources=None,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         """Initialization"""
+        requested_resources = (
+            requested_resources if requested_resources is not None else {}
+        )
+        keep_resources = keep_resources if keep_resources is not None else []
+
         self.registry = registry
         self.start_event = start_event
         self.requested_resources = requested_resources
@@ -136,6 +141,10 @@ class GenericActivity(PluginActivity):
             self.start_sequence = self.env.event()
         if hasattr(self, "start_parallel") and self.start_parallel.triggered:
             self.start_parallel = self.env.event()
+
+        # Make container reservations
+        if hasattr(self, "make_container_reservation"):
+            self.make_container_reservation()
 
         # add the activity withs start event to the simpy environment
         self.main_process = self.env.process(
@@ -163,6 +172,7 @@ class GenericActivity(PluginActivity):
             if expr.get("type") == "container":
                 id_ = expr.get("id_", "default")
                 obj = expr["concept"]
+
                 if (
                     expr.get("state") in ["gt", "ge", "lt", "le"]
                     and expr.get("level") is not None
@@ -208,10 +218,6 @@ class GenericActivity(PluginActivity):
         env,
     ):
         """Return a generator which can be added as a process to a simpy environment."""
-        # Make container reservations
-        if hasattr(self, "make_container_reservation"):
-            yield from self.make_container_reservation()
-
         additional_logs = getattr(self, "additional_logs", [])
         start_event = (
             None

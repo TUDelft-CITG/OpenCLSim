@@ -19,14 +19,21 @@ def get_subprocesses(items):
 
 def register_processes(processes):
     """Register all the processes iteratively."""
-    items = list(set(get_subprocesses(processes)))
+    items = get_subprocesses(processes)
+
+    item_names = [i.name for i in items]
+    assert len(item_names) == len(set(item_names))
 
     for item in items:
         item.main_process = None
 
     registerd_items = []
     for _ in range(100):
-        unregistered_items = set(items) - set(registerd_items)
+        # Subtracting sets does not work since this changes the order, witch will
+        # introduce randomness in the output.
+        unregistered_items = [
+            i for i in items if i.name not in [e.name for e in registerd_items]
+        ]
         if len(unregistered_items) == 0:
             break
         for item in unregistered_items:

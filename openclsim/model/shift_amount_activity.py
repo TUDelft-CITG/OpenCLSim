@@ -195,11 +195,11 @@ class ShiftAmountActivity(GenericActivity):
             self.origin, self.destination, amount=self.amount, id_=self.id_
         )
 
-        yield from self.origin.container.get(
+        self.destination.container.put(
             amount=self.reserved_amount,
             id_=f"{self.id_}_reservations",
         )
-        yield from self.destination.container.put(
+        self.origin.container.get(
             amount=self.reserved_amount,
             id_=f"{self.id_}_reservations",
         )
