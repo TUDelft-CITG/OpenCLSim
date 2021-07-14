@@ -206,6 +206,9 @@ class GenericActivity(PluginActivity):
                     [activity_item.main_process for activity_item in activity_]
                 )
 
+            if expr.get("type") == "time":
+                start = expr.get("start_time")
+                return self.env.timeout(max(start - self.env.now, 0))
             raise ValueError
 
         raise ValueError(
