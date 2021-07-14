@@ -82,7 +82,7 @@ class EventsContainer(simpy.FilterStore):
         current_level = self.get_level(id_)
         event_status = getattr(py_opp, operator)(current_level, level)
 
-        if not event or (not event_status and event.triggered):
+        if not event or (not event_status and event.processed):
             # If event_status is still correct keep it otherwise overwrite it.
             self._container_events[(id_, level, operator)] = self._env.event()
 

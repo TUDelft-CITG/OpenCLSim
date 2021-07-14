@@ -23,7 +23,7 @@ class MoveActivity(GenericActivity):
            should inherit from Movable, HasContainer, HasResource, Identifiable and Log
            after the simulation is complete, its log will contain entries for each time it started moving,
            stopped moving, started loading / unloading and stopped loading / unloading
-    start_event: the activity will start as soon as this event is triggered
+    start_event: the activity will start as soon as this event is processed
                  by default will be to start immediately
     """
 

@@ -62,14 +62,14 @@ class ConditionProcessMixin:
                     },
                 )
 
-            # We check both the static and reactive event. If a event is triggered
+            # We check both the static and reactive event. If a event is processed
             # and after that defused the event is overwritten and not longer reactive.
             # Since we cannot defuse simpy events we have to use this workaround.
 
             if (
                 repetitions >= self.max_iterations
-                or static_condition_event.triggered is True
-                or self.parse_expression(self.condition_event).triggered is True
+                or static_condition_event.processed is True
+                or self.parse_expression(self.condition_event).processed is True
             ):
                 break
             else:
@@ -102,7 +102,7 @@ class WhileActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesses
     condition_event
         a condition event provided in the expression language which will stop the iteration as soon as the event is fulfilled.
     start_event
-        the activity will start as soon as this event is triggered
+        the activity will start as soon as this event is processed
         by default will be to start immediately
     """
 
@@ -131,7 +131,7 @@ class RepeatActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesse
     repetitions
         Number of times the subprocess is repeated
     start_event
-        the activity will start as soon as this event is triggered
+        the activity will start as soon as this event is processed
         by default will be to start immediately
     """
 

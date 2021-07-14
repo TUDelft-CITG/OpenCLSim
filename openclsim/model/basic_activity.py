@@ -12,7 +12,7 @@ class BasicActivity(GenericActivity):
 
     duration: time required to perform the described activity.
     additional_logs: list of other concepts, where the start and the stop of the basic activity should be recorded.
-    start_event: the activity will start as soon as this event is triggered
+    start_event: the activity will start as soon as this event is processed
                  by default will be to start immediately
     """
 
