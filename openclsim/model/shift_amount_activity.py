@@ -24,7 +24,7 @@ class ShiftAmountActivity(GenericActivity):
     amount: the maximum amount of objects to be transfered.
     duration: time specified in seconds on how long it takes to transfer the objects.
     id_: in case of MultiContainers the id_ of the container, where the objects should be removed from or assiged to respectively.
-    start_event: the activity will start as soon as this event is triggered
+    start_event: the activity will start as soon as this event is processed
                  by default will be to start immediately
     """
 

@@ -14,7 +14,7 @@ class SequentialActivity(GenericActivity, RegisterSubProcesses):
     sub_processes:
         a list of activities to be executed in the provided sequence.
     start_event:
-        The activity will start as soon as this event is triggered
+        The activity will start as soon as this event is processed
         by default will be to start immediately
     """
 

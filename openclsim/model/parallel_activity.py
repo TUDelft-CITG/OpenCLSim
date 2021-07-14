@@ -14,7 +14,7 @@ class ParallelActivity(GenericActivity, RegisterSubProcesses):
     sub_processes:
         a list of activities to be executed in Parallel.
     start_event:
-        The activity will start as soon as this event is triggered
+        The activity will start as soon as this event is processed
         by default will be to start immediately
     """
 
@@ -61,14 +61,14 @@ class ParallelActivity(GenericActivity, RegisterSubProcesses):
             )
             subprocess_ids.append(sub_process.id)
 
-        # wait until all stop events are triggered
+        # wait until all stop events are processed
         while len(stop_events) > 0:
-            # wait until any stop event is triggered
+            # wait until any stop event is processed
             event_trigger = self.parse_expression(
                 [{"or": [event for event in stop_events]}]
             )
             yield event_trigger
-            # add a log line for each triggered stop event and pop it
+            # add a log line for each stop event and pop it
             i = 0
             while i < len(stop_events):
                 if self.parse_expression(stop_events[i]).triggered is True:

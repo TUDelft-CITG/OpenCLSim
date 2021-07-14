@@ -137,9 +137,9 @@ class GenericActivity(PluginActivity):
     def register_process(self):
         # replace the events
         self.done_event = self.env.event()
-        if hasattr(self, "start_sequence") and self.start_sequence.triggered:
+        if hasattr(self, "start_sequence") and self.start_sequence.processed:
             self.start_sequence = self.env.event()
-        if hasattr(self, "start_parallel") and self.start_parallel.triggered:
+        if hasattr(self, "start_parallel") and self.start_parallel.processed:
             self.start_parallel = self.env.event()
 
         # Make container reservations
@@ -206,6 +206,9 @@ class GenericActivity(PluginActivity):
                     [activity_item.main_process for activity_item in activity_]
                 )
 
+            if expr.get("type") == "time":
+                start = expr.get("start_time")
+                return self.env.timeout(max(start - self.env.now, 0))
             raise ValueError
 
         raise ValueError(
