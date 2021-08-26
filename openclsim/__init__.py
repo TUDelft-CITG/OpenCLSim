@@ -9,6 +9,5 @@ import openclsim.plugins as plugins
 
 __author__ = """Mark van Koningsveld"""
 __email__ = "M.vanKoningsveld@tudelft.nl"
-__version__ = "v1.4.2"
 __all__ = ["model", "plugins", "core", "plot"]
 __version__ = pkg_resources.get_distribution(__name__).version
