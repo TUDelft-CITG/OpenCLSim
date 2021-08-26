@@ -27,6 +27,7 @@ conda install --file requirements.txt
 ```
 
 If you are using a pip based environment, you can install the requirements with pip:
+
 ``` bash
 pip install -r requirements.txt
 ```
