@@ -6,8 +6,7 @@ WORKDIR /OpenCLSim
 
 RUN conda install numpy pandas nomkl pyproj shapely setuptools
 
-RUN pip install --upgrade pip && \
-    pip install -e .[testing]
+RUN pip install --upgrade pip && pip install -e .[testing]
 
 EXPOSE 8887
 
