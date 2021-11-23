@@ -20,7 +20,7 @@ class EventsContainer(simpy.FilterStore):
     def __init__(self, env, store_capacity: int = 1, *args, **kwargs):
         super().__init__(env, capacity=store_capacity * 2)
         self._env = env
-        self._container_events = {}
+        self._container_events: dict = {}
 
     def initialize_container(self, initials):
         """Initialize method used for MultiContainers."""
