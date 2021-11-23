@@ -48,7 +48,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = u"OpenCLSim"
+project = u"openclsim"
 copyright = u"2019, TU Delft"
 author = u"Mark van Koningsveld"
 
@@ -83,7 +83,7 @@ todo_include_todos = False
 # -- Options for HTML output -------------------------------------------
 
 # Add a logo
-html_logo = "OpenCLSim.png"
+html_logo = "openclsim.png"
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.

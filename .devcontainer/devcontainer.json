@@ -5,7 +5,7 @@
 		"docker-compose.yml"
 	],
 	"service": "package",
-	"workspaceFolder": "/OpenCLSim",
+	"workspaceFolder": "/openclsim",
 	"extensions": [
 		"ms-python.python",
 		"ms-python.vscode-pylance",

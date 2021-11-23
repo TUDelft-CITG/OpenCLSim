@@ -7,8 +7,8 @@ RUN apt update && apt install -y git procps
 RUN pip install --upgrade pip
 
 # install python package
-WORKDIR /OpenCLSim
-ADD . /OpenCLSim
+WORKDIR /openclsim
+ADD . /openclsim
 RUN pip install -e .
 
 EXPOSE 8888
