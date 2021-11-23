@@ -33,7 +33,7 @@ test-up:
 test: test-up
 	@rm -f coverage.svg || true
 	@docker exec $(CONTAINER_NAME_APP) bash -c "pip install -e .[testing]"
-	@docker exec $(CONTAINER_NAME_APP) bash -c "python setup.py test"
+	@docker exec $(CONTAINER_NAME_APP) bash -c "pytest"
 	@docker exec $(CONTAINER_NAME_APP) bash -c "rm -f coverage.svg; coverage-badge -o coverage.svg;"
 	@docker cp $(CONTAINER_NAME_APP):/$(IMAGE_NAME)/coverage.svg .
 	@docker-compose down

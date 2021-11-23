@@ -86,7 +86,7 @@ Ready to contribute? Here's how to set up `OpenCLSim` for local development.
    tests, including testing other Python versions with tox::
 
     $ flake8 openclsim tests
-    $ python setup.py test or py.test
+    $ pytest or py.test
     $ tox
 
 
