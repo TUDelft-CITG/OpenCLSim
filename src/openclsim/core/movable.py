@@ -33,7 +33,8 @@ class Movable(SimpyObject, Locatable):
         """
         Determine distance between origin and destination.
 
-        Yield the time it takes to travel based on flow properties and load factor of the flow.
+        Yield the time it takes to travel based on flow properties and load factor of
+        the flow.
         """
         # Log the start event
         self.log_entry(
@@ -81,7 +82,8 @@ class ContainerDependentMovable(Movable, HasContainer):
     ContainerDependentMovable class.
 
     Used for objects that move with a speed dependent on the container level
-    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed
+    compute_v: a function, given the fraction the container is filled (in [0,1]),
+    returns the current speed
 
     Parameters
     ----------
@@ -108,8 +110,10 @@ class MultiContainerDependentMovable(Movable, HasMultiContainer):
     MultiContainerDependentMovable class.
 
     Used for objects that move with a speed dependent on the container level.
-    This movable is provided with a MultiContainer, thus can handle container containing different object.
-    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed
+    This movable is provided with a MultiContainer, thus can handle container
+    containing different object.
+    compute_v: a function, given the fraction the container is filled (in [0,1]),
+    returns the current speed
     """
 
     def __init__(self, compute_v, *args, **kwargs):

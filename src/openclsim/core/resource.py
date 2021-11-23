@@ -9,7 +9,8 @@ class HasResource(SimpyObject):
     """
     HasProcessingLimit class.
 
-    Adds a limited Simpy resource which should be requested before the object is used for processing.
+    Adds a limited Simpy resource which should be requested before the object is
+    used for processing.
 
     Parameters
     ----------

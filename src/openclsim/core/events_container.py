@@ -1,4 +1,4 @@
-"""EventsContainer provide a basic class for managing information which has to be stored in an object."""
+"""EventsContainer provides events based on the level of the contaier."""
 import operator as py_opp
 
 import simpy
@@ -6,9 +6,10 @@ import simpy
 
 class EventsContainer(simpy.FilterStore):
     """
-    EventsContainer provide a basic class for managing information which has to be stored in an object.
+    EventsContainer provides events based on the level of the contaier.
 
-    It is a generic container, which has a default behavior, but can be used for storing arbitrary objects.
+    It is a generic container, which has a default behavior, but can be used for
+    storing arbitrary objects.
 
     Parameters
     ----------
@@ -69,12 +70,10 @@ class EventsContainer(simpy.FilterStore):
         return 0
 
     def get_container_event(self, level, operator, id_="default"):
-        assert operator in [
-            "gt",
-            "ge",
-            "lt",
-            "le",
-        ], f"Chosen operator ({operator}) is not supported please choose from: 'gt', 'ge', 'lt', 'le'"
+        assert operator in ["gt", "ge", "lt", "le"], (
+            f"Chosen operator ({operator}) is not supported please choose "
+            "from: 'gt', 'ge', 'lt', 'le'"
+        )
 
         self._container_events.setdefault((id_, level, operator), self._env.event())
 
