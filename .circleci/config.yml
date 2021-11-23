@@ -4,25 +4,29 @@ jobs:
     machine: true
     steps:
       - checkout
+
       - run:
-          name: Build and start container
-          command: docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
-      - run:
-          name: Install test environment
-          command: |
-            docker exec -it openclsim bash -c "pip install coverage coverage-badge"
+          name: Build image
+          command: | 
+            make build
+
       - run:
           name: Run tests
           command: |
-            docker exec -it openclsim bash -c "pytest"
-            docker cp openclsim:/OpenCLSim/htmlcov /tmp/artifacts
+            make test
+            mkdir -p /tmp/artifacts/
+            mv coverage.svg /tmp/artifacts/
+
       - run:
-          name: Generate coverage badge
+          name: Build docs
           command: |
-            docker exec -it openclsim bash -c "coverage-badge -o coverage.svg"
-            docker cp openclsim:/OpenCLSim/coverage.svg /tmp/artifacts/
+            make docs
+            mkdir -p /tmp/artifacts/docs
+            mv html_docs /tmp/artifacts/docs
+
       - store_artifacts:
           path: /tmp/artifacts
+
 workflows:
   version: 2
   build:

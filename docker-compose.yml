@@ -1,11 +1,12 @@
-version: '3.2'
+version: "3.2"
 
 services:
-  main:
-    image: openclsim_main:latest
+  package:
+    image: openclsim
     build:
-      dockerfile: Dockerfile
       context: .
     container_name: openclsim
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
     ports:
-      - 8887:8887
+      - "8888:8888"
