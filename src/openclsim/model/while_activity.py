@@ -93,20 +93,21 @@ class ConditionProcessMixin:
 
 class WhileActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesses):
     """
-    WhileActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+    Activity for executing multiple activities in a dedicated order within a simulation.
 
-    The while activity is a structural activity, which does not require specific resources.
+    The while activity is a structural activity, which does not require specific
+    resources.
 
     sub_processes
         the sub_processes which is executed in sequence in every iteration
     condition_event
-        a condition event provided in the expression language which will stop the iteration as soon as the event is fulfilled.
+        a condition event provided in the expression language which will stop the
+        iteration as soon as the event is fulfilled.
     start_event
         the activity will start as soon as this event is processed
         by default will be to start immediately
     """
 
-    #     activity_log, env, stop_event, sub_processes, requested_resources, keep_resources
     def __init__(self, sub_processes, condition_event, show=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
@@ -122,7 +123,7 @@ class WhileActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesses
 
 class RepeatActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesses):
     """
-    RepeatActivity Class forms a specific class for executing multiple activities in a dedicated order within a simulation.
+    Activity for executing multiple activities in a dedicated order within a simulation.
 
     Parameters
     ----------

@@ -15,8 +15,10 @@ class Processor(SimpyObject):
 
     Adds the loading and unloading components and checks for possible downtime.
 
-    If the processor class is used to allow "loading" or "unloading" the mixins "LoadingFunction" and "UnloadingFunction" should be added as well.
-    If no functions are used a subcycle should be used, which is possible with the mixins "LoadingSubcycle" and "UnloadingSubcycle".
+    If the processor class is used to allow "loading" or "unloading" the mixins
+    "LoadingFunction" and "UnloadingFunction" should be added as well.
+    If no functions are used a subcycle should be used, which is possible with the
+    mixins "LoadingSubcycle" and "UnloadingSubcycle".
     """
 
     def __init__(self, *args, **kwargs):
@@ -148,14 +150,20 @@ class Processor(SimpyObject):
         destination_max_amount = dest_cont.get_capacity(id_) - dest_cont.get_level(id_)
         if destination_max_amount <= 0:
             raise ValueError(
-                f"Attempting to shift content to a full destination (name: {destination.name}, container_id: {id_}, capacity: {dest_cont.get_capacity(id_)} level: {dest_cont.get_level(id_)})."
+                "Attempting to shift content to a full destination "
+                f"(name: {destination.name}, container_id: {id_}, "
+                f"capacity: {dest_cont.get_capacity(id_)} "
+                f"level: {dest_cont.get_level(id_)})."
             )
 
         org_cont = origin.container
         origin_max_amount = org_cont.get_level(id_)
         if origin_max_amount <= 0:
             raise ValueError(
-                f"Attempting to shift content from an empty origin (name: {origin.name}, container_id: {id_}, capacity: {org_cont.get_capacity(id_)} level: {org_cont.get_level(id_)})."
+                "Attempting to shift content from an empty origin "
+                f"(name: {origin.name}, container_id: {id_}, "
+                f"capacity: {org_cont.get_capacity(id_)} "
+                f"level: {org_cont.get_level(id_)})."
             )
 
         new_amount = min(origin_max_amount, destination_max_amount)
@@ -181,7 +189,8 @@ class LoadingFunction:
     """
     Create a loading function and add it a processor.
 
-    This is a generic and easy to read function, you can create your own LoadingFunction class and add this as a mixin.
+    This is a generic and easy to read function, you can create your own
+    LoadingFunction class and add this as a mixin.
 
     Parameters
     ----------
@@ -201,9 +210,11 @@ class LoadingFunction:
 
     def loading(self, origin, destination, amount, id_="default"):
         """
-        Determine the duration based on an amount that is given as input with processing.
+        Determine the duration based on an amount that is given as input
+        with processing.
 
-        The origin an destination are also part of the input, because other functions might be dependent on the location.
+        The origin an destination are also part of the input, because other
+        functions might be dependent on the location.
         """
         if not hasattr(self.loading_rate, "__call__"):
             duration = amount / self.loading_rate + self.load_manoeuvring * 60
@@ -221,7 +232,8 @@ class UnloadingFunction:
     """
     Create an unloading function and add it a processor.
 
-    This is a generic and easy to read function, you can create your own LoadingFunction class and add this as a mixin.
+    This is a generic and easy to read function, you can create your own
+    LoadingFunction class and add this as a mixin.
 
     Parameters
     ----------
@@ -241,9 +253,11 @@ class UnloadingFunction:
 
     def unloading(self, origin, destination, amount, id_="default"):
         """
-        Determine the duration based on an amount that is given as input with processing.
+        Determine the duration based on an amount that is given as input
+        with processing.
 
-        The origin an destination are also part of the input, because other functions might be dependent on the location.
+        The origin an destination are also part of the input, because other functions
+        might be dependent on the location.
         """
 
         if not hasattr(self.unloading_rate, "__call__"):

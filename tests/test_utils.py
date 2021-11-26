@@ -8,7 +8,7 @@ def assert_log(simulation_object):
     new_log = simulation_object.log.copy()
     length = len(new_log["Timestamp"])
     df = pd.DataFrame(new_log)
-    df["Timestamp"] = df["Timestamp"].astype(np.int64)
+    df["Timestamp"] = df["Timestamp"].view(np.int64)
 
     assert isinstance(new_log["Timestamp"], list)
     assert isinstance(new_log["ActivityID"], list)

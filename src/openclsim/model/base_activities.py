@@ -9,7 +9,8 @@ import openclsim.core as core
 
 class AbstractPluginClass(ABC):
     """
-    Abstract class used as the basis for all Classes implementing a plugin for a specific Activity.
+    Abstract class used as the basis for all Classes implementing a
+    plugin for a specific Activity.
 
     Instance checks will be performed on this class level.
     """
@@ -71,8 +72,9 @@ class PluginActivity(core.Identifiable, core.Log):
     """
     Base class for all activities which will provide a plugin mechanism.
 
-    The plugin mechanism foresees that the plugin function pre_process is called before the activity is executed, while
-    the function post_process is called after the activity has been executed.
+    The plugin mechanism foresees that the plugin function pre_process is calledbefore
+    the activity is executed, while the function post_process is called after the
+    activity has been executed.
     """
 
     def __init__(self, *args, **kwargs):
@@ -212,7 +214,8 @@ class GenericActivity(PluginActivity):
             raise ValueError
 
         raise ValueError(
-            f"{type(expr)} is not a valid input type. Valid input types are: simpy.Event, dict, and list"
+            f"{type(expr)} is not a valid input type. Valid input types "
+            "are: simpy.Event, dict, and list"
         )
 
     def delayed_process(
@@ -280,7 +283,7 @@ class GenericActivity(PluginActivity):
 
     def _release_resource(self, requested_resources, resource, kept_resource=None):
         """
-        Release the given resource, provided it does not equal the kept_resource parameter.
+        Release the given resource, if it does not equal the kept_resource parameter.
 
         Deletes the released resource from the requested_resources dictionary.
         """

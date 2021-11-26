@@ -14,7 +14,8 @@ class HasContainer(SimpyObject):
     level
         Amount the container holds initially
     store_capacity
-        The number of different types of information can be stored. In this class it usually is 1.
+        The number of different types of information can be stored. In this
+        class it usually is 1.
     """
 
     def __init__(
@@ -52,8 +53,10 @@ class HasMultiContainer(HasContainer):
     """
     A class which can represent information of objects of multiple types.
 
-    store_capacity:  The number of different types of information can be stored. In this calss it is usually >1.
-    initials: a list of dictionaries describing the id_ of the container, the level of the individual container and the capacity of the individual container.
+    store_capacity:  The number of different types of information can be stored. In this
+    class it is usually >1.
+    initials: a list of dictionaries describing the id_ of the container, the level of
+    the individual container and the capacity of the individual container.
     """
 
     def __init__(self, initials, store_capacity=10, *args, **kwargs):

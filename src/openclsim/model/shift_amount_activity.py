@@ -10,12 +10,13 @@ from .base_activities import GenericActivity
 
 class ShiftAmountActivity(GenericActivity):
     """
-    ShiftAmountActivity Class forms a specific class for shifting material from an origin to a destination.
+    Activity for shifting material from an origin to a destination.
 
-    It deals with a single origin container, destination container and a single processor
-    to move substances from the origin to the destination. It will initiate and suspend processes
-    according to a number of specified conditions. To run an activity after it has been initialized call env.run()
-    on the Simpy environment with which it was initialized.
+    It deals with a single origin container, destination container and a single
+    processor to move substances from the origin to the destination. It will
+    initiate and suspend processes according to a number of specified conditions.
+    To run an activity after it has been initialized call env.run() on the Simpy
+    environment with which it was initialized.
 
 
     origin: container where the source objects are located.
@@ -23,9 +24,10 @@ class ShiftAmountActivity(GenericActivity):
     processor: resource responsible to implement the transfer.
     amount: the maximum amount of objects to be transfered.
     duration: time specified in seconds on how long it takes to transfer the objects.
-    id_: in case of MultiContainers the id_ of the container, where the objects should be removed from or assiged to respectively.
+    id_: in case of MultiContainers the id_ of the container, where the objects should
+        be removed from or assiged to respectively.
     start_event: the activity will start as soon as this event is processed
-                 by default will be to start immediately
+        by default will be to start immediately
     """
 
     def __init__(
@@ -93,7 +95,8 @@ class ShiftAmountActivity(GenericActivity):
                 self.requested_resources, self.processor.resource
             )
             if self.origin.container.get_level(self.id_) < amount:
-                # someone removed / added content while we were requesting the processor, so abort and wait for available
+                # someone removed / added content while we were requesting the
+                # processor, so abort and wait for available
                 # space/content again
                 self._release_resource(
                     self.requested_resources,
@@ -187,7 +190,8 @@ class ShiftAmountActivity(GenericActivity):
             return partial(self.processor.unloading, amount=amount)
         else:
             raise RuntimeError(
-                "Both the phase (loading / unloading) and the duration of the shiftamount activity are undefined. At least one is required!"
+                "Both the phase (loading / unloading) and the duration of the "
+                "shiftamount activity are undefined. At least one is required!"
             )
 
     def make_container_reservation(self):

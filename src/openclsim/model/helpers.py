@@ -44,5 +44,6 @@ def register_processes(processes):
                 logger.info(e)
     else:
         raise ValueError(
-            "Due to  recursion in the events of the activities, not all the activities can be registered."
+            "Due to  recursion in the events of the activities, not all the activities "
+            "can be registered."
         )

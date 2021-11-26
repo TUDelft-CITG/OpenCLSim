@@ -47,7 +47,8 @@ class WeatherCriterion:
                 assert minimum is None
         except Exception as e:
             raise AssertionError(
-                f"One and only one of the parameters minimum or maximum can be defined (error message: {e})."
+                "One and only one of the parameters minimum or maximum can be "
+                f"defined (error message: {e})."
             )
 
         self.minimum = minimum

@@ -33,7 +33,8 @@ class Movable(SimpyObject, Locatable):
         """
         Determine distance between origin and destination.
 
-        Yield the time it takes to travel based on flow properties and load factor of the flow.
+        Yield the time it takes to travel based on flow properties and load factor of
+        the flow.
         """
         # Log the start event
         self.log_entry(
@@ -54,7 +55,7 @@ class Movable(SimpyObject, Locatable):
         yield self.env.timeout(sailing_duration)
 
         # Set mover geometry to destination geometry
-        self.geometry = shapely.geometry.asShape(destination.geometry)
+        self.geometry = shapely.geometry.shape(destination.geometry)
 
         # Log the stop event
         self.log_entry(
@@ -69,8 +70,8 @@ class Movable(SimpyObject, Locatable):
 
     def sailing_duration(self, origin, destination, engine_order, verbose=True):
         """Determine the sailing duration."""
-        orig = shapely.geometry.asShape(self.geometry)
-        dest = shapely.geometry.asShape(destination.geometry)
+        orig = shapely.geometry.shape(self.geometry)
+        dest = shapely.geometry.shape(destination.geometry)
         _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
         return distance / (self.current_speed * engine_order)
@@ -81,7 +82,8 @@ class ContainerDependentMovable(Movable, HasContainer):
     ContainerDependentMovable class.
 
     Used for objects that move with a speed dependent on the container level
-    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed
+    compute_v: a function, given the fraction the container is filled (in [0,1]),
+    returns the current speed
 
     Parameters
     ----------
@@ -108,8 +110,10 @@ class MultiContainerDependentMovable(Movable, HasMultiContainer):
     MultiContainerDependentMovable class.
 
     Used for objects that move with a speed dependent on the container level.
-    This movable is provided with a MultiContainer, thus can handle container containing different object.
-    compute_v: a function, given the fraction the container is filled (in [0,1]), returns the current speed
+    This movable is provided with a MultiContainer, thus can handle container
+    containing different object.
+    compute_v: a function, given the fraction the container is filled (in [0,1]),
+    returns the current speed
     """
 
     def __init__(self, compute_v, *args, **kwargs):

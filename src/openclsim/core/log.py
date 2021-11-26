@@ -56,7 +56,12 @@ class Log(SimpyObject):
         self.log["ActivityLabel"].append(activity_label)
 
     def get_state(self):
-        """Add an empty instance of the get state function so that it is always available."""
+        """
+        empty instance of the get state function.
+
+        Add an empty instance of the get state function so that
+        it is always available.
+        """
         state = {}
         if hasattr(super(), "get_state"):
             state = super().get_state()
