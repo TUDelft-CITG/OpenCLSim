@@ -19,17 +19,10 @@ To install OpenCLSim, run this command in your terminal. This is the preferred m
 pip install openclsim
 ```
 
-Make sure you also install the  dependencies, which are recorded in the file `requirements.txt`.
-If you have an anaconda setup, you can use the following command:
+For local development use:
 
 ``` bash
-conda install --file requirements.txt
-```
-
-If you are using a pip based environment, you can install the requirements with pip:
-
-``` bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
 If you do not have [pip](https://pip.pypa.io) installed, this [Python installation guide](http://docs.python-guide.org/en/latest/starting/installation/) can guide you through the process. You can read the [documentation](https://openclsim.readthedocs.io/en/latest/installation.html) for other installation methods.
@@ -37,3 +30,23 @@ If you do not have [pip](https://pip.pypa.io) installed, this [Python installati
 ## Examples
 
 The benefit of OpenCLSim is the generic set-up. This set-up allows the creation of complex logistical flows. A number of examples are presented in a seperate [Jupyter Notebook repository](https://github.com/TUDelft-CITG/OpenCLSim-Notebooks). Information on how to use the notebooks is presented in that repository as well.
+
+## Running in Docker
+
+	Best run in WSL to have parameterized mounts. Otherwise in cmd/PS.
+
+	# if you changed the python requirements or Dockerfile: rebuild image, avoid using the old cache
+	docker build --no-cache . -t  openclsim # same name as in yml: image: 'openclsim'
+	
+	# do only this if you did not update requirements
+    docker-compose up -d     # 1st  time: (re)creates container 'openclsim' from image 'openclsim' as defined in yml
+    docker-compose start     # each time: this will run the existing container 'openclsim' as defined in yml
+    docker ps                # see running containers
+    docker exec -it gee bash # run a prompt in container instance 'openclsim' of image 'openclsim'
+	
+	# this row get lot from history completion after rebuild
+    jupyter notebook --ip 0.0.0.0 --allow-root --no-browser --port=8889
+	jn                       # alias for above defined in Dockerfile
+	
+    docker-compose stop      # each time: this will keep your container 'openclsim' incl. modifications and bash history
+    docker-compose down      # last time: destroys container 'openclsim' (not image 'openclsim')
