@@ -102,7 +102,7 @@ class WhileActivity(GenericActivity, ConditionProcessMixin, RegisterSubProcesses
         the sub_processes which is executed in sequence in every iteration
     condition_event
         a condition event provided in the expression language which will stop the
-        iteration as soon as the event is fulfilled.
+        iteration as soon as the event is fullfilled.
     start_event
         the activity will start as soon as this event is processed
         by default will be to start immediately

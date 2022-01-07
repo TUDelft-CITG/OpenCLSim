@@ -1,4 +1,4 @@
-"""Component to move the simulation objecs."""
+"""Component to move the simulation objects."""
 import logging
 
 import shapely.geometry
@@ -20,8 +20,7 @@ class Movable(SimpyObject, Locatable):
 
     Parameters
     ----------
-    v
-        speed
+    v: speed
     """
 
     def __init__(self, v: float = 1, *args, **kwargs):
@@ -33,8 +32,8 @@ class Movable(SimpyObject, Locatable):
         """
         Determine distance between origin and destination.
 
-        Yield the time it takes to travel based on flow properties and load factor of
-        the flow.
+        Yield the time it takes to travel based on speed properties and load factor of
+        the speed.
         """
         # Log the start event
         self.log_entry(
@@ -82,15 +81,15 @@ class ContainerDependentMovable(Movable, HasContainer):
     ContainerDependentMovable class.
 
     Used for objects that move with a speed dependent on the container level
-    compute_v: a function, given the fraction the container is filled (in [0,1]),
-    returns the current speed
 
     Parameters
     ----------
-    v_empty
-        Velocity of the vessel when empty
-    v_full
-        Velocity of the vessel when full
+    compute_v
+        a function that returns the current speed, given the fraction of the
+        the container that is filled (in [0,1]), e.g.:
+            lambda x: x * (v_full - v_empty) + v_empty
+        It can also be constant, e.g.:
+            lambda x: 10
     """
 
     def __init__(self, compute_v, *args, **kwargs):
@@ -110,10 +109,14 @@ class MultiContainerDependentMovable(Movable, HasMultiContainer):
     MultiContainerDependentMovable class.
 
     Used for objects that move with a speed dependent on the container level.
-    This movable is provided with a MultiContainer, thus can handle container
-    containing different object.
-    compute_v: a function, given the fraction the container is filled (in [0,1]),
-    returns the current speed
+    This movable is provided with a MultiContainer, thus can handle a container
+    containing different objects.
+    compute_v
+        a function that returns the current speed, given the fraction of the
+        the container that is filled (in [0,1]), e.g.:
+            lambda x: x * (v_full - v_empty) + v_empty
+        It can also be constant, e.g.:
+            lambda x: 10
     """
 
     def __init__(self, compute_v, *args, **kwargs):

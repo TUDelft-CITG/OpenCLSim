@@ -1,4 +1,4 @@
-"""Component to locate the simulation objecs."""
+"""Component to locate the simulation objects."""
 import pyproj
 import shapely.geometry
 
@@ -6,12 +6,12 @@ import shapely.geometry
 class Locatable:
     """
     Something with a geometry (geojson format).
+    Can be a point as well as a polygon
 
     Parameters
     ----------
-    lat : degrees
-        can be a point as well as a polygon
-    lon : degrees
+    lat : degrees (wgs84)
+    lon : degrees (wgs84)
     """
 
     def __init__(self, geometry, *args, **kwargs):

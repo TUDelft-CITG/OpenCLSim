@@ -18,9 +18,9 @@ class WeatherCriterion:
     window_delay : minutes
         Delay of the window compared to the start of the activity
     maximum
-        maximal value of the  condition
+        maximal value of the condition
     minimum
-        minimum value of the  condition
+        minimum value of the condition
     """
 
     def __init__(
@@ -59,7 +59,7 @@ class WeatherCriterion:
 
 
 class HasWeatherPluginActivity:
-    """Mixin forActivity to initialize WeatherPluginActivity."""
+    """Mixin for Activity to initialize WeatherPluginActivity."""
 
     def __init__(self, metocean_criteria, metocean_df, *args, **kwargs):
         super().__init__(*args, **kwargs)

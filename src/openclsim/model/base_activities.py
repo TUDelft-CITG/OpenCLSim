@@ -72,7 +72,7 @@ class PluginActivity(core.Identifiable, core.Log):
     """
     Base class for all activities which will provide a plugin mechanism.
 
-    The plugin mechanism foresees that the plugin function pre_process is calledbefore
+    The plugin mechanism foresees that the plugin function pre_process is called before
     the activity is executed, while the function post_process is called after the
     activity has been executed.
     """
@@ -112,7 +112,7 @@ class PluginActivity(core.Identifiable, core.Log):
 
 
 class GenericActivity(PluginActivity):
-    """The GenericActivity Class forms a generic class which sets up all activites."""
+    """The GenericActivity Class forms a generic class which sets up all activities."""
 
     def __init__(
         self,
@@ -148,7 +148,7 @@ class GenericActivity(PluginActivity):
         if hasattr(self, "make_container_reservation"):
             self.make_container_reservation()
 
-        # add the activity withs start event to the simpy environment
+        # add the activity with start event to the simpy environment
         self.main_process = self.env.process(
             self.delayed_process(activity_log=self, env=self.env)
         )

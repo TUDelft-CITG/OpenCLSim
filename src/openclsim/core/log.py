@@ -1,4 +1,4 @@
-"""Component to log the simulation objecs."""
+"""Component to log the simulation objects."""
 import datetime
 from enum import Enum
 

@@ -4,7 +4,17 @@ import pandas as pd
 
 
 def get_log_dataframe(simulation_object, activities=[]):
-    """Get the log of the simulation objects in a pandas dataframe."""
+    """Get the log of the simulation objects in a pandas dataframe.
+    
+    Parameters
+    ----------
+    simulation_object
+        object from which the log is returned as a dataframe sorted by "Timestamp"
+    activities: list
+        a list of activity objects that that is used to replace the unique 
+        object id (uuid) with the human readable name.
+    
+    """
 
     id_map = {act.id: act.name for act in activities}
 

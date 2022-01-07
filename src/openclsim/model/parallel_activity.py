@@ -11,9 +11,11 @@ class ParallelActivity(GenericActivity, RegisterSubProcesses):
     This is for executing multiple activities in a dedicated order within a simulation.
     It is a structural activity, which does not require specific resources.
 
-    sub_processes:
+    Parameters
+    ----------
+    sub_processes
         a list of activities to be executed in Parallel.
-    start_event:
+    start_event
         The activity will start as soon as this event is processed
         by default will be to start immediately
     """

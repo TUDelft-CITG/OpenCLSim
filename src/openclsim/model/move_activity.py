@@ -21,16 +21,21 @@ class MoveActivity(GenericActivity):
     has a satisfied method returning a boolean value. True if the condition is
     satisfied, False otherwise.
 
-    destination: object inheriting from HasContainer, HasResource, Locatable,
-    Identifiable and Log
-    mover: moves to 'origin' if it is not already there, is loaded, then moves to
-            'destination' and is unloaded
-           should inherit from Movable, HasContainer, HasResource, Identifiable and Log
-           after the simulation is complete, its log will contain entries for each time
-           it started moving,
-           stopped moving, started loading / unloading and stopped loading / unloading
-    start_event: the activity will start as soon as this event is processed
-                 by default will be to start immediately
+    Parameters
+    ----------
+    destination
+        object inheriting from HasContainer, HasResource, Locatable,
+        Identifiable and Log
+    mover
+        moves to 'origin' if it is not already there, is loaded, then moves 
+        to 'destination' and is unloaded should inherit from 
+        Movable, HasContainer, HasResource, Identifiable and Log
+        after the simulation is complete, its log will contain entries 
+        for each time it started moving, stopped moving, 
+        started loading / unloading and stopped loading / unloading
+    start_event
+        the activity will start as soon as this event is processed
+        by default will be to start immediately
     """
 
     def __init__(
@@ -58,16 +63,23 @@ class MoveActivity(GenericActivity):
         In the process, a move will be made
         by the mover, moving it to the destination.
 
-        activity_log: the core.Log object in which log_entries about the activities
-        progress will be added.
-        env: the simpy.Environment in which the process will be run
-        mover: moves from its current position to the destination
+        Parameters
+        ----------
+        activity_log
+            the core.Log object in which log_entries about the activities
+            progress will be added.
+        env
+            the simpy.Environment in which the process will be run
+        mover
+            moves from its current position to the destination
             should inherit from core.Movable
-        destination: the location the mover will move to
-                    should inherit from core.Locatable
-        engine_order: optional parameter specifying at what percentage of the maximum
-                    speed the mover should sail. for example, engine_order=0.5
-                    corresponds to sailing at 50% of max speed
+        destination
+            the location the mover will move to
+            should inherit from core.Locatable
+        engine_order
+            optional parameter specifying at what percentage of the maximum
+            speed the mover should sail. for example, engine_order=0.5
+            corresponds to sailing at 50% of max speed
         """
         yield from self._request_resource(self.requested_resources, self.mover.resource)
 

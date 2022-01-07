@@ -18,7 +18,7 @@ def get_subprocesses(items):
 
 
 def register_processes(processes):
-    """Register all the processes iteratively."""
+    """Register all the (sub)processes iteratively."""
     items = get_subprocesses(processes)
 
     item_names = [i.name for i in items]
@@ -29,7 +29,7 @@ def register_processes(processes):
 
     registerd_items = []
     for _ in range(100):
-        # Subtracting sets does not work since this changes the order, witch will
+        # Subtracting sets does not work since this changes the order, which will
         # introduce randomness in the output.
         unregistered_items = [
             i for i in items if i.name not in [e.name for e in registerd_items]
@@ -44,6 +44,6 @@ def register_processes(processes):
                 logger.info(e)
     else:
         raise ValueError(
-            "Due to  recursion in the events of the activities, not all the activities "
+            "Due to recursion in the events of the activities, not all the activities "
             "can be registered."
         )

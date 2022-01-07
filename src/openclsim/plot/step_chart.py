@@ -6,7 +6,12 @@ from .log_dataframe import get_log_dataframe
 
 
 def get_step_chart(simulation_objects):
-    """Get the step chart of the container levels."""
+    """Get the step chart of the container levels.
+    
+    Parameters
+    ----------
+    simulation_objects
+    """
 
     fig = plt.figure(figsize=(14, 7))
     for obj in simulation_objects:

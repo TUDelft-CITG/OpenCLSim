@@ -49,7 +49,7 @@ def get_gantt_chart(
     static=False,
     y_scale="text",
 ):
-    """Create a plot of the planning of vessels."""
+    """Create a plotly GANTT chart of the planning of vessels."""
     id_map = id_map if id_map else {}
     act_map = {ves.id: ves.name for ves in vessels}
 

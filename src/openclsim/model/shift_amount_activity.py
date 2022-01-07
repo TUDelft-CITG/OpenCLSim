@@ -18,15 +18,23 @@ class ShiftAmountActivity(GenericActivity):
     To run an activity after it has been initialized call env.run() on the Simpy
     environment with which it was initialized.
 
-
-    origin: container where the source objects are located.
-    destination: container, where the objects are assigned to
-    processor: resource responsible to implement the transfer.
-    amount: the maximum amount of objects to be transfered.
-    duration: time specified in seconds on how long it takes to transfer the objects.
-    id_: in case of MultiContainers the id_ of the container, where the objects should
+    Parameters
+    ----------
+    origin
+        container where the source objects are located.
+    destination
+        container, where the objects are assigned to
+    processor
+        resource responsible to implement the transfer.
+    amount
+        the maximum amount of objects to be transfered.
+    duration
+        time specified in seconds on how long it takes to transfer the objects.
+    id_
+        in case of MultiContainers the id_ of the container, where the objects should
         be removed from or assiged to respectively.
-    start_event: the activity will start as soon as this event is processed
+    start_event
+        the activity will start as soon as this event is processed
         by default will be to start immediately
     """
 
@@ -195,7 +203,7 @@ class ShiftAmountActivity(GenericActivity):
             )
 
     def make_container_reservation(self):
-        self.reserved_amount = self.processor.determine_reservation_amout(
+        self.reserved_amount = self.processor.determine_reservation_amount(
             self.origin, self.destination, amount=self.amount, id_=self.id_
         )
 
