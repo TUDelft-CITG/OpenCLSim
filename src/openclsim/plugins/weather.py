@@ -138,7 +138,10 @@ class WeatherPluginActivity(model.AbstractPluginClass):
             threshold = {col: criterion.maximum}
 
             if orig_data[col].max() < threshold[col]:
-                threshold[col] = orig_data[col].max() - 0.0001
+                return {
+                    "dataset_start": ts_start,
+                    "dataset_stop": ts_stop,
+                    "windows": [[ts_start, ts_stop]]}
 
             data["cur"] = data["cur"] & (data[col] <= threshold[col])
             data[f"{col}_prev"] = data[col].shift(1)
@@ -148,7 +151,10 @@ class WeatherPluginActivity(model.AbstractPluginClass):
             threshold = {col: criterion.minimum}
 
             if orig_data[col].min() > threshold[col]:
-                threshold[col] = orig_data[col].min() + 0.0001
+                return {
+                    "dataset_start": ts_start,
+                    "dataset_stop": ts_stop,
+                    "windows": [[ts_start, ts_stop]]}
 
             data["cur"] = data["cur"] & (data[col] >= threshold[col])
             data[f"{col}_prev"] = data[col].shift(1)
