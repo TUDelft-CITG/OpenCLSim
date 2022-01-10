@@ -5,12 +5,16 @@ import matplotlib.pyplot as plt
 from .log_dataframe import get_log_dataframe
 
 
-def get_step_chart(simulation_objects,defaultcontainername=""):
+def get_step_chart(simulation_objects, container_map={"default":""}):
     """Get the step chart of the container levels.
     
     Parameters
     ----------
     simulation_objects
+        all vessels and sites for which the property "container level"
+        will be plotted.
+    container_map
+        relabel container names, default {"default":""}
     """
 
     fig = plt.figure(figsize=(14, 7))
@@ -23,11 +27,10 @@ def get_step_chart(simulation_objects,defaultcontainername=""):
                     y = list(df["container level"])
                 else:
                     y = [y[container] for y in list(df["container level"])]
-                containername = container if container!="default" else defaultcontainername
                 plt.plot(
                     list(df["Timestamp"]),
                     y,
-                    label=f"{obj.name} {containername}",
+                    label=f"{obj.name} {container_map.get(container,container)}",
                 )
     plt.legend()
     return fig
