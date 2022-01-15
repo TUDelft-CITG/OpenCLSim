@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 from .log_dataframe import get_log_dataframe
 
 
-def get_step_chart(simulation_objects, container_map={"default":""}):
+def get_step_chart(simulation_objects, container_map=None):
     """Get the step chart of the container levels.
-    
+
     Parameters
     ----------
     simulation_objects
@@ -16,6 +16,9 @@ def get_step_chart(simulation_objects, container_map={"default":""}):
     container_map
         relabel container names, default {"default":""}
     """
+    # default argument
+    if container_map is None:
+        container_map = {"default":""}
 
     fig = plt.figure(figsize=(14, 7))
     for obj in simulation_objects:
