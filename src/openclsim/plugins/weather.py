@@ -141,7 +141,8 @@ class WeatherPluginActivity(model.AbstractPluginClass):
                 return {
                     "dataset_start": ts_start,
                     "dataset_stop": ts_stop,
-                    "windows": [[ts_start, ts_stop]]}
+                    "windows": [[ts_start, ts_stop]],
+                }
 
             data["cur"] = data["cur"] & (data[col] <= threshold[col])
             data[f"{col}_prev"] = data[col].shift(1)
@@ -154,7 +155,8 @@ class WeatherPluginActivity(model.AbstractPluginClass):
                 return {
                     "dataset_start": ts_start,
                     "dataset_stop": ts_stop,
-                    "windows": [[ts_start, ts_stop]]}
+                    "windows": [[ts_start, ts_stop]],
+                }
 
             data["cur"] = data["cur"] & (data[col] >= threshold[col])
             data[f"{col}_prev"] = data[col].shift(1)

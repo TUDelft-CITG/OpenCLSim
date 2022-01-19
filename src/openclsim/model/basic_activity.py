@@ -47,20 +47,20 @@ class BasicActivity(GenericActivity):
         Parameters
         ----------
         activity_log
-            the core.Log object in which log_entries about the 
+            the core.Log object in which log_entries about the
             activities progress will be added.
         env
             the simpy.Environment in which the process will be run
         stop_event
-            a simpy.Event object, when this event occurs, the 
-            conditional process will finish executing its current 
+            a simpy.Event object, when this event occurs, the
+            conditional process will finish executing its current
             run of its sub_processes and then finish
         sub_processes
-            an Iterable of methods which will be called with the 
-            activity_log and env parameters and should return a 
-            generator which could be added as a process to a 
-            simpy.Environment the sub_processes will be executed 
-            sequentially, in the order in which they are given as 
+            an Iterable of methods which will be called with the
+            activity_log and env parameters and should return a
+            generator which could be added as a process to a
+            simpy.Environment the sub_processes will be executed
+            sequentially, in the order in which they are given as
             long as the stop_event has not occurred.
         """
 

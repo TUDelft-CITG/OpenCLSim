@@ -27,11 +27,11 @@ class MoveActivity(GenericActivity):
         object inheriting from HasContainer, HasResource, Locatable,
         Identifiable and Log
     mover
-        moves to 'origin' if it is not already there, is loaded, then moves 
-        to 'destination' and is unloaded should inherit from 
+        moves to 'origin' if it is not already there, is loaded, then moves
+        to 'destination' and is unloaded should inherit from
         Movable, HasContainer, HasResource, Identifiable and Log
-        after the simulation is complete, its log will contain entries 
-        for each time it started moving, stopped moving, 
+        after the simulation is complete, its log will contain entries
+        for each time it started moving, stopped moving,
         started loading / unloading and stopped loading / unloading
     start_event
         the activity will start as soon as this event is processed

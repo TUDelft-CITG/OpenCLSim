@@ -4,6 +4,7 @@ import pandas as pd
 
 from openclsim.model import get_subprocesses
 
+
 def get_log_dataframe(simulation_object, id_map=None):
     """Get the log of the simulation objects in a pandas dataframe.
 

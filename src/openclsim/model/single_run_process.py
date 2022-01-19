@@ -17,7 +17,7 @@ def single_run_process(
     unloader,
     start_event=None,
     stop_event=None,
-    requested_resources=None
+    requested_resources=None,
 ):
     """Single run activity for the simulation."""
 

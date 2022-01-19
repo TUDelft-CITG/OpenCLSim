@@ -40,8 +40,12 @@ class Processor(SimpyObject):
         Yields the time it takes to process.
         """
 
-        assert isinstance(origin, HasContainer) # ?? or isinstance(origin, HasContainer)
-        assert isinstance(destination, HasContainer) # ?? or isinstance(destination, HasContainer)
+        assert isinstance(
+            origin, HasContainer
+        )  # ?? or isinstance(origin, HasContainer)
+        assert isinstance(
+            destination, HasContainer
+        )  # ?? or isinstance(destination, HasContainer)
         assert isinstance(origin, HasResource)
         assert isinstance(destination, HasResource)
         assert isinstance(self, Log)

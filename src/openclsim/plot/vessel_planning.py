@@ -5,9 +5,10 @@ import random
 import plotly.graph_objs as go
 from plotly.offline import init_notebook_mode, iplot
 
+from openclsim.model import get_subprocesses
+
 from .log_dataframe import get_log_dataframe
 
-from openclsim.model import get_subprocesses
 
 def get_colors(n):
     """Get random colors for the activities."""
@@ -51,7 +52,7 @@ def get_gantt_chart(
     y_scale="text",
 ):
     """Create a plotly GANTT chart of the planning of vessels.
-    
+
     Parameters
     ----------
     concepts
@@ -61,11 +62,11 @@ def get_gantt_chart(
     id_map
         by default only activity in concepts are resolved. Activities
         associated with vessels and sites are not resolved. id_map solves this:
-        * a list of top-activities of which also all sub-activities 
+        * a list of top-activities of which also all sub-activities
           will be resolved, e.g.: [while_activity]
         * a manual id_map to resolve uuids to labels, e.g. {'uuid1':'name1'}
     """
-    if type(id_map)==list:
+    if type(id_map) == list:
         id_map = {act.id: act.name for act in get_subprocesses(id_map)}
     else:
         id_map = id_map if id_map else {}

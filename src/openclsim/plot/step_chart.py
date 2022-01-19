@@ -18,7 +18,7 @@ def get_step_chart(simulation_objects, container_map=None):
     """
     # default argument
     if container_map is None:
-        container_map = {"default":""}
+        container_map = {"default": ""}
 
     fig = plt.figure(figsize=(14, 7))
     for obj in simulation_objects:

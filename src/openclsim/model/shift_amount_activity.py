@@ -32,7 +32,7 @@ class ShiftAmountActivity(GenericActivity):
         time specified in seconds on how long it takes to transfer the objects.
     phase
         Either the phase ("loading" or "unloading") or the duration is required.
-        Use phase with LoadingFunction/UnLoadingFunction  
+        Use phase with LoadingFunction/UnLoadingFunction
     id_
         in case of MultiContainers the id_ of the container, where the objects should
         be removed from or assiged to respectively.
