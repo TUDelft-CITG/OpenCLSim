@@ -9,7 +9,7 @@ RUN pip install --upgrade pip
 RUN pip install jupyter
 
 RUN echo 'alias la="ls -la"' >> ~/.bashrc
-RUN echo 'alias jn="jupyter notebook --ip 0.0.0.0 --allow-root --no-browser --port=8889"' >> ~/.bashrc
+RUN echo 'alias jn="jupyter notebook --ip 0.0.0.0 --allow-root --no-browser --port=8888"' >> ~/.bashrc
 
 # install python package
 WORKDIR /openclsim

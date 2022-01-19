@@ -31,21 +31,24 @@ If you do not have [pip](https://pip.pypa.io) installed, this [Python installati
 
 The benefit of OpenCLSim is the generic set-up. This set-up allows the creation of complex logistical flows. A number of examples are presented in a seperate [Jupyter Notebook repository](https://github.com/TUDelft-CITG/OpenCLSim-Notebooks). Information on how to use the notebooks is presented in that repository as well.
 
-## Running in Docker
+## Running in Docker while developing
 
 	Best run in WSL to have parameterized mounts. Otherwise in cmd/PS.
+	
+	For developers issue yourselves
+	pip install -e .
 
 	# if you changed the python requirements or Dockerfile: rebuild image, avoid using the old cache
 	docker build --no-cache . -t  openclsim # same name as in yml: image: 'openclsim'
 	
 	# do only this if you did not update requirements
-    docker-compose up -d     # 1st  time: (re)creates container 'openclsim' from image 'openclsim' as defined in yml
-    docker-compose start     # each time: this will run the existing container 'openclsim' as defined in yml
+    docker-compose -f docker-compose_dev.yml up -d     # 1st  time: (re)creates container 'openclsim' from image 'openclsim' as defined in yml
+    docker-compose -f docker-compose_dev.yml  start     # each time: this will run the existing container 'openclsim' as defined in yml
     docker ps                # see running containers
     docker exec -it gee bash # run a prompt in container instance 'openclsim' of image 'openclsim'
 	
 	# this row get lot from history completion after rebuild
-    jupyter notebook --ip 0.0.0.0 --allow-root --no-browser --port=8889
+    jupyter notebook --ip 0.0.0.0 --allow-root --no-browser --port=8888
 	jn                       # alias for above defined in Dockerfile
 	
     docker-compose stop      # each time: this will keep your container 'openclsim' incl. modifications and bash history

@@ -9,4 +9,4 @@ services:
     environment:
       - GITHUB_TOKEN=${GITHUB_TOKEN}
     ports:
-      - "8889:8889"
+      - "8889:8888"
