@@ -10,8 +10,7 @@ class Locatable:
 
     Parameters
     ----------
-    lat : degrees (wgs84)
-    lon : degrees (wgs84)
+    geometry : Shapely object
     """
 
     def __init__(self, geometry, *args, **kwargs):

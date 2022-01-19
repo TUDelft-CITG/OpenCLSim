@@ -22,7 +22,7 @@ pip install openclsim
 For local development use:
 
 ``` bash
-pip install -e .
+pip install -e .[testing]
 ```
 
 If you do not have [pip](https://pip.pypa.io) installed, this [Python installation guide](http://docs.python-guide.org/en/latest/starting/installation/) can guide you through the process. You can read the [documentation](https://openclsim.readthedocs.io/en/latest/installation.html) for other installation methods.
