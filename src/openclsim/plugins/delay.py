@@ -3,7 +3,7 @@ import openclsim.model as model
 
 
 class HasDelayPlugin:
-    """Mixin forActivity to initialize WeatherPluginActivity."""
+    """Mixin for Activity to initialize WeatherPluginActivity."""
 
     def __init__(self, delay_percentage=None, *args, **kwargs):
         super().__init__(*args, **kwargs)

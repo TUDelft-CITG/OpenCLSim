@@ -16,10 +16,17 @@ def single_run_process(
     loader,
     unloader,
     start_event=None,
-    stop_event=[],
-    requested_resources={},
+    stop_event=None,
+    requested_resources=None,
 ):
     """Single run activity for the simulation."""
+
+    if stop_event is None:
+        stop_event = []
+
+    if requested_resources is None:
+        requested_resources = {}
+
     if stop_event == []:
         stop_event = [
             {

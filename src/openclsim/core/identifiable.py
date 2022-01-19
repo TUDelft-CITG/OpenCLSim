@@ -1,4 +1,4 @@
-"""Component to identify the simulation objecs."""
+"""Component to identify the simulation objects."""
 
 import uuid
 
@@ -10,7 +10,7 @@ class Identifiable:
     Parameters
     ----------
     name
-        a name
+        a human readable name to be used in logs and charts
     ID : UUID
         a unique id generated with uuid
     description

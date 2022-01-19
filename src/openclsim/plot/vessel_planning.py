@@ -5,6 +5,8 @@ import random
 import plotly.graph_objs as go
 from plotly.offline import init_notebook_mode, iplot
 
+from openclsim.model import get_subprocesses
+
 from .log_dataframe import get_log_dataframe
 
 
@@ -41,7 +43,7 @@ def get_segments(df, activity, y_val):
 
 
 def get_gantt_chart(
-    vessels,
+    concepts,
     activities=None,
     id_map=None,
     colors=None,
@@ -49,13 +51,30 @@ def get_gantt_chart(
     static=False,
     y_scale="text",
 ):
-    """Create a plot of the planning of vessels."""
-    id_map = id_map if id_map else {}
-    act_map = {ves.id: ves.name for ves in vessels}
+    """Create a plotly GANTT chart of the planning of vessels.
+
+    Parameters
+    ----------
+    concepts
+        a list of vessels, sites or activities for which to plot all activities
+    activities
+        additional activities to be plotted, if not yet in concepts
+    id_map
+        by default only activity in concepts are resolved. Activities
+        associated with vessels and sites are not resolved. id_map solves this:
+        * a list of top-activities of which also all sub-activities
+          will be resolved, e.g.: [while_activity]
+        * a manual id_map to resolve uuids to labels, e.g. {'uuid1':'name1'}
+    """
+    if type(id_map) == list:
+        id_map = {act.id: act.name for act in get_subprocesses(id_map)}
+    else:
+        id_map = id_map if id_map else {}
+    act_map = {ves.id: ves.name for ves in concepts}
 
     if activities is None:
         activities = []
-        for obj in vessels:
+        for obj in concepts:
             activities.extend(set(obj.log["ActivityID"]))
 
     if colors is None:
@@ -67,9 +86,9 @@ def get_gantt_chart(
     # organise logdata into 'dataframes'
     dataframes = []
     names = []
-    for vessel in vessels:
+    for vessel in concepts:
         if len(vessel.log["Timestamp"]) > 0:
-            df = get_log_dataframe(vessel, vessels).rename(
+            df = get_log_dataframe(vessel, concepts).rename(
                 columns={
                     "Activity": "log_string",
                     "ActivityState": "activity_state",
@@ -109,7 +128,7 @@ def get_gantt_chart(
         )
 
     timestamps = []
-    logs = [o.log["Timestamp"] for o in vessels]
+    logs = [o.log["Timestamp"] for o in concepts]
     for log in logs:
         timestamps.extend(log)
 

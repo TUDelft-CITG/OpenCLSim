@@ -15,9 +15,9 @@ class Processor(SimpyObject):
 
     Adds the loading and unloading components and checks for possible downtime.
 
-    If the processor class is used to allow "loading" or "unloading" the mixins
+    If the processor class is used to allow "loading" or "unloading", the mixins
     "LoadingFunction" and "UnloadingFunction" should be added as well.
-    If no functions are used a subcycle should be used, which is possible with the
+    If no functions are used, a subcycle should be used, which is possible with the
     mixins "LoadingSubcycle" and "UnloadingSubcycle".
     """
 
@@ -40,10 +40,8 @@ class Processor(SimpyObject):
         Yields the time it takes to process.
         """
 
-        assert isinstance(origin, HasContainer) or isinstance(origin, HasContainer)
-        assert isinstance(destination, HasContainer) or isinstance(
-            destination, HasContainer
-        )
+        assert isinstance(origin, HasContainer)
+        assert isinstance(destination, HasContainer)
         assert isinstance(origin, HasResource)
         assert isinstance(destination, HasResource)
         assert isinstance(self, Log)
@@ -96,7 +94,7 @@ class Processor(SimpyObject):
         """
         Check if all the material is available.
 
-        If the amount is not available in the origin or in the destination
+        If the amount is not available in the origin or in the destination,
         yield a put or get. Time will move forward until the amount can be
         retrieved from the origin or placed into the destination.
         """
@@ -110,7 +108,7 @@ class Processor(SimpyObject):
             amount,
             id_,
         )
-        # Corrent the container reservation with the actual amount
+        # Correct the container reservation with the actual amount
         yield method(
             amount - reserved_amount,
             f"{id_}_reservations",
@@ -172,7 +170,7 @@ class Processor(SimpyObject):
 
         return new_amount
 
-    def determine_reservation_amout(
+    def determine_reservation_amount(
         self, origin, destination, amount=None, id_="default"
     ):
         return (
@@ -197,7 +195,7 @@ class LoadingFunction:
     loading_rate : amount / second
         The rate at which units are loaded per second
     load_manoeuvring : seconds
-        The time it takes to manoeuvring in minutes
+        The time it takes to manoeuvre in minutes
     """
 
     def __init__(
@@ -240,7 +238,7 @@ class UnloadingFunction:
     unloading_rate : volume / second
         the rate at which units are loaded per second
     unload_manoeuvring : minutes
-        the time it takes to manoeuvring in minutes
+        the time it takes to manoeuvre in minutes
     """
 
     def __init__(

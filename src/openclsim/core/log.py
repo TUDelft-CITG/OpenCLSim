@@ -1,4 +1,4 @@
-"""Component to log the simulation objecs."""
+"""Component to log the simulation objects."""
 import datetime
 from enum import Enum
 
@@ -39,13 +39,17 @@ class Log(SimpyObject):
         activity_id,
         activity_state=LogState.UNKNOWN,
         additional_state=None,
-        activity_label={},
+        activity_label=None,
     ):
         object_state = self.get_state()
         if additional_state:
             object_state.update(additional_state)
 
-        if activity_label != {}:
+        # default argument
+        if activity_label is None or activity_label == {}:
+            activity_label = {}
+        else:
+            # if an activity_label is passed
             assert activity_label.get("type") is not None
             assert activity_label.get("ref") is not None
 
