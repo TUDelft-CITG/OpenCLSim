@@ -21,8 +21,8 @@ class Locatable:
         self.wgs84 = pyproj.Geod(ellps="WGS84")
 
     def is_at(self, locatable, tolerance=100):
-        current_location = shapely.geometry.asShape(self.geometry)
-        other_location = shapely.geometry.asShape(locatable.geometry)
+        current_location = shapely.geometry.shape(self.geometry)
+        other_location = shapely.geometry.shape(locatable.geometry)
         _, _, distance = self.wgs84.inv(
             current_location.x, current_location.y, other_location.x, other_location.y
         )

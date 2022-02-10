@@ -53,8 +53,13 @@ class Movable(SimpyObject, Locatable):
         # Check out the time based on duration of sailing event
         yield self.env.timeout(sailing_duration)
 
+        if (hasattr(self, 'calculate_total_power_required')):
+            self.calculate_total_resistance(self.v, 50)
+            self.calculate_total_power_required()
+
+
         # Set mover geometry to destination geometry
-        self.geometry = shapely.geometry.asShape(destination.geometry)
+        self.geometry = shapely.geometry.shape(destination.geometry)
 
         # Log the stop event
         self.log_entry(
@@ -69,8 +74,8 @@ class Movable(SimpyObject, Locatable):
 
     def sailing_duration(self, origin, destination, engine_order, verbose=True):
         """Determine the sailing duration."""
-        orig = shapely.geometry.asShape(self.geometry)
-        dest = shapely.geometry.asShape(destination.geometry)
+        orig = shapely.geometry.shape(self.geometry)
+        dest = shapely.geometry.shape(destination.geometry)
         _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
 
         return distance / (self.current_speed * engine_order)
