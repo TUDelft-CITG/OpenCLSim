@@ -1,5 +1,5 @@
 """Test package."""
-
+import numpy as np
 import shapely.geometry
 import simpy
 
@@ -166,7 +166,7 @@ def test_delay_plugin():
     model.register_processes([while_activity])
     my_env.run()
 
-    assert my_env.now == 6354.357654924601
+    np.testing.assert_allclose(my_env.now, 6354.357654924601)
     assert_log(while_activity)
     assert_log(hopper)
     assert_log(from_site)

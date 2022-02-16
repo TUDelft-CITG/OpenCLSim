@@ -1,4 +1,5 @@
 """Test package."""
+import numpy as np
 import shapely.geometry
 import simpy
 
@@ -88,7 +89,7 @@ def test_wraped_single_run():
     model.register_processes([while_activity])
     my_env.run()
 
-    assert my_env.now == 13699.734162066252
+    np.testing.assert_allclose(my_env.now, 13699.734162066252)
 
     assert_log(hopper)
     assert_log(from_site)
