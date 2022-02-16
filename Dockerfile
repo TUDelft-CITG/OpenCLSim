@@ -1,18 +1,19 @@
-# Start with docker image from anaconda
-FROM continuumio/miniconda3:4.6.14
+# use python package as base
+FROM python:3.9-slim
+ARG GITHUB_TOKEN
 
-ADD . /OpenCLSim
-WORKDIR /OpenCLSim
+# upgrade packages
+RUN apt update && apt install -y git procps
+RUN pip install --upgrade pip
 
-RUN conda install numpy pandas nomkl pyproj shapely setuptools
+RUN pip install jupyter
 
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt && \
-    pip install -r test-requirements.txt && \
-    pip install -r additional-requirements.txt && \
-    pip install -e .
+RUN echo 'alias la="ls -la"' >> ~/.bashrc
+RUN echo 'alias jn="jupyter notebook --ip 0.0.0.0 --allow-root --no-browser --port=8888"' >> ~/.bashrc
 
-EXPOSE 8887
+# install python package
+WORKDIR /openclsim
+ADD . /openclsim
+RUN pip install -e .
 
-RUN echo 'alias jn="jupyter notebook --ip 0.0.0.0 --allow-root --no-browser --port=8887"' >> ~/.bashrc
-CMD ["tail -f /dev/null"]
+CMD ["sh", "-c", "tail -f /dev/null"]

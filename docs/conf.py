@@ -48,7 +48,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = u"OpenCLSim"
+project = u"openclsim"
 copyright = u"2019, TU Delft"
 author = u"Mark van Koningsveld"
 

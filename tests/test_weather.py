@@ -185,9 +185,8 @@ def test_weather():
 
     model.register_processes([while_activity])
     my_env.run()
-    duration = my_env.now - simulation_start.timestamp()
 
-    assert duration > 0, "duration should be > 0"
+    assert my_env.now == 1262737885.6491823
 
     assert_log(hopper)
     assert_log(while_activity)

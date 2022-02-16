@@ -1,10 +1,7 @@
-# docker-compose -f docker-compose.yml -f .devcontainer/docker-compose.dev.yml up -d
 version: '3.2'
 
 services:
-  main:
+  package:
     # Execute nonsense command to ensure that the docker keeps running,
     # but does not start the pyramid servers as these are not needed for testing
     command: bash -c "tail -f /dev/null"
-    volumes:
-      - .:/OpenCLSim
