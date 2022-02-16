@@ -1,9 +1,0 @@
-setuptools>=38.3
-pandas>=0.24.0
-numpy
-simpy
-shapely
-pyproj
-nose
-plotly
-matplotlib
