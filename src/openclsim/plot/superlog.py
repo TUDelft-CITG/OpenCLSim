@@ -8,6 +8,7 @@ cp_activity_id (stands for critical path activity id).
 
 """
 # external (pypi) dependencies
+import datetime as dt
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.graph_objs as go
@@ -248,8 +249,12 @@ def reshape_superlog(super_log):
                                                       'Timestamp'],
                                                   "end_time": super_log.loc[idx_end, "Timestamp"]}, index=[0])],
                            ignore_index=True, sort=False)
+
     # ASSUME that activities with duration zero can be discarded
-    df_new = df_new.loc[df_new.loc[:, "duration"] > 0, :]
+    if isinstance(df_new.loc[:, 'duration'][0], dt.timedelta):
+        df_new = df_new.loc[df_new.loc[:, "duration"] > dt.timedelta(seconds=0), :]
+    else:
+        df_new = df_new.loc[df_new.loc[:, "duration"] > 0, :]
 
     assert len(to_handle) == 0, f"These have not been handled {to_handle}"
     df_new = df_new.sort_values(by=["start_time", "SourceObject"])
