@@ -10,10 +10,11 @@ cp_activity_id (stands for critical path activity id).
 # external (pypi) dependencies
 import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.graph_objs as go
+from plotly.offline import init_notebook_mode, iplot
 
 # openclsim imports
-from .log_dataframe import get_log_dataframe
-from .graph import ActivityGraph
+import openclsim.plot as plot
 
 # a color list for plot function
 DEF_COLORS = ["#ff0000", "#bfbfbf", "#305496", "#00b0f0", "#ffff00", "#00b050", "#990101", "#ED7D31", "#7030A0",
@@ -84,9 +85,9 @@ class SuperLog:
 
         return list_dependencies
 
-    def make_wip_gantt_mpl(self, incl_legend=True):
+    def make_gantt_mpl(self, incl_legend=True):
         """
-        make a rough matplotlib gantt plot. For testing purposes
+        Create a matplotlib gantt plot of the superlog. For testing purposes
 
         Returns
         ----------
@@ -123,6 +124,71 @@ class SuperLog:
             fig.subplots_adjust(right=0.6)  # space for legend on right
 
         return fig, ax
+
+    def make_gantt_plotly(self, static=False):
+        """
+        Create a plotly GANTT chart of the superlog
+        """
+        traces = []
+        color_count = 0
+        # loop over unique combinations of source object and Activity
+        for source_object in self.df_super_log.loc[:, "SourceObject"].unique():
+            bool_selection = self.df_super_log.loc[:, "SourceObject"] == source_object
+            for idx, activity in enumerate(self.df_super_log.loc[bool_selection, "Activity"].unique()):
+                # plot all activities of this object
+                color = DEF_COLORS[color_count % len(DEF_COLORS)]
+                color_count += 1
+                bool_selection_activity = (self.df_super_log.loc[:, "Activity"] == activity) & bool_selection
+                start_times = self.df_super_log.loc[bool_selection_activity, "start_time"].tolist()
+                end_times = self.df_super_log.loc[bool_selection_activity, "end_time"].tolist()
+                x_list = [[s, e, e] for s, e in zip(start_times, end_times)]
+                x = [item for sublist in x_list for item in sublist]
+                y = [source_object, source_object, None] * len(x)
+                traces.append(
+                    go.Scatter(
+                        name=activity,
+                        x=x,
+                        y=y,
+                        mode="lines",
+                        hoverinfo="y+name",
+                        line=dict(color=color, width=10),
+                        connectgaps=False))
+
+        # add critical path based on 'names'
+        if "is_critical" in list(self.df_super_log.columns):
+            x_critical = self.df_super_log.loc[self.df_super_log.loc[:, "is_critical"], "start_time"].tolist()
+            y = self.df_super_log.loc[self.df_super_log.loc[:, "is_critical"], "SourceObject"].tolist()
+            traces.append(go.Scatter(name="critical_path",
+                                     x=x_critical,
+                                     y=y,
+                                     mode="markers",
+                                     hoverinfo="name",
+                                     line=dict(color='Black', width=5),
+                                     connectgaps=False))
+            print("DONE")
+
+        layout = go.Layout(
+            title="GANTT Chart",
+            hovermode="closest",
+            legend=dict(x=0, y=-0.2, orientation="h"),
+            xaxis=dict(
+                title="Time",
+                titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
+                range=[min(self.df_super_log.loc[:, "start_time"]), max(self.df_super_log.loc[:, "end_time"])],
+            ),
+            yaxis=dict(
+                title="Activities",
+                titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
+            ),
+        )
+
+        if static is False:
+            init_notebook_mode(connected=True)
+            fig = go.Figure(data=traces, layout=layout)
+
+            return iplot(fig, filename="news-source")
+        else:
+            return {"data": traces, "layout": layout}
 
     @classmethod
     def from_objects(cls, objects, id_map=None):
@@ -182,6 +248,8 @@ def reshape_superlog(super_log):
                                                       'Timestamp'],
                                                   "end_time": super_log.loc[idx_end, "Timestamp"]}, index=[0])],
                            ignore_index=True, sort=False)
+    # ASSUME that activities with duration zero can be discarded
+    df_new = df_new.loc[df_new.loc[:, "duration"] > 0, :]
 
     assert len(to_handle) == 0, f"These have not been handled {to_handle}"
     df_new = df_new.sort_values(by=["start_time", "SourceObject"])
@@ -238,7 +306,7 @@ def combine_logs(objects, id_map=None):
     # concat
     log_all = pd.DataFrame()
     for obj in objects:
-        log = get_log_dataframe(obj, id_map)
+        log = plot.get_log_dataframe(obj, id_map)
         log['SourceObject'] = obj.name
 
         log_all = pd.concat([log_all, log])
@@ -261,7 +329,7 @@ def get_superlog_with_critical_path(list_objects, id_map):
     """
     my_superlog = SuperLog.from_objects(list_objects, id_map)
     my_graph = ActivityGraph(my_superlog.df_super_log, my_superlog.dependencies)
-    list_actvities_critical = my_graph.mark_critical_activities_v2()
+    list_actvities_critical = my_graph.mark_critical_activities()
     # also test plot - also takes time
     log_out = my_superlog.df_super_log.copy()
     log_out.loc[:, 'is_critical'] = log_out.loc[:, 'cp_activity_id'].isin(list_actvities_critical)
