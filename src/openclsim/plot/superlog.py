@@ -14,7 +14,8 @@ import plotly.graph_objs as go
 from plotly.offline import init_notebook_mode, iplot
 
 # openclsim imports
-import openclsim.plot as plot
+from .log_dataframe import get_log_dataframe
+from .graph import ActivityGraph
 
 # a color list for plot function
 DEF_COLORS = ["#ff0000", "#bfbfbf", "#305496", "#00b0f0", "#ffff00", "#00b050", "#990101", "#ED7D31", "#7030A0",
@@ -165,7 +166,6 @@ class SuperLog:
                                      hoverinfo="name",
                                      line=dict(color='Black', width=5),
                                      connectgaps=False))
-            print("DONE")
 
         layout = go.Layout(
             title="GANTT Chart",
@@ -306,7 +306,7 @@ def combine_logs(objects, id_map=None):
     # concat
     log_all = pd.DataFrame()
     for obj in objects:
-        log = plot.get_log_dataframe(obj, id_map)
+        log = get_log_dataframe(obj, id_map)
         log['SourceObject'] = obj.name
 
         log_all = pd.concat([log_all, log])
