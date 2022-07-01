@@ -7,10 +7,10 @@ import os
 import pandas as pd
 
 # module to be tested
-import core.superlog as cp
+import openclsim.plot.superlog as cp
 
 # import some code to run simulation
-import tests.data.demo_simulation as demo
+from .data.demo_simulation import run_simulation
 
 data_path = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -34,20 +34,20 @@ def test_dependencies():
 def test_plot():
     """ test making of plot """
     my_log = cp.SuperLog(pd.read_excel(os.path.join(data_path, "super_log.xlsx")))
-    fig, ax = my_log.make_wip_gantt_mpl()
+    fig, ax = my_log.make_gantt_mpl()
     assert len(ax.get_legend().texts) == 21, "legend with 21 entries expected"
     assert len(ax.get_yticks()) == 6, "6 yticks expected"
 
     # completely not true, but just add this column and tesplot with black asterix
     my_log.df_super_log.loc[:, "is_critical"] = True
-    fig, ax = my_log.make_wip_gantt_mpl()
+    fig, ax = my_log.make_gantt_mpl()
     assert len(ax.get_legend().texts) == 21, "legend with 21 entries expected"
     assert len(ax.get_yticks()) == 6, "6 yticks expected"
 
 
 def test_from_objects():
     """ test from objects"""
-    dict_objects_simulation = demo.run_simulation(2, 100)
+    dict_objects_simulation = run_simulation(2, 100)
     list_objects_with_log = list(dict_objects_simulation["vessels"].values()) + \
                             [dict_objects_simulation['from_site'], dict_objects_simulation['to_site'],
                              dict_objects_simulation['to_site2']]

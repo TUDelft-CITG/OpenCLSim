@@ -8,11 +8,8 @@ import pytest
 import pandas as pd
 
 # module to be tested
-import core.graph as cg
-import core.superlog as cp
-
-# import some code to run simulation
-import tests.data.demo_simulation as demo
+import openclsim.plot.graph as cg
+import openclsim.plot.superlog as cp
 
 
 # %% data
