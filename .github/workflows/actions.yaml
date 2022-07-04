@@ -39,7 +39,7 @@ jobs:
           context: .
           builder: ${{ steps.buildx.outputs.name }}
           file: ./Dockerfile
-          tags: openclsim_main:latest
+          tags: openclsim:latest
           outputs: type=docker,dest=/tmp/image.tar
           cache-from: type=gha, scope=${{ github.workflow }}
           cache-to: type=gha, scope=${{ github.workflow }}
@@ -79,14 +79,13 @@ jobs:
         run: docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d --remove-orphans
 
       - name: List installed packages
-        if: ${{ matrix.group == 1 }} 
-        run: docker-compose exec -T main bash -c "pip freeze"
+        run: docker-compose exec -T package bash -c "pip freeze"
 
       - name: Run tests
         run: >-
-          docker-compose exec -T main bash -c '
+          docker-compose exec -T package bash -c '
             pytest \
-              --cov=openclsim \
+              --cov=src \
               --cov=app \
               --durations=3 \
               --cov-config=setup.cfg \
@@ -97,11 +96,10 @@ jobs:
               tests src'
 
       - name: Extract coverage from container
-        run: docker-compose exec -T main bash -c "cat .coverage" > .coverage
+        run: docker-compose exec -T package bash -c "cat .coverage" > .coverage
 
       - name: Upload coverage
         uses: actions/upload-artifact@v2
         with:
-          name: coverage${{ matrix.group }}
           path: .coverage
           retention-days: 1
