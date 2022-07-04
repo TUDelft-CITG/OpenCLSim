@@ -78,7 +78,7 @@ jobs:
       - name: Run docker-compose up
         run: docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d --remove-orphans
 
-      - name: List installed packages
+      - name: Install test dependecies
         run: docker-compose exec -T package bash -c "pip install -e .[testing]"
 
       - name: List installed packages
