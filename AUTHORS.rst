@@ -5,14 +5,10 @@ Credits
 Development Lead
 ----------------
 * `Mark van Koningsveld`_
-* `Joris den Uijl`_
 * `Fedor Baart`_
-* `Anne Hommelberg`_
 
-.. _Mark van Koningsveld: https://www.tudelft.nl/citg/over-faculteit/afdelingen/hydraulic-engineering/sections/rivers-ports-waterways-and-dredging-engineering/staff/prof-dr-ir-m-mark-van-koningsveld/
-.. _Joris den Uijl: https://github.com/uijl
-.. _Fedor Baart: https://github.com/SiggyF
-.. _Anne Hommelberg: https://github.com/AnneHommelberg
+.. _Mark van Koningsveld: https://www.tudelft.nl/citg/over-faculteit/afdelingen/hydraulic-engineering/sections/rivers-ports-waterways-and-dredging-engineering/staff/van-koningsveld-m/
+.. _Fedor Baart: https://www.deltares.nl/en/experts/fedor-baart-3/
 
 Contributors
 ------------
@@ -23,14 +19,19 @@ Various MSc projects
 * `Vibeke van der Bilt`_, 2019. **Assessing emission performance of dredging projects.** MSc thesis. Delft University of Technology, Civil Engineering and Geosciences, Hydraulic Engineering - Ports and Waterways. Delft, the Netherlands.
 * `Pieter van Halem`_, 2019. **Route optimization in dynamic currents. Navigation system for the North Sea and Wadden Sea.** MSc thesis. Delft University of Technology, Civil Engineering and Geosciences, Environmental Fluid Mechanics. Delft, the Netherlands.
 * `Servaas Kievits`_, 2019. **A framework for the impact assessment of low discharges on the performance of inland waterway transport.** MSc thesis. Delft University of Technology, Civil Engineering and Geosciences, Hydraulic Engineering - Ports and Waterways. Delft, the Netherlands.
+* `Tijmen Wienk`_, 2021. **Evaluation of the resilience of inland waterway transport to increasing periods of low flow, following a Dynamic Adaptive Policy Pathway approach.** MSc thesis. Delft University of Technology, Civil Engineering and Geosciences, Hydraulic Engineering - Ports and Waterways. Delft, the Netherlands.
+* `Thijs Reedijk`_, 2021. **Improving workability estimates for the offshore wind industry: Estimating the workability of marine operations more accurately using the dynamic response motions of vessels and turbine structures.** MSc thesis. Delft University of Technology, Civil Engineering and Geosciences, Hydraulic Engineering - Ports and Waterways. Delft, the Netherlands.
+
 
 .. _Joris den Uijl,: http://resolver.tudelft.nl/uuid:8d82b44c-59e3-4307-a0af-03a20f1a931e
 .. _Vibeke van der Bilt: http://resolver.tudelft.nl/uuid:ab6d12ea-34fe-4577-b72c-6aa688e0d1bf
 .. _Pieter van Halem: http://resolver.tudelft.nl/uuid:5d34d333-34fe-4181-95b6-d8d82f72d979
 .. _Servaas Kievits: http://resolver.tudelft.nl/uuid:b457c9c3-922e-4016-9580-f79a2549128d
+.. _Tijmen Wienk: http://resolver.tudelft.nl/uuid:43901f74-2246-4a0b-87f0-9108ecbd157d
+.. _Thijs Reedijk: http://resolver.tudelft.nl/uuid:bdc995a3-0ce7-4e0b-9cc6-1a3c8e640a52
 
 Ongoing PhD work
 
-* `Frederik Vinke`_, 2019. **Climate proofing the inland water transport system in the Netherlands.** PhD thesis. Delft University of Technology, Civil Engineering and Geosciences, Hydraulic Engineering - Ports and Waterways. Delft, the Netherlands.
+* `Frederik Vinke`_, 2022. **Climate proofing the inland water transport system in the Netherlands.** PhD thesis. Delft University of Technology, Civil Engineering and Geosciences, Hydraulic Engineering - Ports and Waterways. Delft, the Netherlands.
 
 .. _Frederik Vinke: https://repository.tudelft.nl
