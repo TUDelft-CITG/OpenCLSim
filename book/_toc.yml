@@ -9,8 +9,33 @@ parts:
     - file: docs/AUTHORS.rst
 - caption: Basics
   chapters:
+    - file: Command_basics
+      title: Command Prompt
+    - file: Anaconda_basics
+      title: Anaconda
+- caption: Basics of OpenCLSim
+  chapters:
     - file: examples/01_BasicActivity.ipynb
     - file: examples/02_MoveActivity.ipynb
     - file: examples/03_ShiftAmountActivity.ipynb
     - file: examples/04_SequenceActivity.ipynb
     - file: examples/05_WhileActivity.ipynb
+    - file: examples/06_RepeatActivity.ipynb    
+    - file: examples/14_SingleRun.ipynb    
+- caption: More complex simulation
+  chapters:
+    - file: examples/07_WhileActivity_with_ShiftAmount.ipynb
+    - file: examples/08_ParallelActivity.ipynb
+    - file: examples/09_wrapped_single_run_process.ipynb
+    - file: examples/10_MultiContainer.ipynb
+    - file: examples/11_Process_synchronization.ipynb
+    - file: examples/12_Complex_synchronization.ipynb
+    - file: examples/13_Resource_synchronization.ipynb
+    - file: examples/15_Subcycle.ipynb
+- caption: Advanced simulation
+  chapters:
+    - file: examples/16_Feeder.ipynb
+    - file: examples/17_SingleRun_with_WeatherCriterion.ipynb
+    - file: examples/18_SingleRun_with_HasDelayPlugin.ipynb
+    - file: examples/23_Simple_feeder_process_MC.ipynb
+    - file: examples/24_cutters and barges.ipynb
