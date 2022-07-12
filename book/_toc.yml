@@ -2,6 +2,15 @@
 # Learn more at https://jupyterbook.org/customize/toc.html
 
 format: jb-book
-root: intro
-chapters:
-- file: examples/01_BasicActivity.ipynb
+root: Intro_draft.rst
+parts:
+- caption: Context
+  chapters:
+    - file: docs/AUTHORS.rst
+- caption: Basics
+  chapters:
+    - file: examples/01_BasicActivity.ipynb
+    - file: examples/02_MoveActivity.ipynb
+    - file: examples/03_ShiftAmountActivity.ipynb
+    - file: examples/04_SequenceActivity.ipynb
+    - file: examples/05_WhileActivity.ipynb
