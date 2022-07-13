@@ -36,10 +36,9 @@ parts:
     - file: examples/13_Resource_synchronization.ipynb
     - file: examples/15_Subcycle.ipynb
 - caption: Working with plugins
-  chapter
+  chapters:
     - file: examples/17_SingleRun_with_WeatherCriterion.ipynb
     - file: examples/18_SingleRun_with_HasDelayPlugin.ipynb
-
 - caption: Real world examples
   chapters:
     - file: examples/16_Feeder.ipynb
