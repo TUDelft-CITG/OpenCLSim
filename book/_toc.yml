@@ -25,11 +25,11 @@ parts:
     - file: examples/05_WhileActivity.ipynb
     - file: examples/06_RepeatActivity.ipynb    
     - file: examples/08_ParallelActivity.ipynb
+- caption: More complex cycles
+  chapters:
     - file: examples/07_WhileActivity_with_ShiftAmount.ipynb
     - file: examples/14_SingleRun.ipynb    
     - file: examples/09_wrapped_single_run_process.ipynb
-- caption: More complex cycles
-  chapters:
     - file: examples/10_MultiContainer.ipynb
     - file: examples/11_Process_synchronization.ipynb
     - file: examples/12_Complex_synchronization.ipynb
