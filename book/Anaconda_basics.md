@@ -38,13 +38,13 @@ When you begin using conda, you already have a default environment named `base`.
 
 ### Creating and checking environments
 
-- To create a new environment named `opentnsimenv`, that uses python version 3.5 specifically (This is just an example, if you leave out `python=3.5` conda installs the same Python version you used when you downloaded and installed Anaconda. This is recommended when you've just downloaded Anaconda):
+- To create a new environment named `openclsimenv`, that uses python version 3.5 specifically (This is just an example, if you leave out `python=3.5` conda installs the same Python version you used when you downloaded and installed Anaconda. This is recommended when you've just downloaded Anaconda):
 
-`conda create --name opentnsimenv python=3.5`
+`conda create --name openclsimenv python=3.5`
 
-- To activate the environment named `opentnsimenv`:
+- To activate the environment named `openclsimenv`:
 
-`conda activate opentnsimenv`
+`conda activate openclsimenv`
 
 - Verify which version of Python is in your current environment:
 
@@ -97,9 +97,9 @@ When you begin using conda, you already have a default environment named `base`.
 
 ### Activating an environment and starting Jupyter Notebook
 
-- To work on notebooks in an environment name `opentnsimenv`, after just opening the Anaconda Prompt, first activate the `opentnsimenv` environment:
+- To work on notebooks in an environment name `openclsimenv`, after just opening the Anaconda Prompt, first activate the `openclsimenv` environment:
 
-`conda activate opentnsimenv`
+`conda activate openclsimenv`
 
 - Navigate to the correct directory in which you want to save your work. Save yourself some work by copying the correct directory in the Windows file explorer (Google this if you don't know how) and pasting it after `cd`:
 

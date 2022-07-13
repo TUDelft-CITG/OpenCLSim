@@ -17,7 +17,3 @@ You can read more on how to use the command line by selecting one of the two tut
 
 
 <!-- #endregion -->
-
-```python
-
-```

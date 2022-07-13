@@ -35,3 +35,16 @@ Ongoing PhD work
 * `Frederik Vinke`_, 2022. **Climate proofing the inland water transport system in the Netherlands.** PhD thesis. Delft University of Technology, Civil Engineering and Geosciences, Hydraulic Engineering - Ports and Waterways. Delft, the Netherlands.
 
 .. _Frederik Vinke: https://repository.tudelft.nl
+
+Various publications
+
+* Mark van Koningsveld, Henk Verheij, Poonam Taneja and Huib de Vriend (2021). "Ports and Waterways - Navigating the Changing World." Delft University of Technology, Hydraulic engineering, Ports and Waterways, Delft,
+The Netherlands. https://doi.org/10.5074/T.2021.004 
+* Frederik Vinke, Mark van Koningsveld, Cornelis van Dorsser, Pieter van Gelder, Fedor Baar and Tiedo Vellinga (2022). "Cascading effects of sustained low water on inland shipping." Climate Risk Management 35(102159):100400. https://doi.org/10.1016/j.crm.2022.100400
+* Gerben J. de Boer, Pieter van Halem, Bas Hoonhout, Fedor Baart and Mark van Koningsveld (2022). "OpenCLSim: Discrete Event Dredging Fleet Simulation to Optimise Project Costs." Conference proceedings: WODCON XXIII, Copenhagen, Denmark. https://www.researchgate.net/publication/360852095_OpenCLSim_Discrete_Event_Dredging_Fleet_Simulation_to_Optimise_Project_Costs
+
+Company contributions (alphabetical)
+
+* Deltares
+* Van Oord
+* Witteveen + Bos
