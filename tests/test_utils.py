@@ -2,6 +2,8 @@
 import numpy as np
 import pandas as pd
 
+import openclsim.utils
+
 
 def assert_log(simulation_object):
     """Parse the new_log into benchmarkable data."""
@@ -64,3 +66,9 @@ def assert_log(simulation_object):
         assert_log(sub_process)
 
     return new_log
+
+
+def test_notebook_path():
+    """test if we can find the notebook path"""
+    notebook_path = openclsim.utils.find_notebook_path()
+    assert "notebook" in str(notebook_path), "notebook should be in the notebook path"
