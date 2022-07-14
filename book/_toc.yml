@@ -49,5 +49,5 @@ parts:
     - file: examples/18_SingleRun_with_HasDelayPlugin.ipynb
 - caption: Advanced post-processing
   chapters:
-    - file: examples/critical_paths.ipynb
-    - file: examples/registry_parsing.ipynb
+    - file: examples/30_CriticalPath.ipynb
+    - file: examples/31_RegistryParsing.ipynb
