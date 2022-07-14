@@ -25,10 +25,10 @@ parts:
     - file: examples/05_WhileActivity.ipynb
     - file: examples/06_RepeatActivity.ipynb    
     - file: examples/08_ParallelActivity.ipynb
-- caption: More complex cycles
-  chapters:
     - file: examples/07_WhileActivity_with_ShiftAmount.ipynb
     - file: examples/14_SingleRun.ipynb    
+- caption: More complex cycles
+  chapters:
     - file: examples/11_Process_synchronization.ipynb
     - file: examples/12_Complex_synchronization.ipynb
     - file: examples/13_Resource_synchronization.ipynb
@@ -36,10 +36,10 @@ parts:
     - file: examples/20_Triggers_in_RepeatActivity.ipynb
     - file: examples/21_Triggers_in_ParallelActivity.ipynb
     - file: examples/10_MultiContainer.ipynb
+    - file: examples/09_wrapped_single_run_process.ipynb
     - file: examples/15_Subcycle.ipynb
 - caption: Real world examples
   chapters:
-    - file: examples/09_wrapped_single_run_process.ipynb
     - file: examples/16_Feeder.ipynb
     - file: examples/23_Simple_feeder_process_MC.ipynb
     - file: examples/24_cutters and barges.ipynb
