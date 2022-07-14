@@ -47,3 +47,7 @@ parts:
   chapters:
     - file: examples/17_SingleRun_with_WeatherCriterion.ipynb
     - file: examples/18_SingleRun_with_HasDelayPlugin.ipynb
+- caption: Advanced post-processing
+  chapters:
+    - file: examples/critical_paths.ipynb
+    - file: examples/registry_parsing.ipynb
