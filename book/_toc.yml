@@ -7,13 +7,13 @@ parts:
 - caption: Context
   chapters:
     - file: docs/AUTHORS.rst
-    - file: How_to_read_the_examples.rst
 - caption: Basics
   chapters:
     - file: Command_basics
       title: Command Prompt
     - file: Anaconda_basics
       title: Anaconda
+    - file: How_to_read_the_examples.rst
 - caption: Basic activities
   chapters:
     - file: examples/01_BasicActivity.ipynb
