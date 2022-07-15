@@ -15,9 +15,8 @@ import pandas as pd
 import plotly.graph_objs as go
 from plotly.offline import init_notebook_mode, iplot
 
-from .graph import ActivityGraph
-
 # openclsim imports
+from .graph import ActivityGraph
 from .log_dataframe import get_log_dataframe
 
 # a color list for plot function
