@@ -34,29 +34,29 @@ class ActivityGraph:
     """
 
     # name of added columns to the super_log
-    __COLNAME_CRITICAL = 'is_critical'
-    __COLNAME_GRAPH_EDGE = 'graph_edge'
+    __COLNAME_CRITICAL = "is_critical"
+    __COLNAME_GRAPH_EDGE = "graph_edge"
 
     # mapping from column name to attribute
-    __SUPERLOG_COLUMNS = {'Activity': 'activity',
-                          'SourceObject': 'source_object',
-                          'start_time': 'start_time',
-                          'state': 'state',
-                          'duration': 'duration',
-                          'end_time': 'end_time',
-                          'cp_activity_id': 'cp_activity_id'}
+    __SUPERLOG_COLUMNS = {
+        "Activity": "activity",
+        "SourceObject": "source_object",
+        "start_time": "start_time",
+        "state": "state",
+        "duration": "duration",
+        "end_time": "end_time",
+        "cp_activity_id": "cp_activity_id",
+    }
 
     # fixed edge types
-    __EDGE_TYPES = {0: 'activity',
-                    1: 'dependency'}
+    __EDGE_TYPES = {0: "activity", 1: "dependency"}
 
     # criticality
-    __CRITICAL = {0: False,
-                  1: True}
+    __CRITICAL = {0: False, 1: True}
 
     # prefixes to use for node start and end
-    __NODE_START_PREFIX = 'start'
-    __NODE_END_PREFIX = 'end'
+    __NODE_START_PREFIX = "start"
+    __NODE_END_PREFIX = "end"
 
     def __init__(self, super_log, list_dependencies):
         """Initiate the object."""
@@ -71,13 +71,11 @@ class ActivityGraph:
         self.G = nx.DiGraph()
         self.__construct_graph()
         self.n_activities = len(
-            [e for e in self.G.edges
-             if self.G.edges[e]['edge_type'] == 'activity']
+            [e for e in self.G.edges if self.G.edges[e]["edge_type"] == "activity"]
         )
 
         # get the duration of longest path
-        self.max_duration = nx.dag_longest_path_length(self.G,
-                                                       weight='duration')
+        self.max_duration = nx.dag_longest_path_length(self.G, weight="duration")
 
     def __check_log(self, super_log):
         """
@@ -88,12 +86,9 @@ class ActivityGraph:
         """
         # check expected columns
         missing_columns = [
-            c for c in self.__SUPERLOG_COLUMNS.keys()
-            if c not in super_log.columns
+            c for c in self.__SUPERLOG_COLUMNS.keys() if c not in super_log.columns
         ]
-        assert missing_columns == [], (
-            f'super_log is missing columns {missing_columns}'
-        )
+        assert missing_columns == [], f"super_log is missing columns {missing_columns}"
 
         return super_log
 
@@ -106,13 +101,10 @@ class ActivityGraph:
         ``(end cp-activity, start cp-activity)``, which will be prepended to
         comply with the nodes in the graph to be created.
         """
-        assert isinstance(list_dependencies, list), (
-            'list_dependencies must be a list'
-        )
+        assert isinstance(list_dependencies, list), "list_dependencies must be a list"
 
         list_dependencies = [
-            (f'{self.__NODE_END_PREFIX} {end}',
-             f'{self.__NODE_START_PREFIX} {start}')
+            (f"{self.__NODE_END_PREFIX} {end}", f"{self.__NODE_START_PREFIX} {start}")
             for end, start in list_dependencies
         ]
 
@@ -128,11 +120,10 @@ class ActivityGraph:
         super_log = super_log.rename(columns=self.__SUPERLOG_COLUMNS)
 
         # make sure the duration is numeric
-        super_log['duration'] = super_log['end_time'] - super_log['start_time']
-        if isinstance(super_log['duration'][0], dt.timedelta):
-            super_log['duration'] = \
-                super_log['duration'].dt.total_seconds().astype(int)
-        elif isinstance(super_log['duration'][0], (float, int)):
+        super_log["duration"] = super_log["end_time"] - super_log["start_time"]
+        if isinstance(super_log["duration"][0], dt.timedelta):
+            super_log["duration"] = super_log["duration"].dt.total_seconds().astype(int)
+        elif isinstance(super_log["duration"][0], (float, int)):
             pass
         else:
             raise Exception(
@@ -141,9 +132,9 @@ class ActivityGraph:
             )
 
         # make sure all durations are positive
-        assert all(super_log['duration'] >= 0), (
-            'Negative durations encountered in activities.'
-        )
+        assert all(
+            super_log["duration"] >= 0
+        ), "Negative durations encountered in activities."
 
         return super_log
 
@@ -159,9 +150,9 @@ class ActivityGraph:
         self.__link_activity_edges()
 
         # check if the resulting graph is acyclic
-        assert nx.is_directed_acyclic_graph(self.G), (
-            'The resulting graph appears to be cyclic!'
-        )
+        assert nx.is_directed_acyclic_graph(
+            self.G
+        ), "The resulting graph appears to be cyclic!"
 
     def __create_activity_edges(self):
         """
@@ -173,47 +164,49 @@ class ActivityGraph:
         """
         for ix, params in self._critical_log.iterrows():
             # names of the nodes by start/end of
-            name_start = f"{self.__NODE_START_PREFIX} "\
-                f"{params['cp_activity_id']}"
+            name_start = f"{self.__NODE_START_PREFIX} " f"{params['cp_activity_id']}"
             name_end = f"{self.__NODE_END_PREFIX} {params['cp_activity_id']}"
 
             # add the start node
             if name_start not in self.G.nodes:
-                self.G.add_node(name_start,
-                                pos=(params['start_time'], ix),
-                                time=params['start_time'],
-                                cp_activity_id=params['cp_activity_id'])
+                self.G.add_node(
+                    name_start,
+                    pos=(params["start_time"], ix),
+                    time=params["start_time"],
+                    cp_activity_id=params["cp_activity_id"],
+                )
 
             # add the end node
             if name_end not in self.G.nodes:
-                self.G.add_node(name_end,
-                                pos=(params['end_time'], ix),
-                                time=params['end_time'],
-                                cp_activity_id=params['cp_activity_id'])
+                self.G.add_node(
+                    name_end,
+                    pos=(params["end_time"], ix),
+                    time=params["end_time"],
+                    cp_activity_id=params["cp_activity_id"],
+                )
 
             # add an edge
             if (name_start, name_end) in self.G.edges:
                 # edge is there, only add source object
-                self.G.edges[(name_start, name_end)
-                             ]['source_object'] += [params['source_object']]
+                self.G.edges[(name_start, name_end)]["source_object"] += [
+                    params["source_object"]
+                ]
             else:
                 # add the edge
                 kwargs = {
-                    'node_start': name_start,
-                    'node_end': name_end,
-                    'activity': params['activity'],
-                    'source_object': [params['source_object']],
-                    'start_time': params['start_time'],
-                    'state': params['state'],
-                    'duration': params['duration'],
-                    'end_time': params['end_time'],
-                    'cp_activity_id': params['cp_activity_id'],
-                    'edge_type': self.__EDGE_TYPES[0],
-                    self.__COLNAME_CRITICAL: self.__CRITICAL[0]
+                    "node_start": name_start,
+                    "node_end": name_end,
+                    "activity": params["activity"],
+                    "source_object": [params["source_object"]],
+                    "start_time": params["start_time"],
+                    "state": params["state"],
+                    "duration": params["duration"],
+                    "end_time": params["end_time"],
+                    "cp_activity_id": params["cp_activity_id"],
+                    "edge_type": self.__EDGE_TYPES[0],
+                    self.__COLNAME_CRITICAL: self.__CRITICAL[0],
                 }
-                self.G.add_edge(name_start,
-                                name_end,
-                                **kwargs)
+                self.G.add_edge(name_start, name_end, **kwargs)
 
     def __link_activity_edges(self):
         """
@@ -225,8 +218,8 @@ class ActivityGraph:
         """
         for name_start, name_end in self.list_dependencies:
             # extract some information on the times
-            start_time = self.G.nodes[name_start]['time']
-            end_time = self.G.nodes[name_end]['time']
+            start_time = self.G.nodes[name_start]["time"]
+            end_time = self.G.nodes[name_end]["time"]
             duration = end_time - start_time
 
             if isinstance(duration, dt.timedelta):
@@ -235,36 +228,35 @@ class ActivityGraph:
                 pass
             else:
                 raise Exception(
-                    f"Duration computed as type {duration} "
-                    "is not supported!"
+                    f"Duration computed as type {duration} " "is not supported!"
                 )
 
             # add the edge from END to START
             kwargs = {
-                'node_start': name_start,
-                'node_end': name_end,
-                'activity': None,
-                'source_object': [None],
-                'start_time': start_time,
-                'state': None,
-                'duration': duration,
-                'end_time': end_time,
-                'cp_activity_id': None,
-                'edge_type': self.__EDGE_TYPES[1],
-                self.__COLNAME_CRITICAL: self.__CRITICAL[0]
+                "node_start": name_start,
+                "node_end": name_end,
+                "activity": None,
+                "source_object": [None],
+                "start_time": start_time,
+                "state": None,
+                "duration": duration,
+                "end_time": end_time,
+                "cp_activity_id": None,
+                "edge_type": self.__EDGE_TYPES[1],
+                self.__COLNAME_CRITICAL: self.__CRITICAL[0],
             }
-            self.G.add_edge(name_start,
-                            name_end,
-                            **kwargs)
+            self.G.add_edge(name_start, name_end, **kwargs)
 
-    def __get_list_critical_edges(self,
-                                  discount_graph=None,
-                                  list_critical=None,
-                                  list_noncritical=None,
-                                  to_discount=None,
-                                  max_duration=None,
-                                  t_max_end=None,
-                                  duration_discounted_prev=None):
+    def __get_list_critical_edges(
+        self,
+        discount_graph=None,
+        list_critical=None,
+        list_noncritical=None,
+        to_discount=None,
+        max_duration=None,
+        t_max_end=None,
+        duration_discounted_prev=None,
+    ):
         """
         Create a list of edges on a longest path in the graph.
 
@@ -292,16 +284,15 @@ class ActivityGraph:
             # get an initial longest path
             longest_path = nx.dag_longest_path(self.G, weight="duration")
             list_critical = [
-                i for i in zip(longest_path[:-1], longest_path[1:])
-                if self.G.edges[i]['edge_type'] == 'activity'
+                i
+                for i in zip(longest_path[:-1], longest_path[1:])
+                if self.G.edges[i]["edge_type"] == "activity"
             ]
             logging.debug(f"found initial longest path {list_critical}")
 
             # get the end time of the initial longest path
-            t_max_end = self.G.nodes[longest_path[-1]]['time']
-            logging.debug(
-                f"max duration {self.max_duration} and t_max end {t_max_end}"
-            )
+            t_max_end = self.G.nodes[longest_path[-1]]["time"]
+            logging.debug(f"max duration {self.max_duration} and t_max end {t_max_end}")
 
             # ready to continue
             list_noncritical = []
@@ -312,21 +303,18 @@ class ActivityGraph:
         # any following iteration
         else:
             # get the current longest path in the discount graph
-            longest_path = nx.dag_longest_path(discount_graph,
-                                               weight="duration")
+            longest_path = nx.dag_longest_path(discount_graph, weight="duration")
             lp_edges = [
-                i for i in zip(longest_path[:-1], longest_path[1:])
-                if self.G.edges[i]['edge_type'] == 'activity'
+                i
+                for i in zip(longest_path[:-1], longest_path[1:])
+                if self.G.edges[i]["edge_type"] == "activity"
             ]
 
             # get the original duration
-            lp_duration = nx.path_weight(
-                self.G, longest_path, weight="duration"
-            )
-            t_end = self.G.nodes[longest_path[-1]]['time']
+            lp_duration = nx.path_weight(self.G, longest_path, weight="duration")
+            t_end = self.G.nodes[longest_path[-1]]["time"]
             logging.debug(
-                f"longest path found: duration {lp_duration} and t_end "
-                f"{t_end}."
+                f"longest path found: duration {lp_duration} and t_end " f"{t_end}."
             )
 
             # see if this path is a feasible longest path in the original
@@ -344,9 +332,7 @@ class ActivityGraph:
                     list_critical += to_add_critical
                     feasible_longest = True
             else:
-                to_add_discount = [
-                    edge for edge in lp_edges if edge not in to_discount
-                ]
+                to_add_discount = [edge for edge in lp_edges if edge not in to_discount]
                 if len(to_add_discount) > 0:
                     logging.debug("adding to discount")
                     to_discount += to_add_discount
@@ -356,13 +342,13 @@ class ActivityGraph:
             logging.debug("discounting all")
             # in one go discount all activity edges in critical path
             list_edges = [
-                i for i in zip(longest_path[:-1], longest_path[1:])
-                if self.G.edges[i]['edge_type'] == 'activity'
+                i
+                for i in zip(longest_path[:-1], longest_path[1:])
+                if self.G.edges[i]["edge_type"] == "activity"
             ]
             for edge in list_edges:
-                discount_graph.edges[edge]["duration"] = 10 ** -4
-                self.G.edges[edge][self.__COLNAME_CRITICAL] = \
-                    self.__CRITICAL[1]
+                discount_graph.edges[edge]["duration"] = 10**-4
+                self.G.edges[edge][self.__COLNAME_CRITICAL] = self.__CRITICAL[1]
             yet_to_discount = []
         else:
             yet_to_discount = [
@@ -383,7 +369,7 @@ class ActivityGraph:
             to_discount=yet_to_discount,
             max_duration=max_duration,
             t_max_end=t_max_end,
-            duration_discounted_prev=duration_discounted_prev
+            duration_discounted_prev=duration_discounted_prev,
         )
 
     def mark_critical_activities(self):
@@ -400,7 +386,7 @@ class ActivityGraph:
 
         # convert to activities and return
         list_activities = [
-            self.G.edges[edge]['cp_activity_id'] for edge in edges_critical
+            self.G.edges[edge]["cp_activity_id"] for edge in edges_critical
         ]
         print(f"-- total elapsed time {time.time() - process_start} seconds")
 
