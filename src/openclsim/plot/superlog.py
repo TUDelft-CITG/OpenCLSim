@@ -9,14 +9,15 @@ cp_activity_id (stands for critical path activity id).
 """
 # external (pypi) dependencies
 import datetime as dt
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.graph_objs as go
 from plotly.offline import init_notebook_mode, iplot
 
+from .graph import ActivityGraph
 # openclsim imports
 from .log_dataframe import get_log_dataframe
-from .graph import ActivityGraph
 
 # a color list for plot function
 DEF_COLORS = ["#ff0000", "#bfbfbf", "#305496", "#00b0f0", "#ffff00", "#00b050", "#990101", "#ED7D31", "#7030A0",
@@ -67,7 +68,7 @@ class SuperLog:
             # and find cp_activities that END when this one STARTS
             bool_this_activity = self.df_super_log.loc[:, 'cp_activity_id'] == cp_act
             bool_end_when_start = self.df_super_log.loc[:, 'end_time'] == \
-                                  self.df_super_log.loc[bool_this_activity, 'start_time'].iloc[0]
+                self.df_super_log.loc[bool_this_activity, 'start_time'].iloc[0]
             bool_shared_source = self.df_super_log.loc[:, 'SourceObject'].isin(
                 list(self.df_super_log.loc[bool_this_activity, 'SourceObject']))
             # so standard dependencies requires identical time and (at least 1) shared Source Object

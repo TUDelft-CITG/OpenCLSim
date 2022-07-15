@@ -4,6 +4,7 @@ test for module core.superlog.py
 python -m pytest tests/test_superlog.py --cov=superlog.py
 """
 import os
+
 import pandas as pd
 
 # module to be tested
@@ -49,8 +50,8 @@ def test_from_objects():
     """ test from objects"""
     dict_objects_simulation = run_simulation(2, 100)
     list_objects_with_log = list(dict_objects_simulation["vessels"].values()) + \
-                            [dict_objects_simulation['from_site'], dict_objects_simulation['to_site'],
-                             dict_objects_simulation['to_site2']]
+        [dict_objects_simulation['from_site'], dict_objects_simulation['to_site'],
+         dict_objects_simulation['to_site2']]
     my_log = cp.SuperLog.from_objects(list_objects_with_log,
                                       id_map=list(dict_objects_simulation['activities'].values()))
     # my_combi = cp.combine_logs(list_objects_with_log, id_map=list(dict_objects_simulation['activities'].values()))

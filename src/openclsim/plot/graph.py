@@ -14,12 +14,12 @@ Intended use is as follows:
 
 
 """
-import time
-import logging
 import copy
 import datetime as dt
-import networkx as nx
+import logging
+import time
 
+import networkx as nx
 
 # %%
 

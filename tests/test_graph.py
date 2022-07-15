@@ -4,13 +4,13 @@ test for module core.graph.py
 python -m pytest tests/test_graph.py --cov=graph.py
 """
 import os
-import pytest
+
 import pandas as pd
+import pytest
 
 # module to be tested
 import openclsim.plot.graph as cg
 import openclsim.plot.superlog as cp
-
 
 # %% data
 data_path = os.path.join(os.path.dirname(__file__), 'data')
@@ -56,6 +56,3 @@ def test_path_finder(super_log, dependencies):
         "instance of list expected"
     )
     assert len(list_critical) == 102, "expected 102 critical activities"
-
-
-

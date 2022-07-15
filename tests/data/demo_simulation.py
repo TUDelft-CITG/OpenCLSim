@@ -1,9 +1,8 @@
-import simpy
 import shapely.geometry
+import simpy
 
 import openclsim.core as core
 import openclsim.model as model
-
 
 Site = type(
     "Site",
@@ -79,12 +78,12 @@ def run_simulation(nt_barges, total_amount):
     # vessel_last wait till whiletask done
     vessel_last = TransportProcessingResource(
         env=my_env,
-        name=f"vessel_last",
+        name="vessel_last",
         geometry=location_from_site,
         capacity=10,
         compute_v=lambda x: 10
     )
-    vessels[f"vessel_last"] = vessel_last
+    vessels["vessel_last"] = vessel_last
 
     activities = {}
     for i in range(nt_barges):
@@ -103,14 +102,14 @@ def run_simulation(nt_barges, total_amount):
                 sub_processes=[
                     model.BasicActivity(
                         env=my_env,
-                        name=f"basic activity:" + vessels[f"vessel{i}"].name,
+                        name="basic activity:" + vessels[f"vessel{i}"].name,
                         registry=registry,
                         duration=duration,
                         additional_logs=[vessels[f"vessel{i}"]],  # TODO add stop event for vessel 1 if...
                     ),
                     model.MoveActivity(
                         env=my_env,
-                        name=f"sailing empty:" + vessels[f"vessel{i}"].name,
+                        name="sailing empty:" + vessels[f"vessel{i}"].name,
                         registry=registry,
                         mover=vessels[f"vessel{i}"],
                         destination=from_site,
@@ -118,7 +117,7 @@ def run_simulation(nt_barges, total_amount):
                     ),
                     model.ShiftAmountActivity(
                         env=my_env,
-                        name=f"loading:" + vessels[f"vessel{i}"].name,
+                        name="loading:" + vessels[f"vessel{i}"].name,
                         registry=registry,
                         processor=vessels[f"vessel{i}"],
                         origin=from_site,
@@ -129,7 +128,7 @@ def run_simulation(nt_barges, total_amount):
                     ),
                     model.MoveActivity(
                         env=my_env,
-                        name=f"sailing full:" + vessels[f"vessel{i}"].name,
+                        name="sailing full:" + vessels[f"vessel{i}"].name,
                         registry=registry,
                         mover=vessels[f"vessel{i}"],
                         destination=to_site,
@@ -137,7 +136,7 @@ def run_simulation(nt_barges, total_amount):
                     ),
                     model.ShiftAmountActivity(
                         env=my_env,
-                        name=f"unloading:" + vessels[f"vessel{i}"].name,
+                        name="unloading:" + vessels[f"vessel{i}"].name,
                         registry=registry,
                         processor=vessels[f"vessel{i}"],
                         origin=vessels[f"vessel{i}"],
@@ -162,14 +161,14 @@ def run_simulation(nt_barges, total_amount):
     requested_resources = {}
     amount = 5
     duration = 100
-    activities[f"activity_vessel0"] = model.SequentialActivity(
+    activities["activity_vessel0"] = model.SequentialActivity(
         env=my_env,
-        name=f"sequential_v0",
+        name="sequential_v0",
         registry=registry,
         sub_processes=[
             model.BasicActivity(
                 env=my_env,
-                name=f"basic activity vessel_last",
+                name="basic activity vessel_last",
                 registry=registry,
                 duration=duration,
                 additional_logs=[vessel_last],
@@ -180,7 +179,7 @@ def run_simulation(nt_barges, total_amount):
             ),
             model.MoveActivity(
                 env=my_env,
-                name=f"sailing empty: vessel_last",
+                name="sailing empty: vessel_last",
                 registry=registry,
                 mover=vessel_last,
                 destination=from_site,
@@ -188,7 +187,7 @@ def run_simulation(nt_barges, total_amount):
             ),
             model.ShiftAmountActivity(
                 env=my_env,
-                name=f"loading vessel_last",
+                name="loading vessel_last",
                 registry=registry,
                 processor=vessel_last,
                 origin=from_site,
@@ -199,7 +198,7 @@ def run_simulation(nt_barges, total_amount):
             ),
             model.MoveActivity(
                 env=my_env,
-                name=f"sailing full vessel_last",
+                name="sailing full vessel_last",
                 registry=registry,
                 mover=vessel_last,
                 destination=to_site2,
@@ -207,7 +206,7 @@ def run_simulation(nt_barges, total_amount):
             ),
             model.ShiftAmountActivity(
                 env=my_env,
-                name=f"unloading vessel_last",
+                name="unloading vessel_last",
                 registry=registry,
                 processor=vessel_last,
                 origin=vessel_last,
