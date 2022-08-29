@@ -40,7 +40,7 @@ class ActivityGraph:
     # mapping from column name to attribute
     __SUPERLOG_COLUMNS = {
         "Activity": "activity",
-        "SourceObject": "source_object",
+        "SimulationObject": "source_object",
         "start_time": "start_time",
         "state": "state",
         "duration": "duration",
@@ -122,7 +122,8 @@ class ActivityGraph:
         # make sure the duration is numeric
         super_log["duration"] = super_log["end_time"] - super_log["start_time"]
         if isinstance(super_log["duration"][0], dt.timedelta):
-            super_log["duration"] = super_log["duration"].dt.total_seconds().astype(int)
+            logging.debug("Converting duration to seconds (float)")
+            super_log["duration"] = round(super_log["duration"].dt.total_seconds(), 3)
         elif isinstance(super_log["duration"][0], (float, int)):
             pass
         else:
@@ -230,7 +231,8 @@ class ActivityGraph:
                 raise Exception(
                     f"Duration computed as type {duration} " "is not supported!"
                 )
-
+            if duration > 0:
+                logging.debug(f"dependency with duration {duration}")
             # add the edge from END to START
             kwargs = {
                 "node_start": name_start,
@@ -291,13 +293,16 @@ class ActivityGraph:
             logging.debug(f"found initial longest path {list_critical}")
 
             # get the end time of the initial longest path
+            t_start = self.G.nodes[longest_path[0]]["time"]
             t_max_end = self.G.nodes[longest_path[-1]]["time"]
-            logging.debug(f"max duration {self.max_duration} and t_max end {t_max_end}")
+
+            logging.debug(
+                f"max duration {round(self.max_duration, 2)}, t_start {t_start} and t_max end {t_max_end}"
+            )
 
             # ready to continue
             list_noncritical = []
             to_discount = []
-            lp_duration = self.max_duration
             feasible_longest = True
 
         # any following iteration
@@ -311,15 +316,23 @@ class ActivityGraph:
             ]
 
             # get the original duration
-            lp_duration = nx.path_weight(self.G, longest_path, weight="duration")
+            lp_duration_discounted = nx.path_weight(
+                discount_graph, longest_path, weight="duration"
+            )
+            lp_duration = round(
+                nx.path_weight(self.G, longest_path, weight="duration"), 2
+            )
+            t_start = self.G.nodes[longest_path[0]]["time"]
             t_end = self.G.nodes[longest_path[-1]]["time"]
             logging.debug(
-                f"longest path found: duration {lp_duration} and t_end " f"{t_end}."
+                f"longest path found: duration {lp_duration}, t_start {t_start} and t_end "
+                f"{t_end}. "
+                f"(discounted duration {lp_duration_discounted})"
             )
 
             # see if this path is a feasible longest path in the original
             # i.e. must be max duration and same end time
-            if lp_duration == self.max_duration and t_end == t_max_end:
+            if lp_duration == round(self.max_duration, 2) and t_end == t_max_end:
                 # create list of not-yet-marked-as-critical critical edges
                 to_add_critical = [
                     edge for edge in lp_edges if edge not in list_critical
@@ -355,6 +368,7 @@ class ActivityGraph:
                 edge for edge in to_discount if edge not in list_noncritical
             ]
             if len(yet_to_discount) > 0:
+                logging.debug(f"Discounting {yet_to_discount[-1]}")
                 discount_graph.edges[yet_to_discount[-1]]["duration"] = 10**-8
                 list_noncritical.append(yet_to_discount[-1])
                 yet_to_discount = yet_to_discount[:-1]

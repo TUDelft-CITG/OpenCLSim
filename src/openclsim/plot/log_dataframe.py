@@ -3,6 +3,7 @@
 import pandas as pd
 
 from openclsim.model import get_subprocesses
+from openclsim.plot.graph_dependencies import DependencyGraph
 
 
 def get_log_dataframe(simulation_object, id_map=None):
@@ -44,3 +45,46 @@ def get_log_dataframe(simulation_object, id_map=None):
         ],
         axis=1,
     )
+
+
+def get_log_dataframe_activity(activity, keep_only_base=True):
+    """Get the log of the activity object in a pandas dataframe.
+
+    Parameters
+    ----------
+    activity : object
+        object from which the log is returned as a dataframe sorted by "Timestamp"
+    keep_only_base : boolean
+        if True (default) only the base (containing no sub_processes) activities are kept in pd.DataFrame output
+    """
+
+    list_all_activities = get_subprocesses(activity)
+    id_map = {act.id: act.name for act in list_all_activities}
+
+    df_all = pd.DataFrame()
+    for sub_activity in list_all_activities:
+
+        df = (
+            pd.DataFrame(sub_activity.log)
+                .sort_values(by=["Timestamp"])
+                .sort_values(by=["Timestamp"])
+        )
+
+        df_concat = pd.concat(
+            [
+                df.filter(items=["ActivityID"]),
+                pd.DataFrame(sub_activity.log).filter(["Timestamp", "ActivityState"]),
+                pd.DataFrame(sub_activity.log["ObjectState"]),
+            ],
+            axis=1,
+        )
+
+        df_all = pd.concat([df_all, df_concat], axis=0)
+        df_all.loc[:, "Activity"] = df_all.loc[:, "ActivityID"].replace(id_map)
+
+    if keep_only_base:
+        # filter out all non-base activities
+        my_graph = DependencyGraph([activity])
+        df_all = df_all.loc[df_all.loc[:, "ActivityID"].isin(my_graph.getListBaseActivities()), :]
+
+    return df_all
