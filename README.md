@@ -7,7 +7,7 @@
 
 # OpenCLSim
 
-**Open** source **C**omplex **L**ogistics **Sim**ulation - Rule driven scheduling of cyclic activities for in-depth comparison of alternative operating strategies.
+**Open** source **C**omplex **L**ogistics **Sim**ulation - Rule driven scheduling of cyclic activities for in-depth comparison of alternative operating strategies. For background please read our [WODCON 2022 paper](https://www.dredging.org/resources/ceda-publications-online/conference-proceedings/abstract/1126), also available at [ResearchGate](https://www.researchgate.net/publication/360852095_OpenCLSim_Discrete_Event_Dredging_Fleet_Simulation_to_Optimise_Project_Costs).
 
 Documentation is found [here](https://openclsim.readthedocs.io).
 
