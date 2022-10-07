@@ -50,7 +50,7 @@ def get_gantt_chart(
     web=False,
     static=False,
     y_scale="text",
-    critical_path=None
+    critical_path=None,
 ):
     """Create a plotly GANTT chart of the planning of vessels.
 
@@ -130,7 +130,7 @@ def get_gantt_chart(
                 y=[item for sublist in y_nest for item in sublist],
                 mode="lines",
                 hoverinfo="name",
-                line=dict(color="red", width=default_blockwidth+4),
+                line=dict(color="red", width=default_blockwidth + 4),
                 connectgaps=False,
             )
         )
@@ -169,14 +169,12 @@ def get_gantt_chart(
         legend=dict(x=0, y=-0.2, orientation="h"),
         xaxis=dict(
             title="Time",
-            titlefont=dict(family="Courier New, monospace",
-                           size=18, color="#7f7f7f"),
+            titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
             range=[min(timestamps), max(timestamps)],
         ),
         yaxis=dict(
             title="Activities",
-            titlefont=dict(family="Courier New, monospace",
-                           size=18, color="#7f7f7f"),
+            titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
         ),
     )
 

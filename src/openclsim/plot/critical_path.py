@@ -5,54 +5,21 @@ output of a simulation.
 
 # generic modules
 import copy
+import datetime as dt
+import itertools
+import logging
 import time
 import uuid
-import logging
-import itertools
-import pandas as pd
-import datetime as dt
+
 import networkx as nx
+import pandas as pd
 
 # internal modules
-from .. import core
-from .. import model
-from .log_dataframe import (
-    get_log_dataframe,
-    get_log_dataframe_activity,
-    get_subprocesses,
-)
+from .. import core, model
 from ..model.shift_amount_activity import ShiftAmountActivity
-
-# %% see if this remains needed
-import matplotlib.pyplot as plt
-import plotly.graph_objs as go
-from plotly.offline import init_notebook_mode, iplot
-
+from .log_dataframe import get_log_dataframe, get_subprocesses
 
 # %% FIXED PARAMETERS
-DEF_COLORS = [
-    "#ff0000",
-    "#bfbfbf",
-    "#305496",
-    "#00b0f0",
-    "#ffff00",
-    "#00b050",
-    "#990101",
-    "#ED7D31",
-    "#7030A0",
-    "#1EB299",
-    "#483700",
-    "#CCECFF",
-    "#c6e0b4",
-    "#525252",
-    "#f8cbad",
-    "#bf95df",
-    "darkred",
-    "magenta",
-    "cyan",
-    "orange",
-]
-
 DEPENDENCY_TYPES = {
     1: "ActivityDependency",
     2: "StartEventDependency",
@@ -125,9 +92,7 @@ class DependencyGraph:
             add_act_node(activity, self.G)
 
         # replace non-basic nodes by drilling down
-        nodesTODO = [
-            x for x, y in self.G.nodes(data=True) if y["is_basic"] is False
-        ]
+        nodesTODO = [x for x, y in self.G.nodes(data=True) if y["is_basic"] is False]
         while nodesTODO != []:
             # select a node and activity
             cur_node = nodesTODO[0]
@@ -155,6 +120,7 @@ class DependencyGraph:
     def getListBaseActivities(self):
         """Return a list of the IDs of all base activities."""
         return list(self.G.nodes)
+
 
 # Aux functions
 
@@ -269,9 +235,7 @@ def activity_subgraph(activity):
         return _parallel_activity_subgraph(activity)
     elif issubclass(type(activity), model.while_activity.WhileActivity):
         return _while_activity_subgraph(activity)
-    elif issubclass(
-            type(activity), model.sequential_activity.SequentialActivity
-    ):
+    elif issubclass(type(activity), model.sequential_activity.SequentialActivity):
         return _sequential_activity_subgraph(activity)
     elif issubclass(type(activity), model.basic_activity.BasicActivity):
         sub_G = nx.DiGraph()
@@ -290,14 +254,12 @@ def replace_node_with_subgraph(node, main_G, sub_G, start_nodes, end_nodes):
     # all links into the node to be replaced, except the loop with itself
     # should it exist
     existing_edges_in = list(main_G.in_edges(node))
-    existing_nodes_in = [
-        u for (u, v) in existing_edges_in if (u, v) != (node, node)]
+    existing_nodes_in = [u for (u, v) in existing_edges_in if (u, v) != (node, node)]
 
     # all links out of the node to be replaced, except the loop with itself
     # should it exist
     existing_edges_out = list(main_G.out_edges(node))
-    existing_nodes_out = [
-        v for (u, v) in existing_edges_out if (u, v) != (node, node)]
+    existing_nodes_out = [v for (u, v) in existing_edges_out if (u, v) != (node, node)]
 
     # determine all new edges in and out
     new_edges_in = list(itertools.product(existing_nodes_in, start_nodes))
@@ -324,6 +286,7 @@ def replace_node_with_subgraph(node, main_G, sub_G, start_nodes, end_nodes):
 
 
 # %% CLASS ActivityGraph FOR INSPECTING PATH OF LONGEST DURATION IN A DIGRAPH
+
 
 class ActivityGraph:
     """
@@ -397,13 +360,11 @@ class ActivityGraph:
         self.G = nx.DiGraph()
         self.__construct_graph()
         self.n_activities = len(
-            [e for e in self.G.edges if
-             self.G.edges[e]["edge_type"] == "activity"]
+            [e for e in self.G.edges if self.G.edges[e]["edge_type"] == "activity"]
         )
 
         # get the duration of longest path
-        self.max_duration = nx.dag_longest_path_length(
-            self.G, weight="duration")
+        self.max_duration = nx.dag_longest_path_length(self.G, weight="duration")
 
     def __check_log(self, cp_log):
         """
@@ -414,11 +375,9 @@ class ActivityGraph:
         """
         # check expected columns
         missing_columns = [
-            c for c in self.__SUPERLOG_COLUMNS.keys()
-            if c not in cp_log.columns
+            c for c in self.__SUPERLOG_COLUMNS.keys() if c not in cp_log.columns
         ]
-        assert missing_columns == [
-        ], f"cp_log is missing columns {missing_columns}"
+        assert missing_columns == [], f"cp_log is missing columns {missing_columns}"
 
         return cp_log
 
@@ -431,12 +390,13 @@ class ActivityGraph:
         ``(end cp-activity, start cp-activity)``, which will be prepended to
         comply with the nodes in the graph to be created.
         """
-        assert isinstance(list_dependencies,
-                          list), "list_dependencies must be a list"
+        assert isinstance(list_dependencies, list), "list_dependencies must be a list"
 
         list_dependencies = [
-            (f"{self.__NODE_END_PREFIX} {end}",
-             f"{self.__NODE_START_PREFIX} {start}")
+            (
+                f"{self.__NODE_END_PREFIX} {end}",
+                f"{self.__NODE_START_PREFIX} {start}",
+            )
             for end, start in list_dependencies
         ]
 
@@ -456,8 +416,7 @@ class ActivityGraph:
         cp_log["duration"] = cp_log["end_time"] - cp_log["start_time"]
         if isinstance(cp_log["duration"][0], dt.timedelta):
             logging.debug("Converting duration to seconds (float)")
-            cp_log["duration"] = round(
-                cp_log["duration"].dt.total_seconds(), 3)
+            cp_log["duration"] = round(cp_log["duration"].dt.total_seconds(), 3)
         elif isinstance(cp_log["duration"][0], (float, int)):
             pass
         else:
@@ -503,10 +462,8 @@ class ActivityGraph:
         """
         for ix, params in self._critical_log.iterrows():
             # names of the nodes by start/end of
-            name_start = f"{self.__NODE_START_PREFIX} "\
-                f"{params['cp_activity_id']}"
-            name_end = f"{self.__NODE_END_PREFIX} "\
-                f"{params['cp_activity_id']}"
+            name_start = f"{self.__NODE_START_PREFIX} " f"{params['cp_activity_id']}"
+            name_end = f"{self.__NODE_END_PREFIX} " f"{params['cp_activity_id']}"
 
             # add the start node
             if name_start not in self.G.nodes:
@@ -572,8 +529,7 @@ class ActivityGraph:
                 pass
             else:
                 raise Exception(
-                    f"Duration computed as type {duration} "
-                    "is not supported!"
+                    f"Duration computed as type {duration} " "is not supported!"
                 )
             if duration > 0:
                 logging.debug(f"dependency with duration {duration}")
@@ -654,8 +610,7 @@ class ActivityGraph:
         # any following iteration
         else:
             # get the current longest path in the discount graph
-            longest_path = nx.dag_longest_path(
-                discount_graph, weight="duration")
+            longest_path = nx.dag_longest_path(discount_graph, weight="duration")
             lp_edges = [
                 i
                 for i in zip(longest_path[:-1], longest_path[1:])
@@ -679,8 +634,7 @@ class ActivityGraph:
 
             # see if this path is a feasible longest path in the original
             # i.e. must be max duration and same end time
-            if (lp_duration == round(self.max_duration, 2)) and \
-                    (t_end == t_max_end):
+            if (lp_duration == round(self.max_duration, 2)) and (t_end == t_max_end):
                 # create list of not-yet-marked-as-critical critical edges
                 to_add_critical = [
                     edge for edge in lp_edges if edge not in list_critical
@@ -693,8 +647,7 @@ class ActivityGraph:
                     list_critical += to_add_critical
                     feasible_longest = True
             else:
-                to_add_discount = [
-                    edge for edge in lp_edges if edge not in to_discount]
+                to_add_discount = [edge for edge in lp_edges if edge not in to_discount]
                 if len(to_add_discount) > 0:
                     logging.debug("adding to discount")
                     to_discount += to_add_discount
@@ -710,8 +663,7 @@ class ActivityGraph:
             ]
             for edge in list_edges:
                 discount_graph.edges[edge]["duration"] = 10**-4
-                self.G.edges[edge][self.__COLNAME_CRITICAL] = \
-                    self.__CRITICAL[1]
+                self.G.edges[edge][self.__COLNAME_CRITICAL] = self.__CRITICAL[1]
             yet_to_discount = []
         else:
             yet_to_discount = [
@@ -766,9 +718,7 @@ class ActivityGraph:
         list_activities = [
             self.G.edges[edge]["cp_activity_id"] for edge in edges_critical
         ]
-        logging.info(
-            f"-- total elapsed time {time.time() - process_start} seconds."
-        )
+        logging.info(f"-- total elapsed time {time.time() - process_start} seconds.")
 
         return list_activities
 
@@ -855,8 +805,9 @@ class CpLog:
 
         # mark them in the CpLog
         log_out = copy.deepcopy(self.cp_log)
-        log_out.loc[:, "is_critical"] = \
-            log_out.loc[:, "cp_activity_id"].isin(list_actvities_critical)
+        log_out.loc[:, "is_critical"] = log_out.loc[:, "cp_activity_id"].isin(
+            list_actvities_critical
+        )
 
         return log_out
 
@@ -928,8 +879,7 @@ class CpLog:
                     ]
 
                 # get all unique activities on which current cp_act depends
-                activities_depending = \
-                    dependencies.loc[:, "cp_activity_id"].unique()
+                activities_depending = dependencies.loc[:, "cp_activity_id"].unique()
 
                 for act_dep in activities_depending:
                     list_dependencies.append((act_dep, cp_act))
@@ -979,8 +929,7 @@ class CpLog:
         self.dependencies_act = my_graph.getListDependencies()
 
         # also get dependencies from start events
-        dependencies_start = get_act_dependencies_start(
-            self.list_activities)
+        dependencies_start = get_act_dependencies_start(self.list_activities)
         cp_dependencies = get_dependencies_time(
             self.cp_log, self.dependencies_act + dependencies_start
         )
@@ -993,10 +942,7 @@ class CpLog:
         # get cp dependencies 'WAIT'
         cp_dependencies_wait = get_wait_dependencies_cp(self.cp_log)
         self.all_cp_dependencies = list(
-            set(
-                cp_dependencies + cp_depencies_res_limitation +
-                cp_dependencies_wait
-            )
+            set(cp_dependencies + cp_depencies_res_limitation + cp_dependencies_wait)
         )
 
         return self.all_cp_dependencies
@@ -1062,8 +1008,7 @@ def get_dependencies_time(df_log_cp, dependencies_act):
         # find every A with a directly following B
         all_a = df_log_cp.loc[df_log_cp.loc[:, "ActivityID"] == A, :]
         for idx, row in all_a.iterrows():
-            all_time_diffs = df_log_cp.loc[:,
-                                           "start_time"] - row.loc["end_time"]
+            all_time_diffs = df_log_cp.loc[:, "start_time"] - row.loc["end_time"]
             bool_eligible_b = (df_log_cp.loc[:, "ActivityID"] == B) & (
                 abs(all_time_diffs) < dt.timedelta(seconds=0.01)
             )
@@ -1109,9 +1054,7 @@ def reshape_log(df_log):
         The reformated and reshaped log.
     """
     # keep the df chronological
-    df_log = df_log.sort_values(
-        by=["Timestamp", "ActivityState"]
-    )
+    df_log = df_log.sort_values(by=["Timestamp", "ActivityState"])
     df_log = df_log.reset_index()
 
     # make a list of indexes to handle
@@ -1139,16 +1082,9 @@ def reshape_log(df_log):
 
         # see what stop events could belong to this start event
         bool_candidates = (
-            (
-                df_log.loc[:, "ActivityID"] == row_current.loc["ActivityID"]
-            )
-            & (
-                df_log.loc[:, "SimulationObject"] ==
-                row_current.loc["SimulationObject"]
-            )
-            & (
-                df_log.loc[:, "ActivityState"].isin(["STOP", "WAIT_STOP"])
-            )
+            (df_log.loc[:, "ActivityID"] == row_current.loc["ActivityID"])
+            & (df_log.loc[:, "SimulationObject"] == row_current.loc["SimulationObject"])
+            & (df_log.loc[:, "ActivityState"].isin(["STOP", "WAIT_STOP"]))
         )
         idx_candidates = list(bool_candidates.index[bool_candidates])
         # select the first end event after the start event
@@ -1188,8 +1124,7 @@ def reshape_log(df_log):
 
     # ASSUME that activities with duration zero can be discarded
     if isinstance(df_new.loc[:, "duration"][0], dt.timedelta):
-        df_new = df_new.loc[df_new.loc[:, "duration"]
-                            > dt.timedelta(seconds=0), :]
+        df_new = df_new.loc[df_new.loc[:, "duration"] > dt.timedelta(seconds=0), :]
     else:
         df_new = df_new.loc[df_new.loc[:, "duration"] > 0, :]
 
@@ -1254,8 +1189,7 @@ def combine_logs(objects, list_activities):
     """
     # check unique names
     names = [obj.name for obj in objects]
-    assert len(names) == len(
-        set(names)), "Names of your objects must be unique!"
+    assert len(names) == len(set(names)), "Names of your objects must be unique!"
 
     # concat
     log_all = pd.DataFrame()
@@ -1295,8 +1229,7 @@ def combine_logs_activities(activities):
     """
     # check unique names
     names = [act.name for act in activities]
-    assert len(names) == len(
-        set(names)), "Names of your activities must be unique!"
+    assert len(names) == len(set(names)), "Names of your activities must be unique!"
 
     # concat
     log_all = pd.DataFrame()
@@ -1341,12 +1274,11 @@ def is_basic_activity(activity):
         return True
     elif issubclass(type(activity), model.move_activity.MoveActivity):
         return True
-    elif issubclass(
-            type(activity), model.shift_amount_activity.ShiftAmountActivity
-    ):
+    elif issubclass(type(activity), model.shift_amount_activity.ShiftAmountActivity):
         return True
     else:
         return False
+
 
 # Resource capacity related dependencies
 
@@ -1394,18 +1326,16 @@ def get_resource_capacity_dependencies(cp_log, list_objects):
     # step 2: see what is going on at one of the resource sites
     for obj_resource in objs_with_resource:
         nr_resources = check_resource(obj_resource)
-        resource_log = get_timebased_overview_resource(
-            cp_log, obj_resource.name)
+        resource_log = get_timebased_overview_resource(cp_log, obj_resource.name)
 
         # now simply mark activies where utility > capacity and doublecheck
         # that at this (start) time others end
-        bool_greater_than_cap = \
-            (resource_log.loc[:, "utility"] > nr_resources) & \
-            (resource_log.loc[:, "event"] == "START")
+        bool_greater_than_cap = (resource_log.loc[:, "utility"] > nr_resources) & (
+            resource_log.loc[:, "event"] == "START"
+        )
 
         list_dependencies_cp = []
-        for idx in \
-                bool_greater_than_cap.loc[bool_greater_than_cap].index.values:
+        for idx in bool_greater_than_cap.loc[bool_greater_than_cap].index.values:
             list_dependencies_cp = []
             # is this one really waiting, i.e. is there a gap  looking at
             # other simulation object (vessel)
@@ -1429,21 +1359,15 @@ def get_resource_capacity_dependencies(cp_log, list_objects):
                     # a gap or not. If gap (no identical end times), then
                     # continue
                     bool_any_endings_now = (
-                        cp_log.loc[:, "SimulationObject"] ==
-                        shared_simulation_object
-                    ) & (
-                        cp_log.loc[:, "end_time"] ==
-                        resource_log.loc[idx, "datetime"]
-                    )
+                        cp_log.loc[:, "SimulationObject"] == shared_simulation_object
+                    ) & (cp_log.loc[:, "end_time"] == resource_log.loc[idx, "datetime"])
 
                     # noinspection PyUnresolvedReferences
                     if sum(bool_any_endings_now) == 0:
                         # what is stopping now (so that this one can start)
-                        bool_stopping_now = (
-                            resource_log.loc[:, "event"] == "STOP"
-                        ) & (
-                            resource_log.loc[:, "datetime"] ==
-                            resource_log.loc[idx, "datetime"]
+                        bool_stopping_now = (resource_log.loc[:, "event"] == "STOP") & (
+                            resource_log.loc[:, "datetime"]
+                            == resource_log.loc[idx, "datetime"]
                         )
                         activities_stopping_now = resource_log.loc[
                             bool_stopping_now, "cp_activity_id"
@@ -1454,8 +1378,9 @@ def get_resource_capacity_dependencies(cp_log, list_objects):
                             )
 
                     # add the dependencies to the list
-                    list_dependencies_cp_all = \
+                    list_dependencies_cp_all = (
                         list_dependencies_cp_all + list_dependencies_cp
+                    )
 
     # we may have found duplicates, return the unique connections
     return list(set(list_dependencies_cp_all))
@@ -1482,6 +1407,7 @@ def check_resource(obj):
         return obj.resource.capacity
     else:
         return None
+
 
 # Convenience function to keep track of resources
 
@@ -1510,16 +1436,12 @@ def get_timebased_overview_resource(df_log, name_simulation_object):
         not the case, leading to mistakes. Fixes should be sought in updating
         the logging module.
     """
-    bool_corresponding_to_object = (
-        df_log["SimulationObject"] == name_simulation_object
-    )
+    bool_corresponding_to_object = df_log["SimulationObject"] == name_simulation_object
 
     # include WAIT as well
-    activity_ids = df_log.loc[bool_corresponding_to_object,
-                              "ActivityID"].tolist()
+    activity_ids = df_log.loc[bool_corresponding_to_object, "ActivityID"].tolist()
     keep = (df_log.loc[:, "ActivityID"].isin(activity_ids)) & (
-        df_log.loc[:, "SimulationObject"].isin(
-            [name_simulation_object, "Activity"])
+        df_log.loc[:, "SimulationObject"].isin([name_simulation_object, "Activity"])
     )
     resource_log_cp = df_log.loc[keep, :]
 
@@ -1696,3 +1618,53 @@ def get_wait_dependencies_cp(df_log_cp):
         logging.info("No waiting activity in this critical path log")
 
     return list_wait_dependencies
+
+
+# %%
+def get_log_dataframe_activity(activity, keep_only_base=True):
+    """
+    Get the log of the activity object in a pandas dataframe.
+
+    Parameters
+    ----------
+    activity : object
+        object from which the log is returned as a dataframe sorted by
+        "Timestamp"
+    keep_only_base : boolean
+        if True (default) only the base (containing no sub_processes)
+        activities are kept in pd.DataFrame output
+    """
+
+    list_all_activities = get_subprocesses(activity)
+    id_map = {act.id: act.name for act in list_all_activities}
+
+    df_all = pd.DataFrame()
+    for sub_activity in list_all_activities:
+
+        df = (
+            pd.DataFrame(sub_activity.log)
+            .sort_values(by=["Timestamp"])
+            .sort_values(by=["Timestamp"])
+        )
+
+        df_concat = pd.concat(
+            [
+                df.filter(items=["ActivityID"]),
+                pd.DataFrame(sub_activity.log).filter(["Timestamp", "ActivityState"]),
+                pd.DataFrame(sub_activity.log["ObjectState"]),
+            ],
+            axis=1,
+        )
+
+        df_all = pd.concat([df_all, df_concat], axis=0)
+        df_all.loc[:, "Activity"] = df_all.loc[:, "ActivityID"].replace(id_map)
+
+    if keep_only_base:
+        # filter out all non-base activities
+        my_graph = DependencyGraph([activity])
+        df_all = df_all.loc[
+            df_all.loc[:, "ActivityID"].isin(my_graph.getListBaseActivities()),
+            :,
+        ]
+
+    return df_all
