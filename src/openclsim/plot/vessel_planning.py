@@ -50,6 +50,7 @@ def get_gantt_chart(
     web=False,
     static=False,
     y_scale="text",
+    critical_path=None
 ):
     """Create a plotly GANTT chart of the planning of vessels.
 
@@ -66,6 +67,8 @@ def get_gantt_chart(
           will be resolved, e.g.: [while_activity]
         * a manual id_map to resolve uuids to labels, e.g. {'uuid1':'name1'}
     """
+    default_blockwidth = 10
+
     if type(id_map) == list:
         id_map = {act.id: act.name for act in get_subprocesses(id_map)}
     else:
@@ -103,9 +106,37 @@ def get_gantt_chart(
             dataframes.append(df)
             names.append(vessel.name)
 
+    # extract the tracts for the cp to be plotted in the background
+    traces = []
+    if critical_path is not None:
+        x_critical = critical_path.loc[
+            critical_path.loc[:, "is_critical"], "start_time"
+        ].tolist()
+
+        x_critical_end = critical_path.loc[
+            critical_path.loc[:, "is_critical"], "end_time"
+        ].tolist()
+
+        ylist = critical_path.loc[
+            critical_path.loc[:, "is_critical"], "SimulationObject"
+        ].tolist()
+
+        x_nest = [[x1, x2, x2] for (x1, x2) in zip(x_critical, x_critical_end)]
+        y_nest = [[y, y, None] for y in ylist]
+        traces.append(
+            go.Scatter(
+                name="critical_path",
+                x=[item for sublist in x_nest for item in sublist],
+                y=[item for sublist in y_nest for item in sublist],
+                mode="lines",
+                hoverinfo="name",
+                line=dict(color="red", width=default_blockwidth+4),
+                connectgaps=False,
+            )
+        )
+
     df = dataframes[0]
     # prepare traces for each of the activities
-    traces = []
     for i, activity in enumerate(activities):
         activity = act_map.get(activity, activity)
         x_combined = []
@@ -122,7 +153,7 @@ def get_gantt_chart(
                 y=y_combined,
                 mode="lines",
                 hoverinfo="y+name",
-                line=dict(color=colors[i], width=10),
+                line=dict(color=colors[i], width=default_blockwidth),
                 connectgaps=False,
             )
         )
@@ -138,12 +169,14 @@ def get_gantt_chart(
         legend=dict(x=0, y=-0.2, orientation="h"),
         xaxis=dict(
             title="Time",
-            titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
+            titlefont=dict(family="Courier New, monospace",
+                           size=18, color="#7f7f7f"),
             range=[min(timestamps), max(timestamps)],
         ),
         yaxis=dict(
             title="Activities",
-            titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
+            titlefont=dict(family="Courier New, monospace",
+                           size=18, color="#7f7f7f"),
         ),
     )
 
