@@ -1,5 +1,6 @@
 """Test package."""
 
+import pytest
 import shapely.geometry
 import simpy
 
@@ -74,7 +75,7 @@ def test_move_activity():
     model.register_processes([activity])
     my_env.run()
 
-    assert my_env.now == 942.8245912734186
+    assert my_env.now == pytest.approx(942.8245912734186)
     assert_log(activity)
     assert_log(hopper)
     assert_log(to_site)
