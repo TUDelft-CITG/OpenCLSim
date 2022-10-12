@@ -1,0 +1,53 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: Intro_draft.rst
+parts:
+- caption: Context
+  chapters:
+    - file: docs/AUTHORS.rst
+- caption: Basics
+  chapters:
+    - file: Command_basics
+      title: Command Prompt
+    - file: Anaconda_basics
+      title: Anaconda
+    - file: How_to_read_the_examples.rst
+- caption: Basic activities
+  chapters:
+    - file: examples/01_BasicActivity.ipynb
+    - file: examples/02_MoveActivity.ipynb
+    - file: examples/03_ShiftAmountActivity.ipynb
+- caption: Basic cycles
+  chapters:
+    - file: examples/04_SequenceActivity.ipynb
+    - file: examples/05_WhileActivity.ipynb
+    - file: examples/06_RepeatActivity.ipynb    
+    - file: examples/08_ParallelActivity.ipynb
+    - file: examples/07_WhileActivity_with_ShiftAmount.ipynb
+    - file: examples/14_SingleRun.ipynb    
+- caption: More complex cycles
+  chapters:
+    - file: examples/11_Process_synchronization.ipynb
+    - file: examples/12_Complex_synchronization.ipynb
+    - file: examples/13_Resource_synchronization.ipynb
+    - file: examples/19_Triggers_in_SequenceActivity.ipynb
+    - file: examples/20_Triggers_in_RepeatActivity.ipynb
+    - file: examples/21_Triggers_in_ParallelActivity.ipynb
+- caption: Real world examples
+  chapters:
+    - file: examples/09_wrapped_single_run_process.ipynb
+    - file: examples/15_Subcycle.ipynb
+    - file: examples/10_MultiContainer.ipynb
+    - file: examples/16_Feeder.ipynb
+    - file: examples/23_Simple_feeder_process_MC.ipynb
+    - file: examples/24_cutters and barges.ipynb
+- caption: Working with plugins
+  chapters:
+    - file: examples/17_SingleRun_with_WeatherCriterion.ipynb
+    - file: examples/18_SingleRun_with_HasDelayPlugin.ipynb
+- caption: Advanced post-processing
+  chapters:
+    - file: examples/30_CriticalPath.ipynb
+    - file: examples/31_RegistryParsing.ipynb
