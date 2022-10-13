@@ -30,7 +30,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           # Install old version of pip /setuptools, issue with gdal
-          python -m pip install --upgrade pip setuptools==58.0.2
+          python -m pip install --upgrade pip setuptools==57.5
           # install gdal separate
           pip install wheel gdal==3.0.4
           # Now upgrade pip / setuptools for real
