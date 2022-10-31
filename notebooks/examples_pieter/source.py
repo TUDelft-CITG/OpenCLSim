@@ -55,11 +55,11 @@ class DepthRestrictedLoadingFunctions:
         self.depth_full = depth_full
 
     def get_depth_restricted_load(self):
-        min_depth = get_current_depth(self.env)
-        amount = (
-            self.container.get_capacity()
-            * (min_depth - self.depth_empty)
-            / (self.depth_full - self.depth_empty)
+        min_depth = min(self.depth_full, get_current_depth(self.env))
+        capacity = self.container.get_capacity()
+        p = 0.1
+        amount = p * capacity + (1 - p) * capacity * (min_depth - self.depth_empty) / (
+            self.depth_full - self.depth_empty
         )
         return round(amount, 6)
 
