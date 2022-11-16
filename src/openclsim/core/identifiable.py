@@ -34,7 +34,7 @@ class Identifiable:
                 category=DeprecationWarning,
                 stacklevel=2,
             )
-            id = kwargs.get("ID")
+            id = kwargs.pop("ID")
 
         super().__init__(*args, **kwargs)
         self.name = name
