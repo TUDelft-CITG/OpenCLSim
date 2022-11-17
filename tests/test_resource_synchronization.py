@@ -46,7 +46,7 @@ def test_test_resource_synchronization():
     from_site = Site(
         env=my_env,
         name="Winlocatie",
-        ID="6dbbbdf4-4589-11e9-a501-b469212bff5d",
+        id="6dbbbdf4-4589-11e9-a501-b469212bff5d",
         geometry=location_from_site,
         capacity=10,
         level=8,
@@ -55,7 +55,7 @@ def test_test_resource_synchronization():
     hopper1 = TransportProcessingResource(
         env=my_env,
         name="Hopper 01",
-        ID="6dbbbdf6-4589-11e9-95a2-b469212bff5b",
+        id="6dbbbdf6-4589-11e9-95a2-b469212bff5b",
         geometry=location_from_site,
         loading_rate=1,
         unloading_rate=1,
@@ -66,7 +66,7 @@ def test_test_resource_synchronization():
     hopper2 = TransportProcessingResource(
         env=my_env,
         name="Hopper 02",
-        ID="5dbbbdf6-4589-11e9-95a2-b469212bff5b",
+        id="5dbbbdf6-4589-11e9-95a2-b469212bff5b",
         geometry=location_from_site,
         loading_rate=1,
         unloading_rate=1,
@@ -78,7 +78,7 @@ def test_test_resource_synchronization():
     activity1 = model.ShiftAmountActivity(
         env=my_env,
         name="Transfer1",
-        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+        id="6dbbbdf7-4589-11e9-bf3b-b469212bff52",
         registry=registry,
         processor=hopper1,
         origin=from_site,
@@ -91,7 +91,7 @@ def test_test_resource_synchronization():
     seq_activity1 = model.SequentialActivity(
         env=my_env,
         name="Sequential process1",
-        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff60",
+        id="6dbbbdf7-4589-11e9-bf3b-b469212bff60",
         registry=registry,
         sub_processes=[activity1],
         requested_resources=requested_resources1,
@@ -100,7 +100,7 @@ def test_test_resource_synchronization():
     while1 = model.WhileActivity(
         env=my_env,
         name="while1",
-        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
+        id="6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
         registry=registry,
         sub_processes=[seq_activity1],
         requested_resources=requested_resources1,
@@ -117,7 +117,7 @@ def test_test_resource_synchronization():
     activity2 = model.ShiftAmountActivity(
         env=my_env,
         name="Transfer2",
-        ID="5dbbbdf7-4589-11e9-bf3b-b469212bff52",
+        id="5dbbbdf7-4589-11e9-bf3b-b469212bff52",
         registry=registry,
         processor=hopper2,
         origin=from_site,
@@ -129,14 +129,14 @@ def test_test_resource_synchronization():
     seq_activity2 = model.SequentialActivity(
         env=my_env,
         name="Sequential process2",
-        ID="5dbbbdf7-4589-11e9-bf3b-b469212bff60",
+        id="5dbbbdf7-4589-11e9-bf3b-b469212bff60",
         registry=registry,
         sub_processes=[activity2],
     )
     while2 = model.WhileActivity(
         env=my_env,
         name="while2",
-        ID="5dbbbdf7-4589-11e9-bf3b-b469212bff5g",
+        id="5dbbbdf7-4589-11e9-bf3b-b469212bff5g",
         registry=registry,
         sub_processes=[seq_activity2],
         condition_event=[

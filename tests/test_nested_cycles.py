@@ -47,7 +47,7 @@ def test_nested_cycles():
     from_site = Site(
         env=my_env,
         name="Winlocatie",
-        ID="6dbbbdf4-4589-11e9-a501-b469212bff5d",
+        id="6dbbbdf4-4589-11e9-a501-b469212bff5d",
         geometry=location_from_site,
         capacity=100,
         level=50,
@@ -56,7 +56,7 @@ def test_nested_cycles():
     to_site = Site(
         env=my_env,
         name="Dumplocatie",
-        ID="6dbbbdf5-4589-11e9-82b2-b469212bff5c",
+        id="6dbbbdf5-4589-11e9-82b2-b469212bff5c",
         geometry=location_to_site,
         capacity=50,
         level=0,
@@ -65,7 +65,7 @@ def test_nested_cycles():
     hopper = TransportProcessingResource(
         env=my_env,
         name="Hopper 01",
-        ID="6dbbbdf6-4589-11e9-95a2-b469212bff5b",
+        id="6dbbbdf6-4589-11e9-95a2-b469212bff5b",
         geometry=location_from_site,
         loading_rate=0.00001,
         unloading_rate=0.00001,

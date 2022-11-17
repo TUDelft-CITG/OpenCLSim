@@ -170,7 +170,7 @@ def test_weather():
     activity = model.SequentialActivity(
         env=my_env,
         name="Single run process",
-        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff60",
+        id="6dbbbdf7-4589-11e9-bf3b-b469212bff60",
         registry=registry,
         sub_processes=single_run,
     )
