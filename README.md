@@ -11,6 +11,12 @@
 
 Documentation is found [here](https://openclsim.readthedocs.io).
 
+## Book
+
+<a href="https://delightful-cliff-0e49c3503.1.azurestaticapps.net"><img src="docs/_static/book.png" style="max-width: 50vw;"></a>
+
+You can find the OpenCLSim book, based on the examples in the `notebooks` folder on the [OpenCLSim-book](https://delightful-cliff-0e49c3503.1.azurestaticapps.net/Intro_draft.html) website.
+
 ## Installation
 
 To install OpenCLSim, run this command in your terminal. This is the preferred method to install OpenCLSim, as it will always install the most recent stable release. In general you want to install python software in a virtual environment, either using [anaconda](https://docs.anaconda.com/anaconda/install/) or through python's default [virtual environment](https://docs.python.org/3/tutorial/venv.html).
