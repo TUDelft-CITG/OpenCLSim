@@ -13,7 +13,8 @@ class Locatable:
 
     Parameters
     ----------
-    geometry : Shapely Geometry that determines the position of an object. Coordinates are expected to be in wgs84 lon, lat.
+    geometry : Shapely Geometry that determines the position of an object.
+    Coordinates are expected to be in wgs84 lon, lat.
     node: Optional string that locates an object on a graph.
 
     """
