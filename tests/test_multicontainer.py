@@ -46,7 +46,7 @@ def test_mulitcontainer():
     from_site = Site(
         env=my_env,
         name="Winlocatie",
-        ID="6dbbbdf4-4589-11e9-a501-b469212bff5d",
+        id="6dbbbdf4-4589-11e9-a501-b469212bff5d",
         geometry=location_from_site,
         store_capacity=4,
         initials=[
@@ -58,7 +58,7 @@ def test_mulitcontainer():
     hopper = TransportProcessingResource(
         env=my_env,
         name="Hopper 01",
-        ID="6dbbbdf6-4589-11e9-95a2-b469212bff5b",
+        id="6dbbbdf6-4589-11e9-95a2-b469212bff5b",
         geometry=location_from_site,
         loading_rate=1,
         unloading_rate=1,
@@ -73,7 +73,7 @@ def test_mulitcontainer():
     activity = model.ShiftAmountActivity(
         env=my_env,
         name="Transfer MP",
-        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff52",
+        id="6dbbbdf7-4589-11e9-bf3b-b469212bff52",
         registry=registry,
         processor=hopper,
         origin=from_site,

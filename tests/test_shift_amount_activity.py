@@ -64,7 +64,7 @@ def test_shift_amount():
     activity = model.ShiftAmountActivity(
         env=my_env,
         name="Transfer MP",
-        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+        id="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
         registry=registry,
         processor=hopper,
         origin=from_site,

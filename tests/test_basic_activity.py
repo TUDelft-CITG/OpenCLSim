@@ -18,7 +18,7 @@ class TestBasicActivity:
         act = model.BasicActivity(
             env=my_env,
             name="Basic activity",
-            ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            id="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
             registry=registry,
             duration=14,
         )
@@ -35,7 +35,7 @@ class TestBasicActivity:
         reporting_activity = model.BasicActivity(
             env=my_env,
             name="Reporting activity",
-            ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
+            id="6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
             registry=registry,
             duration=0,
         )
@@ -43,7 +43,7 @@ class TestBasicActivity:
             env=my_env,
             name="Basic activity",
             registry=registry,
-            ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            id="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
             duration=14,
             additional_logs=[reporting_activity],
         )

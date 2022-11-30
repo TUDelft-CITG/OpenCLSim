@@ -47,7 +47,7 @@ def test_move_activity():
     to_site = Site(
         env=my_env,
         name="Dumplocatie",
-        ID="6dbbbdf5-4589-11e9-82b2-b469212bff5b",
+        id="6dbbbdf5-4589-11e9-82b2-b469212bff5b",
         geometry=location_to_site,
         capacity=10,
         level=0,
@@ -55,7 +55,7 @@ def test_move_activity():
     hopper = TransportProcessingResource(
         env=my_env,
         name="Hopper 01",
-        ID="6dbbbdf6-4589-11e9-95a2-b469212bff5b",
+        id="6dbbbdf6-4589-11e9-95a2-b469212bff5b",
         geometry=location_from_site,
         loading_rate=1,
         unloading_rate=1,
@@ -66,7 +66,7 @@ def test_move_activity():
     activity = model.MoveActivity(
         env=my_env,
         name="Soil movement",
-        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+        id="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
         registry=registry,
         mover=hopper,
         destination=to_site,
