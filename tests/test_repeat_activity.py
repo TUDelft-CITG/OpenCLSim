@@ -23,7 +23,7 @@ def test_repeat_activity():
     repeat_activity = model.RepeatActivity(
         env=my_env,
         name="repeat",
-        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
+        id="6dbbbdf7-4589-11e9-bf3b-b469212bff5g",
         registry=registry,
         sub_processes=[activity],
         repetitions=3,

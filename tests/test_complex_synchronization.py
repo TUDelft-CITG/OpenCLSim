@@ -17,7 +17,7 @@ def test_complex_synchronization():
     reporting_activity = model.BasicActivity(
         env=my_env,
         name="Reporting activity",
-        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
+        id="6dbbbdf7-4589-11e9-bf3b-b469212bff5k",
         registry=registry,
         duration=0,
         keep_resources=keep_resources,
@@ -27,7 +27,7 @@ def test_complex_synchronization():
         model.BasicActivity(
             env=my_env,
             name="A Basic activity1",
-            ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            id="6dbbbdf7-4589-11e9-bf3b-b469212bff5b",
             registry=registry,
             duration=14,
             additional_logs=[reporting_activity],
@@ -36,7 +36,7 @@ def test_complex_synchronization():
         model.BasicActivity(
             env=my_env,
             name="A Basic activity2",
-            ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5c",
+            id="6dbbbdf7-4589-11e9-bf3b-b469212bff5c",
             registry=registry,
             duration=10,
             additional_logs=[reporting_activity],
@@ -45,7 +45,7 @@ def test_complex_synchronization():
         model.BasicActivity(
             env=my_env,
             name="A Basic activity3",
-            ID="6dbbbdf7-4589-11e9-bf3b-b469212bff5d",
+            id="6dbbbdf7-4589-11e9-bf3b-b469212bff5d",
             registry=registry,
             duration=220,
             additional_logs=[reporting_activity],
@@ -60,7 +60,7 @@ def test_complex_synchronization():
         model.BasicActivity(
             env=my_env,
             name="B Basic activity1",
-            ID="5dbbbdf7-4589-11e9-bf3b-b469212bff5b",
+            id="5dbbbdf7-4589-11e9-bf3b-b469212bff5b",
             registry=registry,
             duration=1,
             additional_logs=[reporting_activity],
@@ -69,7 +69,7 @@ def test_complex_synchronization():
         model.BasicActivity(
             env=my_env,
             name="B Basic activity2",
-            ID="5dbbbdf7-4589-11e9-bf3b-b469212bff5c",
+            id="5dbbbdf7-4589-11e9-bf3b-b469212bff5c",
             registry=registry,
             duration=500,
             additional_logs=[reporting_activity],
@@ -78,7 +78,7 @@ def test_complex_synchronization():
         model.BasicActivity(
             env=my_env,
             name="B Basic activity3",
-            ID="5dbbbdf7-4589-11e9-bf3b-b469212bff5d",
+            id="5dbbbdf7-4589-11e9-bf3b-b469212bff5d",
             registry=registry,
             duration=120,
             additional_logs=[reporting_activity],
@@ -89,7 +89,7 @@ def test_complex_synchronization():
     B = model.SequentialActivity(
         env=my_env,
         name="B Sequential process",
-        ID="5dbbbdf7-4589-11e9-bf3b-b469212bff60",
+        id="5dbbbdf7-4589-11e9-bf3b-b469212bff60",
         registry=registry,
         sub_processes=sub_processes2,
         keep_resources=keep_resources,
@@ -98,7 +98,7 @@ def test_complex_synchronization():
     A = model.SequentialActivity(
         env=my_env,
         name="A Sequential process",
-        ID="6dbbbdf7-4589-11e9-bf3b-b469212bff60",
+        id="6dbbbdf7-4589-11e9-bf3b-b469212bff60",
         registry=registry,
         sub_processes=sub_processes,
         keep_resources=keep_resources,

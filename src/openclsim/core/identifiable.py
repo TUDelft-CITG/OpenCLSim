@@ -1,6 +1,7 @@
 """Component to identify the simulation objects."""
 
 import uuid
+import warnings
 
 
 class Identifiable:
@@ -11,7 +12,7 @@ class Identifiable:
     ----------
     name
         a human readable name to be used in logs and charts
-    ID : UUID
+    id : UUID
         a unique id generated with uuid
     description
         Text that can be used to describe a simulation object.
@@ -21,7 +22,20 @@ class Identifiable:
         Note that this field does not influence the simulation.
     """
 
-    def __init__(self, name: str, ID: str = None, *args, **kwargs):
+    def __init__(self, name: str, id: str = None, *args, **kwargs):
+
+        # Deprecation
+        if "ID" in kwargs:
+            if id is not None:
+                raise ValueError("Both ID and id are specified. Use id only.")
+
+            warnings.warn(
+                f"ID argument specified in {self}, please use the attribute id",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            id = kwargs.pop("ID")
+
         super().__init__(*args, **kwargs)
         self.name = name
-        self.id = ID if ID else str(uuid.uuid4())
+        self.id = id if id else str(uuid.uuid4())

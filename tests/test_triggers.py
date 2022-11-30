@@ -14,14 +14,14 @@ class TestTriggers:
         registry = {}
 
         a = model.BasicActivity(
-            ID="a",
+            id="a",
             env=env,
             name="a",
             registry=registry,
             duration=1,
         )
         a2 = model.BasicActivity(
-            ID="a2",
+            id="a2",
             env=env,
             name="a2",
             registry=registry,
@@ -29,7 +29,7 @@ class TestTriggers:
         )
 
         c = model.BasicActivity(
-            ID="c",
+            id="c",
             env=env,
             name="c",
             registry=registry,
@@ -39,7 +39,7 @@ class TestTriggers:
         Sa = model.SequentialActivity(
             env=env,
             name="Sa",
-            ID="Sa",
+            id="Sa",
             registry=registry,
             sub_processes=[a, a2],
         )
@@ -47,13 +47,13 @@ class TestTriggers:
         act1 = model.SequentialActivity(
             env=env,
             name="Sc",
-            ID="Sc",
+            id="Sc",
             registry=registry,
             sub_processes=[c, Sa],
         )
 
         b = model.BasicActivity(
-            ID="b",
+            id="b",
             env=env,
             name="b",
             registry=registry,
@@ -64,7 +64,7 @@ class TestTriggers:
         act2 = model.SequentialActivity(
             env=env,
             name="Sb",
-            ID="Sb",
+            id="Sb",
             registry=registry,
             sub_processes=[b],
         )
@@ -80,21 +80,21 @@ class TestTriggers:
         registry = {}
 
         a = model.BasicActivity(
-            ID="a",
+            id="a",
             env=env,
             name="a",
             registry=registry,
             duration=1,
         )
         a2 = model.BasicActivity(
-            ID="a2",
+            id="a2",
             env=env,
             name="a2",
             registry=registry,
             duration=1,
         )
         c = model.BasicActivity(
-            ID="c",
+            id="c",
             env=env,
             name="c",
             registry=registry,
@@ -104,7 +104,7 @@ class TestTriggers:
         Ra = model.RepeatActivity(
             env=env,
             name="Ra",
-            ID="Ra",
+            id="Ra",
             registry=registry,
             sub_processes=[a, a2],
             repetitions=3,
@@ -113,13 +113,13 @@ class TestTriggers:
         act1 = model.SequentialActivity(
             env=env,
             name="Sc",
-            ID="Sc",
+            id="Sc",
             registry=registry,
             sub_processes=[c, Ra],
         )
 
         b = model.BasicActivity(
-            ID="b",
+            id="b",
             env=env,
             name="b",
             registry=registry,
@@ -130,7 +130,7 @@ class TestTriggers:
         act2 = model.RepeatActivity(
             env=env,
             name="Rb",
-            ID="Rb",
+            id="Rb",
             registry=registry,
             sub_processes=[b],
             repetitions=3,
@@ -147,21 +147,21 @@ class TestTriggers:
         registry = {}
 
         a = model.BasicActivity(
-            ID="a",
+            id="a",
             env=env,
             name="a",
             registry=registry,
             duration=3,
         )
         a2 = model.BasicActivity(
-            ID="a2",
+            id="a2",
             env=env,
             name="a2",
             registry=registry,
             duration=2,
         )
         a3 = model.BasicActivity(
-            ID="a3",
+            id="a3",
             env=env,
             name="a3",
             registry=registry,
@@ -169,7 +169,7 @@ class TestTriggers:
         )
 
         c = model.BasicActivity(
-            ID="c",
+            id="c",
             env=env,
             name="c",
             registry=registry,
@@ -179,7 +179,7 @@ class TestTriggers:
         Pa = model.ParallelActivity(
             env=env,
             name="Pa",
-            ID="Pa",
+            id="Pa",
             registry=registry,
             sub_processes=[a, a2, a3],
         )
@@ -187,13 +187,13 @@ class TestTriggers:
         act1 = model.SequentialActivity(
             env=env,
             name="Sc",
-            ID="Sc",
+            id="Sc",
             registry=registry,
             sub_processes=[c, Pa],
         )
 
         b = model.BasicActivity(
-            ID="b",
+            id="b",
             env=env,
             name="b",
             registry=registry,
@@ -204,7 +204,7 @@ class TestTriggers:
         act2 = model.SequentialActivity(
             env=env,
             name="Sb",
-            ID="Sb",
+            id="Sb",
             registry=registry,
             sub_processes=[b],
         )
