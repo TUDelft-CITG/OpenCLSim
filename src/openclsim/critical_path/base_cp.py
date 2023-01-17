@@ -45,7 +45,6 @@ class BaseCP(ABC):
     def __init__(
         self,
         env,
-        registry,
         object_list,
         activity_list,
         *args,
@@ -55,7 +54,6 @@ class BaseCP(ABC):
 
         # some asserts
         self.env = env
-        self.registry = registry
         self.object_list = object_list
         self.activity_list = activity_list
 
@@ -69,7 +67,7 @@ class BaseCP(ABC):
         """must be implemented by child classes"""
         return []
 
-    def make_recorded_activities_df(self):
+    def _make_recorded_activities_df(self):
         """
         set a recorded_activity_df in self
         uses the logs of provided activities and sim objects, combines these, adds unique UUID
@@ -84,28 +82,27 @@ class BaseCP(ABC):
     def get_recorded_activity_df(self):
         """ get a recorded_activity_df in self"""
         if self.recorded_activities_df is None:
-            self.make_recorded_activities_df()
+            self._make_recorded_activities_df()
         return self.recorded_activities_df
 
-    def make_simulation_graph(self):
+    def __make_simulation_graph(self):
         """use self.recorded_activity_df and self.dependency_list to build graph of
         (interconnected) activities as evaluated in time in simulation"""
-        self.simulation_graph = SimulationGraph()
-        pass
+        self.simulation_graph = SimulationGraph(self.recorded_activities_df, self.dependency_list)
 
     def get_critical_path_df(self):
         """
         enrich recorded activity df with column 'is_critical' and return this dataframe
         """
-        self.make_recorded_activities_df()  # makes self.recorded_activities_df
+        self._make_recorded_activities_df()  # makes self.recorded_activities_df
         self.dependency_list = self.get_dependency_list()
-        self.make_simulation_graph()  # makes self.activity_graph
+        self.__make_simulation_graph()  # makes self.activity_graph
 
-        return self.compute_critical_path()
+        return self.__compute_critical_path()
 
-    def compute_critical_path(self):
+    def __compute_critical_path(self):
         """
-        provided self has an activity graph based on all the recorded activities and
+        provided self has an simulation graph based on all the recorded activities and
         dependencies, compute the critical path, i.e. mark all activities which are on (any)
         critical path as critical.
         """
@@ -120,11 +117,12 @@ my_env = MyCustomSimpyEnv()
 my_env = simpy.Environment()
 
 # simulation code
+# ...
 
 # call CP functionality
 cp_log = DependenciesFromModel(...)  # OR 1 of other classes that inherits 
-critical_path = cp_log.get_critical_path()
-plot.gantt_chart(critical_path)
+critical_path_df = cp_log.get_critical_path_df()
+plot.gantt_chart(critical_path_df)
 """
 
 
