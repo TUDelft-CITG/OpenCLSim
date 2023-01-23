@@ -40,11 +40,8 @@ class SimulationGraph:
         should appear in the list as tuple ``(1, 2)``.
     """
 
-    def __init__(
-            self,
-            recorded_activity_df,
-            dependency_list):
-        """ init """
+    def __init__(self, recorded_activity_df, dependency_list):
+        """init"""
         # set in self
         self.recorded_activity_df = self.__check_rec(recorded_activity_df)
         self.dependency_list = self.__check_dep(dependency_list)
@@ -77,7 +74,7 @@ class SimulationGraph:
         pass
 
     def __find_critical_edges(self):
-        """ iteratively run through self.G and find all critical edges"""
+        """iteratively run through self.G and find all critical edges"""
         pass
 
     def get_list_critical_activities(self):

@@ -6,18 +6,13 @@ helper functions and methods which ar enot all listed here
 """
 import networkx as nx
 
-
 from openclsim.critical_path.base_cp import BaseCP
 
 
 class DependenciesFromModel(BaseCP):
-    """ build dependecies from recorded_activities_df """
+    """build dependecies from recorded_activities_df"""
 
-    def __init__(
-            self,
-            *args,
-            **kwargs
-    ):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def get_dependency_list(self):
@@ -66,9 +61,7 @@ class DependenciesFromModel(BaseCP):
 
 
 # Waiting related start events
-def get_wait_dependencies_cp(
-        recorded_activities_df
-):
+def get_wait_dependencies_cp(recorded_activities_df):
     """
     Get/assume dependencies between activities related to waiting. Waiting
     activities must explicitly be marked in the CpLog object as ``WAITING``.
@@ -98,10 +91,7 @@ def get_wait_dependencies_cp(
     return []
 
 
-def get_resource_capacity_dependencies(
-        recorded_activities_df,
-        objects_list
-):
+def get_resource_capacity_dependencies(recorded_activities_df, objects_list):
     """
     Given a ``CpLog`` instance, and a list of OpenCLSim model objects this
     function inspects dependencies between activities which seen to be due to
@@ -142,9 +132,7 @@ def get_resource_capacity_dependencies(
 
 
 # Get dependencies based on start events
-def get_act_dependencies_start(
-        activities_list
-):
+def get_act_dependencies_start(activities_list):
     """
     Get activity dependencies based on start event conditions.
     For now only 'container' type supported for base activities.
@@ -167,10 +155,7 @@ def get_act_dependencies_start(
     return []
 
 
-def get_dependencies_time(
-        recorded_activities_df,
-        dependencies_model_list
-):
+def get_dependencies_time(recorded_activities_df, dependencies_model_list):
     """
     Based on the model-based dependencies check these dependencies as they appear in the
     recorded_activities_df after simulation and convert/create depencies at simulation/time level
@@ -214,10 +199,7 @@ class DependencyGraph:
         are contained in it.
     """
 
-    def __init__(
-            self,
-            main_activities
-    ):
+    def __init__(self, main_activities):
         """Init."""
         # initiate
         self._main_activities = main_activities

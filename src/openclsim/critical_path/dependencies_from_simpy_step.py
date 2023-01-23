@@ -10,11 +10,7 @@ from openclsim.critical_path.base_cp import BaseCP
 
 
 class DependenciesFromSimpy(BaseCP):
-    def __init__(
-            self,
-            *args,
-            **kwargs
-    ):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def get_dependency_list(self):
@@ -29,14 +25,15 @@ class DependenciesFromSimpy(BaseCP):
         dependency_list : list of tuples
             like [(A1, A2), (A1, A3), (A3, A4)] where A2 depends on A1 (A1 'causes' A2) et cetera
         """
-        assert(
-            isinstance(self.env, MyCustomSimpyEnv),
-            "This module is not callable with the default simpy environment"
-        )
+        assert isinstance(
+            self.env, MyCustomSimpyEnv
+        ), "This module is not callable with the default simpy environment"
+
         # ...
         return []
 
 
 class MyCustomSimpyEnv:
     """TODO SCOPE 6"""
+
     pass

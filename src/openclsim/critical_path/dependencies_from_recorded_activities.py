@@ -5,12 +5,9 @@ from openclsim.critical_path.base_cp import BaseCP
 
 
 class DependenciesFromRecordedActivities(BaseCP):
-    """ build dependecies from recorded_activities_df """
-    def __init__(
-            self,
-            *args,
-            **kwargs
-    ):
+    """build dependecies from recorded_activities_df"""
+
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def get_dependency_list(self):

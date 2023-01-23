@@ -80,7 +80,7 @@ class BaseCP(ABC):
         pass
 
     def get_recorded_activity_df(self):
-        """ get a recorded_activity_df in self"""
+        """get a recorded_activity_df in self"""
         if self.recorded_activities_df is None:
             self._make_recorded_activities_df()
         return self.recorded_activities_df
@@ -88,7 +88,9 @@ class BaseCP(ABC):
     def __make_simulation_graph(self):
         """use self.recorded_activity_df and self.dependency_list to build graph of
         (interconnected) activities as evaluated in time in simulation"""
-        self.simulation_graph = SimulationGraph(self.recorded_activities_df, self.dependency_list)
+        self.simulation_graph = SimulationGraph(
+            self.recorded_activities_df, self.dependency_list
+        )
 
     def get_critical_path_df(self):
         """
@@ -120,7 +122,7 @@ my_env = simpy.Environment()
 # ...
 
 # call CP functionality
-cp_log = DependenciesFromModel(...)  # OR 1 of other classes that inherits 
+cp_log = DependenciesFromModel(...)  # OR 1 of other classes that inherits
 critical_path_df = cp_log.get_critical_path_df()
 plot.gantt_chart(critical_path_df)
 """
