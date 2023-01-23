@@ -5,6 +5,7 @@ the critical path of the simulation
 """
 
 from abc import ABC, abstractmethod
+import pandas as pd
 
 from openclsim.critical_path.simulation_graph import SimulationGraph
 
@@ -15,9 +16,12 @@ class BaseCP(ABC):
 
     Parameters
     ------------
-    env : instance of simpy.env or instance of class that inherits from simpy.env
-    object_list : list of all (simulation) objects with Log mixin (after simulation)
-    activity_list : list of all (simulation) activities with Log mixin (after simulation)
+    env : simpy.Environment
+        instance of simpy.env or instance of class that inherits from simpy.env
+    object_list : list
+        list of all (simulation) objects with Log mixin (after simulation)
+    activity_list : list
+        list of all (simulation) activities with Log mixin (after simulation)
     """
 
     def __init__(
@@ -33,7 +37,9 @@ class BaseCP(ABC):
         """
         super().__init__(*args, **kwargs)
 
-        # some asserts
+        # some asserts todo
+
+        # set to self
         self.env = env
         self.object_list = object_list
         self.activity_list = activity_list
@@ -45,24 +51,32 @@ class BaseCP(ABC):
 
     @abstractmethod
     def get_dependency_list(self):
-        """Must be implemented by child classes"""
+        """
+        Must be implemented by child classes
+
+        Returns
+        -------
+        dependency_list : list
+            list of tuples (dependencies)
+        """
         return []
 
     def _make_recorded_activities_df(self):
         """
-        Set a recorded_activity_df in self
-        uses the logs of provided activities and sim objects, combines these, adds unique UUID
+        Set a recorded_activity_df in self.
+        Uses the logs of provided activities and sim objects, combines these, adds unique UUID
         and reshape into format such that single row has a start time and an end time
-
-        Notes
-        ------
-        in original commit approx 250 lines of code (split over several functions)
         """
         pass
 
     def get_recorded_activity_df(self):
         """
-        Get a recorded_activity_df in self
+        Get a recorded_activity_df from self.
+
+        Returns
+        -------
+        recorded_activity_df : pd.DataFrame
+            all recorded activities from simulation
         """
         if self.recorded_activities_df is None:
             self._make_recorded_activities_df()
@@ -80,10 +94,15 @@ class BaseCP(ABC):
     def get_critical_path_df(self):
         """
         Enrich recorded activity df with column 'is_critical' and return this dataframe
+
+        Returns
+        -------
+        recorded_activity_df : pd.DataFrame
+            all recorded activities from simulation.
         """
-        self._make_recorded_activities_df()  # makes self.recorded_activities_df
+        self._make_recorded_activities_df()
         self.dependency_list = self.get_dependency_list()
-        self.__make_simulation_graph()  # makes self.activity_graph
+        self.__make_simulation_graph()
 
         return self.__compute_critical_path()
 
@@ -92,5 +111,10 @@ class BaseCP(ABC):
         Provided self has a simulation graph based on all the recorded activities and
         dependencies, compute the critical path, i.e. mark all activities which are on (any)
         critical path as critical.
+
+        Returns
+        -------
+        recorded_activity_df : pd.DataFrame
+            all recorded activities from simulation.
         """
-        return []
+        return pd.DataFrame()

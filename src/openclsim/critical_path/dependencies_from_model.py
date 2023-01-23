@@ -1,8 +1,5 @@
 """
 Module contains DependenciesFromModel that inherits from critical_path.base_cp.BaseCP
-
-in original commit this module would contain may lines and many (hidden/protected)
-helper functions and methods which ar enot all listed here
 """
 import networkx as nx
 
@@ -18,162 +15,134 @@ class DependenciesFromModel(BaseCP):
     def get_dependency_list(self):
         """
         Get dependencies from simulation setup and
-        cross reference with recorded activities to get dependencies of relevant instances
-        requires self.object_list, self.activity_list and self.recorded_activities_df
+        cross-reference with recorded activities to get dependencies of relevant instances.
+        Requires self.object_list, self.activity_list and self.recorded_activities_df
 
         Notes
-        ---------
-        this method is likely to provide too few dependencies and might raise warnings
+        -----
+        This method is likely to provide too few dependencies and might raise warnings
         for unsupported start event conditions, activities et cetera
-
-        this method contains approx 1000 (!) lines in original commit
 
         Returns
         -------
-        dependency_list : list of tuples
-            like [(A1, A2), (A1, A3), (A3, A4)] where A2 depends on A1 (A1 'causes' A2) et cetera
+        dependency_list : list
+            list of tuples like [(A1, A2), (A1, A3), (A3, A4)]
+            where A2 depends on A1 (A1 'causes' A2) et cetera
         """
 
         # get dependencies from DependencyGraph - so at model setup level (not time based yet)
         my_graph = DependencyGraph(self.activity_list)
-        dependencies_act = my_graph.getListDependencies()
+        dependencies_act = my_graph.get_list_dependencies()
 
         # also get dependencies from start events - HAS LIMITATIONS
-        dependencies_start = get_act_dependencies_start(self.activity_list)
+        dependencies_start = self.get_act_dependencies_start()
 
         # convert these dependencies to depencies of the activity 'instances',
         # i.e. dependencies within the simulation/with time component
-        cp_dependencies = get_dependencies_time(
-            self.recorded_activities_df, dependencies_act + dependencies_start
+        cp_dependencies = self.get_dependencies_time(
+            dependencies_act + dependencies_start
         )
 
         # get cp dependencies based on resource utilisation vs capacity - HAS LIMITATIONS
-        cp_depencies_res_limitation = get_resource_capacity_dependencies(
-            self.recorded_activities_df, self.object_list
-        )
+        cp_depencies_res_limitation = self.get_resource_capacity_dependencies()
 
         # get cp dependencies 'WAIT' - HAS LIMITATIONS
-        cp_dependencies_wait = get_wait_dependencies_cp(self.recorded_activities_df)
+        cp_dependencies_wait = self.get_wait_dependencies_cp()
 
         return list(
             set(cp_dependencies + cp_depencies_res_limitation + cp_dependencies_wait)
         )
 
+    def get_wait_dependencies_cp(self):
+        """
+        Get/assume dependencies between activities related to waiting. Waiting
+        activities must explicitly be marked in the CpLog object as ``WAITING``.
 
-# Waiting related start events
-def get_wait_dependencies_cp(recorded_activities_df):
-    """
-    Get/assume dependencies between activities related to waiting. Waiting
-    activities must explicitly be marked in the CpLog object as ``WAITING``.
+        Returns
+        --------
+        list_wait_dependencies : list
+            list of tuples of dependencies as occured in simulation
+            (tuple of cp_activity_id) wrt WAITing
 
-    Parameters
-    -----------
-    recorded_activities_df : pd.DataFrame
-        attribute of base_cp.BaseCP
+        .. warning::
+            The definition of ``WAITING`` is up for discussion, as well as when and
+            whether waiting is part of the critical path in the first place.
 
-    Returns
-    --------
-    list_wait_dependencies : list
-        list of tuples of dependencies as occured in simulation
-        (tuple of cp_activity_id) wrt WAITing
+        .. warning::
+            This function is preliminary, and hence has its limitations. Mostly due
+            to critical information for dependencies in the way OpenCLSim now logs
+            its information. For proper dependency checks for extracting the
+            critical path, the logging module of OpenCLSim must be extended.
 
-    .. warning::
-        The definition of ``WAITING`` is up for discussion, as well as when and
-        whether waiting is part of the critical path in the first place.
+        """
+        return []
 
-    .. warning::
-        This function is preliminary, and hence has its limitations. Mostly due
-        to critical information for dependencies in the way OpenCLSim now logs
-        its information. For proper dependency checks for extracting the
-        critical path, the logging module of OpenCLSim must be extended.
+    def get_resource_capacity_dependencies(self):
+        """
+        Given a ``CpLog`` instance, and a list of OpenCLSim model objects this
+        function inspects dependencies between activities which seen to be due to
+        resource limitations.
 
-    """
-    return []
+        For all objects it checks the number of resources that are available. Then
+        in the log it keeps track of the number of activities that occur at this
+        object, assuming that these activities request a resource from the object.
+        Hence, assumptions can be made on how many resources have been in use at a
+        particular moment in the simulation. As a result, resource limitation
+        dependencies between activities can be registered.
 
+        .. warning::
+            This function has some known limitations:
+            - This function utilizes the logging and simulation objects after
+              simulation. From this information it turns out that the actual
+              resource request cannot be tracked down. Hence, it is assumed that
+              if an activity takes place at an object, that also a resource is
+              requested. This is not by default the case, examples can be created
+              where an activity takes place at a simulation object without needing
+              a resource request.
 
-def get_resource_capacity_dependencies(recorded_activities_df, objects_list):
-    """
-    Given a ``CpLog`` instance, and a list of OpenCLSim model objects this
-    function inspects dependencies between activities which seen to be due to
-    resource limitations.
+        Returns
+        --------
+        dependencies_list : list
+            list of tuples of dependencies as occured in simulation
+            (tuple of cp_activity_id) wrt resource capacity
+        """
+        return []
 
-    For all objects it checks the number of resources that are available. Then
-    in the log it keeps track of the number of activities that occur at this
-    object, assuming that these activities request a resource from the object.
-    Hence, assumptions can be made on how many resources have been in use at a
-    particular moment in the simulation. As a result, resource limitation
-    dependencies between activities can be registered.
+    def get_act_dependencies_start(self):
+        """
+        Get activity dependencies based on start event conditions.
+        For now only 'container' type supported for base activities.
 
-    Parameters
-    ------------
-    recorded_activities_df : pd.DataFrame
-        attribute of base_cp.BaseCP
-    objects_list : list
-        list of all simulation objects (after simulation, e.g.
-        [vessel, site, etc])
+        Returns
+        ----------
+        dependencies_start_act_list : list
+            list of dependencies (tuples with activity ids)
 
-    .. warning::
-        This function has some known limitations:
-        - This function utilizes the logging and simulation objects after
-          simulation. From this information it turns out that the actual
-          resource request cannot be tracked down. Hence, it is assumed that
-          if an activity takes place at an object, that also a resource is
-          requested. This is not by default the case, examples can be created
-          where an activity takes place at a simulation object without needing
-          a resource request.
+        .. warning::
+            Start events are currently only detected based on level-related start
+            events. Hence, this function does not capture all start events!
 
-    Returns
-    --------
-    dependencies_list : list
-        list of tuples of dependencies as occured in simulation
-        (tuple of cp_activity_id) wrt resource capacity
-    """
-    return []
+        """
+        return []
 
+    def get_dependencies_time(self, dependencies_model_list):
+        """
+        Based on the model-based dependencies check these dependencies as they appear in the
+        recorded_activities_df after simulation and convert/create dependencies
+        at simulation/time level
 
-# Get dependencies based on start events
-def get_act_dependencies_start(activities_list):
-    """
-    Get activity dependencies based on start event conditions.
-    For now only 'container' type supported for base activities.
+        Parameters
+        -----------------
+        dependencies_model_list : list
+            list of tuples of all (activity ID) dependencies
 
-    Parameters
-    ------------
-    activities_list : list
-        recorded main activity or list of main activities (after simulation)
+        Returns
+        ---------
+        dependencies_list : list
+            list of tuples of dependencies as occured in simulation (tuple of cp_activity_id)
 
-    Returns
-    ----------
-    dependencies_start_act_list : list
-        list of dependencies (tuples with activity ids)
-
-    .. warning::
-        Start events are currently only detected based on level-related start
-        events. Hence, this function does not capture all start events!
-
-    """
-    return []
-
-
-def get_dependencies_time(recorded_activities_df, dependencies_model_list):
-    """
-    Based on the model-based dependencies check these dependencies as they appear in the
-    recorded_activities_df after simulation and convert/create depencies at simulation/time level
-
-    Parameters
-    -----------------
-    recorded_activities_df : pd.DataFrame
-        attribute of base_cp.BaseCP
-    dependencies_model_list : list
-        list of tuples of all (activity ID) dependencies
-
-    Returns
-    ---------
-    dependencies_list : list
-        list of tuples of dependencies as occured in simulation (tuple of cp_activity_id)
-
-    """
-    return []
+        """
+        return []
 
 
 class DependencyGraph:
@@ -203,12 +172,12 @@ class DependencyGraph:
         """Init."""
         # initiate
         self._main_activities = main_activities
-        self.G = nx.DiGraph()
+        self.dependency_graph = nx.DiGraph()
 
         # construct the graph
-        self._constructGraph()
+        self._construct_graph()
 
-    def _constructGraph(self):
+    def _construct_graph(self):
         """
         Construct the graph by drilling down from the top level activity all
         the way to the underlying base activities. Every time a node is created
@@ -234,10 +203,24 @@ class DependencyGraph:
 
         """
 
-    def getListDependencies(self):
-        """Return the list of dependencies based on the graph."""
-        return list(self.G.edges)
+    def get_list_dependencies(self):
+        """
+        Return the list of dependencies based on the graph.
 
-    def getListBaseActivities(self):
-        """Return a list of the IDs of all base activities."""
-        return list(self.G.nodes)
+        Returns
+        -------
+        dependencies_model_list : list
+            list of tuples (dependencies as defined in model setup)
+        """
+        return list(self.dependency_graph.edges)
+
+    def get_list_base_activities(self):
+        """
+        Return a list of the IDs of all base activities.
+
+        Returns
+        -------
+        basic_activities_list : list
+            list of the IDs of all base activities.
+        """
+        return list(self.dependency_graph.nodes)

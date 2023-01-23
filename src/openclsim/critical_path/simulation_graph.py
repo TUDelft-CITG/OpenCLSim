@@ -1,6 +1,7 @@
 """
-Module that contains class SimulationGraph (previously ActivityGraph)
+Module that contains class SimulationGraph
 """
+import networkx as nx
 
 
 class SimulationGraph:
@@ -10,7 +11,7 @@ class SimulationGraph:
     Class to construct a ``networkx.DiGraph`` from simulation activity logs
     captured in a CpLog-object, and corresponding dependencies between those
     activities. Simulated activities appear in the graph as sets of _node-edge-
-    node_, with a staet time, end time and a duration. Dependencies between
+    node_, with a start time, end time and a duration. Dependencies between
     activities are added through connecting edges, from the end-node of one
     activity, to the starting-node of the next activity.
 
@@ -25,7 +26,7 @@ class SimulationGraph:
 
     Parameters
     ----------
-    recorded_activity_df : recorded_activity_df
+    recorded_activity_df : pd.DataFrame
         attribute from instance of BaseCpLog
     dependency_list : list
         A key part of the recorded_activities_df is the ``cp_activity_id`` column. This column
@@ -38,20 +39,19 @@ class SimulationGraph:
 
     def __init__(self, recorded_activity_df, dependency_list):
         """Init"""
-        # set in self
         self.recorded_activity_df = self.__check_rec(recorded_activity_df)
         self.dependency_list = self.__check_dep(dependency_list)
-
-        # init
-        self.G = None
-
-        # do the work
-        self.__construct_graph()
+        self.simulation_graph = self.__construct_graph()
         self.__find_critical_edges()
 
     def __check_rec(self, recorded_activity_df):
         """
         Check validity of recorded_activity_df.
+
+        Parameters
+        ----------
+        recorded_activity_df : pd.DataFrame
+            attribute from instance of BaseCpLog
         """
         # ..
         return recorded_activity_df
@@ -59,19 +59,30 @@ class SimulationGraph:
     def __check_dep(self, dependency_list):
         """
         Check validity of dependency_list.
+
+        Parameters
+        ----------
+        dependency_list : list
         """
         # ..
         return dependency_list
 
     def __construct_graph(self):
         """
-        Set self.G, the networkx diGraph representing the OpenClSim simulation
+        Construct and return simulation graph (self.simulation_graph),
+        the networkx diGraph representing the OpenClSim simulation,
+        so including all recorded activities and their dependencies (in time)
+
+        Returns
+        -------
+        simulation_graph : nx.DiGraph
+            the networkx diGraph representing the OpenClSim simulation
         """
-        pass
+        return nx.DiGraph()
 
     def __find_critical_edges(self):
         """
-        Iteratively run through self.G and find all critical edges
+        Iteratively run through self.simulation_graph and find all critical edges
         """
         pass
 
@@ -81,6 +92,8 @@ class SimulationGraph:
 
         Returns
         -------
-        list of activity UUIDs (as found in column cp_activity_id from self.recorded_activity_df)
+        critical_activities_list : list
+            list of activity UUIDs
+            (as found in column cp_activity_id from self.recorded_activity_df)
         """
         return []

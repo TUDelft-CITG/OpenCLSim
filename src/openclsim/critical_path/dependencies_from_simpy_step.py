@@ -22,8 +22,9 @@ class DependenciesFromSimpy(BaseCP):
 
         Returns
         -------
-        dependency_list : list of tuples
-            like [(A1, A2), (A1, A3), (A3, A4)] where A2 depends on A1 (A1 'causes' A2) et cetera
+        dependency_list : list
+            list of tuples like [(A1, A2), (A1, A3), (A3, A4)]
+            where A2 depends on A1 (A1 'causes' A2) et cetera
         """
         assert isinstance(
             self.env, MyCustomSimpyEnv
@@ -35,5 +36,4 @@ class DependenciesFromSimpy(BaseCP):
 
 class MyCustomSimpyEnv:
     """TODO SCOPE 6"""
-
     pass
