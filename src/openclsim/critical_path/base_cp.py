@@ -62,7 +62,7 @@ class BaseCP(ABC):
         self.dependency_list = None
         self.simulation_graph = None
 
-    @abstractmethod()
+    @abstractmethod
     def get_dependency_list(self):
         """must be implemented by child classes"""
         return []
