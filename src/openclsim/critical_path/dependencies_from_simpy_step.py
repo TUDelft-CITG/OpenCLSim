@@ -15,7 +15,7 @@ class DependenciesFromSimpy(BaseCP):
 
     def get_dependency_list(self):
         """
-        get dependencies from simpy logging by analysing
+        Get dependencies from simpy logging by analysing
         the data as saved with the patched env.step function
 
         requires self.env (instance MyCustomSimpy)

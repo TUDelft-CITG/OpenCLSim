@@ -1,9 +1,5 @@
 """
-module that contains class SimulationGraph (previously ActivityGraph)
-
-Notes
--------
-in original commit approx 400 lines
+Module that contains class SimulationGraph (previously ActivityGraph)
 """
 
 
@@ -41,7 +37,7 @@ class SimulationGraph:
     """
 
     def __init__(self, recorded_activity_df, dependency_list):
-        """init"""
+        """Init"""
         # set in self
         self.recorded_activity_df = self.__check_rec(recorded_activity_df)
         self.dependency_list = self.__check_dep(dependency_list)
@@ -55,31 +51,33 @@ class SimulationGraph:
 
     def __check_rec(self, recorded_activity_df):
         """
-        check validity of recorded_activity_df
+        Check validity of recorded_activity_df.
         """
         # ..
         return recorded_activity_df
 
     def __check_dep(self, dependency_list):
         """
-        check validity of dependency_list
+        Check validity of dependency_list.
         """
         # ..
         return dependency_list
 
     def __construct_graph(self):
         """
-        set self.G, the netowrkx diGraph representing the OpenClSim simulation
+        Set self.G, the networkx diGraph representing the OpenClSim simulation
         """
         pass
 
     def __find_critical_edges(self):
-        """iteratively run through self.G and find all critical edges"""
+        """
+        Iteratively run through self.G and find all critical edges
+        """
         pass
 
     def get_list_critical_activities(self):
         """
-        translate the critical edges into critical activities
+        Translate the critical edges into critical activities
 
         Returns
         -------

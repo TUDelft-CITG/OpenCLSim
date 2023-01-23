@@ -1,18 +1,20 @@
 """
-module contains DependenciesFromRecordedActivities that inherits from critical_path.base_cp.BaseCP
+Module contains DependenciesFromRecordedActivities that inherits from critical_path.base_cp.BaseCP
 """
 from openclsim.critical_path.base_cp import BaseCP
 
 
 class DependenciesFromRecordedActivities(BaseCP):
-    """build dependecies from recorded_activities_df"""
+    """
+    Build dependecies from recorded_activities_df
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def get_dependency_list(self):
         """
-        get dependencies directly from recorded activities (match on identical timestamps)
+        Get dependencies directly from recorded activities (match on identical timestamps)
 
         Notes
         ---------

@@ -1,5 +1,5 @@
 """
-module contains DependenciesFromModel that inherits from critical_path.base_cp.BaseCP
+Module contains DependenciesFromModel that inherits from critical_path.base_cp.BaseCP
 
 in original commit this module would contain may lines and many (hidden/protected)
 helper functions and methods which ar enot all listed here
@@ -10,14 +10,14 @@ from openclsim.critical_path.base_cp import BaseCP
 
 
 class DependenciesFromModel(BaseCP):
-    """build dependecies from recorded_activities_df"""
+    """Build dependecies from recorded_activities_df"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def get_dependency_list(self):
         """
-        get dependencies from simulation setup and
+        Get dependencies from simulation setup and
         cross reference with recorded activities to get dependencies of relevant instances
         requires self.object_list, self.activity_list and self.recorded_activities_df
 
