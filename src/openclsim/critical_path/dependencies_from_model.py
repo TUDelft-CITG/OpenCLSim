@@ -59,7 +59,7 @@ class DependenciesFromModel(BaseCP):
         activities must explicitly be marked in the CpLog object as ``WAITING``.
 
         Returns
-        --------
+        -------
         list_wait_dependencies : list
             list of tuples of dependencies as occured in simulation
             (tuple of cp_activity_id) wrt WAITing

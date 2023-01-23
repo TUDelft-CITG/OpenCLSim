@@ -5,6 +5,7 @@ the critical path of the simulation
 """
 
 from abc import ABC, abstractmethod
+
 import pandas as pd
 
 from openclsim.critical_path.simulation_graph import SimulationGraph
