@@ -4,14 +4,15 @@ the critical path of the simulation
 
 """
 
-from abc import ABC, abstractmethod
 import datetime as dt
-import pandas as pd
 import uuid
+from abc import ABC, abstractmethod
+
+import pandas as pd
 
 from openclsim.critical_path.simulation_graph import SimulationGraph
-from openclsim.plot.log_dataframe import get_log_dataframe, get_log_dataframe_activity
 from openclsim.model import get_subprocesses
+from openclsim.plot.log_dataframe import get_log_dataframe
 
 
 class BaseCP(ABC):
@@ -89,8 +90,7 @@ class BaseCP(ABC):
         """
         # check unique names - @Pieter maybe warning?
         names = [obj.name for obj in self.object_list]
-        assert len(names) == len(
-            set(names)), "Names of your objects must be unique!"
+        assert len(names) == len(set(names)), "Names of your objects must be unique!"
 
         # concat
         log_all = pd.DataFrame()
@@ -101,8 +101,8 @@ class BaseCP(ABC):
 
         # now drop some columns not directly needed
         log_all = log_all.loc[
-                  :, ["Activity", "Timestamp", "ActivityState", "SimulationObject"]
-                  ]
+            :, ["Activity", "Timestamp", "ActivityState", "SimulationObject"]
+        ]
 
         # keep ID and add name for us humans
         log_all.loc[:, "ActivityID"] = log_all.loc[:, "Activity"]
@@ -138,9 +138,7 @@ class BaseCP(ABC):
             The reformated and reshaped log.
         """
         # keep the df chronological
-        df_log = df_log.sort_values(
-            by=["Timestamp", "ActivityState"]
-        )
+        df_log = df_log.sort_values(by=["Timestamp", "ActivityState"])
         df_log = df_log.reset_index()
 
         # make a list of indexes to handle
@@ -168,16 +166,12 @@ class BaseCP(ABC):
 
             # see what stop events could belong to this start event
             bool_candidates = (
-                    (
-                            df_log.loc[:, "ActivityID"] == row_current.loc["ActivityID"]
-                    )
-                    & (
-                            df_log.loc[:, "SimulationObject"] ==
-                            row_current.loc["SimulationObject"]
-                    )
-                    & (
-                        df_log.loc[:, "ActivityState"].isin(["STOP", "WAIT_STOP"])
-                    )
+                (df_log.loc[:, "ActivityID"] == row_current.loc["ActivityID"])
+                & (
+                    df_log.loc[:, "SimulationObject"]
+                    == row_current.loc["SimulationObject"]
+                )
+                & (df_log.loc[:, "ActivityState"].isin(["STOP", "WAIT_STOP"]))
             )
             idx_candidates = list(bool_candidates.index[bool_candidates])
             # select the first end event after the start event
@@ -205,7 +199,7 @@ class BaseCP(ABC):
                             if "WAIT" in row_current.loc["ActivityState"]
                             else "ACTIVE",
                             "duration": df_log.loc[idx_end, "Timestamp"]
-                                        - row_current.loc["Timestamp"],
+                            - row_current.loc["Timestamp"],
                             "end_time": df_log.loc[idx_end, "Timestamp"],
                         },
                         index=[0],
@@ -217,13 +211,18 @@ class BaseCP(ABC):
 
         # ASSUME that activities with duration zero can be discarded
         if isinstance(recorded_activities_df.loc[:, "duration"][0], dt.timedelta):
-            recorded_activities_df = recorded_activities_df.loc[recorded_activities_df.loc[:, "duration"]
-                                > dt.timedelta(seconds=0), :]
+            recorded_activities_df = recorded_activities_df.loc[
+                recorded_activities_df.loc[:, "duration"] > dt.timedelta(seconds=0), :
+            ]
         else:
-            recorded_activities_df = recorded_activities_df.loc[recorded_activities_df.loc[:, "duration"] > 0, :]
+            recorded_activities_df = recorded_activities_df.loc[
+                recorded_activities_df.loc[:, "duration"] > 0, :
+            ]
 
         assert len(to_handle) == 0, f"These have not been handled {to_handle}"
-        recorded_activities_df = recorded_activities_df.sort_values(by=["start_time", "SimulationObject"])
+        recorded_activities_df = recorded_activities_df.sort_values(
+            by=["start_time", "SimulationObject"]
+        )
         recorded_activities_df = recorded_activities_df.reset_index(drop=True)
 
         return recorded_activities_df
@@ -259,9 +258,9 @@ class BaseCP(ABC):
         # now add unique ID to df_new
         for idx, row in unique_combis.iterrows():
             bool_match = (
-                    (recorded_activities_df.loc[:, "Activity"] == row.loc["Activity"])
-                    & (recorded_activities_df.loc[:, "start_time"] == row.loc["start_time"])
-                    & (recorded_activities_df.loc[:, "end_time"] == row.loc["end_time"])
+                (recorded_activities_df.loc[:, "Activity"] == row.loc["Activity"])
+                & (recorded_activities_df.loc[:, "start_time"] == row.loc["start_time"])
+                & (recorded_activities_df.loc[:, "end_time"] == row.loc["end_time"])
             )
             recorded_activities_df.loc[bool_match, "cp_activity_id"] = str(uuid.uuid4())
 
