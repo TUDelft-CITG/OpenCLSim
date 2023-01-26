@@ -5,10 +5,13 @@ the critical path of the simulation
 """
 
 from abc import ABC, abstractmethod
-
+import datetime as dt
 import pandas as pd
+import uuid
 
 from openclsim.critical_path.simulation_graph import SimulationGraph
+from openclsim.plot.log_dataframe import get_log_dataframe, get_log_dataframe_activity
+from openclsim.model import get_subprocesses
 
 
 class BaseCP(ABC):
@@ -66,9 +69,203 @@ class BaseCP(ABC):
         """
         Set a recorded_activity_df in self.
         Uses the logs of provided activities and sim objects, combines these, adds unique UUID
-        and reshape into format such that single row has a start time and an end time
+        and reshape into format such that single row has a start time and an end time.
         """
-        pass
+        # get all recorded logevents
+        all_recorded_events = self.combine_logs()
+
+        # reshape into set of activities with start, duration and end
+        recorded_activities_df = self.reshape_log(all_recorded_events)
+
+        # add unique identifier for activities (may be shared by multiple objects)
+        recorded_activities_df = self.add_unique_activity(recorded_activities_df)
+
+        # set to self
+        self.recorded_activities_df = recorded_activities_df
+
+    def combine_logs(self):
+        """
+        Combines the logs of given (simulation) objects into a single dataframe.
+        """
+        # check unique names - @Pieter maybe warning?
+        names = [obj.name for obj in self.object_list]
+        assert len(names) == len(
+            set(names)), "Names of your objects must be unique!"
+
+        # concat
+        log_all = pd.DataFrame()
+        for obj in self.object_list:
+            log = get_log_dataframe(obj)
+            log["SimulationObject"] = obj.name
+            log_all = pd.concat([log_all, log])
+
+        # now drop some columns not directly needed
+        log_all = log_all.loc[
+                  :, ["Activity", "Timestamp", "ActivityState", "SimulationObject"]
+                  ]
+
+        # keep ID and add name for us humans
+        log_all.loc[:, "ActivityID"] = log_all.loc[:, "Activity"]
+
+        # get mapping (activity name)
+        list_all_activities = get_subprocesses(self.activity_list)
+        id_map = {act.id: act.name for act in list_all_activities}
+        log_all.loc[:, "Activity"] = log_all.loc[:, "Activity"].replace(id_map)
+
+        return log_all.sort_values("Timestamp").reset_index(drop=True)
+
+    @staticmethod
+    def reshape_log(df_log):
+        """
+        Reshape OpenCLSim log to a workable format for extracting critical path.
+
+        This function reshapes a log DataFrame as output from OpenCLSim such that
+        an activity appears with a single log-line. The start and end times of the
+        activity is added in new columns.
+
+        Note: the function starts off with a start event of an activity, and then
+        selects the stop event which is closest after this start event. It assumes
+        that activities with duration zero can be discarded.
+
+        Parameters
+        ----------
+        df_log : pd.DataFrame()
+            format like return from self.combine_logs() or plot.get_log_dataframe()
+
+        Returns
+        -------
+        recorded_activities_df : pd.DataFrame
+            The reformated and reshaped log.
+        """
+        # keep the df chronological
+        df_log = df_log.sort_values(
+            by=["Timestamp", "ActivityState"]
+        )
+        df_log = df_log.reset_index()
+
+        # make a list of indexes to handle
+        to_handle = list(range(0, len(df_log)))
+
+        # init the output
+        recorded_activities_df = pd.DataFrame()
+
+        # loop exit
+        safety_valve = 0
+        while (len(to_handle) > 0) and (safety_valve < len(df_log)):
+            # update the safety valve
+            safety_valve += 1
+
+            # select a log-row to inspect
+            idx_start = to_handle[0]
+            row_current = df_log.loc[idx_start, :]
+
+            # check for a start event
+            if row_current.loc["ActivityState"] not in ["START", "WAIT_START"]:
+                raise ValueError(
+                    f"Unexpected starting state {row_current.loc['ActivityState']}"
+                    f" for idx {idx_start}, so skipping this."
+                )
+
+            # see what stop events could belong to this start event
+            bool_candidates = (
+                    (
+                            df_log.loc[:, "ActivityID"] == row_current.loc["ActivityID"]
+                    )
+                    & (
+                            df_log.loc[:, "SimulationObject"] ==
+                            row_current.loc["SimulationObject"]
+                    )
+                    & (
+                        df_log.loc[:, "ActivityState"].isin(["STOP", "WAIT_STOP"])
+                    )
+            )
+            idx_candidates = list(bool_candidates.index[bool_candidates])
+            # select the first end event after the start event
+            idx_end = [
+                idx_end
+                for idx_end in idx_candidates
+                if idx_end > idx_start and idx_end in to_handle
+            ][0]
+
+            # now remove idx start and end from handle
+            to_handle.remove(idx_start)
+            to_handle.remove(idx_end)
+
+            # and place in new dataframe
+            recorded_activities_df = pd.concat(
+                [
+                    recorded_activities_df,
+                    pd.DataFrame(
+                        {
+                            "Activity": row_current.loc["Activity"],
+                            "ActivityID": row_current.loc["ActivityID"],
+                            "SimulationObject": row_current.loc["SimulationObject"],
+                            "start_time": row_current.loc["Timestamp"],
+                            "state": "WAITING"
+                            if "WAIT" in row_current.loc["ActivityState"]
+                            else "ACTIVE",
+                            "duration": df_log.loc[idx_end, "Timestamp"]
+                                        - row_current.loc["Timestamp"],
+                            "end_time": df_log.loc[idx_end, "Timestamp"],
+                        },
+                        index=[0],
+                    ),
+                ],
+                ignore_index=True,
+                sort=False,
+            )
+
+        # ASSUME that activities with duration zero can be discarded
+        if isinstance(recorded_activities_df.loc[:, "duration"][0], dt.timedelta):
+            recorded_activities_df = recorded_activities_df.loc[recorded_activities_df.loc[:, "duration"]
+                                > dt.timedelta(seconds=0), :]
+        else:
+            recorded_activities_df = recorded_activities_df.loc[recorded_activities_df.loc[:, "duration"] > 0, :]
+
+        assert len(to_handle) == 0, f"These have not been handled {to_handle}"
+        recorded_activities_df = recorded_activities_df.sort_values(by=["start_time", "SimulationObject"])
+        recorded_activities_df = recorded_activities_df.reset_index(drop=True)
+
+        return recorded_activities_df
+
+    @staticmethod
+    def add_unique_activity(recorded_activities_df):
+        """
+        Add a unique activity ID in time.
+
+        OpenCLSim activities have their unique UUID. However, if the same activity
+        is executed serveral times in through time, the same ID will appear in the
+        log. For the analysis of the critical path of executed activities, it is
+        desired to make the distinction between _activity A_ starting at time _t1_,
+        and the same _activity A_ starting at time _t2_. This new ID is added as
+        an additional column in the provided log as ``cp_activity_id``.
+
+        Parameters
+        -----------
+        recorded_activities_df : pd.DataFrame
+            columns/format like return from self.reshape_log()
+
+        Returns
+        ----------
+        recorded_activities_df : pd.DataFrame
+            as input, with additional column `cp_activity_id`
+        """
+        unique_combis = (
+            recorded_activities_df.groupby(["Activity", "start_time", "end_time"])
+            .size()
+            .reset_index()
+            .rename(columns={0: "count"})
+        )
+        # now add unique ID to df_new
+        for idx, row in unique_combis.iterrows():
+            bool_match = (
+                    (recorded_activities_df.loc[:, "Activity"] == row.loc["Activity"])
+                    & (recorded_activities_df.loc[:, "start_time"] == row.loc["start_time"])
+                    & (recorded_activities_df.loc[:, "end_time"] == row.loc["end_time"])
+            )
+            recorded_activities_df.loc[bool_match, "cp_activity_id"] = str(uuid.uuid4())
+
+        return recorded_activities_df
 
     def get_recorded_activity_df(self):
         """
