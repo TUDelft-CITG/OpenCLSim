@@ -72,17 +72,14 @@ class BaseCP(ABC):
         Uses the logs of provided activities and sim objects, combines these, adds unique UUID
         and reshape into format such that single row has a start time and an end time.
         """
-        # get all recorded logevents
+        # get all recorded log-events
         all_recorded_events = self.combine_logs()
 
         # reshape into set of activities with start, duration and end
         recorded_activities_df = self.reshape_log(all_recorded_events)
 
-        # add unique identifier for activities (may be shared by multiple objects)
-        recorded_activities_df = self.add_unique_activity(recorded_activities_df)
-
-        # set to self
-        self.recorded_activities_df = recorded_activities_df
+        # add unique identifier for activities (could be shared by multiple objects)
+        self.recorded_activities_df = self.add_unique_activity(recorded_activities_df)
 
     def combine_logs(self):
         """
@@ -129,7 +126,7 @@ class BaseCP(ABC):
 
         Parameters
         ----------
-        df_log : pd.DataFrame()
+        df_log : pd.DataFrame
             format like return from self.combine_logs() or plot.get_log_dataframe()
 
         Returns
@@ -250,7 +247,7 @@ class BaseCP(ABC):
             as input, with additional column `cp_activity_id`
         """
         unique_combis = (
-            recorded_activities_df.groupby(["Activity", "start_time", "end_time"])
+            recorded_activities_df.groupby(["ActivityID", "start_time", "end_time"])
             .size()
             .reset_index()
             .rename(columns={0: "count"})
@@ -258,7 +255,7 @@ class BaseCP(ABC):
         # now add unique ID to df_new
         for idx, row in unique_combis.iterrows():
             bool_match = (
-                (recorded_activities_df.loc[:, "Activity"] == row.loc["Activity"])
+                (recorded_activities_df.loc[:, "ActivityID"] == row.loc["ActivityID"])
                 & (recorded_activities_df.loc[:, "start_time"] == row.loc["start_time"])
                 & (recorded_activities_df.loc[:, "end_time"] == row.loc["end_time"])
             )

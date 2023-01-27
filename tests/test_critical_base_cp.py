@@ -250,10 +250,10 @@ def test_critical_activities_2barges():
         {"get_dependency_list": "no need to implement"},
     )
     my_basecp = TestCP(**demo_data(2, 100))
-    my_basecp._make_recorded_activities_df()
+    recorded_activities_df = my_basecp.get_recorded_activity_df()
 
-    assert len(my_basecp.recorded_activities_df) == 148
-    assert list(my_basecp.recorded_activities_df.columns) == [
+    assert len(recorded_activities_df) == 148
+    assert list(recorded_activities_df) == [
         "Activity",
         "ActivityID",
         "SimulationObject",
