@@ -83,11 +83,12 @@ class BaseCP(ABC):
 
     def combine_logs(self):
         """
-        Combines the logs of given (simulation) objects into a single dataframe.
+        Combines the logs of given (simulation) objects into a single pandas.Dataframe.
         """
         # check unique names - @Pieter maybe warning?
         names = [obj.name for obj in self.object_list]
-        assert len(names) == len(set(names)), "Names of your objects must be unique!"
+        if not len(names) == len(set(names)):
+            raise ValueError("Names of your objects must be unique!")
 
         # concat
         log_all = pd.DataFrame()
@@ -96,15 +97,13 @@ class BaseCP(ABC):
             log["SimulationObject"] = obj.name
             log_all = pd.concat([log_all, log])
 
-        # now drop some columns not directly needed
+        # keep only columns directly needed
         log_all = log_all.loc[
             :, ["Activity", "Timestamp", "ActivityState", "SimulationObject"]
         ]
 
         # keep ID and add name for us humans
         log_all.loc[:, "ActivityID"] = log_all.loc[:, "Activity"]
-
-        # get mapping (activity name)
         list_all_activities = get_subprocesses(self.activity_list)
         id_map = {act.id: act.name for act in list_all_activities}
         log_all.loc[:, "Activity"] = log_all.loc[:, "Activity"].replace(id_map)
@@ -127,7 +126,7 @@ class BaseCP(ABC):
         Parameters
         ----------
         df_log : pd.DataFrame
-            format like return from self.combine_logs() or plot.get_log_dataframe()
+            Format like return from self.combine_logs() or plot.get_log_dataframe().
 
         Returns
         -------
@@ -239,12 +238,12 @@ class BaseCP(ABC):
         Parameters
         -----------
         recorded_activities_df : pd.DataFrame
-            columns/format like return from self.reshape_log()
+            Columns/format like return from self.reshape_log().
 
         Returns
         ----------
         recorded_activities_df : pd.DataFrame
-            as input, with additional column `cp_activity_id`
+            As input, with additional column `cp_activity_id`.
         """
         unique_combis = (
             recorded_activities_df.groupby(["ActivityID", "start_time", "end_time"])
@@ -270,7 +269,7 @@ class BaseCP(ABC):
         Returns
         -------
         recorded_activity_df : pd.DataFrame
-            all recorded activities from simulation
+            All recorded activities from simulation.
         """
         if self.recorded_activities_df is None:
             self._make_recorded_activities_df()
@@ -292,7 +291,7 @@ class BaseCP(ABC):
         Returns
         -------
         recorded_activity_df : pd.DataFrame
-            all recorded activities from simulation.
+            All recorded activities from simulation.
         """
         self._make_recorded_activities_df()
         self.dependency_list = self.get_dependency_list()
@@ -309,6 +308,6 @@ class BaseCP(ABC):
         Returns
         -------
         recorded_activity_df : pd.DataFrame
-            all recorded activities from simulation.
+            All recorded activities from simulation.
         """
         return pd.DataFrame()
