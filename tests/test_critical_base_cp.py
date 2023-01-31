@@ -4,8 +4,8 @@ import datetime as dt
 from openclsim.critical_path.base_cp import BaseCP
 
 
-def test_critical_activities_2barges(simulation_2_barges):
-    """test"""
+def test_get_recorded_activity_df_2_barges(simulation_2_barges):
+    """Test creation of recorded_activities_df in simulation with 2 barges."""
     TestCP = type(
         "TestCP",
         (BaseCP,),
@@ -28,8 +28,8 @@ def test_critical_activities_2barges(simulation_2_barges):
     ]
 
 
-def test_critical_activities_4barges(simulation_4_barges):
-    """test"""
+def test_get_recorded_activity_df_4_barges(simulation_4_barges):
+    """Test creation of recorded_activities_df in simulation with 4 barges."""
     TestCP = type(
         "TestCP",
         (BaseCP,),

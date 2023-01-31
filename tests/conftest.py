@@ -1,4 +1,8 @@
-""" Fixtures for the test-suite """
+"""
+Fixtures for the test-suite.
+
+Fixtures return the simpy.Environment, objects and activities after a simulation has been run.
+"""
 import pytest
 import shapely.geometry
 import simpy
@@ -19,8 +23,15 @@ def simulation_4_barges():
 
 def demo_data(nr_barges, total_amount):
     """
-    run a simulation where <nr_barges> barges need to shift an amount of <total_amount>
-    from site 1 to site 2 whereafter a larger vessel can come into action
+    Run a simulation where <nr_barges> barges need to shift an amount of <total_amount>
+    from site 1 to site 2 whereafter a larger vessel can come into action.
+
+    Parameters
+    ----------
+    nr_barges : int
+        Number of barges in the simulation.
+    total_amount : int
+        Total amount to be transported in the simulation.
     """
     Site = type(
         "Site",
