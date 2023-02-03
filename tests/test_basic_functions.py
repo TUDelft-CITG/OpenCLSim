@@ -94,7 +94,7 @@ def move_and_test(env, destination, movable, expected_speed, expected_time):
     start = env.now
     env.process(movable.move(destination))
     env.run()
-    np.testing.assert_almost_equal(movable.current_speed, expected_speed)
+    np.testing.assert_almost_equal(movable.v, expected_speed)
     assert movable.geometry.equals(destination.geometry)
     hours_spent = (env.now - start) / 3600
     np.testing.assert_almost_equal(hours_spent, expected_time, decimal=2)
