@@ -1,13 +1,27 @@
 """Component to move the simulation objects."""
 import logging
+from typing import List
 import warnings
 
+
 import shapely.geometry
+import pyproj
 
 from .container import HasContainer, HasMultiContainer
 from .locatable import Locatable
 from .log import LogState
 from .simpy_object import SimpyObject
+
+# can be removed if we switch to python>=3.10
+try:
+    from itertools import pairwise
+except ImportError:
+    def pairwise(iterable):
+        # pairwise('ABCDEFG') --> AB BC CD DE EF FG
+        a, b = tee(iterable)
+        next(b, None)
+        return zip(a, b)
+
 
 logger = logging.getLogger(__name__)
 
@@ -183,21 +197,51 @@ class CanSailOnGraph(Routable, Movable):
         super().__init__(*args, **kwargs)
         # call functions when passing edges
         self.on_pass_edge_functions = []
+        self.wgs84 = pyproj.Geod(ellps="WGS84")
         assert hasattr(self.env, "FG"), "expected graph FG to be available on env"
 
-    def pass_edge(self, origin: str, destination: str):
-        """Pass an edge. The node pair origin destination should be available on the env.graph."""
-        edge = self.env.graph.edges[origin, destination]
-        # get origin and destination geometry
-        origin_geometry = self.env.graph.nodes[origin]["geometry"]
-        destination_geometry = self.env.graph.nodes[destination]["geometry"]
-        edge_geometry = edge["geometry"]
-        print(
-            "check if we need to reorder",
-            edge_geometry,
-            origin_geometry,
-            destination_geometry,
-        )
+    def move_to_geometry(self, geometry: shapely.geometry.Point):
+        """move to geometry"""
+        linestring = shapely.geometry.LineString([self.geometry, geometry])
+        distance = self.wgs84.geometry_length(edge_geometry)
+        duration = self.v * distance
+        yield self.env.timeout(duration)
+        self.geometry = geometry
 
-        for on_pass_edge_function in self.on_pass_edge_functions:
-            on_pass_edge_function(origin, destination)
+    def pass_linestring(self, geometry):
+        """Pass an edge. The node pair origin destination should be available on the env.graph."""
+        assert isinstance(geometry, shapely.geometry.LineString)
+        distance = self.wgs84.geometry_length(edge_geometry)
+        duration = self.v * distance
+        yield self.env.timeout(duration)
+        self.geometry = destination_geometry
+
+
+    @staticmethod
+    def order_geometry(geometry: shapely.geometry.LineString, a: shapely.geometry.Point):
+        """Make sure the linestring starts at a. If the end of the linestring is closer to a than the start, the linestring is inverted."""
+        start = shapely.geometry.Point(*geometry.coords[0])
+        end = shapely.geometry.Point(*geometry.coords[-1])
+        _, _, distance_from_start = self.wgs84.inv(start.x, start.y, a.x, a.y)
+        _, _, distance_from_end = self.wgs84.inv(end.x, end.y, a.x, a.y)
+        if distance_from_start > distance_from_end:
+            coords = np.flipud(np.array(geometry.coords))
+        else:
+            coords = geometry.coords
+        new_geometry = shapely.geometry.LineString(coords)
+        return new_geometry
+
+    def move_over_route(self, route: List[str]):
+        """sail over the route, a list of nodes"""
+        a = route[0]
+        a_geometry = self.graph.nodes[a]['geometry']
+        yield from self.move_to_geometry(a_geometry)
+        for i, (a, b) in enumerate(pairwise(route)):
+            a_geometry = self.graph[a]['geometry']
+            b_geometry = self.graph[b]['geometry']
+            edge_geometry = self.graph[(a, b)]['geometry']
+            # make sure we are in the right order
+            edge_geometry = self.order_geometry(edge_geometry)
+            yield from self.pass_linestring(edge_geometry)
+            for pass_edge_function in self.pass_edge_function:
+                yield pass_edge_function(ship=self, a=a, b=b, route=route, geometry=geometry)
