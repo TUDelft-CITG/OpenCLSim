@@ -84,7 +84,7 @@ class Movable(SimpyObject, Locatable):
         return self._v
 
     @property
-    def currentspeed(self):
+    def current_speed(self):
         warnings.warn(
             "The property `.currentspeed` is deprected. Use `.v` instead.",
             DeprecationWarning,
@@ -192,7 +192,12 @@ class CanSailOnGraph(Routable, Movable):
         origin_geometry = self.env.graph.nodes[origin]["geometry"]
         destination_geometry = self.env.graph.nodes[destination]["geometry"]
         edge_geometry = edge["geometry"]
-        print("check if we need to reorder", edge_geometry, origin_geometry, destination_geometry)
+        print(
+            "check if we need to reorder",
+            edge_geometry,
+            origin_geometry,
+            destination_geometry,
+        )
 
         for on_pass_edge_function in self.on_pass_edge_functions:
             on_pass_edge_function(origin, destination)
