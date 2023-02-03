@@ -3,7 +3,6 @@ import logging
 import warnings
 
 import shapely.geometry
-import networkx as nx
 
 from .container import HasContainer, HasMultiContainer
 from .locatable import Locatable
@@ -187,10 +186,13 @@ class CanSailOnGraph(Routable, Movable):
         assert hasattr(self.env, "FG"), "expected graph FG to be available on env"
 
     def pass_edge(self, origin: str, destination: str):
-        """Pass an edge. The node pair origin destination should be available on the env.FG graph."""
-        edge = self.env.FG.edges[origin, destination]
+        """Pass an edge. The node pair origin destination should be available on the env.graph."""
+        edge = self.env.graph.edges[origin, destination]
         # get origin and destination geometry
-        orig = nx.get_node_attributes(self.env.FG, "geometry")[origin]
-        dest = nx.get_node_attributes(self.env.FG, "geometry")[destination]
+        origin_geometry = self.env.graph.nodes[origin]["geometry"]
+        destination_geometry = self.env.graph.nodes[destination]["geometry"]
+        edge_geometry = edge["geometry"]
+        print("check if we need to reorder", edge_geometry, origin_geometry, destination_geometry)
+
         for on_pass_edge_function in self.on_pass_edge_functions:
             on_pass_edge_function(origin, destination)
