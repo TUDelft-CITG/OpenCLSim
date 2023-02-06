@@ -15,15 +15,18 @@ def test_get_recorded_activity_df_2_barges(simulation_2_barges):
     recorded_activities_df = my_basecp.get_recorded_activity_df()
 
     assert max(recorded_activities_df.end_time) == dt.datetime(1970, 1, 2, 6, 40)
-    assert len(recorded_activities_df) == 148
-    assert list(recorded_activities_df) == [
-        "Activity",
+    assert len(recorded_activities_df) == 148, "148 (shared) activities recorded"
+    assert (
+        len(recorded_activities_df.cp_activity_id.unique()) == 106
+    ), "106 unique activities"
+    assert list(recorded_activities_df.columns) == [
         "ActivityID",
+        "Activity",
         "SimulationObject",
         "start_time",
-        "state",
-        "duration",
         "end_time",
+        "duration",
+        "state",
         "cp_activity_id",
     ]
 

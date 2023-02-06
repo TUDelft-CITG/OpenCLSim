@@ -4,7 +4,6 @@ the critical path of the simulation
 
 """
 
-import datetime as dt
 import uuid
 from abc import ABC, abstractmethod
 
@@ -85,28 +84,29 @@ class BaseCP(ABC):
         """
         Combines the logs of given (simulation) objects into a single pandas.Dataframe.
         """
-        # check unique names - @Pieter maybe warning?
+        # check unique names
         names = [obj.name for obj in self.object_list]
         if not len(names) == len(set(names)):
             raise ValueError("Names of your objects must be unique!")
 
-        # concat
-        log_all = pd.DataFrame()
-        for obj in self.object_list:
-            log = get_log_dataframe(obj)
-            log["SimulationObject"] = obj.name
-            log_all = pd.concat([log_all, log])
+        # concat with name
+        log_list = [get_log_dataframe(obj) for obj in self.object_list]
+        _ = [
+            df.insert(0, "SimulationObject", name)
+            for (df, name) in zip(log_list, names)
+        ]
+        log_all = pd.concat(log_list)
 
         # keep only columns directly needed
-        log_all = log_all.loc[
-            :, ["Activity", "Timestamp", "ActivityState", "SimulationObject"]
+        log_all = log_all[
+            ["Activity", "Timestamp", "ActivityState", "SimulationObject"]
         ]
 
         # keep ID and add name for us humans
-        log_all.loc[:, "ActivityID"] = log_all.loc[:, "Activity"]
         list_all_activities = get_subprocesses(self.activity_list)
         id_map = {act.id: act.name for act in list_all_activities}
-        log_all.loc[:, "Activity"] = log_all.loc[:, "Activity"].replace(id_map)
+        log_all["ActivityID"] = log_all["Activity"]
+        log_all["Activity"] = log_all["Activity"].replace(id_map)
 
         return log_all.sort_values("Timestamp").reset_index(drop=True)
 
@@ -119,10 +119,6 @@ class BaseCP(ABC):
         an activity appears with a single log-line. The start and end times of the
         activity is added in new columns.
 
-        Note: the function starts off with a start event of an activity, and then
-        selects the stop event which is closest after this start event. It assumes
-        that activities with duration zero can be discarded.
-
         Parameters
         ----------
         df_log : pd.DataFrame
@@ -131,95 +127,47 @@ class BaseCP(ABC):
         Returns
         -------
         recorded_activities_df : pd.DataFrame
-            The reformated and reshaped log.
+            The reformatted and reshaped log.
         """
-        # keep the df chronological
-        df_log = df_log.sort_values(by=["Timestamp", "ActivityState"])
-        df_log = df_log.reset_index()
 
-        # make a list of indexes to handle
-        to_handle = list(range(0, len(df_log)))
+        df_log = df_log.sort_values(
+            by=["ActivityID", "Timestamp", "ActivityState"]
+        ).reset_index()
 
-        # init the output
-        recorded_activities_df = pd.DataFrame()
-
-        # loop exit
-        safety_valve = 0
-        while (len(to_handle) > 0) and (safety_valve < len(df_log)):
-            # update the safety valve
-            safety_valve += 1
-
-            # select a log-row to inspect
-            idx_start = to_handle[0]
-            row_current = df_log.loc[idx_start, :]
-
-            # check for a start event
-            if row_current.loc["ActivityState"] not in ["START", "WAIT_START"]:
-                raise ValueError(
-                    f"Unexpected starting state {row_current.loc['ActivityState']}"
-                    f" for idx {idx_start}, so skipping this."
-                )
-
-            # see what stop events could belong to this start event
-            bool_candidates = (
-                (df_log.loc[:, "ActivityID"] == row_current.loc["ActivityID"])
-                & (
-                    df_log.loc[:, "SimulationObject"]
-                    == row_current.loc["SimulationObject"]
-                )
-                & (df_log.loc[:, "ActivityState"].isin(["STOP", "WAIT_STOP"]))
-            )
-            idx_candidates = list(bool_candidates.index[bool_candidates])
-            # select the first end event after the start event
-            idx_end = [
-                idx_end
-                for idx_end in idx_candidates
-                if idx_end > idx_start and idx_end in to_handle
-            ][0]
-
-            # now remove idx start and end from handle
-            to_handle.remove(idx_start)
-            to_handle.remove(idx_end)
-
-            # and place in new dataframe
-            recorded_activities_df = pd.concat(
+        df_starts = (
+            df_log[df_log.ActivityState.isin(["START", "WAIT_START"])]
+            .filter(
                 [
-                    recorded_activities_df,
-                    pd.DataFrame(
-                        {
-                            "Activity": row_current.loc["Activity"],
-                            "ActivityID": row_current.loc["ActivityID"],
-                            "SimulationObject": row_current.loc["SimulationObject"],
-                            "start_time": row_current.loc["Timestamp"],
-                            "state": "WAITING"
-                            if "WAIT" in row_current.loc["ActivityState"]
-                            else "ACTIVE",
-                            "duration": df_log.loc[idx_end, "Timestamp"]
-                            - row_current.loc["Timestamp"],
-                            "end_time": df_log.loc[idx_end, "Timestamp"],
-                        },
-                        index=[0],
-                    ),
-                ],
-                ignore_index=True,
-                sort=False,
+                    "ActivityID",
+                    "Activity",
+                    "SimulationObject",
+                    "Timestamp",
+                    "ActivityState",
+                ]
             )
-
-        # ASSUME that activities with duration zero can be discarded
-        if isinstance(recorded_activities_df.loc[:, "duration"][0], dt.timedelta):
-            recorded_activities_df = recorded_activities_df.loc[
-                recorded_activities_df.loc[:, "duration"] > dt.timedelta(seconds=0), :
-            ]
-        else:
-            recorded_activities_df = recorded_activities_df.loc[
-                recorded_activities_df.loc[:, "duration"] > 0, :
-            ]
-
-        assert len(to_handle) == 0, f"These have not been handled {to_handle}"
-        recorded_activities_df = recorded_activities_df.sort_values(
-            by=["start_time", "SimulationObject"]
+            .rename(columns={"Timestamp": "start_time"})
+            .set_index("ActivityID")
         )
-        recorded_activities_df = recorded_activities_df.reset_index(drop=True)
+        df_stops = (
+            df_log[df_log.ActivityState.isin(["STOP", "WAIT_STOP"])]
+            .filter(["ActivityID", "Timestamp"])
+            .rename(columns={"Timestamp": "end_time"})
+            .set_index("ActivityID")
+        )
+        recorded_activities_df = (
+            pd.concat([df_starts, df_stops], axis=1)
+            .sort_values(by=["start_time"])
+            .reset_index()
+        )
+
+        recorded_activities_df["duration"] = (
+            recorded_activities_df.end_time - recorded_activities_df.start_time
+        )
+        recorded_activities_df["state"] = recorded_activities_df.apply(
+            lambda x: "WAITING" if "WAIT" in x["ActivityState"] else "ACTIVE", axis=1
+        )
+
+        recorded_activities_df = recorded_activities_df.drop(columns=["ActivityState"])
 
         return recorded_activities_df
 
@@ -245,20 +193,21 @@ class BaseCP(ABC):
         recorded_activities_df : pd.DataFrame
             As input, with additional column `cp_activity_id`.
         """
-        unique_combis = (
-            recorded_activities_df.groupby(["ActivityID", "start_time", "end_time"])
-            .size()
-            .reset_index()
-            .rename(columns={0: "count"})
+        # add unique identifier (count) based on activity ID and time, and then set to UUID
+        recorded_activities_df.insert(
+            loc=len(recorded_activities_df.columns),
+            column="cp_activity_id",
+            value=recorded_activities_df.set_index(
+                ["ActivityID", "start_time", "end_time"]
+            ).index.factorize()[0],
         )
-        # now add unique ID to df_new
-        for idx, row in unique_combis.iterrows():
-            bool_match = (
-                (recorded_activities_df.loc[:, "ActivityID"] == row.loc["ActivityID"])
-                & (recorded_activities_df.loc[:, "start_time"] == row.loc["start_time"])
-                & (recorded_activities_df.loc[:, "end_time"] == row.loc["end_time"])
-            )
-            recorded_activities_df.loc[bool_match, "cp_activity_id"] = str(uuid.uuid4())
+        mapping = {
+            temp_id: str(uuid.uuid4())
+            for temp_id in recorded_activities_df["cp_activity_id"]
+        }
+        recorded_activities_df["cp_activity_id"] = recorded_activities_df[
+            "cp_activity_id"
+        ].apply(lambda x: mapping[x])
 
         return recorded_activities_df
 
