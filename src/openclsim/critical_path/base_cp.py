@@ -91,11 +91,9 @@ class BaseCP(ABC):
 
         # concat with name
         log_list = [get_log_dataframe(obj) for obj in self.object_list]
-        _ = [
-            df.insert(0, "SimulationObject", name)
-            for (df, name) in zip(log_list, names)
-        ]
-        log_all = pd.concat(log_list)
+        names_column = pd.Series(names, name="SimulationObject").repeat(
+            [len(df) for df in log_list]).reset_index(drop=True)
+        log_all = pd.concat([names_column, pd.concat(log_list).reset_index(drop=True)], axis=1)
 
         # keep only columns directly needed
         log_all = log_all[
