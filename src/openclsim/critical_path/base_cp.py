@@ -89,18 +89,21 @@ class BaseCP(ABC):
         if not len(names) == len(set(names)):
             raise ValueError("Names of your objects must be unique!")
 
-        # concat with name
+        # concat logs with name and keep only columns needed
         log_list = [get_log_dataframe(obj) for obj in self.object_list]
-        names_column = pd.Series(names, name="SimulationObject").repeat(
-            [len(df) for df in log_list]).reset_index(drop=True)
-        log_all = pd.concat([names_column, pd.concat(log_list).reset_index(drop=True)], axis=1)
-
-        # keep only columns directly needed
+        names_column = (
+            pd.Series(names, name="SimulationObject")
+            .repeat([len(df) for df in log_list])
+            .reset_index(drop=True)
+        )
+        log_all = pd.concat(
+            [names_column, pd.concat(log_list).reset_index(drop=True)], axis=1
+        )
         log_all = log_all[
             ["Activity", "Timestamp", "ActivityState", "SimulationObject"]
         ]
 
-        # keep ID and add name for us humans
+        # keep ID and name (for readability)
         list_all_activities = get_subprocesses(self.activity_list)
         id_map = {act.id: act.name for act in list_all_activities}
         log_all["ActivityID"] = log_all["Activity"]
