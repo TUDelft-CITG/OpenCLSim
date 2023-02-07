@@ -23,7 +23,6 @@ class Identifiable:
     """
 
     def __init__(self, name: str, id: str = None, *args, **kwargs):
-
         # Deprecation
         if "ID" in kwargs:
             if id is not None:
