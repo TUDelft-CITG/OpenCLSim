@@ -191,7 +191,9 @@ class SimulationGraph:
         connected through an edge. All relevant attributes, such as the
         duration of an activity, are added to these nodes and edges.
         """
-        cp_activities_df = self.recorded_activity_df.drop_duplicates(subset=['cp_activity_id'])
+        cp_activities_df = self.recorded_activity_df.drop_duplicates(
+            subset=["cp_activity_id"]
+        )
         for ix, params in cp_activities_df.iterrows():
             # names of the nodes by start/end of
             name_start = f"{self.__NODE_START_PREFIX} " f"{params['cp_activity_id']}"
