@@ -43,7 +43,6 @@ class SimulationGraph:
 
     # name of added columns to the recorded_activities_df
     __COLNAME_CRITICAL = "is_critical"
-    __COLNAME_GRAPH_EDGE = "graph_edge"
 
     # mapping from column name to attribute
     __SUPERLOG_COLUMNS = {
@@ -67,7 +66,7 @@ class SimulationGraph:
     __NODE_END_PREFIX = "end"
 
     def __init__(self, recorded_activity_df, dependency_list):
-        """Initiate the object"""
+        """Initiate the object."""
         self.critical_edges_list = None
         self.recorded_activity_df = self.__check_rec(recorded_activity_df)
         self.dependency_list = self.__check_dep(dependency_list)
@@ -165,7 +164,7 @@ class SimulationGraph:
         """
         Construct and return simulation graph (self.simulation_graph),
         the networkx diGraph representing the OpenClSim simulation,
-        so including all recorded activities and their dependencies (in time)
+        so including all recorded activities and their dependencies (in time).
 
         Returns
         -------
@@ -188,55 +187,46 @@ class SimulationGraph:
         """
         Create nodes and edges for each individual activity.
 
-        Converts all lines of ``self.recorded_activity_df`` into start and end nodes
+        Converts all cp_activity_ids within ``self.recorded_activity_df`` into start and end nodes
         connected through an edge. All relevant attributes, such as the
         duration of an activity, are added to these nodes and edges.
         """
-        for ix, params in self.recorded_activity_df.iterrows():
+        cp_activities_df = self.recorded_activity_df.drop_duplicates(subset=['cp_activity_id'])
+        for ix, params in cp_activities_df.iterrows():
             # names of the nodes by start/end of
             name_start = f"{self.__NODE_START_PREFIX} " f"{params['cp_activity_id']}"
             name_end = f"{self.__NODE_END_PREFIX} " f"{params['cp_activity_id']}"
 
             # add the start node
-            if name_start not in self.simulation_graph.nodes:
-                self.simulation_graph.add_node(
-                    name_start,
-                    pos=(params["start_time"], ix),
-                    time=params["start_time"],
-                    cp_activity_id=params["cp_activity_id"],
-                )
+            self.simulation_graph.add_node(
+                name_start,
+                pos=(params["start_time"], ix),
+                time=params["start_time"],
+                cp_activity_id=params["cp_activity_id"],
+            )
 
             # add the end node
-            if name_end not in self.simulation_graph.nodes:
-                self.simulation_graph.add_node(
-                    name_end,
-                    pos=(params["end_time"], ix),
-                    time=params["end_time"],
-                    cp_activity_id=params["cp_activity_id"],
-                )
+            self.simulation_graph.add_node(
+                name_end,
+                pos=(params["end_time"], ix),
+                time=params["end_time"],
+                cp_activity_id=params["cp_activity_id"],
+            )
 
-            # add an edge
-            if (name_start, name_end) in self.simulation_graph.edges:
-                # edge is there, only add source object
-                self.simulation_graph.edges[(name_start, name_end)][
-                    "source_object"
-                ] += [params["source_object"]]
-            else:
-                # add the edge
-                kwargs = {
-                    "node_start": name_start,
-                    "node_end": name_end,
-                    "activity": params["activity"],
-                    "source_object": [params["source_object"]],
-                    "start_time": params["start_time"],
-                    "state": params["state"],
-                    "duration": params["duration"],
-                    "end_time": params["end_time"],
-                    "cp_activity_id": params["cp_activity_id"],
-                    "edge_type": self.__EDGE_TYPES[0],
-                    self.__COLNAME_CRITICAL: self.__CRITICAL[0],
-                }
-                self.simulation_graph.add_edge(name_start, name_end, **kwargs)
+            # add the edge
+            kwargs = {
+                "node_start": name_start,
+                "node_end": name_end,
+                "activity": params["activity"],
+                "start_time": params["start_time"],
+                "state": params["state"],
+                "duration": params["duration"],
+                "end_time": params["end_time"],
+                "cp_activity_id": params["cp_activity_id"],
+                "edge_type": self.__EDGE_TYPES[0],
+                self.__COLNAME_CRITICAL: self.__CRITICAL[0],
+            }
+            self.simulation_graph.add_edge(name_start, name_end, **kwargs)
 
     def __link_activity_edges(self):
         """
@@ -273,7 +263,6 @@ class SimulationGraph:
                 "node_start": name_start,
                 "node_end": name_end,
                 "activity": None,
-                "source_object": [None],
                 "start_time": start_time,
                 "state": None,
                 "duration": duration,
@@ -300,16 +289,16 @@ class SimulationGraph:
         This method recursively builds a list of edges in the activity graph
         which are on the longest path. In a nutshell the process is as follows:
 
-        0. Create a shadow-copy of the activity graph.
+        0. Create a shadow/copy of the activity graph.
         1. Find an initial longest path, mark all edges on it as such, and set
-           their 'duration' to 10**-3 on a shadow-graph (i.e. discount all
+           their 'duration' to 10**-4 on the shadow-graph (i.e. discount all
            edges which have already been marked).
         2. Find a new longest path in the shadow-graph, and check if the
            duration in the original graph equals the maximum length. If so,
            good! Mark all edges as critical and set duration in the shadow
-           graph to 10**-3. If not a feasible longest path, then mark the last
+           graph to 10**-4. If not a feasible longest path, then mark the last
            edge as noncritical, and set its weight in the shadow graph to
-           10**-6.
+           10**-8.
         3. Repeat until all edges are marked as critical or non-critical.
         """
 
@@ -414,12 +403,6 @@ class SimulationGraph:
                 list_noncritical.append(yet_to_discount[-1])
                 yet_to_discount = yet_to_discount[:-1]
 
-        logging.debug(
-            f"list critical {len(list_critical)}, "
-            f"list noncritical {len(list_noncritical)}, "
-            f"and n activities {self.n_activities}, "
-            f"yet to discount {len(yet_to_discount)}"
-        )
         # iterate if we have yet to discount or if we have marked all edges
         if len(list_critical) + len(list_noncritical) == self.n_activities:
             return list_critical
@@ -435,13 +418,12 @@ class SimulationGraph:
 
     def get_list_critical_activities(self):
         """
-        Translate the critical edges into critical activities
+        Translate the critical edges into critical activities.
 
         Returns
         -------
         critical_activities_list : list
-            list of activity UUIDs
-            (as found in column cp_activity_id from self.recorded_activity_df)
+            list of activity UUIDs (as found in column cp_activity_id from recorded_activity_df)
         """
         # get all edges on all critical paths
         if self.critical_edges_list is None:

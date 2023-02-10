@@ -81,7 +81,8 @@ class BaseCP(ABC):
         recorded_activities_df = self.add_unique_activity(recorded_activities_df)
 
         self.recorded_activities_df = recorded_activities_df.sort_values(
-            by=['start_time', 'Activity', 'SimulationObject']).reset_index(drop=True)
+            by=["start_time", "Activity", "SimulationObject"]
+        ).reset_index(drop=True)
 
     def combine_logs(self):
         """

@@ -1,7 +1,5 @@
 """
 Fixtures for the test-suite.
-
-Fixtures return the simpy.Environment, objects and activities after a simulation has been run.
 """
 import pytest
 import shapely.geometry
@@ -13,11 +11,17 @@ import openclsim.model as model
 
 @pytest.fixture()
 def simulation_2_barges():
+    """
+    Fixture returns the simpy.Environment, objects and activities after a 2-barges simulation.
+    """
     return demo_data(nr_barges=2, total_amount=100)
 
 
 @pytest.fixture()
 def dependencies_simulation_2_barges():
+    """
+    List of dependencies for simulation '2 barges' with index values (since UUID changes)
+    """
     dependency_list = [
         (1, 3),
         (2, 4),
@@ -138,6 +142,9 @@ def dependencies_simulation_2_barges():
 
 @pytest.fixture()
 def simulation_4_barges():
+    """
+    Fixture returns the simpy.Environment, objects and activities after a 4-barges simulation.
+    """
     return demo_data(nr_barges=4, total_amount=100)
 
 
