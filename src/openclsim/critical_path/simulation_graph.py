@@ -194,37 +194,37 @@ class SimulationGraph:
         cp_activities_df = self.recorded_activity_df.drop_duplicates(
             subset=["cp_activity_id"]
         )
-        for ix, params in cp_activities_df.iterrows():
+        for params in cp_activities_df.itertuples():
             # names of the nodes by start/end of
-            name_start = f"{self.__NODE_START_PREFIX} " f"{params['cp_activity_id']}"
-            name_end = f"{self.__NODE_END_PREFIX} " f"{params['cp_activity_id']}"
+            name_start = f"{self.__NODE_START_PREFIX} " f"{params.cp_activity_id}"
+            name_end = f"{self.__NODE_END_PREFIX} " f"{params.cp_activity_id}"
 
             # add the start node
             self.simulation_graph.add_node(
                 name_start,
-                pos=(params["start_time"], ix),
-                time=params["start_time"],
-                cp_activity_id=params["cp_activity_id"],
+                pos=(params.start_time, params.Index),
+                time=params.start_time,
+                cp_activity_id=params.cp_activity_id,
             )
 
             # add the end node
             self.simulation_graph.add_node(
                 name_end,
-                pos=(params["end_time"], ix),
-                time=params["end_time"],
-                cp_activity_id=params["cp_activity_id"],
+                pos=(params.end_time, params.Index),
+                time=params.end_time,
+                cp_activity_id=params.cp_activity_id,
             )
 
             # add the edge
             kwargs = {
                 "node_start": name_start,
                 "node_end": name_end,
-                "activity": params["activity"],
-                "start_time": params["start_time"],
-                "state": params["state"],
-                "duration": params["duration"],
-                "end_time": params["end_time"],
-                "cp_activity_id": params["cp_activity_id"],
+                "activity": params.activity,
+                "start_time": params.start_time,
+                "state": params.state,
+                "duration": params.duration,
+                "end_time": params.end_time,
+                "cp_activity_id": params.cp_activity_id,
                 "edge_type": self.__EDGE_TYPES[0],
                 self.__COLNAME_CRITICAL: self.__CRITICAL[0],
             }
