@@ -358,23 +358,23 @@ class SimulationGraph:
 
             # see if this path is a feasible longest path in the original
             # i.e. must be max duration and same end time
-            if (lp_duration == round(self.max_duration, 2)) and (t_end == t_max_end):
+            new_cp = (lp_duration == round(self.max_duration, 2)) and (
+                t_end == t_max_end
+            )
+            if new_cp:
                 # create list of not-yet-marked-as-critical critical edges
                 to_add_critical = [
                     edge for edge in lp_edges if edge not in list_critical
                 ]
-                if len(to_add_critical) > 0:
-                    logging.debug(
-                        "New elements on critical path path, "
-                        f"adding {to_add_critical}."
-                    )
-                    list_critical += to_add_critical
-                    feasible_longest = True
+                logging.debug(
+                    "New elements on critical path path, " f"adding {to_add_critical}."
+                )
+                list_critical += to_add_critical
+                feasible_longest = True
             else:
                 to_add_discount = [edge for edge in lp_edges if edge not in to_discount]
-                if len(to_add_discount) > 0:
-                    logging.debug("adding to discount")
-                    to_discount += to_add_discount
+                logging.debug("adding to discount")
+                to_discount += to_add_discount
 
         # discount the edges, all at once, or only the last one
         if feasible_longest:
