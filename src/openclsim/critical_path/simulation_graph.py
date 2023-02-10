@@ -129,10 +129,8 @@ class SimulationGraph:
             recorded_activity_df["duration"] = round(
                 recorded_activity_df["duration"].dt.total_seconds(), 3
             )
-        elif isinstance(recorded_activity_df["duration"][0], (float, int)):
-            pass
-        else:
-            raise Exception(
+        if not isinstance(recorded_activity_df["duration"][0], (float, int)):
+            raise TypeError(
                 f"Duration computed as type {type(recorded_activity_df['duration'][0])} "
                 "is not supported!"
             )
@@ -196,8 +194,8 @@ class SimulationGraph:
         )
         for params in cp_activities_df.itertuples():
             # names of the nodes by start/end of
-            name_start = f"{self.__NODE_START_PREFIX} " f"{params.cp_activity_id}"
-            name_end = f"{self.__NODE_END_PREFIX} " f"{params.cp_activity_id}"
+            name_start = f"{self.__NODE_START_PREFIX} {params.cp_activity_id}"
+            name_end = f"{self.__NODE_END_PREFIX} {params.cp_activity_id}"
 
             # add the start node
             self.simulation_graph.add_node(
@@ -249,10 +247,8 @@ class SimulationGraph:
 
             if isinstance(duration, dt.timedelta):
                 duration = int(duration.total_seconds())
-            elif isinstance(duration, (float, int)):
-                pass
-            else:
-                raise Exception(
+            if not isinstance(duration, (float, int)):
+                raise TypeError(
                     f"Duration computed as type {duration} " "is not supported!"
                 )
             if round(duration, 4) != 0:
