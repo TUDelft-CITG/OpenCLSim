@@ -100,7 +100,7 @@ class Movable(SimpyObject, Locatable):
     @property
     def current_speed(self):
         warnings.warn(
-            "The property `.currentspeed` is deprected. Use `.v` instead.",
+            "The property `.current_speed` is deprected. Use `.v` instead.",
             DeprecationWarning,
         )
         return self.v
@@ -142,9 +142,9 @@ class ContainerDependentMovable(Movable, HasContainer):
         )
 
     @property
-    def currentspeed(self):
+    def current_speed(self):
         warnings.warn(
-            "The property `.currentspeed` is deprected. Use `.v` instead.",
+            "The property `.current_speed` is deprected. Use `.v` instead.",
             DeprecationWarning,
         )
         return self.v
@@ -182,9 +182,9 @@ class MultiContainerDependentMovable(Movable, HasMultiContainer):
         return self.compute_v(fill_degree)
 
     @property
-    def currentspeed(self):
+    def current_speed(self):
         warnings.warn(
-            "The property `.currentspeed` is deprected. Use `.v` instead.",
+            "The property `.current_speed` is deprected. Use `.v` instead.",
             DeprecationWarning,
         )
         return self.v
