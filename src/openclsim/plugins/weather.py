@@ -69,7 +69,6 @@ class HasWeatherPluginActivity:
             and metocean_df is not None
             and isinstance(self, model.PluginActivity)
         ):
-
             self.metocean_data = metocean_df
 
             weather_plugin = WeatherPluginActivity(
@@ -121,7 +120,6 @@ class WeatherPluginActivity(model.AbstractPluginClass):
         return list(filter_windows[0])
 
     def process_data(self, criterion) -> None:
-
         col = criterion.condition
         orig_data = self.metocean_df.copy()
 
