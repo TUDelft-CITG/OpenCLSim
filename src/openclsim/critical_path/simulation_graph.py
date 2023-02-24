@@ -1,5 +1,5 @@
 """
-Module that contains class SimulationGraph
+Module that contains class SimulationGraph.
 """
 import copy
 import datetime as dt
