@@ -40,7 +40,7 @@ class SequentialActivity(GenericActivity, RegisterSubProcesses):
 
         start_sequence = env.now
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.START,
@@ -49,7 +49,7 @@ class SequentialActivity(GenericActivity, RegisterSubProcesses):
         self.start_sequence.succeed()
 
         for sub_process in self.sub_processes:
-            activity_log.log_entry(
+            activity_log.log_entry_v1(
                 t=env.now,
                 activity_id=activity_log.id,
                 activity_state=core.LogState.START,
@@ -70,7 +70,7 @@ class SequentialActivity(GenericActivity, RegisterSubProcesses):
             )
             yield stop_event
 
-            activity_log.log_entry(
+            activity_log.log_entry_v1(
                 t=env.now,
                 activity_id=activity_log.id,
                 activity_state=core.LogState.STOP,
@@ -80,7 +80,7 @@ class SequentialActivity(GenericActivity, RegisterSubProcesses):
                 },
             )
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.STOP,

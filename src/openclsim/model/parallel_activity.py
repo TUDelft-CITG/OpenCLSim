@@ -40,7 +40,7 @@ class ParallelActivity(GenericActivity, RegisterSubProcesses):
 
         start_time_parallel = env.now
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.START,
@@ -51,7 +51,7 @@ class ParallelActivity(GenericActivity, RegisterSubProcesses):
         stop_events = []
         subprocess_ids = []
         for sub_process in self.sub_processes:
-            activity_log.log_entry(
+            activity_log.log_entry_v1(
                 t=env.now,
                 activity_id=activity_log.id,
                 activity_state=core.LogState.START,
@@ -75,7 +75,7 @@ class ParallelActivity(GenericActivity, RegisterSubProcesses):
             while i < len(stop_events):
                 if self.parse_expression(stop_events[i]).triggered is True:
                     stop_events.pop(i)
-                    activity_log.log_entry(
+                    activity_log.log_entry_v1(
                         t=env.now,
                         activity_id=activity_log.id,
                         activity_state=core.LogState.STOP,
@@ -87,7 +87,7 @@ class ParallelActivity(GenericActivity, RegisterSubProcesses):
                 else:
                     i += 1
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.STOP,
