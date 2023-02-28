@@ -28,17 +28,11 @@ class Log(SimpyObject):
         super().__init__(*args, **kwargs)
         """Initialization"""
         # record oriented list of log messages
-        self.log = {
-            "Timestamp": [],
-            "ActivityID": [],
-            "ActivityState": [],
-            "ObjectState": [],
-            "ActivityLabel": [],
-        }
+        self.logbook = []
 
     @property
     def log(self):
-        """return the log in log format"""
+        """return the log in log format (compatible with old log attribute)"""
         df = pd.DataFrame(self.logbook)
         # Convert table to this format:
         # {'a': [1, 2], 'b': [2, 4]}
@@ -54,6 +48,8 @@ class Log(SimpyObject):
         activity_label=None,
     ):
         """Log an entry (openclsim version)"""
+        assert isinstance(t, float), "expected t variable of type float"
+
         object_state = self.get_state()
         if additional_state:
             object_state.update(additional_state)
@@ -66,18 +62,25 @@ class Log(SimpyObject):
             assert activity_label.get("type") is not None
             assert activity_label.get("ref") is not None
 
-        self.log["Timestamp"].append(datetime.datetime.utcfromtimestamp(t))
-        self.log["ActivityID"].append(activity_id)
-        self.log["ActivityState"].append(activity_state.name)
-        self.log["ObjectState"].append(object_state)
-        self.log["ActivityLabel"].append(activity_label)
+        entry = {
+            "Timestamp": datetime.datetime.utcfromtimestamp(t),
+            "ActivityID": activity_id,
+            "ActivityState": activity_state.name,
+            "ObjectState": object_state,
+            "ActivityLabel": activity_label
+        }
+        self.logbook.append(entry)
 
     def log_entry_v0(self, log, t, value, geometry_log):
         """Log an entry (opentnsim version)"""
-        self.log["Message"].append(log)
-        self.log["Timestamp"].append(datetime.datetime.fromtimestamp(t))
-        self.log["Value"].append(value)
-        self.log["Geometry"].append(geometry_log)
+        assert isinstance(log, str), "expected log variable of type string"
+        entry = {
+            "Message": log,
+            "Timestamp": datetime.datetime.fromtimestamp(t),
+            "Value": value,
+            "Geometry": geometry_log
+        }
+        self.logbook.append(entry)
 
     @deprecation.deprecated(details="Use .log_entry_v0 instead")
     def log_entry(self, *args, **kwargs):
