@@ -1,5 +1,6 @@
 """
 Module that contains class SimulationGraph.
+SimulationGraph is a graph representation of simulated activities and their dependencies.
 """
 import copy
 import datetime as dt
@@ -45,7 +46,7 @@ class SimulationGraph:
     __COLNAME_CRITICAL = "is_critical"
 
     # mapping from column name to attribute
-    __SUPERLOG_COLUMNS = {
+    __RECORDED_ACTIVITY_COLUMNS = {
         "Activity": "activity",
         "SimulationObject": "source_object",
         "start_time": "start_time",
@@ -66,10 +67,12 @@ class SimulationGraph:
     __NODE_END_PREFIX = "end"
 
     def __init__(self, recorded_activity_df, dependency_list):
-        """Initiate the object."""
+        """Initialize the object."""
         self.critical_edges_list = None
-        self.recorded_activity_df = self.__check_rec(recorded_activity_df)
-        self.dependency_list = self.__check_dep(dependency_list)
+        self.recorded_activity_df = self.__check_recorded_activity_df(
+            recorded_activity_df
+        )
+        self.dependency_list = self.__check_dependency_list(dependency_list)
 
         # construct the graph based on the log and dependencies
         self.simulation_graph = self.__construct_graph()
@@ -87,9 +90,7 @@ class SimulationGraph:
             self.simulation_graph, weight="duration"
         )
 
-        # self.__find_critical_edges()
-
-    def __check_rec(self, recorded_activity_df):
+    def __check_recorded_activity_df(self, recorded_activity_df):
         """
         Check validity of recorded_activity_df.
 
@@ -101,7 +102,7 @@ class SimulationGraph:
         # check expected columns
         missing_columns = [
             c
-            for c in self.__SUPERLOG_COLUMNS.keys()
+            for c in self.__RECORDED_ACTIVITY_COLUMNS.keys()
             if c not in recorded_activity_df.columns
         ]
         assert missing_columns == [], f"cp_log is missing columns {missing_columns}"
@@ -117,7 +118,7 @@ class SimulationGraph:
         """
         # rename columns to class defaults
         recorded_activity_df = recorded_activity_df.rename(
-            columns=self.__SUPERLOG_COLUMNS
+            columns=self.__RECORDED_ACTIVITY_COLUMNS
         )
 
         # make sure the duration is numeric
@@ -136,13 +137,12 @@ class SimulationGraph:
             )
 
         # make sure all durations are positive
-        assert all(
-            recorded_activity_df["duration"] >= 0
-        ), "Negative durations encountered in activities."
+        if not all(recorded_activity_df["duration"] >= 0):
+            raise ValueError("Negative durations encountered in activities.")
 
         return recorded_activity_df
 
-    def __check_dep(self, dependency_list):
+    def __check_dependency_list(self, dependency_list):
         """
         Check validity of dependency_list.
 
@@ -185,9 +185,10 @@ class SimulationGraph:
         """
         Create nodes and edges for each individual activity.
 
-        Converts all cp_activity_ids within ``self.recorded_activity_df`` into start and end nodes
-        connected through an edge. All relevant attributes, such as the
-        duration of an activity, are added to these nodes and edges.
+        Converts all cp_activity_ids within ``self.recorded_activity_df``
+        into start and end nodes connected through an edge.
+        All relevant attributes, such as the duration of an activity,
+        are added to these nodes and edges.
         """
         cp_activities_df = self.recorded_activity_df.drop_duplicates(
             subset=["cp_activity_id"]
@@ -200,7 +201,6 @@ class SimulationGraph:
             # add the start node
             self.simulation_graph.add_node(
                 name_start,
-                pos=(params.start_time, params.Index),
                 time=params.start_time,
                 cp_activity_id=params.cp_activity_id,
             )
@@ -208,7 +208,6 @@ class SimulationGraph:
             # add the end node
             self.simulation_graph.add_node(
                 name_end,
-                pos=(params.end_time, params.Index),
                 time=params.end_time,
                 cp_activity_id=params.cp_activity_id,
             )
@@ -232,17 +231,16 @@ class SimulationGraph:
         """
         Add connecting edges between linked activities.
 
-        Note: this method is to be called after
-        ``self.__create_activity_edges()``.
+        Note: this method is to be called after ``self.__create_activity_edges()``.
 
         Uses the ``self.list_dependencies`` to link all loose nodes and edges
         together within the graph. Note that edges are added from the END of
-        the first activity to the START of the second.
+        the first activity (dependency cause) to the START of the second (dependency effect).
         """
-        for name_start, name_end in self.dependency_list:
+        for dependency_cause, dependency_effect in self.dependency_list:
             # extract some information on the times
-            start_time = self.simulation_graph.nodes[name_start]["time"]
-            end_time = self.simulation_graph.nodes[name_end]["time"]
+            start_time = self.simulation_graph.nodes[dependency_cause]["time"]
+            end_time = self.simulation_graph.nodes[dependency_effect]["time"]
             duration = end_time - start_time
 
             if isinstance(duration, dt.timedelta):
@@ -253,13 +251,13 @@ class SimulationGraph:
                 )
             if round(duration, 4) != 0:
                 raise ValueError(
-                    f"dependency ({name_start}, {name_end})"
+                    f"dependency ({dependency_cause}, {dependency_effect})"
                     f" with non zero duration ({duration}) not allowed!"
                 )
-            # add the edge from END to START
-            kwargs = {
-                "node_start": name_start,
-                "node_end": name_end,
+            # add the edge from cause to effect
+            edge_kwargs = {
+                "node_start": dependency_cause,
+                "node_end": dependency_effect,
                 "activity": None,
                 "start_time": start_time,
                 "state": None,
@@ -269,11 +267,13 @@ class SimulationGraph:
                 "edge_type": self.__EDGE_TYPES[1],
                 self.__COLNAME_CRITICAL: self.__CRITICAL[0],
             }
-            self.simulation_graph.add_edge(name_start, name_end, **kwargs)
+            self.simulation_graph.add_edge(
+                dependency_cause, dependency_effect, **edge_kwargs
+            )
 
     def __find_critical_edges(
         self,
-        discount_graph=None,
+        marked_edges_graph=None,
         list_critical=None,
         list_noncritical=None,
         to_discount=None,
@@ -287,7 +287,7 @@ class SimulationGraph:
         This method recursively builds a list of edges in the activity graph
         which are on the longest path. In a nutshell the process is as follows:
 
-        0. Create a shadow/copy of the activity graph.
+        0. Create a shadow/copy of the activity graph 'marked_edges_graph'.
         1. Find an initial longest path, mark all edges on it as such, and set
            their 'duration' to 10**-4 on the shadow-graph (i.e. discount all
            edges which have already been marked).
@@ -303,9 +303,9 @@ class SimulationGraph:
         feasible_longest = False  # all edges on path can be discounted at once
 
         # the initial iteration
-        if discount_graph is None:
+        if marked_edges_graph is None:
             # make a copy of the graph to change weights
-            discount_graph = copy.deepcopy(self.simulation_graph)
+            marked_edges_graph = copy.deepcopy(self.simulation_graph)
 
             # get an initial longest path
             longest_path = nx.dag_longest_path(self.simulation_graph, weight="duration")
@@ -333,7 +333,7 @@ class SimulationGraph:
         # any following iteration
         else:
             # get the current longest path in the discount graph
-            longest_path = nx.dag_longest_path(discount_graph, weight="duration")
+            longest_path = nx.dag_longest_path(marked_edges_graph, weight="duration")
             lp_edges = [
                 i
                 for i in zip(longest_path[:-1], longest_path[1:])
@@ -342,7 +342,7 @@ class SimulationGraph:
 
             # get the original duration
             lp_duration_discounted = nx.path_weight(
-                discount_graph, longest_path, weight="duration"
+                marked_edges_graph, longest_path, weight="duration"
             )
             lp_duration = round(
                 nx.path_weight(self.simulation_graph, longest_path, weight="duration"),
@@ -386,7 +386,7 @@ class SimulationGraph:
                 if self.simulation_graph.edges[i]["edge_type"] == "activity"
             ]
             for edge in list_edges:
-                discount_graph.edges[edge]["duration"] = 10**-4
+                marked_edges_graph.edges[edge]["duration"] = 10**-4
                 self.simulation_graph.edges[edge][
                     self.__COLNAME_CRITICAL
                 ] = self.__CRITICAL[1]
@@ -397,7 +397,7 @@ class SimulationGraph:
             ]
             if len(yet_to_discount) > 0:
                 logging.debug(f"Discounting {yet_to_discount[-1]}")
-                discount_graph.edges[yet_to_discount[-1]]["duration"] = 10**-8
+                marked_edges_graph.edges[yet_to_discount[-1]]["duration"] = 10**-8
                 list_noncritical.append(yet_to_discount[-1])
                 yet_to_discount = yet_to_discount[:-1]
 
@@ -405,7 +405,7 @@ class SimulationGraph:
         if len(list_critical) + len(list_noncritical) == self.n_activities:
             return list_critical
         return self.__find_critical_edges(
-            discount_graph=discount_graph,
+            marked_edges_graph=marked_edges_graph,
             list_critical=list_critical,
             list_noncritical=list_noncritical,
             to_discount=yet_to_discount,
@@ -421,7 +421,7 @@ class SimulationGraph:
         Returns
         -------
         critical_activities_list : list
-            list of activity UUIDs (as found in column cp_activity_id from recorded_activity_df)
+            list of activity UUIDs (from column cp_activity_id in recorded_activity_df)
         """
         # get all edges on all critical paths
         if self.critical_edges_list is None:
