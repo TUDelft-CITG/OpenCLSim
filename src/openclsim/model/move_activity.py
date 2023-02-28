@@ -81,6 +81,8 @@ class MoveActivity(GenericActivity):
             speed the mover should sail. for example, engine_order=0.5
             corresponds to sailing at 50% of max speed
         """
+
+        print('mover', self.mover.name, 'destination', self.destination.name)
         yield from self._request_resource(self.requested_resources, self.mover.resource)
 
         start_time = env.now
@@ -91,7 +93,7 @@ class MoveActivity(GenericActivity):
         }
         yield from self.pre_process(args_data)
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.START,
@@ -104,8 +106,10 @@ class MoveActivity(GenericActivity):
             engine_order=self.engine_order,
             duration=self.duration,
         )
+        print('mover', self.mover.name, 'is now at', self.mover.geometry.wkt)
 
-        activity_log.log_entry(
+
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.STOP,
@@ -118,3 +122,5 @@ class MoveActivity(GenericActivity):
         self._release_resource(
             self.requested_resources, self.mover.resource, self.keep_resources
         )
+
+        print('mover', self.mover.name, 'is now at', self.mover.geometry.wkt)

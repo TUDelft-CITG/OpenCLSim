@@ -26,18 +26,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class Routable(SimpyObject):
-    """Mixin class: Something with a route (networkx node list format)
-
-    - route: list of node-IDs
-    -
-    """
-
-    def __init__(self, route, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.route = route
-
-
 class Movable(SimpyObject, Locatable):
     """
     Movable class.
@@ -47,15 +35,17 @@ class Movable(SimpyObject, Locatable):
 
     Parameters
     ----------
-    v: speed
+    v: speed (1d)
+    engine_order: factor that determines how much of the speed is used.
     """
 
-    def __init__(self, v: float = 1, *args, **kwargs):
+    def __init__(self, v: float = 1, engine_order: float = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        """Initialization"""
+        """"""
         self._v = v
+        self.engine_order = 1
 
-    def move(self, destination=None, engine_order=1.0, duration=None):
+    def move(self, destination: Locatable = None, duration: float = None):
         """
         Determine distance between origin and destination.
 
@@ -66,7 +56,7 @@ class Movable(SimpyObject, Locatable):
             raise ValueError("Movable in OpenCLSim does not support empty destination")
 
         # Log the start event
-        self.log_entry(
+        self.log_entry_v1(
             self.env.now,
             self.activity_id,
             LogState.START,
@@ -74,20 +64,21 @@ class Movable(SimpyObject, Locatable):
 
         # Determine the sailing_duration
         if duration is not None:
-            sailing_duration = duration
+            duration = duration
         else:
-            sailing_duration = self.sailing_duration(
-                self.geometry, destination, engine_order
+            duration = self.duration(
+                self.geometry, destination
             )
 
         # Check out the time based on duration of sailing event
-        yield self.env.timeout(sailing_duration)
+        yield self.env.timeout(duration)
 
         # Set mover geometry to destination geometry
+        print('updating to destination geometry', destination.geometry)
         self.geometry = shapely.geometry.shape(destination.geometry)
 
         # Log the stop event
-        self.log_entry(
+        self.log_entry_v1(
             self.env.now,
             self.activity_id,
             LogState.STOP,
@@ -95,7 +86,8 @@ class Movable(SimpyObject, Locatable):
 
     @property
     def v(self):
-        return self._v
+        """return the velocity * engine_order"""
+        return self._v * self.engine_order
 
     @property
     def current_speed(self):
@@ -105,12 +97,17 @@ class Movable(SimpyObject, Locatable):
         )
         return self.v
 
-    def sailing_duration(self, origin, destination, engine_order, verbose=True):
-        """Determine the sailing duration."""
+    @staticmethod
+    def distance(origin, destination):
+        """Determine the sailing distance based on great circle path from origin to destination."""
         orig = shapely.geometry.shape(self.geometry)
         dest = shapely.geometry.shape(destination.geometry)
         _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+        return distance
 
+    def duration(self, origin, destination, engine_order, verbose=True):
+        """Determine the duration based on great circle path from origin to destination."""
+        distance = self.distance(origin, destination)
         return distance / (self.v * engine_order)
 
 
@@ -189,13 +186,20 @@ class MultiContainerDependentMovable(Movable, HasMultiContainer):
         )
         return self.v
 
+class Navigator:
+    def find_route(waypoints):
+        route = []
+        return route
 
-class CanSailOnGraph(Routable, Movable):
-    """Mixin class: Allows to move over nodes on a graph"""
+class Routable(SimpyObject):
+    """Mixin class: Something with a route (networkx node list format)
+    route: a list of node ids (available on env.graph) or geometries (shapely.Geometry)
+    """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, route: list, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # call functions when passing edges
+        self.route = route
         self.on_pass_edge_functions = []
         self.wgs84 = pyproj.Geod(ellps="WGS84")
         assert hasattr(self.env, "FG"), "expected graph FG to be available on env"

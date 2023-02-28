@@ -74,7 +74,7 @@ class BasicActivity(GenericActivity):
 
         start_basic = env.now
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.START,
@@ -82,7 +82,7 @@ class BasicActivity(GenericActivity):
 
         if isinstance(self.additional_logs, list) and len(self.additional_logs) > 0:
             for log_item in self.additional_logs:
-                log_item.log_entry(
+                log_item.log_entry_v1(
                     t=env.now,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.START,
@@ -94,12 +94,12 @@ class BasicActivity(GenericActivity):
 
         yield env.timeout(self.duration)
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now, activity_id=activity_log.id, activity_state=core.LogState.STOP
         )
         if isinstance(self.additional_logs, list) and len(self.additional_logs) > 0:
             for log_item in self.additional_logs:
-                log_item.log_entry(
+                log_item.log_entry_v1(
                     t=env.now,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.STOP,

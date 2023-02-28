@@ -68,7 +68,9 @@ class ShiftAmountActivity(GenericActivity):
 
     def main_process_function(self, activity_log, env):
         """Origin and Destination are of type HasContainer."""
-        assert self.processor.is_at(self.origin)
+        print('processing shift amount', 'processor', self.processor.name, 'origin', self.origin.name)
+        msg = f"Processor {self.processor.name} is at {self.processor.geometry.wkt}. But we expect to shift an amount from the origin location ({self.origin.name}) at {self.origin.geometry.wkt}"
+        assert self.processor.is_at(self.origin), msg
         assert self.destination.is_at(self.origin)
 
         yield from self._request_resource(
@@ -138,7 +140,7 @@ class ShiftAmountActivity(GenericActivity):
         }
         yield from self.pre_process(args_data)
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.START,
@@ -151,7 +153,7 @@ class ShiftAmountActivity(GenericActivity):
             activity_id=activity_log.id,
         )
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.STOP,
