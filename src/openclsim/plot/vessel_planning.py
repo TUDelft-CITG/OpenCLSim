@@ -64,11 +64,15 @@ def get_gantt_chart(
         by default only activity in concepts are resolved. Activities
         associated with vessels and sites are not resolved. id_map solves this:
         * a list of top-activities of which also all sub-activities
-          will be resolved, e.g.: [while_activity]
+           will be resolved, e.g.: [while_activity1, while_activity2]
+        * a dic of top-activities of which also all sub-activities
+           will be resolved, e.g.: {'w1':while_activity1, 'w2:while_activity2}
         * a manual id_map to resolve uuids to labels, e.g. {'uuid1':'name1'}
     """
     default_blockwidth = 10
-
+    
+    if type(id_map) == dict:
+        id_map = [*id_map.values()] # unpack dict to list
     if type(id_map) == list:
         id_map = {act.id: act.name for act in get_subprocesses(id_map)}
     else:
