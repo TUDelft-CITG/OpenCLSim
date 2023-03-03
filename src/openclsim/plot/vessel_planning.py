@@ -51,6 +51,7 @@ def get_gantt_chart(
     static=False,
     y_scale="text",
     critical_path=None,
+    title="GANTT Chart"
 ):
     """Create a plotly GANTT chart of the planning of vessels.
 
@@ -178,7 +179,7 @@ def get_gantt_chart(
         timestamps.extend(log)
 
     layout = go.Layout(
-        title="GANTT Chart",
+        title=title,
         hovermode="closest",
         legend=dict(x=0, y=-0.2, orientation="h"),
         xaxis=dict(
