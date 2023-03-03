@@ -20,3 +20,51 @@ def find_notebook_path():
     src_path = find_src_path()
     notebook_path = src_path / "notebooks"
     return notebook_path
+
+
+def flatten(treelist, depth=0) -> dict:
+    """Flatten a tree of activities into a flat list.
+
+    Returns a dict with fields: ActivityID,ActivityName,
+    ParentId, ParentName, activity,level
+    
+    Parameters
+    ----------
+    treelist
+        activity, or list or dict with activities
+    depth
+        depth level of top of hierarchy (default 0)
+    """
+
+    if isinstance(treelist,list):
+        treelist = treelist
+    elif isinstance(treelist,dict):
+        treelist = [*treelist.values()]
+    else:
+        treelist = [treelist]
+        
+    activity = [x for x in treelist]
+    ActivityID = [x.id for x in treelist]
+    ActivityName = [x.name for x in treelist]
+    ParentId = [None,]*len(ActivityID)
+    ParentName = ['',]*len(ActivityID)
+    
+    level = [depth,]*len(ActivityID)
+    
+    for i, act in enumerate(treelist):
+        if hasattr(act, "sub_processes"):
+            d = flatten(act.sub_processes, depth+1)
+            ActivityID += d['ActivityID']
+            activity+=d['activity']
+            ParentId +=[act.id]*len(d['activity'])
+            ParentName +=[act.name]*len(d['ParentName'])
+            ActivityName +=d['ActivityName']
+            level +=d['level']
+           
+    return {'ActivityID':ActivityID,
+            'ActivityName':ActivityName,
+            'ParentId':ParentId,
+            'ParentName':ParentName,
+            'activity':activity,
+            'level':level}
+
