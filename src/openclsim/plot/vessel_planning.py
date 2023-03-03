@@ -51,6 +51,8 @@ def get_gantt_chart(
     static=False,
     y_scale="text",
     critical_path=None,
+    legend=True,
+    ylabel="Activities",
     title="GANTT Chart"
 ):
     """Create a plotly GANTT chart of the planning of vessels.
@@ -59,7 +61,7 @@ def get_gantt_chart(
     ----------
     concepts
         a list or dict of vessels, sites or activities for which to plot all 
-        activities, e.g.: [while_activity1, while_activity2] or
+        activities, e.g.: [while_actifvity1, while_activity2] or
         {'w1':while_activity1, 'w2:while_activity2'}. Combinations of list 
         and dicts need to be merged first into 1 overall list or dict, e.g. 
         concepts = [from_site, to_site, *vessels.values()]
@@ -188,7 +190,7 @@ def get_gantt_chart(
             range=[min(timestamps), max(timestamps)],
         ),
         yaxis=dict(
-            title="Activities",
+            title=ylabel,
             titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
         ),
     )
@@ -196,6 +198,8 @@ def get_gantt_chart(
     if static is False:
         init_notebook_mode(connected=True)
         fig = go.Figure(data=traces, layout=layout)
+        if not(legend):
+            fig.update_layout(showlegend=False)
 
         return iplot(fig, filename="news-source")
     else:
