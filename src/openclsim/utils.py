@@ -46,10 +46,10 @@ def flatten(treelist, depth=0) -> dict:
     activity = [x for x in treelist]
     ActivityID = [x.id for x in treelist]
     ActivityName = [x.name for x in treelist]
+    ActivityType = [type(x).__name__ for x in treelist]
     ParentId = [None,]*len(ActivityID)
     ParentName = ['',]*len(ActivityID)
-    
-    level = [depth,]*len(ActivityID)
+    ParentLevel = [depth,]*len(ActivityID)
     
     for i, act in enumerate(treelist):
         if hasattr(act, "sub_processes"):
@@ -58,13 +58,15 @@ def flatten(treelist, depth=0) -> dict:
             activity+=d['activity']
             ParentId +=[act.id]*len(d['activity'])
             ParentName +=[act.name]*len(d['ParentName'])
+            ActivityType +=d['ActivityType']
             ActivityName +=d['ActivityName']
-            level +=d['level']
+            ParentLevel +=d['ParentLevel']
            
     return {'ActivityID':ActivityID,
             'ActivityName':ActivityName,
+            'ActivityType':ActivityType,
             'ParentId':ParentId,
             'ParentName':ParentName,
-            'activity':activity,
-            'level':level}
+            'ParentLevel':ParentLevel,
+            'activity':activity}
 
