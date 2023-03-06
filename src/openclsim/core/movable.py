@@ -103,7 +103,7 @@ class Movable(SimpyObject, Locatable):
         _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
         return distance
 
-    def compute_duration(self, origin, destination, engine_order, verbose=True):
+    def compute_duration(self, origin, destination, engine_order=1.0, verbose=True):
         """Determine the duration based on great circle path from origin to destination."""
         distance = self.distance(origin, destination)
         return distance / (self.v * engine_order)
