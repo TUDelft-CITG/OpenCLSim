@@ -1,5 +1,7 @@
 import pathlib
 
+import pandas as pd
+
 import openclsim
 
 
@@ -25,8 +27,9 @@ def find_notebook_path():
 def flatten(treelist, depth=0) -> dict:
     """Flatten a tree of activities into a flat list.
 
-    Returns a dict with fields: ActivityID,ActivityName,
-    ParentId, ParentName, activity,level
+    Returns a dict with fields:
+    ActivityID, ActivityName, activity,
+    ParentId, ParentName, ParentLevel
     
     Parameters
     ----------
