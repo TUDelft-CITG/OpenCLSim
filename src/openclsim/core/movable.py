@@ -103,7 +103,7 @@ class Movable(SimpyObject, Locatable):
         _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
         return distance
 
-    def compute_duration(self, origin, destination, engine_order=1.0, verbose=True):
+    def compute_duration(self, origin, destination, engine_order=1.0):
         """Determine the duration based on great circle path from origin to destination."""
         distance = self.distance(origin, destination)
         return distance / (self.v * engine_order)
@@ -171,11 +171,13 @@ class MultiContainerDependentMovable(Movable, HasMultiContainer):
 
 
 class Navigator:
+    @staticmethod
     def find_route(waypoints):
-        route = []
+        # TODO: implement this method
+        route = [waypoint for waypoint in waypoints]
         return route
 
-class Routable(SimpyObject):
+class Routable(SimpyObject, Locatable):
     """Mixin class: Something with a route (networkx node list format)
     route: a list of node ids (available on env.graph) or geometries (shapely.Geometry)
     """
@@ -191,7 +193,7 @@ class Routable(SimpyObject):
     def move_to_geometry(self, geometry: shapely.geometry.Point):
         """move to geometry"""
         linestring = shapely.geometry.LineString([self.geometry, geometry])
-        distance = self.wgs84.geometry_length(edge_geometry)
+        distance = self.wgs84.geometry_length(linestring)
         duration = self.v * distance
         yield self.env.timeout(duration)
         self.geometry = geometry
@@ -224,12 +226,25 @@ class Routable(SimpyObject):
         a = route[0]
         a_geometry = self.graph.nodes[a]['geometry']
         yield from self.move_to_geometry(a_geometry)
+        # move self to node + geometry
+        self.node = a
+        self.geometry = a_geometry
+
         for i, (a, b) in enumerate(pairwise(route)):
             a_geometry = self.graph[a]['geometry']
             b_geometry = self.graph[b]['geometry']
             edge_geometry = self.graph[(a, b)]['geometry']
             # make sure we are in the right order
             edge_geometry = self.order_geometry(edge_geometry)
+            # go to a (we should already be here)
+            self.geometry = a_geometry
+            self.node = a
+            # pass over the edge
             yield from self.pass_linestring(edge_geometry)
+            # call any other functions we have registered
             for pass_edge_function in self.pass_edge_function:
-                yield pass_edge_function(ship=self, a=a, b=b, route=route, geometry=geometry)
+                # TODO: name ship with something more general? moveable, routable, self?
+                yield pass_edge_function(ship=self, a=a, b=b, route=route, geometry=edge_geometry)
+            # we have arrived, go there....
+            self.geometry = b_geometry
+            self.node = b
