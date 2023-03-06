@@ -63,9 +63,7 @@ class Movable(SimpyObject, Locatable):
         )
 
         # Determine the sailing_duration
-        if duration is not None:
-            duration = duration
-        else:
+        if duration is None:
             duration = self.duration(
                 self.geometry, destination
             )
