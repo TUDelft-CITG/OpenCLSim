@@ -64,7 +64,7 @@ class Movable(SimpyObject, Locatable):
 
         # Determine the sailing_duration
         if duration is None:
-            duration = self.duration(
+            duration = self.compute_duration(
                 self.geometry, destination
             )
 
@@ -103,7 +103,7 @@ class Movable(SimpyObject, Locatable):
         _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
         return distance
 
-    def duration(self, origin, destination, engine_order, verbose=True):
+    def compute_duration(self, origin, destination, engine_order, verbose=True):
         """Determine the duration based on great circle path from origin to destination."""
         distance = self.distance(origin, destination)
         return distance / (self.v * engine_order)
