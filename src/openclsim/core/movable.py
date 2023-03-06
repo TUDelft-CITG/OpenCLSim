@@ -136,13 +136,6 @@ class ContainerDependentMovable(Movable, HasContainer):
             self.container.get_level() / self.container.get_capacity()
         )
 
-    @property
-    def current_speed(self):
-        warnings.warn(
-            "The property `.current_speed` is deprected. Use `.v` instead.",
-            DeprecationWarning,
-        )
-        return self.v
 
 
 class MultiContainerDependentMovable(Movable, HasMultiContainer):
@@ -176,13 +169,6 @@ class MultiContainerDependentMovable(Movable, HasMultiContainer):
         fill_degree = sum_level / sum_capacity
         return self.compute_v(fill_degree)
 
-    @property
-    def current_speed(self):
-        warnings.warn(
-            "The property `.current_speed` is deprected. Use `.v` instead.",
-            DeprecationWarning,
-        )
-        return self.v
 
 class Navigator:
     def find_route(waypoints):
