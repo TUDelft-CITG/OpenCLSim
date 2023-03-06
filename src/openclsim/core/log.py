@@ -1,11 +1,13 @@
 """Component to log the simulation objects."""
 import datetime
 from enum import Enum
+import numbers
+import warnings
 
-import deprecation
+import deprecated
+import pandas as pd
 
 from .simpy_object import SimpyObject
-
 
 class LogState(Enum):
     """
@@ -39,6 +41,14 @@ class Log(SimpyObject):
         list_format = df.to_dict(orient='list')
         return list_format
 
+    # decorate the log setter.
+    # throw a deprecation warning and ignore the setting
+    @log.setter
+    def log(self, value):
+        """set the .log attribute (not allowed, will throw a deprecation warning)"""
+        warnings.warn(".log property is replaced by record format .logbook", DeprecationWarning)
+
+
     def log_entry_v1(
         self,
         t,
@@ -48,7 +58,7 @@ class Log(SimpyObject):
         activity_label=None,
     ):
         """Log an entry (openclsim version)"""
-        assert isinstance(t, float), "expected t variable of type float"
+        assert isinstance(t, numbers.Number), f"expected t variable of type Number, got {t} of type {type(t)}"
 
         object_state = self.get_state()
         if additional_state:
@@ -71,7 +81,7 @@ class Log(SimpyObject):
         }
         self.logbook.append(entry)
 
-    def log_entry_v0(self, log, t, value, geometry_log):
+    def log_entry_v0(self, log, t: numbers.Number, value, geometry_log):
         """Log an entry (opentnsim version)"""
         assert isinstance(log, str), "expected log variable of type string"
         entry = {
@@ -82,12 +92,12 @@ class Log(SimpyObject):
         }
         self.logbook.append(entry)
 
-    @deprecation.deprecated(details="Use .log_entry_v0 instead")
+    @deprecated.deprecated(reason="Use .log_entry_v0 instead")
     def log_entry(self, *args, **kwargs):
         """Backward compatible log_entry. Calls the opentnsim variant."""
         assert len(args) >= 2 or 't' in kwargs, 'Expected t as second argument or as named argument'
         t_argument = kwargs.get('t', args[1])
-        assert isinstance(t_argument, datetime.datetime), 'Expected t of type: datetime.datetime'
+        assert isinstance(t_argument, numbers.Number), f'Expected t of type: Number, got {t_argument} of type: {type(t_argument)}'
         self.log_entry_v0(*args, **kwargs)
 
 
