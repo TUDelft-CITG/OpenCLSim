@@ -57,54 +57,35 @@ class DependenciesFromRecordedActivities(BaseCP):
         Hidden and protected method for the get_dependency_list.
         """
         # a recorded_activities_df is required
+        # a recorded_activities_df is required
         if self.recorded_activities_df is None:
             self._make_recorded_activities_df()
 
         dependency_list = []
 
         # loop over each unique cp_activity
-        for cp_act in self.recorded_activities_df.loc[:, "cp_activity_id"].unique():
-            # and find cp_activities that END when this one STARTS
-            bool_this_activity = (
-                self.recorded_activities_df.loc[:, "cp_activity_id"] == cp_act
-            )
-            bool_end_when_start = (
-                self.recorded_activities_df.loc[:, "end_time"]
-                == self.recorded_activities_df.loc[
-                    bool_this_activity, "start_time"
-                ].iloc[0]
-            )
-            bool_shared_source = self.recorded_activities_df.loc[
-                :, "SimulationObject"
-            ].isin(
-                list(
-                    self.recorded_activities_df.loc[
-                        bool_this_activity, "SimulationObject"
-                    ]
-                )
-            )
+        for cp_act in self.recorded_activities_df.itertuples():
+            # and find cp_activities that END when this one STARTS (same simulation object)
+            dependencies = self.recorded_activities_df.loc[
+                (self.recorded_activities_df.end_time == cp_act.start_time)
+                & (
+                    self.recorded_activities_df.SimulationObject
+                    == cp_act.SimulationObject
+                ),
+                :,
+            ]
 
-            # so standard dependencies requires identical time and (at least 1)
-            # shared Source Object
-            bool_dependencies = (
-                bool_shared_source & bool_end_when_start & ~bool_this_activity
-            )
-            if sum(bool_dependencies) > 0:
-                dependencies = self.recorded_activities_df.loc[bool_dependencies, :]
+            if len(dependencies) > 0:
                 if "WAITING" in dependencies.loc[:, "state"].tolist():
-                    # This activity depends on waiting meaning: current
-                    # activity might have been waiting on activity of other
-                    # source object! We ASSUME that every activity of every
-                    # source object with identical end time of this WAITING is
-                    # a dependency for current activity
+                    # if this cp_act is waiting for something,
+                    # drop shared SimulationObject condition
                     dependencies = self.recorded_activities_df.loc[
-                        bool_end_when_start & ~bool_this_activity, :
+                        self.recorded_activities_df.end_time == cp_act.start_time, :
                     ]
+                depending_on = set(dependencies.cp_activity_id) - {
+                    cp_act.cp_activity_id
+                }
+                for act_dep in depending_on:
+                    dependency_list.append((act_dep, cp_act.cp_activity_id))
 
-                # get all unique activities on which current cp_act depends
-                activities_depending = dependencies.loc[:, "cp_activity_id"].unique()
-
-                for act_dep in activities_depending:
-                    dependency_list.append((act_dep, cp_act))
-
-        self.dependency_list = dependency_list
+        self.dependency_list = list(set(dependency_list))
