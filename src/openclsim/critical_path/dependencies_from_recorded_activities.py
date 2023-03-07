@@ -57,15 +57,13 @@ class DependenciesFromRecordedActivities(BaseCP):
         Hidden and protected method for the get_dependency_list.
         """
         # a recorded_activities_df is required
-        # a recorded_activities_df is required
         if self.recorded_activities_df is None:
             self._make_recorded_activities_df()
 
         dependency_list = []
 
-        # loop over each unique cp_activity
+        # loop over each unique cp_activity and find cp_activities which directly precede 'cp_act'
         for cp_act in self.recorded_activities_df.itertuples():
-            # and find cp_activities that END when this one STARTS (same simulation object)
             dependencies = self.recorded_activities_df.loc[
                 (self.recorded_activities_df.end_time == cp_act.start_time)
                 & (
