@@ -7,6 +7,7 @@ import simpy
 
 import openclsim.core as core
 import openclsim.model as model
+from openclsim.critical_path.dependencies_from_simpy_step import MyCustomSimpyEnv
 
 
 @pytest.fixture()
@@ -15,6 +16,14 @@ def simulation_2_barges():
     Fixture returns the simpy.Environment, objects and activities after a 2-barges simulation.
     """
     return demo_data(nr_barges=2, total_amount=100)
+
+
+@pytest.fixture()
+def simulation_2_barges_custom_env():
+    """
+    Fixture returns the custom environment, objects and activities after a 2-barges simulation.
+    """
+    return demo_data(nr_barges=2, total_amount=100, env=MyCustomSimpyEnv)
 
 
 @pytest.fixture()
@@ -148,7 +157,7 @@ def simulation_4_barges():
     return demo_data(nr_barges=4, total_amount=100)
 
 
-def demo_data(nr_barges, total_amount):
+def demo_data(nr_barges, total_amount, env=None):
     """
     Run a simulation where <nr_barges> barges need to shift an amount of <total_amount>
     from site 1 to site 2 whereafter a larger vessel can come into action.
@@ -159,6 +168,8 @@ def demo_data(nr_barges, total_amount):
         Number of barges in the simulation.
     total_amount : int
         Total amount to be transported in the simulation.
+    env : simpy.Environment or class that inherits from simpy.Environment
+        Optional. If None, default to simpy Environment
     """
     Site = type(
         "Site",
@@ -184,7 +195,11 @@ def demo_data(nr_barges, total_amount):
     )
 
     simulation_start = 0
-    my_env = simpy.Environment(initial_time=simulation_start)
+    if env is None:
+        my_env = simpy.Environment(initial_time=simulation_start)
+    else:
+        my_env = env(initial_time=simulation_start)
+
     registry = {}
 
     location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)
