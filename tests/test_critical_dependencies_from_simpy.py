@@ -2,6 +2,7 @@
 Tests for openclsim.critical_path.dependencies_from_simpy module
 """
 import shapely.geometry
+import simpy.events
 
 import openclsim.core as core
 import openclsim.model as model
@@ -261,13 +262,62 @@ def test_init(simulation_2_barges):
     simulation_2_barges = demo_data(2, 100)
     my_env = simulation_2_barges['env']
     df_step = pd.DataFrame(my_env.data_step,
-                           columns=['t', 'e_id', 'type', 'value', 'prio', 'event_object'])
+                           columns=['t', 'e_id', 'type', 'value', 'prio', 'event_object']).set_index('e_id')
     df_cause_effect = pd.DataFrame(my_env.data_cause_effect,
-                                   columns=['e_id_cause', 'e_id_effect'])
+                                   columns=['e_id_cause', 'e_id_effect']).set_index('e_id_cause')
+    list_cause_effect = my_env.data_cause_effect
 
     # we want dependencies based on the timeouts as seen in recorded activities!
     # so loop through df_cause_effect until no longer possible and make only timeout dependency tuples!
-    
+    def _loop_through(e_id_cause, prev_timeout=None, dependency_list=None, seen_eids=None, all_tuples=None):
+
+        # init when called for very first time
+        if dependency_list is None:
+            dependency_list = []
+        if seen_eids is None:
+            seen_eids = {e_id_cause}
+        else:
+            seen_eids.add(e_id_cause)
+        if all_tuples is None:
+            all_tuples = []
+
+        # see if timeout
+        if isinstance(df_step.loc[e_id_cause, 'event_object'], simpy.events.Timeout):
+            # yep dealing with a timeOut!
+            if df_step.loc[e_id_cause, 'value'] is None:
+                our_reference = "unknown_openclsim_reference"
+            else:
+                our_reference = df_step.loc[e_id_cause, 'value']
+            print(f"TimeOut with delay {df_step.loc[e_id_cause, 'event_object']._delay} {our_reference}")
+            if prev_timeout is not None:
+                print("Adding OpenCLSim dependency :)")
+                dependency_list.append((prev_timeout, our_reference))
+            prev_timeout = our_reference
+
+        # see if effect and call recursive self again
+        new_tuples = [tup for tup in list_cause_effect if tup[0] == e_id_cause]
+        all_tuples = new_tuples + all_tuples
+
+        if len(all_tuples) > 0:
+            print(f"Passing eid {all_tuples[0][1]}")
+            return _loop_through(all_tuples[0][1],
+                                 prev_timeout=prev_timeout,
+                                 dependency_list=dependency_list,
+                                 seen_eids=seen_eids, all_tuples=all_tuples[1:])
+        else:
+            # this id does not causes stuff done
+            print(f"{e_id_cause} causes NO effect")
+            return dependency_list, seen_eids
+
+    all_dependencies = []
+    remaining_eids = {tup[0] for tup in list_cause_effect}
+    while len(remaining_eids) > 0:
+        found_dependencies, seen_eids = _loop_through(list(remaining_eids)[0])
+        all_dependencies = all_dependencies + found_dependencies
+        remaining_eids = remaining_eids - seen_eids
+
+
+
 
 
 def test_get_dependency_list(simulation_2_barges):
