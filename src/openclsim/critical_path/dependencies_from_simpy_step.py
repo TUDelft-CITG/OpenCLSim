@@ -13,6 +13,9 @@ from openclsim.critical_path.base_cp import BaseCP
 
 
 class DependenciesFromSimpy(BaseCP):
+    """
+    Build dependecies from recorded_activities_df
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # other attributes, specific for this (child) class
@@ -32,24 +35,67 @@ class DependenciesFromSimpy(BaseCP):
             list of tuples like [(A1, A2), (A1, A3), (A3, A4)]
             where A2 depends on A1 (A1 'causes' A2) et cetera
         """
+        if self.dependency_list is None:
+            self.__set_dependency_list()
+
+        return self.dependency_list
+
+    def __set_dependency_list(self):
+        """
+        Hidden and protected method for the get_dependency_list.
+
+        This method recursively walks through the simpy dependencies
+        (as the 'monkeypatched' step function records these) and keeps only those depencencies
+        which are a timeout event. Then we translate the IDs of these dependencies from
+        the original simpy e_id values to our openclsim cp_activity_id values.
+        """
         assert isinstance(
             self.env, MyCustomSimpyEnv
         ), "This module is not callable with the default simpy environment"
 
-        print("TODO")
         self.step_logging_dataframe = pd.DataFrame(self.env.data_step,
                                                    columns=['t0', 't1', 'e_id', 'type', 'value',
                                                             'prio',
                                                             'event_object']).set_index('e_id')
         self.cause_effect_list = self.env.data_cause_effect
 
-        # keep only those e_id tuples which mark dependencies between env.Timeouts
-        all_dependencies = []
-        remaining_eids = {tup[0] for tup in self.env.data_cause_effect}
-        while len(remaining_eids) > 0:
-            found_dependencies, seen_eids = self._loop_through(list(remaining_eids)[0])
-            all_dependencies = all_dependencies + found_dependencies
-            remaining_eids = remaining_eids - seen_eids
+        # Define some globals to which the recursive functions/while loop can append
+        DEPENDENCIES_SIMPY = []
+        SEEN = []
+
+        def __loop_through(tree_input, elem=None, last_seen=None):
+            """
+            Hidden and protected method for __set_dependency_list2.
+
+            This function will walk through a hierarchical tree which is represented by
+            list of tuples.
+            Each tuple is a dependency and contains a cause (first element tuple) and
+            effect (second and last element tuple).
+            """
+            if elem is None:
+                elem = tree_input[0][0]
+            # note that we have seen this one
+            SEEN.append(elem)
+
+            # get effects
+            effects_this_elem = [tup[1] for tup in tree_input if tup[0] == elem]
+
+            if isinstance(self.step_logging_dataframe.loc[elem, 'event_object'],
+                          simpy.events.Timeout):
+                # relevant to SAVE
+                if last_seen is not None:
+                    DEPENDENCIES_SIMPY.append((last_seen, elem))
+                last_seen = elem
+
+            for effect_this_elem in effects_this_elem:
+                __loop_through(tree_input, elem=effect_this_elem, last_seen=last_seen)
+
+        # get all relevant dependencies from the simpy depencies,
+        # that is find how the timeouts depend on one another.
+        tree = copy.deepcopy(self.cause_effect_list)
+        while len(tree) > 0:
+            __loop_through(tree)
+            tree = [tup for tup in tree if tup[0] not in SEEN]
 
         # get recorded activities and convert times to floats (seconds since Jan 1970)
         recorded_activities_df = self.get_recorded_activity_df().copy()
@@ -60,52 +106,23 @@ class DependenciesFromSimpy(BaseCP):
 
         # rename the dependencies from dependencies with e_id to dependencies with cp_activity_id
         dependency_list = []
-        for dependency in all_dependencies:
+        for dependency in DEPENDENCIES_SIMPY:
             cause = self._find_cp_act(dependency[0], recorded_activities_df)
             effect = self._find_cp_act(dependency[1], recorded_activities_df)
             dependency_list.append((cause, effect))
-
-        return dependency_list
-
-    def _loop_through(self, e_id_cause, prev_timeout=None, dependency_list=None, seen_eids=None,
-                      all_tuples=None):
-        """ helper function """
-
-        # init when called for very first time
-        if dependency_list is None:
-            dependency_list = []
-        if seen_eids is None:
-            seen_eids = {e_id_cause}
-        else:
-            seen_eids.add(e_id_cause)
-        if all_tuples is None:
-            all_tuples = []
-
-        # if e_id refers to Timeout event we keep this e_id as it may be the cause (or effect)
-        # of another Timeout event
-        if isinstance(self.step_logging_dataframe.loc[e_id_cause, 'event_object'],
-                      simpy.events.Timeout):
-            if prev_timeout is not None:
-                dependency_list.append((prev_timeout, e_id_cause))
-            prev_timeout = e_id_cause
-
-        # see if effect and call recursive self again
-        new_tuples = [tup for tup in self.cause_effect_list if tup[0] == e_id_cause]
-        all_tuples = new_tuples + all_tuples
-
-        if len(all_tuples) > 0:
-            print(f"Passing eid {all_tuples[0][1]}")
-            return self._loop_through(all_tuples[0][1],
-                                      prev_timeout=prev_timeout,
-                                      dependency_list=dependency_list,
-                                      seen_eids=seen_eids, all_tuples=all_tuples[1:])
-        else:
-            # this id does not causes stuff done
-            print(f"{e_id_cause} causes NO effect")
-            return dependency_list, seen_eids
+        self.dependency_list = dependency_list
 
     def _find_cp_act(self, e_id, recorded_activities_df):
-        """ get cp activity ID given a timewindow and an activity ID"""
+        """
+        Get cp activity ID given a timewindow and an activity ID.
+
+        Parameters
+        ----------
+        e_id : int
+            execution id from simpy
+        recorded_activities_df : pd.DataFrame
+            from self.get_recorded_activity_df()
+        """
         activity_id = self.step_logging_dataframe.loc[e_id, "event_object"].value
         start_time = self.step_logging_dataframe.loc[e_id, "t0"]
         end_time = self.step_logging_dataframe.loc[e_id, "t1"]
@@ -120,15 +137,25 @@ class DependenciesFromSimpy(BaseCP):
 
 
 class MyCustomSimpyEnv(simpy.Environment):
-    """TODO SCOPE 6"""
+    """
+    Class is child of simpy.Environment and passes on all arguments on initalization.
+    The 'step' method is overwritten (or 'monkeypatched') in order to log some data of
+    simulation into self.data_step and self.data_cause_effect. The former saves some metadata
+    of the Event such as e_id (execution ID), simulation time, prio and event type (list of tuples).
+    The latter saves which e_id scheduled another e_id and is hence a list of cause-effect tuples.
+    """
 
     def __init__(self, *args, **kwargs):
+        """ Initialization. """
         super().__init__(*args, **kwargs)
         self.data_cause_effect = []
         self.data_step = []
 
     def step(self):
-        """ we keep tack of some data"""
+        """
+        The 'step' method is overwritten (or 'monkeypatched') in order to log some data of
+        simulation into self.data_step and self.data_cause_effect.
+        """
         time_start = copy.deepcopy(self.now)
         if len(self._queue):
             timestamp, prio, eid, event = self._queue[0]
@@ -150,10 +177,15 @@ class MyCustomSimpyEnv(simpy.Environment):
         self._monitor_step(time_start, time_end, prio, eid, event)
 
     def _monitor_cause_effect(self, eid_current, eids_new=None):
-        """add dependencies (triggers) to data """
+        """
+        Append dependencies (triggers) to data_cause_effect.
+        """
         if eids_new is not None and len(eids_new) > 0:
             for new_eid in eids_new:
                 self.data_cause_effect.append((eid_current, new_eid))
 
     def _monitor_step(self, t0, t1, prio, eid, event):
+        """
+        Append metadata concerning events data_step.
+        """
         self.data_step.append((t0, t1, eid, type(event), event.value, prio, event))

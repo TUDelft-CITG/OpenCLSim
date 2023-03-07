@@ -247,7 +247,7 @@ class BaseCP(ABC):
         recorded_activity_df : pd.DataFrame
             All recorded activities from simulation.
         """
-        self._make_recorded_activities_df()
+        self.get_recorded_activity_df()
         self.dependency_list = self.get_dependency_list()
         self.__make_simulation_graph()
 
@@ -264,4 +264,8 @@ class BaseCP(ABC):
         recorded_activity_df : pd.DataFrame
             All recorded activities from simulation.
         """
-        return pd.DataFrame()
+        critical_activities = self.simulation_graph.get_list_critical_activities()
+        recorded_activity_df = self.get_recorded_activity_df()
+        recorded_activity_df['is_critical'] = \
+            recorded_activity_df["cp_activity_id"].isin(critical_activities)
+        return recorded_activity_df
