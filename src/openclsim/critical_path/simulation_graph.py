@@ -7,6 +7,7 @@ import datetime as dt
 import logging
 
 import networkx as nx
+from pandas.api.types import is_numeric_dtype, is_timedelta64_dtype
 
 
 class SimulationGraph:
@@ -125,12 +126,12 @@ class SimulationGraph:
         recorded_activity_df["duration"] = (
             recorded_activity_df["end_time"] - recorded_activity_df["start_time"]
         )
-        if isinstance(recorded_activity_df["duration"][0], dt.timedelta):
+        if is_timedelta64_dtype(recorded_activity_df["duration"]):
             logging.debug("Converting duration to seconds (float)")
             recorded_activity_df["duration"] = round(
                 recorded_activity_df["duration"].dt.total_seconds(), 3
             )
-        if not isinstance(recorded_activity_df["duration"][0], (float, int)):
+        if not is_numeric_dtype(recorded_activity_df["duration"]):
             raise TypeError(
                 f"Duration computed as type {type(recorded_activity_df['duration'][0])} "
                 "is not supported!"
