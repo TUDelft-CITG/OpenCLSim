@@ -106,7 +106,9 @@ def get_ranges_dataframe(simulation_object, id_map=None):
         s = t0.merge(t1, on='trip')
         
         s[idkey] = ActivityID
-        s['TimestampDt'] = s['TimestampStop'] - s['TimestampStart']
+        dt = s['TimestampStop'] - s['TimestampStart']
+        # powerbi gannt can only handle integer durations. so use a small unit:sec
+        s['TimestampDt'] = [x.total_seconds() for x in dt]
         li.append(s)
         
     R = pd.concat(li)
