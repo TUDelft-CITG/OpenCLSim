@@ -107,7 +107,7 @@ def export_concepts(concepts, namespace='', ofile=None,):
     
     return df
 
-def export_activities(activities, ofile=None, id_map=None):
+def export_activities(activities, ofile=None):
     """Save the activities tree to a resolved list in a csv file
 
     Note these are just the model-defined activities and the 
@@ -128,30 +128,24 @@ def export_activities(activities, ofile=None, id_map=None):
         hierarchical activities to be resolved and stored
     ofile
         name of csv file to be exported
-    id_map
-        by default uuids are not resolved. id_map solves this at request:
-        * a list or dict of concepts
-        * a manual id_map to resolve concept uuids to labels, e.g. {'uuid1':'vessel A'}
     """
-    
-    if isinstance(id_map, dict):
-        id_map = [*id_map.values()]    
-    if isinstance(id_map, list):
-        id_map = {act.id: act.name for act in id_map} # needs to be recursive: flatten
-    else:
-        id_map = id_map if id_map else {}
     
     df = flatten(activities)
     
-    df['ProcessorID']     = [x.processor.id   if hasattr(x,'processor')   else None for x in df['activity']]
-    df['MoverID']         = [x.mover.id       if hasattr(x,'mover')       else None for x in df['activity']]
-    df['OriginID']        = [x.origin.id      if hasattr(x,'origin')      else None for x in df['activity']]
-    df['DestinationID']   = [x.destination.id if hasattr(x,'destination') else None for x in df['activity']]
+    processor   = [x.processor   if hasattr(x,'processor')   else None for x in df['activity']]
+    mover       = [x.mover       if hasattr(x,'mover')       else None for x in df['activity']]
+    origin      = [x.origin      if hasattr(x,'origin')      else None for x in df['activity']]
+    destination = [x.destination if hasattr(x,'destination') else None for x in df['activity']]
     
-    df['ProcessorName']   = [dict.get(id_map,x,'') for x in df['ProcessorID']]
-    df['MoverName']       = [dict.get(id_map,x,'') for x in df['MoverID']]
-    df['OriginName']      = [dict.get(id_map,x,'') for x in df['OriginID']]
-    df['DestinationName'] = [dict.get(id_map,x,'') for x in df['DestinationID']]
+    df['ProcessorID']   = [x.id if x else None for x in processor]
+    df['MoverID']       = [x.id if x else None for x in mover]
+    df['OriginID']      = [x.id if x else None for x in origin]
+    df['DestinationID'] = [x.id if x else None for x in destination]
+    
+    df['ProcessorName']   = [x.name if x else '' for x in processor]
+    df['MoverName']       = [x.name if x else '' for x in mover]
+    df['OriginName']      = [x.name if x else '' for x in origin]
+    df['DestinationName'] = [x.name if x else '' for x in destination]
 
     # manually set column order + exclude actual 'activity' object !
     
