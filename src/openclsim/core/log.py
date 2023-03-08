@@ -36,9 +36,26 @@ class Log(SimpyObject):
     def log(self):
         """return the log in log format (compatible with old log attribute)"""
         df = pd.DataFrame(self.logbook)
+        if not self.logbook:
+            # add columns from old formats
+            empty = {
+                "Timestamp": [],
+                "ActivityID": [],
+                "ActivityState": [],
+                "ObjectState": [],
+                "ActivityLabel": [],
+                "Message": [],
+                "Timestamp": [],
+                "Value": [],
+                "Geometry": []
+            }
+            df = pd.DataFrame(empty)
+
+
         # Convert table to this format:
         # {'a': [1, 2], 'b': [2, 4]}
         list_format = df.to_dict(orient='list')
+
         return list_format
 
     # decorate the log setter.
@@ -58,6 +75,7 @@ class Log(SimpyObject):
         activity_label=None,
     ):
         """Log an entry (openclsim version)"""
+
         assert isinstance(t, numbers.Number), f"expected t variable of type Number, got {t} of type {type(t)}"
 
         object_state = self.get_state()
@@ -79,6 +97,7 @@ class Log(SimpyObject):
             "ObjectState": object_state,
             "ActivityLabel": activity_label
         }
+        print(f'adding {entry} to logbook')
         self.logbook.append(entry)
 
     def log_entry_v0(self, log, t: numbers.Number, value, geometry_log):
