@@ -130,7 +130,7 @@ def export_activities(activities, ofile=None):
         name of csv file to be exported
     """
     
-    df = flatten(activities)
+    df = pd.DataFrame(flatten(activities))
     
     processor   = [x.processor   if hasattr(x,'processor')   else None for x in df['activity']]
     mover       = [x.mover       if hasattr(x,'mover')       else None for x in df['activity']]
@@ -164,8 +164,8 @@ def export_activities(activities, ofile=None):
     
     return df
 
-def export_ranges(all_act_flat, ofile = None, concept_name=None):
-    """Save log of flattened activities list to a resolved start-stop list in a csv file
+def export_activity_log(activities, ofile = None):
+    """Save log of activities to a resolved start-stop list in a csv file
 
     This export of the logged time ranges can be used to plot Gannt 
     charts in for instance Qlik and PowerBI. Load the coupled export_activities() 
@@ -175,41 +175,81 @@ def export_ranges(all_act_flat, ofile = None, concept_name=None):
     Parameters
     ----------
     activities
-        flattened list of activities to be resolved and stored
-        use flatten()
+        hierarchical activities to be resolved and stored
     ofile
         name of csv file to be exported
-    concept_name
-        optional filter the flattened list for one 
-        concept_name (Sites and Vessels)
     """
 
-    if concept_name:
-        logmask = (all_act_flat['ProcessorName']==concept_name) | \
-                  (all_act_flat['MoverName']==concept_name)  | \
-                  (all_act_flat['OriginName']==concept_name)  | \
-                  (all_act_flat['DestinationName']==concept_name) 
-
-        all_act_flat = all_act_flat[logmask]
+    df = pd.DataFrame(flatten(activities))
     
     li = []
-    for i, rowi in all_act_flat.iterrows():
+    for i, rowi in df.iterrows():
         log = get_ranges_dataframe(rowi['activity'])
         log.rename(columns={'Activity':'ActivityID'}, inplace=True)
         li.append(log)
     ActivityRanges = pd.concat(li)
     
-    ActivityRanges = ActivityRanges.merge(all_act_flat[['ActivityID', 'ActivityName', 'ActivityClass']], on='ActivityID', how='left')
+    ActivityRanges = ActivityRanges.merge(df[['ActivityID', 'ActivityName', 'ActivityClass']], on='ActivityID', how='left')
     
     keys  = ['trip',
              'ActivityID','ActivityName','ActivityClass',
              'TimestampStart','TimestampStop','TimestampDt']
-    if concept_name:
-        ActivityRanges['ConceptName'] = concept_name
-        keys+=['ConceptName']
         
     if ofile:
         ActivityRanges.to_csv(ofile, columns = keys, index=False)
     
     return ActivityRanges.sort_values(by=["TimestampStart"])
+
+def export_activity_resources(activities, concept_name=None, ofile=None):
+    """Save the resources assigned to an activity to a resolved list in a csv file
+
+    Note these are just the model-defined activities and the 
+    mover, processor, origin and destination relations 
+    without the log. activities thasty have no concept assigned
+    to it, are not exported. Use export_activities() for that.
+    
+    Note that 1 acticvity can have multiple concepts assigned
+    to it simultaneously.  
+
+    returned keys are
+            'ActivityID','ActivityName','ActivityClass',
+            'ConceptID','ConceptName','ConceptMode'
+
+    Parameters
+    ----------
+    activities
+        hierarchical activities to be resolved and stored
+    concept_name
+        optional filter the flattened list for one 
+        concept_name (Sites and Vessels). Default: None
+    ofile
+        name of csv file to be exported
+    """
+
+    df = pd.DataFrame(flatten(activities))
+    if concept_name:
+        logmask = (df['ProcessorName']==concept_name) | \
+                  (df['MoverName']==concept_name)  | \
+                  (df['OriginName']==concept_name)  | \
+                  (df['DestinationName']==concept_name) 
+
+        df = df[logmask]
+
+    li = []
+    for attr_name in ['processor','mover', 'origin', 'destination']:
+        mask   = [hasattr(x,attr_name) for x in df['activity']]
+        li+=[(x.id,
+              x.name,
+              type(x).__name__,
+              getattr(getattr(x,attr_name),'id'),
+              getattr(getattr(x,attr_name),'name'),
+              attr_name) for x in df[mask]['activity']]
+    tmp = list(zip(*li))
+    res = pd.DataFrame.from_dict({'ActivityID':tmp[0],
+                                  'ActivityName':tmp[1],
+                                  'ActivityClass':tmp[2],
+                                  'ConceptID':tmp[3],
+                                  'ConceptName':tmp[4],
+                                  'ConceptMode':tmp[5]})
+    return res
 
