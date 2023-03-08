@@ -1,13 +1,14 @@
 """Component to log the simulation objects."""
 import datetime
-from enum import Enum
 import numbers
 import warnings
+from enum import Enum
 
 import deprecated
 import pandas as pd
 
 from .simpy_object import SimpyObject
+
 
 class LogState(Enum):
     """
@@ -45,16 +46,14 @@ class Log(SimpyObject):
                 "ObjectState": [],
                 "ActivityLabel": [],
                 "Message": [],
-                "Timestamp": [],
                 "Value": [],
-                "Geometry": []
+                "Geometry": [],
             }
             df = pd.DataFrame(empty)
 
-
         # Convert table to this format:
         # {'a': [1, 2], 'b': [2, 4]}
-        list_format = df.to_dict(orient='list')
+        list_format = df.to_dict(orient="list")
 
         return list_format
 
@@ -63,8 +62,9 @@ class Log(SimpyObject):
     @log.setter
     def log(self, value):
         """set the .log attribute (not allowed, will throw a deprecation warning)"""
-        warnings.warn(".log property is replaced by record format .logbook", DeprecationWarning)
-
+        warnings.warn(
+            ".log property is replaced by record format .logbook", DeprecationWarning
+        )
 
     def log_entry_v1(
         self,
@@ -76,7 +76,9 @@ class Log(SimpyObject):
     ):
         """Log an entry (openclsim version)"""
 
-        assert isinstance(t, numbers.Number), f"expected t variable of type Number, got {t} of type {type(t)}"
+        assert isinstance(
+            t, numbers.Number
+        ), f"expected t variable of type Number, got {t} of type {type(t)}"
 
         object_state = self.get_state()
         if additional_state:
@@ -95,9 +97,8 @@ class Log(SimpyObject):
             "ActivityID": activity_id,
             "ActivityState": activity_state.name,
             "ObjectState": object_state,
-            "ActivityLabel": activity_label
+            "ActivityLabel": activity_label,
         }
-        print(f'adding {entry} to logbook')
         self.logbook.append(entry)
 
     def log_entry_v0(self, log, t: numbers.Number, value, geometry_log):
@@ -107,21 +108,24 @@ class Log(SimpyObject):
             "Message": log,
             "Timestamp": datetime.datetime.fromtimestamp(t),
             "Value": value,
-            "Geometry": geometry_log
+            "Geometry": geometry_log,
         }
         self.logbook.append(entry)
 
     @deprecated.deprecated(reason="Use .log_entry_v0 instead")
     def log_entry(self, *args, **kwargs):
         """Backward compatible log_entry. Calls the opentnsim variant."""
-        assert len(args) >= 2 or 't' in kwargs, 'Expected t as second argument or as named argument'
-        if 't' in kwargs:
-            t_argument = kwargs.get('t')
+        assert (
+            len(args) >= 2 or "t" in kwargs
+        ), "Expected t as second argument or as named argument"
+        if "t" in kwargs:
+            t_argument = kwargs.get("t")
         else:
             t_argument = args[1]
-        assert isinstance(t_argument, numbers.Number), f'Expected t of type: Number, got {t_argument} of type: {type(t_argument)}'
+        assert isinstance(
+            t_argument, numbers.Number
+        ), f"Expected t of type: Number, got {t_argument} of type: {type(t_argument)}"
         self.log_entry_v0(*args, **kwargs)
-
 
     def get_state(self):
         """
@@ -135,6 +139,3 @@ class Log(SimpyObject):
         if hasattr(super(), "get_state"):
             state = super().get_state()
         return state
-
-
-
