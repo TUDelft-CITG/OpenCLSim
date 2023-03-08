@@ -84,7 +84,7 @@ def export_concepts(concepts, namespace='', ofile=None,):
     concepts
         concepts to be resolved and stored
     namespace
-        str that will prepad the column names 'Name', 'ID', "Type".
+        str that will prepad the column names 'Name', 'ID', "Class".
         e.g. Vessel, Site or Concept
     ofile
         name of csv file to be exported
@@ -99,7 +99,7 @@ def export_concepts(concepts, namespace='', ofile=None,):
     
     df= {f'{namespace}Name':[x.name for x in concepts],
          f'{namespace}ID':[x.id for x in concepts],
-         f'{namespace}Type':[type(x) for x in concepts]}
+         f'{namespace}Class':[type(x).__name__ for x in concepts]}
     
     df = pd.DataFrame(df)
     if ofile:
