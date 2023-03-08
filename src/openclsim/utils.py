@@ -3,7 +3,7 @@ import pathlib
 import pandas as pd
 
 import openclsim
-
+from openclsim.plot import get_ranges_dataframe
 
 def find_src_path():
     """Lookup the path where the package are located. Returns a pathlib.Path object."""
@@ -174,8 +174,8 @@ def export_ranges(all_act_flat, ofile = None, concept_name=None):
     """Save log of flattened activities list to a resolved start-stop list in a csv file
 
     This export of the logged time ranges can be used to plot Gannt 
-    charts in for instance Qlik. Load the coupled export_activities() file
-    to resolve the Activty properties and relations to (Sites and Vessels).
+    charts in for instance Qlik and PowerBI. Load the coupled export_activities() 
+    file to resolve the Activty properties and relations to (Sites and Vessels).
 
 
     Parameters
