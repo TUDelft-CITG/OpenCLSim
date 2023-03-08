@@ -403,3 +403,147 @@ def demo_data(nr_barges, total_amount, env=None):
         "object_list": [from_site, to_site, to_site2] + list(vessels.values()),
         "activity_list": list(activities.values()),
     }
+
+
+def demo_data_simple(env=None):
+    """ Run a simulation with a single while-sequential loop. """
+    if env is None:
+        my_env = simpy.Environment(initial_time=0)
+    else:
+        my_env = env(initial_time=0)
+
+    # create a Site object based on desired mixin classes
+    Site = type(
+        "Site",
+        (
+            core.Identifiable,
+            core.Log,
+            core.Locatable,
+            core.HasContainer,
+            core.HasResource,
+        ),
+        {},
+    )
+
+    # create a TransportProcessingResource object based on desired mixin classes
+    TransportProcessingResource = type(
+        "TransportProcessingResource",
+        (
+            core.Identifiable,
+            core.Log,
+            core.ContainerDependentMovable,
+            core.Processor,
+            core.HasResource,
+            core.LoadingFunction,
+            core.UnloadingFunction,
+        ),
+        {},
+    )
+
+    # prepare input data for from_site
+    location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)
+    data_from_site = {"env": my_env,
+                      "name": "from_site",
+                      "geometry": location_from_site,
+                      "capacity": 100,
+                      "level": 100
+                      }
+    # instantiate from_site
+    from_site = Site(**data_from_site)
+
+    # prepare input data for to_site
+    location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)
+    data_to_site = {"env": my_env,
+                    "name": "to_site",
+                    "geometry": location_to_site,
+                    "capacity": 100,
+                    "level": 0
+                    }
+    # instantiate to_site
+    to_site = Site(**data_to_site)
+
+    # prepare input data for vessel_01
+    data_vessel01 = {"env": my_env,
+                     "name": "vessel01",
+                     "geometry": location_from_site,
+                     "loading_rate": 0.0004,
+                     "unloading_rate": 0.0004,
+                     "capacity": 4,
+                     "compute_v": lambda x: 10
+                     }
+    # instantiate vessel_01
+    vessel01 = TransportProcessingResource(**data_vessel01)
+
+    # create a list of the sub processes
+    registry = {}
+    sub_processes = [
+        model.MoveActivity(
+            env=my_env,
+            name="sailing empty",
+            registry=registry,
+            mover=vessel01,
+            destination=from_site,
+        ),
+        model.ShiftAmountActivity(
+            env=my_env,
+            name="loading",
+            registry=registry,
+            processor=vessel01,
+            origin=from_site,
+            destination=vessel01,
+            amount=4,
+            duration=1000,
+        ),
+        model.MoveActivity(
+            env=my_env,
+            name="sailing full",
+            registry=registry,
+            mover=vessel01,
+            destination=to_site,
+        ),
+        model.ShiftAmountActivity(
+            env=my_env,
+            name="unloading",
+            registry=registry,
+            processor=vessel01,
+            origin=vessel01,
+            destination=to_site,
+            amount=4,
+            duration=1000,
+        ),
+        model.BasicActivity(
+            env=my_env,
+            name="basic activity",
+            registry=registry,
+            duration=0,
+            additional_logs=[vessel01],
+        ),
+    ]
+
+    # create a 'sequential activity' that is made up of the 'sub_processes'
+    sequential_activity = model.SequentialActivity(
+        env=my_env,
+        name="sequential",
+        registry=registry,
+        sub_processes=sub_processes,
+    )
+
+    # create a while activity that executes the 'sequential activity'
+    # while the stop condition is not triggered
+    while_activity = model.WhileActivity(
+        env=my_env,
+        name="while",
+        registry=registry,
+        sub_processes=[sequential_activity],
+        condition_event=[{"type": "container", "concept": to_site, "state": "full"}],
+    )
+
+    model.register_processes([while_activity])
+    my_env.run()
+
+    return {
+        "env": my_env,
+        "object_list": [from_site, to_site, vessel01],
+        "activity_list": [while_activity],
+    }
+

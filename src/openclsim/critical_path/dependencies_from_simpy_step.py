@@ -35,6 +35,8 @@ class DependenciesFromSimpy(BaseCP):
             list of tuples like [(A1, A2), (A1, A3), (A3, A4)]
             where A2 depends on A1 (A1 'causes' A2) et cetera
         """
+        self.get_recorded_activity_df()
+
         if self.dependency_list is None:
             self.__set_dependency_list()
 
@@ -74,14 +76,18 @@ class DependenciesFromSimpy(BaseCP):
             """
             if elem is None:
                 elem = tree_input[0][0]
+
             # note that we have seen this one
             SEEN.append(elem)
 
             # get effects
             effects_this_elem = [tup[1] for tup in tree_input if tup[0] == elem]
+            relevant_timeout = \
+                isinstance(self.step_logging_dataframe.loc[elem, 'event_object'],
+                           simpy.events.Timeout) and \
+                self.step_logging_dataframe.loc[elem, 'event_object']._delay > 0
 
-            if isinstance(self.step_logging_dataframe.loc[elem, 'event_object'],
-                          simpy.events.Timeout):
+            if relevant_timeout:
                 # relevant to SAVE
                 if last_seen is not None:
                     DEPENDENCIES_SIMPY.append((last_seen, elem))
@@ -89,6 +95,8 @@ class DependenciesFromSimpy(BaseCP):
 
             for effect_this_elem in effects_this_elem:
                 __loop_through(tree_input, elem=effect_this_elem, last_seen=last_seen)
+
+            return None
 
         # get all relevant dependencies from the simpy depencies,
         # that is find how the timeouts depend on one another.
@@ -98,11 +106,11 @@ class DependenciesFromSimpy(BaseCP):
             tree = [tup for tup in tree if tup[0] not in SEEN]
 
         # get recorded activities and convert times to floats (seconds since Jan 1970)
-        recorded_activities_df = self.get_recorded_activity_df().copy()
+        recorded_activities_df = self.recorded_activities_df.copy()
         recorded_activities_df.start_time = \
-            recorded_activities_df.start_time.astype('int64') / 10 ** 9
+            round(recorded_activities_df.start_time.astype('int64') / 10 ** 9, 4)
         recorded_activities_df.end_time = \
-            recorded_activities_df.end_time.astype('int64') / 10 ** 9
+            round(recorded_activities_df.end_time.astype('int64') / 10 ** 9, 4)
 
         # rename the dependencies from dependencies with e_id to dependencies with cp_activity_id
         dependency_list = []
@@ -111,6 +119,7 @@ class DependenciesFromSimpy(BaseCP):
             effect = self._find_cp_act(dependency[1], recorded_activities_df)
             dependency_list.append((cause, effect))
         self.dependency_list = dependency_list
+        print("Dependency list made")
 
     def _find_cp_act(self, e_id, recorded_activities_df):
         """
@@ -124,15 +133,14 @@ class DependenciesFromSimpy(BaseCP):
             from self.get_recorded_activity_df()
         """
         activity_id = self.step_logging_dataframe.loc[e_id, "event_object"].value
-        start_time = self.step_logging_dataframe.loc[e_id, "t0"]
-        end_time = self.step_logging_dataframe.loc[e_id, "t1"]
+        end_time = round(self.step_logging_dataframe.loc[e_id, "t1"], 4)
         matching_ids = recorded_activities_df.loc[
             ((recorded_activities_df.ActivityID == activity_id) &
              (recorded_activities_df.end_time == end_time)), "cp_activity_id"]
         if len(set(matching_ids)) == 1:
             cp_activity_id = matching_ids.iloc[0]
         else:
-            raise UserWarning(f"No match found for {activity_id} at time {start_time}")
+            raise UserWarning(f"No match found for {activity_id} at (end)time {end_time}")
         return cp_activity_id
 
 

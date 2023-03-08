@@ -248,7 +248,7 @@ class BaseCP(ABC):
             All recorded activities from simulation.
         """
         self.get_recorded_activity_df()
-        self.dependency_list = self.get_dependency_list()
+        self.get_dependency_list()
         self.__make_simulation_graph()
 
         return self.__compute_critical_path()
@@ -265,7 +265,7 @@ class BaseCP(ABC):
             All recorded activities from simulation.
         """
         critical_activities = self.simulation_graph.get_list_critical_activities()
-        recorded_activity_df = self.get_recorded_activity_df()
+        recorded_activity_df = self.get_recorded_activity_df().copy()
         recorded_activity_df['is_critical'] = \
             recorded_activity_df["cp_activity_id"].isin(critical_activities)
         return recorded_activity_df

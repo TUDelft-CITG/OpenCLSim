@@ -137,8 +137,10 @@ class SimulationGraph:
                 "is not supported!"
             )
 
+        # drop activities with zero time, they mess up algorithm
+        recorded_activity_df = recorded_activity_df.loc[recorded_activity_df.duration != 0, :]
         # make sure all durations are positive
-        if not all(recorded_activity_df["duration"] >= 0):
+        if not all(recorded_activity_df["duration"] > 0):
             raise ValueError("Negative durations encountered in activities.")
 
         return recorded_activity_df
