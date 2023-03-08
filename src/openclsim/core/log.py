@@ -96,7 +96,10 @@ class Log(SimpyObject):
     def log_entry(self, *args, **kwargs):
         """Backward compatible log_entry. Calls the opentnsim variant."""
         assert len(args) >= 2 or 't' in kwargs, 'Expected t as second argument or as named argument'
-        t_argument = kwargs.get('t', args[1])
+        if 't' in kwargs:
+            t_argument = kwargs.get('t')
+        else:
+            t_argument = args[1]
         assert isinstance(t_argument, numbers.Number), f'Expected t of type: Number, got {t_argument} of type: {type(t_argument)}'
         self.log_entry_v0(*args, **kwargs)
 

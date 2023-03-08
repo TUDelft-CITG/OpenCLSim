@@ -47,10 +47,10 @@ class Movable(SimpyObject, Locatable):
         super().__init__(*args, **kwargs)
         """"""
         self._v = v
-        self.engine_order = 1
+        self.engine_order = 1.0
 
 
-    def move(self, destination: Locatable = None, duration: float = None):
+    def move(self, destination: Locatable = None, duration: float = None, engine_order: float = None):
         """
         Determine distance between origin and destination.
 
@@ -59,6 +59,10 @@ class Movable(SimpyObject, Locatable):
         """
         if destination is None:
             raise ValueError("Movable in OpenCLSim does not support empty destination")
+
+        # we got an egnine setting, store it.
+        if engine_order is not None:
+            self.engine_order = engine_order
 
         # Log the start event
         self.log_entry_v1(
