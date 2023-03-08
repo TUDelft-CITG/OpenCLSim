@@ -1,13 +1,13 @@
 """Component to move the simulation objects."""
+import itertools
 import logging
-from typing import List
 import warnings
+from typing import List
 
-
+import numpy as np
+import pyproj
 import shapely
 import shapely.geometry
-
-import pyproj
 
 from .container import HasContainer, HasMultiContainer
 from .locatable import Locatable
@@ -18,9 +18,10 @@ from .simpy_object import SimpyObject
 try:
     from itertools import pairwise
 except ImportError:
+
     def pairwise(iterable):
         # pairwise('ABCDEFG') --> AB BC CD DE EF FG
-        a, b = tee(iterable)
+        a, b = itertools.tee(iterable)
         next(b, None)
         return zip(a, b)
 
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 # we only have one earth, defined here.
 WGS84 = pyproj.Geod(ellps="WGS84")
+
 
 class Movable(SimpyObject, Locatable):
     """
@@ -49,8 +51,12 @@ class Movable(SimpyObject, Locatable):
         self._v = v
         self.engine_order = 1.0
 
-
-    def move(self, destination: Locatable = None, duration: float = None, engine_order: float = None):
+    def move(
+        self,
+        destination: Locatable = None,
+        duration: float = None,
+        engine_order: float = None,
+    ):
         """
         Determine distance between origin and destination.
 
@@ -73,15 +79,13 @@ class Movable(SimpyObject, Locatable):
 
         # Determine the sailing_duration
         if duration is None:
-            duration = self.compute_duration(
-                self.geometry, destination.geometry
-            )
+            duration = self.compute_duration(self.geometry, destination.geometry)
 
         # Check out the time based on duration of sailing event
         yield self.env.timeout(duration)
 
         # Set mover geometry to destination geometry
-        print('updating to destination geometry', destination.geometry)
+        print("updating to destination geometry", destination.geometry)
         self.geometry = shapely.geometry.shape(destination.geometry)
 
         # Log the stop event
@@ -112,7 +116,9 @@ class Movable(SimpyObject, Locatable):
         _, _, distance = WGS84.inv(orig.x, orig.y, dest.x, dest.y)
         return distance
 
-    def compute_duration(self, origin: shapely.Geometry, destination: shapely.Geometry, engine_order=1.0):
+    def compute_duration(
+        self, origin: shapely.Geometry, destination: shapely.Geometry, engine_order=1.0
+    ):
         """Determine the duration based on great circle path from origin to destination."""
         distance = self.compute_distance(origin, destination)
         return distance / (self.v * engine_order)
@@ -144,7 +150,6 @@ class ContainerDependentMovable(Movable, HasContainer):
         return self.compute_v(
             self.container.get_level() / self.container.get_capacity()
         )
-
 
 
 class MultiContainerDependentMovable(Movable, HasMultiContainer):
@@ -186,13 +191,13 @@ class Navigator:
         route = [waypoint for waypoint in waypoints]
         return route
 
+
 class Routable(SimpyObject, Locatable):
     """Mixin class: Something with a route (networkx node list format)
     route: a list of node ids (available on env.graph) or geometries (shapely.Geometry)
     """
 
     # one instance on the class
-
 
     def __init__(self, route: list, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -210,18 +215,24 @@ class Routable(SimpyObject, Locatable):
         yield self.env.timeout(duration)
         self.geometry = geometry
 
-    def pass_linestring(self, geometry):
-        """Pass an edge. The node pair origin destination should be available on the env.graph."""
+    def pass_linestring(self, geometry: shapely.geometry.LineString):
+        """Pass a linestring."""
+        a = shapely.geometry.Point(geometry.coords[0])
+        b = shapely.geometry.Point(geometry.coords[-1])
         assert isinstance(geometry, shapely.geometry.LineString)
-        distance = WGS84.geometry_length(edge_geometry)
+        distance = WGS84.geometry_length(geometry)
+        # TODO: align with Movable (use compute_duration)
         duration = self.v * distance
+        self.geometry = a
         yield self.env.timeout(duration)
-        self.geometry = destination_geometry
-
+        self.geometry = b
 
     @staticmethod
-    def order_geometry(geometry: shapely.geometry.LineString, a: shapely.geometry.Point):
-        """Make sure the linestring starts at a. If the end of the linestring is closer to a than the start, the linestring is inverted."""
+    def order_geometry(
+        geometry: shapely.geometry.LineString, a: shapely.geometry.Point
+    ):
+        """Make sure the linestring starts at a. If the end of the linestring is
+        closer to a than the start, the linestring is inverted."""
         start = shapely.geometry.Point(*geometry.coords[0])
         end = shapely.geometry.Point(*geometry.coords[-1])
         _, _, distance_from_start = WGS84.inv(start.x, start.y, a.x, a.y)
@@ -236,16 +247,16 @@ class Routable(SimpyObject, Locatable):
     def move_over_route(self, route: List[str]):
         """sail over the route, a list of nodes"""
         a = route[0]
-        a_geometry = self.graph.nodes[a]['geometry']
+        a_geometry = self.graph.nodes[a]["geometry"]
         yield from self.move_to_geometry(a_geometry)
         # move self to node + geometry
         self.node = a
         self.geometry = a_geometry
 
         for i, (a, b) in enumerate(pairwise(route)):
-            a_geometry = self.graph[a]['geometry']
-            b_geometry = self.graph[b]['geometry']
-            edge_geometry = self.graph[(a, b)]['geometry']
+            a_geometry = self.graph[a]["geometry"]
+            b_geometry = self.graph[b]["geometry"]
+            edge_geometry = self.graph[(a, b)]["geometry"]
             # make sure we are in the right order
             edge_geometry = self.order_geometry(edge_geometry)
             # go to a (we should already be here)
@@ -256,7 +267,9 @@ class Routable(SimpyObject, Locatable):
             # call any other functions we have registered
             for pass_edge_function in self.pass_edge_function:
                 # TODO: name ship with something more general? moveable, routable, self?
-                yield pass_edge_function(ship=self, a=a, b=b, route=route, geometry=edge_geometry)
+                yield pass_edge_function(
+                    ship=self, a=a, b=b, route=route, geometry=edge_geometry
+                )
             # we have arrived, go there....
             self.geometry = b_geometry
             self.node = b
