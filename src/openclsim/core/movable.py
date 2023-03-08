@@ -4,7 +4,9 @@ from typing import List
 import warnings
 
 
+import shapely
 import shapely.geometry
+
 import pyproj
 
 from .container import HasContainer, HasMultiContainer
@@ -25,6 +27,8 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+# we only have one earth, defined here.
+WGS84 = pyproj.Geod(ellps="WGS84")
 
 class Movable(SimpyObject, Locatable):
     """
@@ -44,6 +48,7 @@ class Movable(SimpyObject, Locatable):
         """"""
         self._v = v
         self.engine_order = 1
+
 
     def move(self, destination: Locatable = None, duration: float = None):
         """
@@ -65,7 +70,7 @@ class Movable(SimpyObject, Locatable):
         # Determine the sailing_duration
         if duration is None:
             duration = self.compute_duration(
-                self.geometry, destination
+                self.geometry, destination.geometry
             )
 
         # Check out the time based on duration of sailing event
@@ -96,16 +101,16 @@ class Movable(SimpyObject, Locatable):
         return self.v
 
     @staticmethod
-    def distance(origin, destination):
+    def compute_distance(origin: shapely.Geometry, destination: shapely.Geometry):
         """Determine the sailing distance based on great circle path from origin to destination."""
-        orig = shapely.geometry.shape(self.geometry)
-        dest = shapely.geometry.shape(destination.geometry)
-        _, _, distance = self.wgs84.inv(orig.x, orig.y, dest.x, dest.y)
+        orig = shapely.geometry.shape(origin)
+        dest = shapely.geometry.shape(destination)
+        _, _, distance = WGS84.inv(orig.x, orig.y, dest.x, dest.y)
         return distance
 
-    def compute_duration(self, origin, destination, engine_order=1.0):
+    def compute_duration(self, origin: shapely.Geometry, destination: shapely.Geometry, engine_order=1.0):
         """Determine the duration based on great circle path from origin to destination."""
-        distance = self.distance(origin, destination)
+        distance = self.compute_distance(origin, destination)
         return distance / (self.v * engine_order)
 
 
@@ -182,18 +187,21 @@ class Routable(SimpyObject, Locatable):
     route: a list of node ids (available on env.graph) or geometries (shapely.Geometry)
     """
 
+    # one instance on the class
+
+
     def __init__(self, route: list, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # call functions when passing edges
         self.route = route
         self.on_pass_edge_functions = []
-        self.wgs84 = pyproj.Geod(ellps="WGS84")
+
         assert hasattr(self.env, "FG"), "expected graph FG to be available on env"
 
     def move_to_geometry(self, geometry: shapely.geometry.Point):
         """move to geometry"""
         linestring = shapely.geometry.LineString([self.geometry, geometry])
-        distance = self.wgs84.geometry_length(linestring)
+        distance = WGS84.geometry_length(linestring)
         duration = self.v * distance
         yield self.env.timeout(duration)
         self.geometry = geometry
@@ -201,7 +209,7 @@ class Routable(SimpyObject, Locatable):
     def pass_linestring(self, geometry):
         """Pass an edge. The node pair origin destination should be available on the env.graph."""
         assert isinstance(geometry, shapely.geometry.LineString)
-        distance = self.wgs84.geometry_length(edge_geometry)
+        distance = WGS84.geometry_length(edge_geometry)
         duration = self.v * distance
         yield self.env.timeout(duration)
         self.geometry = destination_geometry
@@ -212,8 +220,8 @@ class Routable(SimpyObject, Locatable):
         """Make sure the linestring starts at a. If the end of the linestring is closer to a than the start, the linestring is inverted."""
         start = shapely.geometry.Point(*geometry.coords[0])
         end = shapely.geometry.Point(*geometry.coords[-1])
-        _, _, distance_from_start = self.wgs84.inv(start.x, start.y, a.x, a.y)
-        _, _, distance_from_end = self.wgs84.inv(end.x, end.y, a.x, a.y)
+        _, _, distance_from_start = WGS84.inv(start.x, start.y, a.x, a.y)
+        _, _, distance_from_end = WGS84.inv(end.x, end.y, a.x, a.y)
         if distance_from_start > distance_from_end:
             coords = np.flipud(np.array(geometry.coords))
         else:
