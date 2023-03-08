@@ -49,7 +49,7 @@ def flatten(treelist, depth=0) -> dict:
     activity = [x for x in treelist]
     ActivityID = [x.id for x in treelist]
     ActivityName = [x.name for x in treelist]
-    ActivityType = [type(x).__name__ for x in treelist]
+    ActivityClass = [type(x).__name__ for x in treelist]
     ParentId = [None,]*len(ActivityID)
     ParentName = ['',]*len(ActivityID)
     ParentLevel = [depth,]*len(ActivityID)
@@ -61,13 +61,13 @@ def flatten(treelist, depth=0) -> dict:
             activity+=d['activity']
             ParentId +=[act.id]*len(d['activity'])
             ParentName +=[act.name]*len(d['ParentName'])
-            ActivityType +=d['ActivityType']
+            ActivityClass +=d['ActivityClass']
             ActivityName +=d['ActivityName']
             ParentLevel +=d['ParentLevel']
            
     return {'ActivityID':ActivityID,
             'ActivityName':ActivityName,
-            'ActivityType':ActivityType,
+            'ActivityClass':ActivityClass,
             'ParentId':ParentId,
             'ParentName':ParentName,
             'ParentLevel':ParentLevel,
@@ -115,7 +115,7 @@ def export_activities(activities, ofile=None, id_map=None):
     without the log.
 
     returned keys are
-            'ActivityID','ActivityName','ActivityType',
+            'ActivityID','ActivityName','ActivityClass',
             'ParentId','ParentName','ParentLevel',
             'OriginID','OriginName',
             'DestinationID','DestinationName',
@@ -155,7 +155,7 @@ def export_activities(activities, ofile=None, id_map=None):
 
     # manually set column order + exclude actual 'activity' object !
     
-    keys  = ['ActivityID','ActivityName','ActivityType',
+    keys  = ['ActivityID','ActivityName','ActivityClass',
              'ParentId','ParentName','ParentLevel',
              'OriginID','OriginName',
              'DestinationID','DestinationName',
@@ -205,10 +205,10 @@ def export_ranges(all_act_flat, ofile = None, concept_name=None):
         li.append(log)
     ActivityRanges = pd.concat(li)
     
-    ActivityRanges = ActivityRanges.merge(all_act_flat[['ActivityID', 'ActivityName', 'ActivityType']], on='ActivityID', how='left')
+    ActivityRanges = ActivityRanges.merge(all_act_flat[['ActivityID', 'ActivityName', 'ActivityClass']], on='ActivityID', how='left')
     
     keys  = ['trip',
-             'ActivityID','ActivityName','ActivityType',
+             'ActivityID','ActivityName','ActivityClass',
              'TimestampStart','TimestampStop','TimestampDt']
     if concept_name:
         ActivityRanges['ConceptName'] = concept_name
