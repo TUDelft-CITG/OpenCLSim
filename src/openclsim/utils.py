@@ -244,5 +244,9 @@ def export_activity_resources(activities, ofile=None):
                                   'ConceptID':tmp[3],
                                   'ConceptName':tmp[4],
                                   'ConceptMode':tmp[5]})
+    
+    if ofile:
+        res.to_csv(ofile, index=False)
+
     return res
 
