@@ -200,7 +200,7 @@ def export_activity_log(activities, ofile = None):
     
     return ActivityRanges.sort_values(by=["TimestampStart"])
 
-def export_activity_resources(activities, concept_name=None, ofile=None):
+def export_activity_resources(activities, ofile=None):
     """Save the resources assigned to an activity to a resolved list in a csv file
 
     Note these are just the model-defined activities and the 
@@ -227,13 +227,6 @@ def export_activity_resources(activities, concept_name=None, ofile=None):
     """
 
     df = pd.DataFrame(flatten(activities))
-    if concept_name:
-        logmask = (df['ProcessorName']==concept_name) | \
-                  (df['MoverName']==concept_name)  | \
-                  (df['OriginName']==concept_name)  | \
-                  (df['DestinationName']==concept_name) 
-
-        df = df[logmask]
 
     li = []
     for attr_name in ['processor','mover', 'origin', 'destination']:
