@@ -43,7 +43,7 @@ class RegisterSubProcesses:
     def register_sequential_subprocesses(self):
         self.start_sequence = self.env.event()
 
-        for (i, sub_process) in enumerate(self.sub_processes):
+        for i, sub_process in enumerate(self.sub_processes):
             if i == 0:
                 sub_process.start_event_parent = self.start_sequence
 
@@ -61,7 +61,7 @@ class RegisterSubProcesses:
     def register_parallel_subprocesses(self):
         self.start_parallel = self.env.event()
 
-        for (i, sub_process) in enumerate(self.sub_processes):
+        for i, sub_process in enumerate(self.sub_processes):
             sub_process.start_event_parent = self.start_parallel
 
             if hasattr(sub_process, "register_subprocesses"):

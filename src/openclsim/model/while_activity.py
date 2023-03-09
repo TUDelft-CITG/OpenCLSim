@@ -20,7 +20,7 @@ class ConditionProcessMixin:
 
         start_while = env.now
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.START,

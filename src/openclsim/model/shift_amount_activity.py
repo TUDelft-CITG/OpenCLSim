@@ -68,8 +68,13 @@ class ShiftAmountActivity(GenericActivity):
 
     def main_process_function(self, activity_log, env):
         """Origin and Destination are of type HasContainer."""
-        print('processing shift amount', 'processor', self.processor.name, 'origin', self.origin.name)
-        msg = f"Processor {self.processor.name} is at {self.processor.geometry.wkt}. But we expect to shift an amount from the origin location ({self.origin.name}) at {self.origin.geometry.wkt}"
+        # concatenate long string
+        msg = (
+            f"Processor {self.processor.name} is at: "
+            f"{self.processor.geometry.wkt}."
+            f"But we expect to shift an amount from the origin location ({self.origin.name}) at: "
+            f"{self.origin.geometry.wkt}."
+        )
         assert self.processor.is_at(self.origin), msg
         assert self.destination.is_at(self.origin)
 
