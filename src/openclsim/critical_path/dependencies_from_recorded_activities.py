@@ -53,7 +53,7 @@ class DependenciesFromRecordedActivities(BaseCP):
         return self.dependency_list
 
     def __set_dependency_list(self):
-        """ Hidden and protected method for the get_dependency_list. """
+        """Hidden and protected method for the get_dependency_list."""
         # a recorded_activities_df is required
         if self.recorded_activities_df is None:
             self._make_recorded_activities_df()
