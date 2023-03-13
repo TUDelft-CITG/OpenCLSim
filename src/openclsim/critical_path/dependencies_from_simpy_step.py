@@ -1,9 +1,9 @@
 """
-this module contains two classes which are both required if critical path (dependencies)
+This module contains two classes which are both required if critical path (dependencies)
 are to be found with method 'simpy step':
 - class DependenciesFromSimpy that inherits from critical_path.base_cp.BaseCP and has specific
  get_dependency_list method (as is the case with the other methods as well)
-- class MyCustomSimpyEnv that inherits from simpy.env and patches env.step()
+- class AlteredStepEnv that inherits from simpy.env and patches env.step()
 """
 import simpy
 import pandas as pd
@@ -16,6 +16,7 @@ class DependenciesFromSimpy(BaseCP):
     """
     Build dependecies from recorded_activities_df
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # other attributes, specific for this (child) class
@@ -52,7 +53,7 @@ class DependenciesFromSimpy(BaseCP):
         the original simpy e_id values to our openclsim cp_activity_id values.
         """
         assert isinstance(
-            self.env, MyCustomSimpyEnv
+            self.env, AlteredStepEnv
         ), "This module is not callable with the default simpy environment"
 
         self.step_logging_dataframe = pd.DataFrame(self.env.data_step,
@@ -62,17 +63,22 @@ class DependenciesFromSimpy(BaseCP):
         self.cause_effect_list = self.env.data_cause_effect
 
         # Define some globals to which the recursive functions/while loop can append
-        DEPENDENCIES_SIMPY = []
+        DEPENDENCIES_OPENCLSIM = []
         SEEN = []
 
-        def __loop_through(tree_input, elem=None, last_seen=None):
+        def __extract_openclsim_dependencies(tree_input, elem=None, last_seen=None):
             """
-            Hidden and protected method for __set_dependency_list2.
+            Extract the relevant (OpenCLSim) dependencies from the complete list
+            of all Simpy dependencies.
 
-            This function will walk through a hierarchical tree which is represented by
-            list of tuples.
-            Each tuple is a dependency and contains a cause (first element tuple) and
-            effect (second and last element tuple).
+            This function will walk through a dependency tree which is represented by
+            list of tuples (e.g. [(1, 2), (2, 3), (2, 4))]). Each tuple contains two
+            event - IDs and can be  seen a dependency with a cause (first element
+            tuple) and effect (second and last element tuple).
+            AlteredStepEnv registers all events, but we are only
+            interested in events which are OpenClSim activities with duration,
+            i.e. we are only interested in Timeout event with a _delay attribute > 0.
+            This function keeps track filters the original input to a
             """
             if elem is None:
                 elem = tree_input[0][0]
@@ -82,6 +88,8 @@ class DependenciesFromSimpy(BaseCP):
 
             # get effects
             effects_this_elem = [tup[1] for tup in tree_input if tup[0] == elem]
+            # we only want dependencies that are 1) a Timeout and 2) have a delay > 0
+            # (because these events take time)
             relevant_timeout = \
                 isinstance(self.step_logging_dataframe.loc[elem, 'event_object'],
                            simpy.events.Timeout) and \
@@ -90,11 +98,12 @@ class DependenciesFromSimpy(BaseCP):
             if relevant_timeout:
                 # relevant to SAVE
                 if last_seen is not None:
-                    DEPENDENCIES_SIMPY.append((last_seen, elem))
+                    DEPENDENCIES_OPENCLSIM.append((last_seen, elem))
                 last_seen = elem
 
             for effect_this_elem in effects_this_elem:
-                __loop_through(tree_input, elem=effect_this_elem, last_seen=last_seen)
+                __extract_openclsim_dependencies(tree_input, elem=effect_this_elem,
+                                                 last_seen=last_seen)
 
             return None
 
@@ -102,7 +111,7 @@ class DependenciesFromSimpy(BaseCP):
         # that is find how the timeouts depend on one another.
         tree = copy.deepcopy(self.cause_effect_list)
         while len(tree) > 0:
-            __loop_through(tree)
+            __extract_openclsim_dependencies(tree)
             tree = [tup for tup in tree if tup[0] not in SEEN]
 
         # get recorded activities and convert times to floats (seconds since Jan 1970)
@@ -113,13 +122,9 @@ class DependenciesFromSimpy(BaseCP):
             round(recorded_activities_df.end_time.astype('int64') / 10 ** 9, 4)
 
         # rename the dependencies from dependencies with e_id to dependencies with cp_activity_id
-        dependency_list = []
-        for dependency in DEPENDENCIES_SIMPY:
-            cause = self._find_cp_act(dependency[0], recorded_activities_df)
-            effect = self._find_cp_act(dependency[1], recorded_activities_df)
-            dependency_list.append((cause, effect))
-        self.dependency_list = dependency_list
-        print("Dependency list made")
+        self.dependency_list = [(self._find_cp_act(dependency[0], recorded_activities_df),
+                                 self._find_cp_act(dependency[1], recorded_activities_df))
+                                for dependency in DEPENDENCIES_OPENCLSIM]
 
     def _find_cp_act(self, e_id, recorded_activities_df):
         """
@@ -144,7 +149,7 @@ class DependenciesFromSimpy(BaseCP):
         return cp_activity_id
 
 
-class MyCustomSimpyEnv(simpy.Environment):
+class AlteredStepEnv(simpy.Environment):
     """
     Class is child of simpy.Environment and passes on all arguments on initalization.
     The 'step' method is overwritten (or 'monkeypatched') in order to log some data of
@@ -166,34 +171,59 @@ class MyCustomSimpyEnv(simpy.Environment):
         """
         time_start = copy.deepcopy(self.now)
         if len(self._queue):
-            timestamp, prio, eid, event = self._queue[0]
-            old_eids = set([t[2] for t in self._queue])
+            timestamp, prio, e_id, event = self._queue[0]
+            old_e_ids = set([t[2] for t in self._queue])
         else:
-            timestamp, prio, eid, event = None, None, None, None
-            old_eids = {}
+            timestamp, prio, e_id, event = None, None, None, None
+            old_e_ids = {}
 
         super().step()
 
         if len(self._queue):
-            new_eids = list(set([t[2] for t in self._queue]) - old_eids)
+            new_e_ids = list(set([t[2] for t in self._queue]) - old_e_ids)
         else:
-            new_eids = []
+            new_e_ids = []
 
         time_end = copy.deepcopy(self.now)
 
-        self._monitor_cause_effect(eid, new_eids)
-        self._monitor_step(time_start, time_end, prio, eid, event)
+        self._monitor_cause_effect(e_id, new_e_ids)
+        self._monitor_step(time_start, time_end, prio, e_id, event)
 
-    def _monitor_cause_effect(self, eid_current, eids_new=None):
+    def _monitor_cause_effect(self, e_id_current, e_ids_new=None):
         """
         Append dependencies (triggers) to data_cause_effect.
-        """
-        if eids_new is not None and len(eids_new) > 0:
-            for new_eid in eids_new:
-                self.data_cause_effect.append((eid_current, new_eid))
 
-    def _monitor_step(self, t0, t1, prio, eid, event):
+        Parameters
+        ----------
+        e_id_current : int
+            simpy execution ID ('cause')
+        e_ids_new : list
+            simpy execution IDs ('effect').
+            If None or empty list, eid_current does not trigger another event.
+        """
+        if e_ids_new is not None and len(e_ids_new) > 0:
+            for new_eid in e_ids_new:
+                self.data_cause_effect.append((e_id_current, new_eid))
+
+    def _monitor_step(self, t0, t1, prio, e_id, event):
         """
         Append metadata concerning events data_step.
+
+        Parameters
+        ----------
+        t0 : float
+            numeric timestamp before execution of step() method.
+        t1 : float
+            numeric timestamp before execution of step() method.
+            This t1 correpons with actual time when event has ended in simulation time,
+            whereas t0 might be 'off' (due to other events that need to be handled in simulation).
+        prio : int
+            prio attribute of event
+        e_id : int
+            simpy execution ID which is handled (whose callbacks/trigeers are handled).
+            in step() method
+        event : instance of (Simpy) Event
+            Event (with eid) which is handled.
+
         """
-        self.data_step.append((t0, t1, eid, type(event), event.value, prio, event))
+        self.data_step.append((t0, t1, e_id, type(event), event.value, prio, event))

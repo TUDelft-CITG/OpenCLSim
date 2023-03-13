@@ -4,19 +4,31 @@ Tests for openclsim.critical_path.dependencies_from_simpy module
 import datetime as dt
 
 from openclsim.critical_path.dependencies_from_simpy_step import (
-    MyCustomSimpyEnv,
+    AlteredStepEnv,
     DependenciesFromSimpy,
 )
 
 from tests.conftest import demo_data, demo_data_simple
-simulation_2_barges_custom_env = demo_data(2, 100, MyCustomSimpyEnv)
-simulation_4_barges_custom_env = demo_data(4, 100, MyCustomSimpyEnv)
-simulation_simple = demo_data_simple(env=MyCustomSimpyEnv)
+simulation_2_barges_custom_env = demo_data(2, 100, AlteredStepEnv)
+
+def test_altered_step_environment():
+    """Test AlteredStepEnv."""
+    my_env = AlteredStepEnv(initial_time=0)
+    # do a simple timeout and another and assert what is logged
+    def simple_timeout(duration, value):
+        value = yield my_env.timeout(duration, value=value)
+
+    my_env.process(simple_timeout(10, 'p10'))
+    my_env.process(simple_timeout(15, 'p15'))
+    my_env.run(until=30)
+    assert len(my_env.data_step) == 6, "2 times 3 events expected to have been handled"
+    assert len(my_env.data_cause_effect) == 4, "2 times 3 events expected to have been handled"
 
 
 def test_get_dependency_list(simulation_2_barges_custom_env):
     """ Test get_dependency_list method."""
     my_cp = DependenciesFromSimpy(**simulation_2_barges_custom_env)
+
     dependency_list = my_cp.get_dependency_list()
 
     assert len(dependency_list) == 103, "103 dependencies expected"
@@ -37,46 +49,8 @@ def test_get_critical_path_df(simulation_2_barges_custom_env):
     assert critical_df.is_critical.sum() == 79, "79 critical activities expected"
 
 
-def test_get_critical_path_df_simple_simulation(simulation_simple):
+def test_get_critical_path_df_simple_simulation(simulation_while_sequential):
     """ Test get_critical_path_df method. """
-    import logging
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
-
-    my_cp = DependenciesFromSimpy(**simulation_simple)
-    dependency_list = my_cp.get_dependency_list()
-    len(my_cp.recorded_activities_df.cp_activity_id.unique())
+    my_cp = DependenciesFromSimpy(**simulation_while_sequential)
     critical_df = my_cp.get_critical_path_df()
-    assert critical_df.is_critical.sum() == 79, "79 critical activities expected"
-
-
-def temp_visualisation():
-    from openclsim.plot.vessel_planning import get_gantt_chart
-    import plotly.graph_objs as go
-    my_cp = DependenciesFromSimpy(**simulation_2_barges_custom_env)
-    critical_df = my_cp.get_critical_path_df()
-    data = get_gantt_chart(simulation_2_barges_custom_env['object_list'],
-                           id_map=simulation_2_barges_custom_env['activity_list'],
-                           static=True, critical_path_dataframe=critical_df)
-    fig = go.Figure(**data)
-    fig.show()
-    fig.write_html(r"D:\temp_files\crit1_2barges.html")
-
-    my_cp = DependenciesFromSimpy(**simulation_4_barges_custom_env)
-    critical_df = my_cp.get_critical_path_df()
-    data = get_gantt_chart(simulation_4_barges_custom_env['object_list'],
-                           id_map=simulation_4_barges_custom_env['activity_list'],
-                           static=True, critical_path_dataframe=critical_df)
-    fig = go.Figure(**data)
-    fig.show()
-    fig.write_html(r"D:\temp_files\crit1_4barges.html")
-
-
-    my_cp = DependenciesFromSimpy(**simulation_simple)
-    critical_df = my_cp.get_critical_path_df()
-    data = get_gantt_chart(simulation_simple['object_list'],
-                           id_map=simulation_simple['activity_list'],
-                           static=True, critical_path_dataframe=critical_df)
-    fig = go.Figure(**data)
-    fig.show()
-    fig.write_html(r"D:\temp_files\simple_while.html")
+    assert critical_df.is_critical.sum() == 149, "149 critical activities expected"

@@ -7,7 +7,7 @@ import simpy
 
 import openclsim.core as core
 import openclsim.model as model
-from openclsim.critical_path.dependencies_from_simpy_step import MyCustomSimpyEnv
+from openclsim.critical_path.dependencies_from_simpy_step import AlteredStepEnv
 
 
 @pytest.fixture()
@@ -23,7 +23,16 @@ def simulation_2_barges_custom_env():
     """
     Fixture returns the custom environment, objects and activities after a 2-barges simulation.
     """
-    return demo_data(nr_barges=2, total_amount=100, env=MyCustomSimpyEnv)
+    return demo_data(nr_barges=2, total_amount=100, env=AlteredStepEnv)
+
+
+@pytest.fixture()
+def simulation_while_sequential():
+    """
+    Fixture returns the custom environment, objects and activities
+    after a simple while-sequential simulation.
+    """
+    return demo_data_simple(env=AlteredStepEnv)
 
 
 @pytest.fixture()
