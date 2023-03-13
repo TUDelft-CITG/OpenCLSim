@@ -19,7 +19,7 @@ def test_init(simulation_2_barges):
 
 
 def test_get_dependency_list(simulation_2_barges):
-    """test get dependency list"""
+    """Test get dependency list."""
     my_cp = DependenciesFromRecordedActivities(**simulation_2_barges)
     dependency_list = my_cp.get_dependency_list()
     assert len(dependency_list) == 113, "113 dependencies expected"
@@ -27,4 +27,4 @@ def test_get_dependency_list(simulation_2_barges):
     cp_ids = {item for dependecy_tuple in dependency_list for item in dependecy_tuple}
     assert cp_ids.issubset(
         set(my_cp.recorded_activities_df.cp_activity_id)
-    ), "activity IDs must exist in recored_activities_df"
+    ), "activity IDs must exist in recorded_activities_df"

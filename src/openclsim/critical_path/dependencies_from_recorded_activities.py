@@ -6,7 +6,7 @@ from openclsim.critical_path.base_cp import BaseCP
 
 class DependenciesFromRecordedActivities(BaseCP):
     """
-    Build dependecies from recorded_activities_df
+    Build dependencies from recorded_activities_df.
     """
 
     def __init__(self, *args, **kwargs):
@@ -14,7 +14,7 @@ class DependenciesFromRecordedActivities(BaseCP):
 
     def get_dependency_list(self):
         """
-        Get dependencies directly from recorded activities (match on identical timestamps)
+        Get dependencies directly from recorded activities (match on identical timestamps).
 
         This method determines dependencies between activities 'blindly' based
         on the simulation logs only. That is, purely based on timestamp and
@@ -53,9 +53,7 @@ class DependenciesFromRecordedActivities(BaseCP):
         return self.dependency_list
 
     def __set_dependency_list(self):
-        """
-        Hidden and protected method for the get_dependency_list.
-        """
+        """ Hidden and protected method for the get_dependency_list. """
         # a recorded_activities_df is required
         if self.recorded_activities_df is None:
             self._make_recorded_activities_df()
