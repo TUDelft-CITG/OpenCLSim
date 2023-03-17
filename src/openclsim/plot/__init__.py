@@ -1,6 +1,6 @@
 """Directory for the simulation plots."""
 
-from .log_dataframe import get_log_dataframe
+from .log_dataframe import get_log_dataframe, get_ranges_dataframe
 from .step_chart import get_step_chart
 from .vessel_planning import get_gantt_chart
 

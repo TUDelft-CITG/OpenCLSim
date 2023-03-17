@@ -85,6 +85,8 @@ class WeatherPluginActivity(model.AbstractPluginClass):
         self.weather_criteria = weather_criteria
         self.metocean_df = metocean_df
 
+        self.res = self.process_data(self.weather_criteria)
+
     def pre_process(self, env, activity_log, activity, *args, **kwargs):
         if self.weather_criteria is not None:
             t = float(env.now)
@@ -105,10 +107,9 @@ class WeatherPluginActivity(model.AbstractPluginClass):
             return {}
 
     def check_constraint(self, start_time):
-        res = self.process_data(self.weather_criteria)
-        windows = np.array(res["windows"])
-        ts_start = res["dataset_start"]
-        ts_stop = res["dataset_stop"]
+        windows = np.array(self.res["windows"])
+        ts_start = self.res["dataset_start"]
+        ts_stop = self.res["dataset_stop"]
 
         filter_windows = windows[windows[:, 1] >= start_time]
         i = 0

@@ -50,22 +50,42 @@ def get_gantt_chart(
     web=False,
     static=False,
     y_scale="text",
+    critical_path=None,
+    legend=True,
+    ylabel="Activities",
+    title="GANTT Chart"
 ):
     """Create a plotly GANTT chart of the planning of vessels.
 
     Parameters
     ----------
     concepts
-        a list of vessels, sites or activities for which to plot all activities
+        a list or dict of vessels, sites or activities for which to plot all 
+        activities, e.g.: [while_actifvity1, while_activity2] or
+        {'w1':while_activity1, 'w2:while_activity2'}. Combinations of list 
+        and dicts need to be merged first into 1 overall list or dict, e.g. 
+        concepts = [from_site, to_site, *vessels.values()]
     activities
-        additional activities to be plotted, if not yet in concepts
+        a list or dict of additional activities to be plotted, if not yet in concepts
     id_map
-        by default only activity in concepts are resolved. Activities
-        associated with vessels and sites are not resolved. id_map solves this:
-        * a list of top-activities of which also all sub-activities
-          will be resolved, e.g.: [while_activity]
+        by default only the legend labels of activities in concepts are resolved.
+        Activities associated with vessels and sites are not resolved. id_map 
+        resolves the legend labels using extra metadata:
+        * a list or dict of vessels
         * a manual id_map to resolve uuids to labels, e.g. {'uuid1':'name1'}
     """
+    default_blockwidth = 10
+    
+     # unpack dict to list
+    if type(concepts) == dict:
+        concepts = [*concepts.values()]
+
+    if type(activities) == dict:
+        activities = [*activities.values()]
+
+    if type(id_map) == dict:
+        id_map = [*id_map.values()]
+
     if type(id_map) == list:
         id_map = {act.id: act.name for act in get_subprocesses(id_map)}
     else:
@@ -103,9 +123,37 @@ def get_gantt_chart(
             dataframes.append(df)
             names.append(vessel.name)
 
+    # extract the tracts for the cp to be plotted in the background
+    traces = []
+    if critical_path is not None:
+        x_critical = critical_path.loc[
+            critical_path.loc[:, "is_critical"], "start_time"
+        ].tolist()
+
+        x_critical_end = critical_path.loc[
+            critical_path.loc[:, "is_critical"], "end_time"
+        ].tolist()
+
+        ylist = critical_path.loc[
+            critical_path.loc[:, "is_critical"], "SimulationObject"
+        ].tolist()
+
+        x_nest = [[x1, x2, x2] for (x1, x2) in zip(x_critical, x_critical_end)]
+        y_nest = [[y, y, None] for y in ylist]
+        traces.append(
+            go.Scatter(
+                name="critical_path",
+                x=[item for sublist in x_nest for item in sublist],
+                y=[item for sublist in y_nest for item in sublist],
+                mode="lines",
+                hoverinfo="name",
+                line=dict(color="red", width=default_blockwidth + 4),
+                connectgaps=False,
+            )
+        )
+
     df = dataframes[0]
     # prepare traces for each of the activities
-    traces = []
     for i, activity in enumerate(activities):
         activity = act_map.get(activity, activity)
         x_combined = []
@@ -122,7 +170,7 @@ def get_gantt_chart(
                 y=y_combined,
                 mode="lines",
                 hoverinfo="y+name",
-                line=dict(color=colors[i], width=10),
+                line=dict(color=colors[i], width=default_blockwidth),
                 connectgaps=False,
             )
         )
@@ -133,7 +181,7 @@ def get_gantt_chart(
         timestamps.extend(log)
 
     layout = go.Layout(
-        title="GANTT Chart",
+        title=title,
         hovermode="closest",
         legend=dict(x=0, y=-0.2, orientation="h"),
         xaxis=dict(
@@ -142,7 +190,7 @@ def get_gantt_chart(
             range=[min(timestamps), max(timestamps)],
         ),
         yaxis=dict(
-            title="Activities",
+            title=ylabel,
             titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
         ),
     )
@@ -150,6 +198,8 @@ def get_gantt_chart(
     if static is False:
         init_notebook_mode(connected=True)
         fig = go.Figure(data=traces, layout=layout)
+        if not(legend):
+            fig.update_layout(showlegend=False)
 
         return iplot(fig, filename="news-source")
     else:
