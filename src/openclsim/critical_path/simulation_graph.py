@@ -138,7 +138,9 @@ class SimulationGraph:
             )
 
         # drop activities with zero time, they mess up algorithm
-        recorded_activities_df = recorded_activities_df.loc[recorded_activities_df.duration != 0, :]
+        recorded_activities_df = recorded_activities_df.loc[
+            recorded_activities_df.duration != 0, :
+        ]
         # make sure all durations are positive
         if not all(recorded_activities_df["duration"] > 0):
             raise ValueError("Negative durations encountered in activities.")

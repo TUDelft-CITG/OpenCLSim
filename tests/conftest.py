@@ -415,7 +415,7 @@ def demo_data(nr_barges, total_amount, env=None):
 
 
 def demo_data_simple(env=None):
-    """ Run a simulation with a single while-sequential loop. """
+    """Run a simulation with a single while-sequential loop."""
     if env is None:
         my_env = simpy.Environment(initial_time=0)
     else:
@@ -451,35 +451,38 @@ def demo_data_simple(env=None):
 
     # prepare input data for from_site
     location_from_site = shapely.geometry.Point(4.18055556, 52.18664444)
-    data_from_site = {"env": my_env,
-                      "name": "from_site",
-                      "geometry": location_from_site,
-                      "capacity": 100,
-                      "level": 100
-                      }
+    data_from_site = {
+        "env": my_env,
+        "name": "from_site",
+        "geometry": location_from_site,
+        "capacity": 100,
+        "level": 100,
+    }
     # instantiate from_site
     from_site = Site(**data_from_site)
 
     # prepare input data for to_site
     location_to_site = shapely.geometry.Point(4.25222222, 52.11428333)
-    data_to_site = {"env": my_env,
-                    "name": "to_site",
-                    "geometry": location_to_site,
-                    "capacity": 100,
-                    "level": 0
-                    }
+    data_to_site = {
+        "env": my_env,
+        "name": "to_site",
+        "geometry": location_to_site,
+        "capacity": 100,
+        "level": 0,
+    }
     # instantiate to_site
     to_site = Site(**data_to_site)
 
     # prepare input data for vessel_01
-    data_vessel01 = {"env": my_env,
-                     "name": "vessel01",
-                     "geometry": location_from_site,
-                     "loading_rate": 0.0004,
-                     "unloading_rate": 0.0004,
-                     "capacity": 4,
-                     "compute_v": lambda x: 10
-                     }
+    data_vessel01 = {
+        "env": my_env,
+        "name": "vessel01",
+        "geometry": location_from_site,
+        "loading_rate": 0.0004,
+        "unloading_rate": 0.0004,
+        "capacity": 4,
+        "compute_v": lambda x: 10,
+    }
     # instantiate vessel_01
     vessel01 = TransportProcessingResource(**data_vessel01)
 
@@ -555,4 +558,3 @@ def demo_data_simple(env=None):
         "object_list": [from_site, to_site, vessel01],
         "activity_list": [while_activity],
     }
-

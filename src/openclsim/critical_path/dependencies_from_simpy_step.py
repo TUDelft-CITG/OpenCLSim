@@ -5,11 +5,11 @@ are to be found with method 'simpy step':
  get_dependency_list method (as is the case with the other methods as well)
 - class AlteredStepEnv that inherits from simpy.env and patches env.step()
 """
-import simpy
-import logging
-import numpy as np
-import pandas as pd
 import copy
+import logging
+
+import pandas as pd
+import simpy
 
 from openclsim.critical_path.base_cp import BaseCP
 
@@ -27,13 +27,13 @@ class DependenciesFromSimpy(BaseCP):
         ), "This module is not callable with the default simpy environment"
 
         # other attributes, specific for this (child) class
-        self.step_logging_dataframe = pd.DataFrame(self.env.data_step,
-                                                   columns=['t0', 't1', 'e_id', 'type', 'value',
-                                                            'prio',
-                                                            'event_object']).set_index('e_id')
+        self.step_logging_dataframe = pd.DataFrame(
+            self.env.data_step,
+            columns=["t0", "t1", "e_id", "type", "value", "prio", "event_object"],
+        ).set_index("e_id")
         self.cause_effect_list = copy.deepcopy(self.env.data_cause_effect)
 
-    def get_dependency_list(self, connect_all_off=False):
+    def get_dependency_list(self):
         """
         Get dependencies from simpy logging by analysing
         the data as saved with the patched env.step function
@@ -49,11 +49,11 @@ class DependenciesFromSimpy(BaseCP):
         self.get_recorded_activity_df()
 
         if self.dependency_list is None:
-            self.__set_dependency_list(connect_all_off=connect_all_off)
+            self.__set_dependency_list()
 
         return self.dependency_list
 
-    def __set_dependency_list(self, connect_all_off):
+    def __set_dependency_list(self):
         """
         Hidden and protected method for the get_dependency_list.
 
@@ -62,9 +62,6 @@ class DependenciesFromSimpy(BaseCP):
         which are a timeout event. Then we translate the IDs of these dependencies from
         the original simpy e_id values to our openclsim cp_activity_id values.
         """
-        if connect_all_off:
-            self._connect_all_of_dependencies()
-
         # Define some globals to which the recursive functions/while loop can append
         DEPENDENCIES_OPENCLSIM = []
         SEEN = []
@@ -88,16 +85,18 @@ class DependenciesFromSimpy(BaseCP):
 
             # note that we have seen this one
             SEEN.append(elem)
-            print(len(SEEN))
 
             # get effects
             effects_this_elem = [tup[1] for tup in tree_input if tup[0] == elem]
             # we only want dependencies that are 1) a Timeout and 2) have a delay > 0
             # (because these events take time)
-            relevant_timeout = \
-                isinstance(self.step_logging_dataframe.loc[elem, 'event_object'],
-                           simpy.events.Timeout) and \
-                self.step_logging_dataframe.loc[elem, 'event_object']._delay > 0
+            relevant_timeout = (
+                isinstance(
+                    self.step_logging_dataframe.loc[elem, "event_object"],
+                    simpy.events.Timeout,
+                )
+                and self.step_logging_dataframe.loc[elem, "event_object"]._delay > 0
+            )
 
             if relevant_timeout:
                 # relevant to SAVE
@@ -107,8 +106,9 @@ class DependenciesFromSimpy(BaseCP):
 
             for effect_this_elem in effects_this_elem:
                 logging.debug(f"Effect {effect_this_elem} from {effects_this_elem}")
-                __extract_openclsim_dependencies(tree_input, elem=effect_this_elem,
-                                                 last_seen=last_seen)
+                __extract_openclsim_dependencies(
+                    tree_input, elem=effect_this_elem, last_seen=last_seen
+                )
 
             return None
 
@@ -121,52 +121,21 @@ class DependenciesFromSimpy(BaseCP):
 
         # get recorded activities and convert times to floats (seconds since Jan 1970)
         recorded_activities_df = self.recorded_activities_df.copy()
-        recorded_activities_df.start_time = \
-            round(recorded_activities_df.start_time.astype('int64') / 10 ** 9, 4)
-        recorded_activities_df.end_time = \
-            round(recorded_activities_df.end_time.astype('int64') / 10 ** 9, 4)
+        recorded_activities_df.start_time = round(
+            recorded_activities_df.start_time.astype("int64") / 10**9, 4
+        )
+        recorded_activities_df.end_time = round(
+            recorded_activities_df.end_time.astype("int64") / 10**9, 4
+        )
 
         # rename the dependencies from dependencies with e_id to dependencies with cp_activity_id
-        self.dependency_list = [(self._find_cp_act(dependency[0], recorded_activities_df),
-                                 self._find_cp_act(dependency[1], recorded_activities_df))
-                                for dependency in DEPENDENCIES_OPENCLSIM]
-
-    def _connect_all_of_dependencies(self):
-        """
-        Simpy does not allow multiple events to trigger a single event. In case of an
-        'AllOff' condition (event) simpy will ensure that the first events do NOT
-        trigger anything new, whereas the last event (hence fullfilling the AllOff
-        condition) will trigger a next event.
-        In OpenCLSim use case it may be desirable to know, however, which events have to
-        be completed before another event is triggered. Therefore, this function will
-        scan for AllOff events and rename all the AllOff events with similar value to
-        a single simpy e_id.
-        Result: the self.cause_effect_list (dependency tree (list of tuples))
-        will show that multiple events CAN trigger a single event.
-        """
-        # we convert to numpy to speed up
-        cause_effect_np_matrix = np.array(self.cause_effect_list)
-
-        for event in self.step_logging_dataframe.itertuples():
-            if event.type == simpy.events.AllOf:
-                # find all simpy e_ids which reflect this AllOff event and rename in np operation
-                same_value = list(self.step_logging_dataframe.index[
-                                      self.step_logging_dataframe.value == event.value])
-                cause_effect_np_matrix = np.where(
-                    np.in1d(cause_effect_np_matrix, same_value[1:]).reshape(
-                        cause_effect_np_matrix.shape),
-                    same_value[0], cause_effect_np_matrix)
-
-        # delete (created) rows with:
-        # - identical cause-effect
-        # - cause smaller than effect (while loop condition)
-        # - duplicates
-        cause_effect_np_matrix = np.delete(
-            cause_effect_np_matrix,
-            np.where(cause_effect_np_matrix[:, 0] >= cause_effect_np_matrix[:, 1]), axis=0)
-        cause_effect_np_matrix = np.unique(cause_effect_np_matrix, axis=0)
-
-        self.cause_effect_list = list(map(tuple, cause_effect_np_matrix))
+        self.dependency_list = [
+            (
+                self._find_cp_act(dependency[0], recorded_activities_df),
+                self._find_cp_act(dependency[1], recorded_activities_df),
+            )
+            for dependency in DEPENDENCIES_OPENCLSIM
+        ]
 
     def _find_cp_act(self, e_id, recorded_activities_df):
         """
@@ -182,12 +151,18 @@ class DependenciesFromSimpy(BaseCP):
         activity_id = self.step_logging_dataframe.loc[e_id, "event_object"].value
         end_time = round(self.step_logging_dataframe.loc[e_id, "t1"], 4)
         matching_ids = recorded_activities_df.loc[
-            ((recorded_activities_df.ActivityID == activity_id) &
-             (recorded_activities_df.end_time == end_time)), "cp_activity_id"]
+            (
+                (recorded_activities_df.ActivityID == activity_id)
+                & (recorded_activities_df.end_time == end_time)
+            ),
+            "cp_activity_id",
+        ]
         if len(set(matching_ids)) == 1:
             cp_activity_id = matching_ids.iloc[0]
         else:
-            raise UserWarning(f"No match found for {activity_id} at (end)time {end_time}")
+            raise UserWarning(
+                f"No match found for {activity_id} at (end)time {end_time}"
+            )
         return cp_activity_id
 
 
@@ -201,7 +176,7 @@ class AlteredStepEnv(simpy.Environment):
     """
 
     def __init__(self, *args, **kwargs):
-        """ Initialization. """
+        """Initialization."""
         super().__init__(*args, **kwargs)
         self.data_cause_effect = []
         self.data_step = []
@@ -213,10 +188,10 @@ class AlteredStepEnv(simpy.Environment):
         """
         time_start = copy.deepcopy(self.now)
         if len(self._queue):
-            timestamp, prio, e_id, event = self._queue[0]
+            _, prio, e_id, event = self._queue[0]
             old_e_ids = set([t[2] for t in self._queue])
         else:
-            timestamp, prio, e_id, event = None, None, None, None
+            _, prio, e_id, event = None, None, None, None
             old_e_ids = {}
 
         super().step()

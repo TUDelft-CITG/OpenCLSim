@@ -50,7 +50,7 @@ def get_gantt_chart(
     web=False,
     static=False,
     y_scale="text",
-    critical_path_dataframe=None
+    critical_path_dataframe=None,
 ):
     """Create a plotly GANTT chart of the planning of vessels.
 

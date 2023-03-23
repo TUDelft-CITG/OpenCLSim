@@ -266,6 +266,7 @@ class BaseCP(ABC):
         """
         critical_activities = self.simulation_graph.get_list_critical_activities()
         recorded_activity_df = self.get_recorded_activity_df().copy()
-        recorded_activity_df['is_critical'] = \
-            recorded_activity_df["cp_activity_id"].isin(critical_activities)
+        recorded_activity_df["is_critical"] = recorded_activity_df[
+            "cp_activity_id"
+        ].isin(critical_activities)
         return recorded_activity_df
