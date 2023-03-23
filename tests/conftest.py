@@ -408,6 +408,10 @@ def demo_data(nr_barges, total_amount, env=None, max_wave=None):
                     "id_": "default_reservations",
                 }
             ],
+            start_event={
+                "type": "time",
+                "start_time": 100,
+            }
         )
 
     # now add activity for vessel last, once v1 and v2 are done

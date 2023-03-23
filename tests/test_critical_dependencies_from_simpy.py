@@ -63,3 +63,14 @@ def test_get_critical_path_df_storm(simulation_2_barges_custom_env_storm):
     my_cp = DependenciesFromSimpy(**simulation_2_barges_custom_env_storm)
     critical_df = my_cp.get_critical_path_df()
     assert critical_df.is_critical.sum() == 82, "82 critical activities expected"
+
+
+# def test_get_critical_path_with_startevent():
+#     from tests.conftest import demo_data
+#     demo_data_start = demo_data(nr_barges=2, total_amount=100, env=AlteredStepEnv)
+#     my_cp = DependenciesFromSimpy(**demo_data_start)
+#     df_activities = my_cp.get_recorded_activity_df()
+#     critical_df = my_cp.get_critical_path_df()
+
+
+

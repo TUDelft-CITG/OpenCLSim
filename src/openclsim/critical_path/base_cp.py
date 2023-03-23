@@ -41,8 +41,6 @@ class BaseCP(ABC):
         """
         super().__init__(*args, **kwargs)
 
-        # some asserts todo
-
         # set to self
         self.env = env
         self.object_list = object_list
@@ -72,20 +70,17 @@ class BaseCP(ABC):
         and reshape into format such that single row has a start time and an end time.
         """
         # get all recorded events through logs simulation objects (excl plugins)
-        all_recorded_events = self.combine_logs()
+        all_recorded_events_objects = self.combine_logs()
 
-        # get all recorded events through logs activities (incl plugins)
-        all_recorded_events_activities = self.combine_logs_activities()
-
-        # combine - ensure no duplicates
-        to_add = (
-            pd.concat([all_recorded_events_activities, all_recorded_events])
-            .drop_duplicates(
-                subset=["Timestamp", "ActivityID", "ActivityState"], keep=False
+        # get all recorded events through logs activities
+        # (incl plugins, start/condition events etc.)
+        all_recorded_events_activities = \
+            self.get_log_dataframe_activity(
+                get_subprocesses(self.activity_list)
             )
-            .reset_index(drop=True)
-        )
-        all_recorded_events = pd.concat([all_recorded_events, to_add]).reset_index(
+
+        all_recorded_events = pd.concat(
+            [all_recorded_events_objects, all_recorded_events_activities]).reset_index(
             drop=True
         )
 
@@ -130,39 +125,20 @@ class BaseCP(ABC):
 
         return log_all.sort_values("Timestamp").reset_index(drop=True)
 
-    def __get_subprocesses_lowest(self, items, out=None):
-        """
-        Get a list of all the activities without subprocesses.
-        """
-        if out is None:
-            out = []
-
-        if not isinstance(items, list):
-            items = [items]
-
-        for item in items:
-            if hasattr(item, "sub_processes") and len(item.sub_processes) > 0:
-                out = self.__get_subprocesses_lowest(item.sub_processes, out=out)
-            else:
-                out.append(item)
-
-        return out
-
-    def get_log_dataframe_activity(self, activity):
+    def get_log_dataframe_activity(self, activity_list):
         """
         Get the log of the activity object in a pandas dataframe.
 
         Parameters
         ----------
-        activity : object
+        activity_list : list
             object from which the log is returned as a dataframe sorted by "Timestamp"
         """
 
-        list_all_activities = self.__get_subprocesses_lowest(activity)
-        id_map = {act.id: act.name for act in list_all_activities}
+        id_map = {act.id: act.name for act in activity_list}
 
-        df_all = pd.DataFrame()
-        for sub_activity in list_all_activities:
+        all_dfs_list = []
+        for sub_activity in activity_list:
             df = (
                 pd.DataFrame(sub_activity.log)
                 .sort_values(by=["Timestamp"])
@@ -179,20 +155,13 @@ class BaseCP(ABC):
                 ],
                 axis=1,
             )
+            all_dfs_list.append(df_concat)
 
-            df_all = pd.concat([df_all, df_concat], axis=0)
-            df_all.loc[:, "Activity"] = df_all.loc[:, "ActivityID"].replace(id_map)
-            df_all["SimulationObject"] = "Activity"
+        df_all = pd.concat(all_dfs_list, axis=0)
+        df_all.loc[:, "Activity"] = df_all.loc[:, "ActivityID"].replace(id_map)
+        df_all["SimulationObject"] = "Activity"
 
         return df_all
-
-    def combine_logs_activities(self):
-        """
-        Create single log of activities.
-        """
-        return pd.concat(
-            [self.get_log_dataframe_activity(act) for act in self.activity_list]
-        )
 
     @staticmethod
     def reshape_log(df_log):
@@ -349,3 +318,34 @@ class BaseCP(ABC):
             "cp_activity_id"
         ].isin(critical_activities)
         return recorded_activity_df
+
+    def get_plotly_gantt_data(self):
+        """
+        This method generates data (dict) which can directly be used in a plotly figure.
+        The resulting figure will contain a 'row' for each simulation object,
+        and on each row horizontal bars that indicate an activity in time.
+
+        Examples
+        --------
+        my_cp = DependenciesFromSimpy(**simulation_data)
+        my_cp.get_critical_path_df()
+        fig = go.Figure(**my_cp.get_plotly_gantt_data())
+
+        Returns
+        --------
+        plotly_gantt_data_dict : dict
+            containing layout and data for you plotly plot
+        """
+        critical_df = self.get_critical_path_df().copy()
+        # cp_activity IDs for both an activty and another simulation objects are too much - filter out
+        critical_df = pd.concat(
+            [critical_df.loc[critical_df.SimulationObject != "Activity", :],
+            critical_df.loc[critical_df.SimulationObject == "Activity", :]]).drop_duplicates(
+            keep="first", subset=["cp_activity_id"]).reset_index(drop=True)
+
+        # remove activities not on cp
+
+        critical_df = critical_df.loc[~((critical_df.SimulationObject == "Activity") &
+                                        (~critical_df.is_critical)), :]
+
+        return critical_df
