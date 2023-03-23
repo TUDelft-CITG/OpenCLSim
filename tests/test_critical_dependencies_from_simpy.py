@@ -28,11 +28,6 @@ def test_altered_step_environment():
 
 def test_get_dependency_list(simulation_2_barges_custom_env):
     """Test get_dependency_list method."""
-    import logging
-
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
-
     my_cp = DependenciesFromSimpy(**simulation_2_barges_custom_env)
     dependency_list = my_cp.get_dependency_list()
 
@@ -63,102 +58,8 @@ def test_get_critical_path_df_simple_simulation(simulation_while_sequential):
     assert critical_df.is_critical.sum() == 149, "149 critical activities expected"
 
 
-def temp_testing_motl():
-    """TO DELETE"""
-    import logging
-
-    import plotly.graph_objs as go
-    import simpy
-
-    from openclsim.plot.vessel_planning import get_gantt_chart
-    from tests.conftest import demo_data
-
-    simulation_2_barges_custom_env = demo_data(2, 100, AlteredStepEnv)
-
-    def temp_visualisation(simulation_data, critical_df, out_name="gant_1"):
-        data = get_gantt_chart(
-            simulation_data["object_list"],
-            id_map=simulation_data["activity_list"],
-            static=True,
-            critical_path_dataframe=critical_df,
-        )
-        fig = go.Figure(**data)
-        fig.show()
-        fig.write_html(rf"D:\temp_files\{out_name}.html")
-
-    logging.basicConfig(
-        filename=r"D:\temp_files\templog.log",
-        filemode="a",
-    )
-    logging.getLogger().setLevel(logging.INFO)
-
-    my_cp = DependenciesFromSimpy(**simulation_2_barges_custom_env)
-    recorded_activities = my_cp.get_recorded_activity_df()
+def test_get_critical_path_df_storm(simulation_2_barges_custom_env_storm):
+    """Test get_critical_path_df method in 2 barge simulation with weather delay."""
+    my_cp = DependenciesFromSimpy(**simulation_2_barges_custom_env_storm)
     critical_df = my_cp.get_critical_path_df()
-    temp_visualisation(simulation_2_barges_custom_env, critical_df, out_name="gant_1")
-    dict_lookup = {
-        row.ActivityID: row.Activity for row in recorded_activities.itertuples()
-    }
-
-    # make a nice log that shows what causes what
-    tree_input = my_cp.cause_effect_list
-    SEEN = []
-
-    def __extract_openclsim_dependencies(tree_input, elem=None, level=0):
-        """
-        Extract the relevant (OpenCLSim) dependencies from the complete list
-        of all Simpy dependencies.
-
-        This function will walk through a dependency tree which is represented by
-        list of tuples (e.g. [(1, 2), (2, 3), (2, 4))]). Each tuple contains two
-        event - IDs and can be  seen a dependency with a cause (first element
-        tuple) and effect (second and last element tuple).
-        AlteredStepEnv registers all events, but we are only
-        interested in events which are OpenClSim activities with duration,
-        i.e. we are only interested in Timeout event with a _delay attribute > 0.
-        This function keeps track filters the original input to a
-        """
-        if elem is None:
-            elem = tree_input[0][0]
-
-        object_instance = my_cp.step_logging_dataframe.loc[elem, "event_object"]
-
-        # note that we have seen this one
-        SEEN.append(elem)
-        # print(len(SEEN))
-
-        # get effects
-        effects_this_elem = [tup[1] for tup in tree_input if tup[0] == elem]
-        spaces_level_based = " " * level
-        # log some stuff
-        logging.info(
-            f"{spaces_level_based} eid {elem} (type {type(object_instance)})"
-            f" {object_instance.__str__()} causes {effects_this_elem}"
-        )
-        if type(object_instance) == simpy.events.Timeout:
-            logging.info(
-                f"{spaces_level_based} OpenCLSIM activity {dict_lookup[object_instance.value]}"
-            )
-        elif type(object_instance) == simpy.events.AllOf:
-            logging.info(f"{spaces_level_based} AllOf {object_instance.value}")
-        else:
-            pass
-
-        if len(effects_this_elem) > 0:
-            level += 1
-
-        for effect_this_elem in effects_this_elem:
-            # print(f"Effect {effect_this_elem} from {effects_this_elem}")
-            __extract_openclsim_dependencies(
-                tree_input, elem=effect_this_elem, level=level
-            )
-
-        return None
-
-    __extract_openclsim_dependencies(tree_input)
-
-    get_gantt_chart(
-        simulation_2_barges_custom_env["object_list"],
-        critical_path_dataframe=critical_df,
-        id_map=simulation_2_barges_custom_env["activity_list"],
-    )
+    assert critical_df.is_critical.sum() == 82, "82 critical activities expected"

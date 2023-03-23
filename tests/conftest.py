@@ -1,12 +1,15 @@
 """
 Fixtures for the test-suite.
 """
+import numpy as np
+import pandas as pd
 import pytest
 import shapely.geometry
 import simpy
 
 import openclsim.core as core
 import openclsim.model as model
+import openclsim.plugins as plugin
 from openclsim.critical_path.dependencies_from_simpy_step import AlteredStepEnv
 
 
@@ -19,11 +22,28 @@ def simulation_2_barges():
 
 
 @pytest.fixture()
+def simulation_2_barges_storm():
+    """
+    Fixture returns the simpy.Environment, objects and activities
+    after a 2-barges simulation with weather delay.
+    """
+    return demo_data(nr_barges=2, total_amount=100, max_wave=4)
+
+
+@pytest.fixture()
 def simulation_2_barges_custom_env():
     """
     Fixture returns the custom environment, objects and activities after a 2-barges simulation.
     """
     return demo_data(nr_barges=2, total_amount=100, env=AlteredStepEnv)
+
+
+@pytest.fixture()
+def simulation_2_barges_custom_env_storm():
+    """
+    Fixture returns the custom environment, objects and activities after a 2-barges simulation.
+    """
+    return demo_data(nr_barges=2, total_amount=100, env=AlteredStepEnv, max_wave=4)
 
 
 @pytest.fixture()
@@ -166,7 +186,62 @@ def simulation_4_barges():
     return demo_data(nr_barges=4, total_amount=100)
 
 
-def demo_data(nr_barges, total_amount, env=None):
+def get_sailing_empty(my_env, vessels, i, registry, from_site, duration, max_wave):
+    """possible use plugin"""
+    if max_wave is not None:
+        # create a TestMoveActivity object based on desired mixin classes
+        WeatherMoveActivity = type(
+            "TestMoveActivity",
+            (
+                plugin.HasWeatherPluginActivity,
+                model.MoveActivity,  # the order is critical!
+            ),
+            {},
+        )
+
+        # generate weather data
+        waves_df = pd.DataFrame(
+            {
+                "Hs [m]": [
+                    3.1
+                    + 1.5 * np.sin(t / 7200 * np.pi)
+                    + 1.5 * np.sin(t / 4000 * np.pi)
+                    for t in np.arange(0, 4 * 24 * 3600)
+                ],
+                "ts": np.arange(0, 4 * 24 * 3600),
+            }
+        )
+
+        # generate a weather criterion for the sailing process
+        sailing_crit = plugin.WeatherCriterion(
+            name="sailing_crit",
+            condition="Hs [m]",
+            maximum=max_wave,
+            window_length=900,
+        )
+        activity = WeatherMoveActivity(
+            env=my_env,
+            name="sailing empty:" + vessels[f"vessel{i}"].name,
+            registry=registry,
+            mover=vessels[f"vessel{i}"],
+            destination=from_site,
+            duration=duration,
+            metocean_criteria=sailing_crit,
+            metocean_df=waves_df,
+        )
+    else:
+        activity = model.MoveActivity(
+            env=my_env,
+            name="sailing empty:" + vessels[f"vessel{i}"].name,
+            registry=registry,
+            mover=vessels[f"vessel{i}"],
+            destination=from_site,
+            duration=duration,
+        )
+    return activity
+
+
+def demo_data(nr_barges, total_amount, env=None, max_wave=None):
     """
     Run a simulation where <nr_barges> barges need to shift an amount of <total_amount>
     from site 1 to site 2 whereafter a larger vessel can come into action.
@@ -289,13 +364,8 @@ def demo_data(nr_barges, total_amount, env=None):
                             duration=duration,
                             additional_logs=[vessels[f"vessel{i}"]],
                         ),
-                        model.MoveActivity(
-                            env=my_env,
-                            name="sailing empty:" + vessels[f"vessel{i}"].name,
-                            registry=registry,
-                            mover=vessels[f"vessel{i}"],
-                            destination=from_site,
-                            duration=duration,
+                        get_sailing_empty(
+                            my_env, vessels, i, registry, from_site, duration, max_wave
                         ),
                         model.ShiftAmountActivity(
                             env=my_env,

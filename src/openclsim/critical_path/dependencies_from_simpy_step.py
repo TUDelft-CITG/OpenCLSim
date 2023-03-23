@@ -16,7 +16,7 @@ from openclsim.critical_path.base_cp import BaseCP
 
 class DependenciesFromSimpy(BaseCP):
     """
-    Build dependecies from recorded_activities_df
+    Build dependencies from data as recorded with AlteredStepEnv instance.
     """
 
     def __init__(self, *args, **kwargs):
@@ -36,15 +36,13 @@ class DependenciesFromSimpy(BaseCP):
     def get_dependency_list(self):
         """
         Get dependencies from simpy logging by analysing
-        the data as saved with the patched env.step function
-
-        requires self.env (instance MyCustomSimpy)
+        the data as saved within the AlteredStepEnv instance.
 
         Returns
         -------
         dependency_list : list
-            list of tuples like [(A1, A2), (A1, A3), (A3, A4)]
-            where A2 depends on A1 (A1 'causes' A2) et cetera
+            dependency_list contains tuples like [(A1, A2), (A1, A3), (A3, A4)]
+            where A2 depends on A1 (A1 'causes' A2) etcetera.
         """
         self.get_recorded_activity_df()
 
@@ -58,7 +56,7 @@ class DependenciesFromSimpy(BaseCP):
         Hidden and protected method for the get_dependency_list.
 
         This method recursively walks through the simpy dependencies
-        (as the 'monkeypatched' step function records these) and keeps only those depencencies
+        (as the 'monkey-patched' step function recorded these) and keeps only those dependencies
         which are a timeout event. Then we translate the IDs of these dependencies from
         the original simpy e_id values to our openclsim cp_activity_id values.
         """
@@ -78,7 +76,8 @@ class DependenciesFromSimpy(BaseCP):
             AlteredStepEnv registers all events, but we are only
             interested in events which are OpenClSim activities with duration,
             i.e. we are only interested in Timeout event with a _delay attribute > 0.
-            This function keeps track filters the original input to a
+            This function extracts such dependencies (which Timeout causes which timeout)
+            from the original tree_input.
             """
             if elem is None:
                 elem = tree_input[0][0]
@@ -112,7 +111,7 @@ class DependenciesFromSimpy(BaseCP):
 
             return None
 
-        # get all relevant dependencies from the simpy depencies,
+        # get all relevant dependencies from the simpy dependencies,
         # that is find how the timeouts depend on one another.
         tree = copy.deepcopy(self.cause_effect_list)
         while len(tree) > 0:
@@ -139,7 +138,7 @@ class DependenciesFromSimpy(BaseCP):
 
     def _find_cp_act(self, e_id, recorded_activities_df):
         """
-        Get cp activity ID given a timewindow and an activity ID.
+        Get cp activity ID given a time-window and an activity ID.
 
         Parameters
         ----------
@@ -160,16 +159,18 @@ class DependenciesFromSimpy(BaseCP):
         if len(set(matching_ids)) == 1:
             cp_activity_id = matching_ids.iloc[0]
         else:
-            raise UserWarning(
-                f"No match found for {activity_id} at (end)time {end_time}"
-            )
+            cp_activity_id = "NOT RECORDED"
+            print(activity_id)
+            print(end_time)
+            print(e_id)
+            logging.warning(f"No match found for {activity_id} at (end)time {end_time}")
         return cp_activity_id
 
 
 class AlteredStepEnv(simpy.Environment):
     """
-    Class is child of simpy.Environment and passes on all arguments on initalization.
-    The 'step' method is overwritten (or 'monkeypatched') in order to log some data of
+    Class is child of simpy.Environment and passes on all arguments on initialization.
+    The 'step' method is overwritten (or 'monkey-patched') in order to log some data of
     simulation into self.data_step and self.data_cause_effect. The former saves some metadata
     of the Event such as e_id (execution ID), simulation time, prio and event type (list of tuples).
     The latter saves which e_id scheduled another e_id and is hence a list of cause-effect tuples.
@@ -183,7 +184,7 @@ class AlteredStepEnv(simpy.Environment):
 
     def step(self):
         """
-        The 'step' method is overwritten (or 'monkeypatched') in order to log some data of
+        The 'step' method is overwritten (or 'monkey-patched') in order to log some data of
         simulation into self.data_step and self.data_cause_effect.
         """
         time_start = copy.deepcopy(self.now)
@@ -213,9 +214,9 @@ class AlteredStepEnv(simpy.Environment):
         Parameters
         ----------
         e_id_current : int
-            simpy execution ID ('cause')
+            simpy execution ID (cause)
         e_ids_new : list
-            simpy execution IDs ('effect').
+            simpy execution IDs (effect).
             If None or empty list, eid_current does not trigger another event.
         """
         if e_ids_new is not None and len(e_ids_new) > 0:
@@ -224,7 +225,7 @@ class AlteredStepEnv(simpy.Environment):
 
     def _monitor_step(self, t0, t1, prio, e_id, event):
         """
-        Append metadata concerning events data_step.
+        Append metadata from events to data_step.
 
         Parameters
         ----------
@@ -232,12 +233,12 @@ class AlteredStepEnv(simpy.Environment):
             numeric timestamp before execution of step() method.
         t1 : float
             numeric timestamp before execution of step() method.
-            This t1 correpons with actual time when event has ended in simulation time,
+            This t1 corresponds with actual time when event has ended in simulation time,
             whereas t0 might be 'off' (due to other events that need to be handled in simulation).
         prio : int
             prio attribute of event
         e_id : int
-            simpy execution ID which is handled (whose callbacks/trigeers are handled).
+            simpy execution ID which is handled (whose callbacks/triggers are handled).
             in step() method
         event : instance of (Simpy) Event
             Event (with eid) which is handled.

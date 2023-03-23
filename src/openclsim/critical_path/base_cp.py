@@ -71,8 +71,23 @@ class BaseCP(ABC):
         Uses the logs of provided activities and sim objects, combines these, adds unique UUID
         and reshape into format such that single row has a start time and an end time.
         """
-        # get all recorded log-events
+        # get all recorded events through logs simulation objects (excl plugins)
         all_recorded_events = self.combine_logs()
+
+        # get all recorded events through logs activities (incl plugins)
+        all_recorded_events_activities = self.combine_logs_activities()
+
+        # combine - ensure no duplicates
+        to_add = (
+            pd.concat([all_recorded_events_activities, all_recorded_events])
+            .drop_duplicates(
+                subset=["Timestamp", "ActivityID", "ActivityState"], keep=False
+            )
+            .reset_index(drop=True)
+        )
+        all_recorded_events = pd.concat([all_recorded_events, to_add]).reset_index(
+            drop=True
+        )
 
         # reshape into set of activities with start, duration and end
         recorded_activities_df = self.reshape_log(all_recorded_events)
@@ -114,6 +129,70 @@ class BaseCP(ABC):
         log_all["Activity"] = log_all["Activity"].replace(id_map)
 
         return log_all.sort_values("Timestamp").reset_index(drop=True)
+
+    def __get_subprocesses_lowest(self, items, out=None):
+        """
+        Get a list of all the activities without subprocesses.
+        """
+        if out is None:
+            out = []
+
+        if not isinstance(items, list):
+            items = [items]
+
+        for item in items:
+            if hasattr(item, "sub_processes") and len(item.sub_processes) > 0:
+                out = self.__get_subprocesses_lowest(item.sub_processes, out=out)
+            else:
+                out.append(item)
+
+        return out
+
+    def get_log_dataframe_activity(self, activity):
+        """
+        Get the log of the activity object in a pandas dataframe.
+
+        Parameters
+        ----------
+        activity : object
+            object from which the log is returned as a dataframe sorted by "Timestamp"
+        """
+
+        list_all_activities = self.__get_subprocesses_lowest(activity)
+        id_map = {act.id: act.name for act in list_all_activities}
+
+        df_all = pd.DataFrame()
+        for sub_activity in list_all_activities:
+            df = (
+                pd.DataFrame(sub_activity.log)
+                .sort_values(by=["Timestamp"])
+                .sort_values(by=["Timestamp"])
+            )
+
+            df_concat = pd.concat(
+                [
+                    df.filter(items=["ActivityID"]),
+                    pd.DataFrame(sub_activity.log).filter(
+                        ["Timestamp", "ActivityState"]
+                    ),
+                    pd.DataFrame(sub_activity.log["ObjectState"]),
+                ],
+                axis=1,
+            )
+
+            df_all = pd.concat([df_all, df_concat], axis=0)
+            df_all.loc[:, "Activity"] = df_all.loc[:, "ActivityID"].replace(id_map)
+            df_all["SimulationObject"] = "Activity"
+
+        return df_all
+
+    def combine_logs_activities(self):
+        """
+        Create single log of activities.
+        """
+        return pd.concat(
+            [self.get_log_dataframe_activity(act) for act in self.activity_list]
+        )
 
     @staticmethod
     def reshape_log(df_log):

@@ -52,3 +52,33 @@ def test_get_recorded_activity_df_4_barges(simulation_4_barges):
         "vessel_last": 6,
         "to_site2": 1,
     }
+
+
+def test_get_recorded_activity_df_2_barges_storm(simulation_2_barges_storm):
+    """
+    Test creation of recorded_activities_df in simulation
+     with 2 barges and the wether delay plugin.
+    """
+    TestCP = type(
+        "TestCP",
+        (BaseCP,),
+        {"get_dependency_list": "no need to implement"},
+    )
+    my_basecp = TestCP(**simulation_2_barges_storm)
+    recorded_activities_df = my_basecp.get_recorded_activity_df()
+
+    assert max(recorded_activities_df.end_time) == dt.datetime(1970, 1, 2, 9, 8, 55)
+    assert len(recorded_activities_df) == 154, "148 (shared) activities recorded"
+    assert (
+        len(recorded_activities_df.cp_activity_id.unique()) == 112
+    ), "106 unique activities"
+    assert list(recorded_activities_df.columns) == [
+        "ActivityID",
+        "Activity",
+        "SimulationObject",
+        "start_time",
+        "end_time",
+        "duration",
+        "state",
+        "cp_activity_id",
+    ]
