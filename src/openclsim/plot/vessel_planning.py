@@ -50,7 +50,6 @@ def get_gantt_chart(
     web=False,
     static=False,
     y_scale="text",
-    critical_path_dataframe=None,
 ):
     """Create a plotly GANTT chart of the planning of vessels.
 
@@ -66,8 +65,6 @@ def get_gantt_chart(
         * a list of top-activities of which also all sub-activities
           will be resolved, e.g.: [while_activity]
         * a manual id_map to resolve uuids to labels, e.g. {'uuid1':'name1'}
-    critical_path_dataframe : pd.DataFrame
-        dataframe like recorded_activities_dataframe, with additional column 'is_critical'
     """
     default_blockwidth = 10
 
@@ -111,32 +108,6 @@ def get_gantt_chart(
     df = dataframes[0]
     # prepare traces for each of the activities
     traces = []
-    if critical_path_dataframe is not None:
-        x_critical = critical_path_dataframe.loc[
-            critical_path_dataframe.loc[:, "is_critical"], "start_time"
-        ].tolist()
-
-        x_critical_end = critical_path_dataframe.loc[
-            critical_path_dataframe.loc[:, "is_critical"], "end_time"
-        ].tolist()
-
-        ylist = critical_path_dataframe.loc[
-            critical_path_dataframe.loc[:, "is_critical"], "SimulationObject"
-        ].tolist()
-
-        x_nest = [[x1, x2, x2] for (x1, x2) in zip(x_critical, x_critical_end)]
-        y_nest = [[y, y, None] for y in ylist]
-        traces.append(
-            go.Scatter(
-                name="critical_path",
-                x=[item for sublist in x_nest for item in sublist],
-                y=[item for sublist in y_nest for item in sublist],
-                mode="lines",
-                hoverinfo="name",
-                line=dict(color="red", width=default_blockwidth + 4),
-                connectgaps=False,
-            )
-        )
 
     for i, activity in enumerate(activities):
         activity = act_map.get(activity, activity)
@@ -164,6 +135,14 @@ def get_gantt_chart(
     for log in logs:
         timestamps.extend(log)
 
+    return add_layout_gantt_chart(traces, min(timestamps), max(timestamps), static)
+
+
+def add_layout_gantt_chart(traces, xmin, xmax, static):
+    """
+    Given the plotly data (traces), add the layout and return the resulting figure.
+    """
+
     layout = go.Layout(
         title="GANTT Chart",
         hovermode="closest",
@@ -171,7 +150,7 @@ def get_gantt_chart(
         xaxis=dict(
             title="Time",
             titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
-            range=[min(timestamps), max(timestamps)],
+            range=[xmin, xmax],
         ),
         yaxis=dict(
             title="Activities",

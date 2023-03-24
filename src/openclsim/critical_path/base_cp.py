@@ -8,10 +8,12 @@ import uuid
 from abc import ABC, abstractmethod
 
 import pandas as pd
+import plotly.graph_objs as go
 
 from openclsim.critical_path.simulation_graph import SimulationGraph
 from openclsim.model import get_subprocesses
 from openclsim.plot.log_dataframe import get_log_dataframe
+from openclsim.plot.vessel_planning import add_layout_gantt_chart, get_colors
 
 
 class BaseCP(ABC):
@@ -48,6 +50,7 @@ class BaseCP(ABC):
 
         # init attributes which will be set by (child) methods
         self.recorded_activities_df = None
+        self.critical_path_df = None
         self.dependency_list = None
         self.simulation_graph = None
 
@@ -74,15 +77,13 @@ class BaseCP(ABC):
 
         # get all recorded events through logs activities
         # (incl plugins, start/condition events etc.)
-        all_recorded_events_activities = \
-            self.get_log_dataframe_activity(
-                get_subprocesses(self.activity_list)
-            )
+        all_recorded_events_activities = self.get_log_dataframe_activity(
+            get_subprocesses(self.activity_list)
+        )
 
         all_recorded_events = pd.concat(
-            [all_recorded_events_objects, all_recorded_events_activities]).reset_index(
-            drop=True
-        )
+            [all_recorded_events_objects, all_recorded_events_activities]
+        ).reset_index(drop=True)
 
         # reshape into set of activities with start, duration and end
         recorded_activities_df = self.reshape_log(all_recorded_events)
@@ -125,7 +126,8 @@ class BaseCP(ABC):
 
         return log_all.sort_values("Timestamp").reset_index(drop=True)
 
-    def get_log_dataframe_activity(self, activity_list):
+    @staticmethod
+    def get_log_dataframe_activity(activity_list):
         """
         Get the log of the activity object in a pandas dataframe.
 
@@ -288,18 +290,24 @@ class BaseCP(ABC):
 
     def get_critical_path_df(self):
         """
-        Enrich recorded activity df with column 'is_critical' and return this dataframe
+        Enrich recorded activity df with column 'is_critical' and return this dataframe.
 
         Returns
         -------
         recorded_activity_df : pd.DataFrame
             All recorded activities from simulation.
         """
+        if self.critical_path_df is None:
+            self._set_critical_path_df()
+
+        return self.critical_path_df
+
+    def _set_critical_path_df(self):
+        """Set critical_path_df."""
         self.get_recorded_activity_df()
         self.get_dependency_list()
         self.__make_simulation_graph()
-
-        return self.__compute_critical_path()
+        self.critical_path_df = self.__compute_critical_path()
 
     def __compute_critical_path(self):
         """
@@ -319,33 +327,122 @@ class BaseCP(ABC):
         ].isin(critical_activities)
         return recorded_activity_df
 
-    def get_plotly_gantt_data(self):
+    def _get_plotly_gantt_data(self):
         """
-        This method generates data (dict) which can directly be used in a plotly figure.
-        The resulting figure will contain a 'row' for each simulation object,
-        and on each row horizontal bars that indicate an activity in time.
-
-        Examples
-        --------
-        my_cp = DependenciesFromSimpy(**simulation_data)
-        my_cp.get_critical_path_df()
-        fig = go.Figure(**my_cp.get_plotly_gantt_data())
+        This method generates pd.DataFrame for self.get_plotly_plot().
+        This dataframe does not contain unneeded (since duplicate and not nice in
+        the "final" plotly plot) activity rows (rows with SimulationObject=='Activity').
 
         Returns
         --------
-        plotly_gantt_data_dict : dict
-            containing layout and data for you plotly plot
+        critical_df : pd.DataFrame
         """
         critical_df = self.get_critical_path_df().copy()
-        # cp_activity IDs for both an activty and another simulation objects are too much - filter out
-        critical_df = pd.concat(
-            [critical_df.loc[critical_df.SimulationObject != "Activity", :],
-            critical_df.loc[critical_df.SimulationObject == "Activity", :]]).drop_duplicates(
-            keep="first", subset=["cp_activity_id"]).reset_index(drop=True)
 
-        # remove activities not on cp
-
-        critical_df = critical_df.loc[~((critical_df.SimulationObject == "Activity") &
-                                        (~critical_df.is_critical)), :]
+        # cp_activity IDs for both an activty
+        # and another simulation objects are too much - filter out
+        df_no_activity = critical_df.loc[critical_df.SimulationObject != "Activity", :]
+        df_to_add = critical_df.loc[
+            (
+                (critical_df.SimulationObject == "Activity")
+                & critical_df.is_critical
+                & (~critical_df.cp_activity_id.isin(df_no_activity.cp_activity_id))
+            ),
+            :,
+        ]
+        critical_df = pd.concat([df_no_activity, df_to_add])
 
         return critical_df
+
+    def get_plotly_plot(self, static=False):
+        """
+        Make plotly gantt plot with critical path included (marked as red).
+        The figure will contain a 'row' for each simulation object,
+        and on each row horizontal bars that indicate an activity in time.
+
+        Parameters
+        ----------
+        static : boolean
+            If True a dict is returned (for use in go.Figure()).
+            If False then this figure is returned with iplot.
+        """
+        critical_path_dataframe = self._get_plotly_gantt_data()
+
+        default_blockwidth = 10
+        # prepare traces for each of the activities
+        traces = []
+        if critical_path_dataframe is not None:
+            x_critical = critical_path_dataframe.loc[
+                critical_path_dataframe.loc[:, "is_critical"], "start_time"
+            ].tolist()
+
+            x_critical_end = critical_path_dataframe.loc[
+                critical_path_dataframe.loc[:, "is_critical"], "end_time"
+            ].tolist()
+
+            ylist = critical_path_dataframe.loc[
+                critical_path_dataframe.loc[:, "is_critical"], "SimulationObject"
+            ].tolist()
+
+            x_nest = [[x1, x2, x2] for (x1, x2) in zip(x_critical, x_critical_end)]
+            y_nest = [[y, y, None] for y in ylist]
+            traces.append(
+                go.Scatter(
+                    name="critical_path",
+                    x=[item for sublist in x_nest for item in sublist],
+                    y=[item for sublist in y_nest for item in sublist],
+                    mode="lines",
+                    hoverinfo="name",
+                    line=dict(color="red", width=default_blockwidth + 4),
+                    connectgaps=False,
+                )
+            )
+
+        # unique combis of activity and simulation type
+        plot_combis = (
+            critical_path_dataframe.loc[:, ["SimulationObject", "Activity"]]
+            .drop_duplicates()
+            .reset_index(drop=True)
+        )
+        C = get_colors(len(plot_combis))
+        colors = {}
+        for i in range(len(plot_combis)):
+            colors[i] = f"rgb({C[i][0]},{C[i][1]},{C[i][2]})"
+
+        for plot_combi in plot_combis.itertuples():
+            bool_this_combi = (
+                critical_path_dataframe.SimulationObject == plot_combi.SimulationObject
+            ) & (critical_path_dataframe.Activity == plot_combi.Activity)
+            # now activities with name
+            x_critical = critical_path_dataframe.loc[
+                bool_this_combi, "start_time"
+            ].tolist()
+            x_critical_end = critical_path_dataframe.loc[
+                bool_this_combi, "end_time"
+            ].tolist()
+
+            ylist = critical_path_dataframe.loc[
+                bool_this_combi, "SimulationObject"
+            ].tolist()
+
+            x_nest = [[x1, x2, x2] for (x1, x2) in zip(x_critical, x_critical_end)]
+            y_nest = [[y, y, None] for y in ylist]
+
+            traces.append(
+                go.Scatter(
+                    name=f"{plot_combi.Activity}",
+                    x=[item for sublist in x_nest for item in sublist],
+                    y=[item for sublist in y_nest for item in sublist],
+                    mode="lines",
+                    hoverinfo="y+name",
+                    line=dict(color=colors[plot_combi.Index], width=default_blockwidth),
+                    connectgaps=False,
+                )
+            )
+
+        return add_layout_gantt_chart(
+            traces,
+            critical_path_dataframe.start_time.min(),
+            critical_path_dataframe.end_time.max(),
+            static=static,
+        )

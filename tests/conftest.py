@@ -241,7 +241,7 @@ def get_sailing_empty(my_env, vessels, i, registry, from_site, duration, max_wav
     return activity
 
 
-def demo_data(nr_barges, total_amount, env=None, max_wave=None):
+def demo_data(nr_barges, total_amount, env=None, max_wave=None, start_delay=0):
     """
     Run a simulation where <nr_barges> barges need to shift an amount of <total_amount>
     from site 1 to site 2 whereafter a larger vessel can come into action.
@@ -410,8 +410,8 @@ def demo_data(nr_barges, total_amount, env=None, max_wave=None):
             ],
             start_event={
                 "type": "time",
-                "start_time": 100,
-            }
+                "start_time": start_delay,
+            },
         )
 
     # now add activity for vessel last, once v1 and v2 are done

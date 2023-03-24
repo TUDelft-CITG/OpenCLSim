@@ -159,8 +159,10 @@ class DependenciesFromSimpy(BaseCP):
         if len(set(matching_ids)) == 1:
             cp_activity_id = matching_ids.iloc[0]
         else:
-            raise ValueError(f"No recorded activity found for"
-                             f" activityID {activity_id} at (end)time {end_time}")
+            raise ValueError(
+                f"No recorded activity found for"
+                f" activityID {activity_id} at (end)time {end_time}"
+            )
         return cp_activity_id
 
 
