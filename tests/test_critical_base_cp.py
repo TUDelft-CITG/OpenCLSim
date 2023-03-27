@@ -1,16 +1,21 @@
-""" Tests for openclsim.critical_path.base_cp module """
+"""
+Tests for openclsim.critical_path.base_cp module.
+Tests the method 'get_recorded_activity_df' for a number of simulations.
+"""
 import datetime as dt
 
 from openclsim.critical_path.base_cp import BaseCP
 
+# define class that inherits from BaseCP for testing purposes only
+TestCP = type(
+    "TestCP",
+    (BaseCP,),
+    {"get_dependency_list": None},
+)
+
 
 def test_get_recorded_activity_df_2_barges(simulation_2_barges):
     """Test creation of recorded_activities_df in simulation with 2 barges."""
-    TestCP = type(
-        "TestCP",
-        (BaseCP,),
-        {"get_dependency_list": "no need to implement"},
-    )
     my_basecp = TestCP(**simulation_2_barges)
     recorded_activities_df = my_basecp.get_recorded_activity_df()
 
@@ -33,11 +38,6 @@ def test_get_recorded_activity_df_2_barges(simulation_2_barges):
 
 def test_get_recorded_activity_df_4_barges(simulation_4_barges):
     """Test creation of recorded_activities_df in simulation with 4 barges."""
-    TestCP = type(
-        "TestCP",
-        (BaseCP,),
-        {"get_dependency_list": "no need to implement"},
-    )
     my_basecp = TestCP(**simulation_4_barges)
     recorded_activities_df = my_basecp.get_recorded_activity_df()
 
@@ -60,11 +60,6 @@ def test_get_recorded_activity_df_2_barges_storm(simulation_2_barges_storm):
     Test creation of recorded_activities_df in simulation
      with 2 barges and the wether delay plugin.
     """
-    TestCP = type(
-        "TestCP",
-        (BaseCP,),
-        {"get_dependency_list": "no need to implement"},
-    )
     my_basecp = TestCP(**simulation_2_barges_storm)
     recorded_activities_df = my_basecp.get_recorded_activity_df()
 
@@ -90,11 +85,6 @@ def test_get_recorded_activity_startevent(simulation_2_barges_start):
     Test creation of recorded_activities_df in simulation
     with 2 barges and the start event.
     """
-    TestCP = type(
-        "TestCP",
-        (BaseCP,),
-        {"get_dependency_list": "no need to implement"},
-    )
     my_basecp = TestCP(**simulation_2_barges_start)
     recorded_activities_df = my_basecp.get_recorded_activity_df()
 

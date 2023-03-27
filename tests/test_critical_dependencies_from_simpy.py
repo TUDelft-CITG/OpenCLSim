@@ -1,5 +1,5 @@
 """
-Tests for openclsim.critical_path.dependencies_from_simpy module
+Tests for openclsim.critical_path.dependencies_from_simpy module.
 """
 import datetime as dt
 
@@ -15,7 +15,7 @@ def test_altered_step_environment():
     # do a simple timeout and another and assert what is logged
 
     def simple_timeout(duration, value):
-        value = yield my_env.timeout(duration, value=value)
+        _ = yield my_env.timeout(duration, value=value)
 
     my_env.process(simple_timeout(10, "p10"))
     my_env.process(simple_timeout(15, "p15"))
@@ -27,7 +27,7 @@ def test_altered_step_environment():
 
 
 def test_get_dependency_list(simulation_2_barges_custom_env):
-    """Test get_dependency_list method."""
+    """Test get_dependency_list method in 2 barge simulation."""
     my_cp = DependenciesFromSimpy(**simulation_2_barges_custom_env)
     dependency_list = my_cp.get_dependency_list()
 
@@ -45,14 +45,14 @@ def test_get_dependency_list(simulation_2_barges_custom_env):
 
 
 def test_get_critical_path_df(simulation_2_barges_custom_env):
-    """Test get_critical_path_df method."""
+    """Test get_critical_path_df method in a 2 barge simulation."""
     my_cp = DependenciesFromSimpy(**simulation_2_barges_custom_env)
     critical_df = my_cp.get_critical_path_df()
     assert critical_df.is_critical.sum() == 79, "79 critical activities expected"
 
 
 def test_get_critical_path_df_simple_simulation(simulation_while_sequential):
-    """Test get_critical_path_df method."""
+    """Test get_critical_path_df method in simulation with a single while-activity."""
     my_cp = DependenciesFromSimpy(**simulation_while_sequential)
     critical_df = my_cp.get_critical_path_df()
     assert critical_df.is_critical.sum() == 149, "149 critical activities expected"

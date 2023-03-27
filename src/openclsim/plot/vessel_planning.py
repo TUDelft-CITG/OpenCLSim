@@ -108,7 +108,6 @@ def get_gantt_chart(
     df = dataframes[0]
     # prepare traces for each of the activities
     traces = []
-
     for i, activity in enumerate(activities):
         activity = act_map.get(activity, activity)
         x_combined = []
@@ -141,6 +140,19 @@ def get_gantt_chart(
 def add_layout_gantt_chart(traces, xmin, xmax, static):
     """
     Given the plotly data (traces), add the layout and return the resulting figure.
+
+    Parameters
+    ----------
+    traces : list
+        contains data/plotly objects for plotting in go.Figure().
+    xmin : float
+        min value for x-axis of plot
+    xmax : float
+        max value for x-axis of plot
+    static: boolean
+        If True, return data and layout in dictionairy.
+        if False, a go.Figure is generated with iplot.
+
     """
 
     layout = go.Layout(

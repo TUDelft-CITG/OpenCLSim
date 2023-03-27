@@ -40,6 +40,8 @@ class DependenciesFromRecordedActivities(BaseCP):
               be the case, for instance some level dependencies.
             - No explicit logic from the simulation model setup and objects can
               be extracted from the logbooks (after simulation)
+            - Activities which are not recorded with/on a simulation object
+              (e.g. weather plugin delays) are excluded.
 
         Returns
         -------
