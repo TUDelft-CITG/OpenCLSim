@@ -65,8 +65,8 @@ def test_get_critical_path_df_storm(simulation_2_barges_custom_env_storm):
     assert critical_df.is_critical.sum() == 82, "82 critical activities expected"
 
 
-def test_get_critical_path_with_startevent(simulation_2_barges_custom_env):
+def test_get_critical_path_with_startevent(simulation_2_barges_custom_env_start):
     """Test get_critical_path_df method in 2 barge simulation with start wait."""
-    my_cp = DependenciesFromSimpy(**simulation_2_barges_custom_env)
+    my_cp = DependenciesFromSimpy(**simulation_2_barges_custom_env_start)
     critical_df = my_cp.get_critical_path_df()
-    assert critical_df.is_critical.sum() == 136, "136 critical dependencies expected"
+    assert critical_df.is_critical.sum() == 80, "80 critical dependencies expected"

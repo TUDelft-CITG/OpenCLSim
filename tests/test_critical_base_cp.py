@@ -15,10 +15,10 @@ def test_get_recorded_activity_df_2_barges(simulation_2_barges):
     recorded_activities_df = my_basecp.get_recorded_activity_df()
 
     assert max(recorded_activities_df.end_time) == dt.datetime(1970, 1, 2, 6, 40)
-    assert len(recorded_activities_df) == 148, "148 (shared) activities recorded"
+    assert len(recorded_activities_df) == 402, "402 (shared) activities recorded"
     assert (
-        len(recorded_activities_df.cp_activity_id.unique()) == 106
-    ), "106 unique activities"
+        len(recorded_activities_df.cp_activity_id.unique()) == 254
+    ), "254 unique activities"
     assert list(recorded_activities_df.columns) == [
         "ActivityID",
         "Activity",
@@ -43,6 +43,7 @@ def test_get_recorded_activity_df_4_barges(simulation_4_barges):
 
     assert max(recorded_activities_df.end_time) == dt.datetime(1970, 1, 1, 16, 40)
     assert recorded_activities_df["SimulationObject"].value_counts().to_dict() == {
+        "Activity": 256,
         "barge_1": 25,
         "barge_0": 25,
         "barge_3": 25,
@@ -68,10 +69,10 @@ def test_get_recorded_activity_df_2_barges_storm(simulation_2_barges_storm):
     recorded_activities_df = my_basecp.get_recorded_activity_df()
 
     assert max(recorded_activities_df.end_time) == dt.datetime(1970, 1, 2, 9, 8, 55)
-    assert len(recorded_activities_df) == 154, "148 (shared) activities recorded"
+    assert len(recorded_activities_df) == 408, "408 (shared) activities recorded"
     assert (
-        len(recorded_activities_df.cp_activity_id.unique()) == 112
-    ), "106 unique activities"
+        len(recorded_activities_df.cp_activity_id.unique()) == 260
+    ), "260 unique activities"
     assert list(recorded_activities_df.columns) == [
         "ActivityID",
         "Activity",
@@ -82,3 +83,23 @@ def test_get_recorded_activity_df_2_barges_storm(simulation_2_barges_storm):
         "state",
         "cp_activity_id",
     ]
+
+
+def test_get_recorded_activity_startevent(simulation_2_barges_start):
+    """
+    Test creation of recorded_activities_df in simulation
+    with 2 barges and the start event.
+    """
+    TestCP = type(
+        "TestCP",
+        (BaseCP,),
+        {"get_dependency_list": "no need to implement"},
+    )
+    my_basecp = TestCP(**simulation_2_barges_start)
+    recorded_activities_df = my_basecp.get_recorded_activity_df()
+
+    assert max(recorded_activities_df.end_time) == dt.datetime(1970, 1, 2, 7, 40)
+    assert len(recorded_activities_df) == 404, "404 (shared) activities recorded"
+    assert (
+        len(recorded_activities_df.cp_activity_id.unique()) == 256
+    ), "260 unique activities"

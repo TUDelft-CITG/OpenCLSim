@@ -325,9 +325,14 @@ class BaseCP(ABC):
         recorded_activity_df["is_critical"] = recorded_activity_df[
             "cp_activity_id"
         ].isin(critical_activities)
+
+        # remove activities which are duplicate or irrelevant
+        recorded_activity_df = self._remove_duplicate_activities(recorded_activity_df)
+
         return recorded_activity_df
 
-    def _get_plotly_gantt_data(self):
+    @staticmethod
+    def _remove_duplicate_activities(recorded_activities_df):
         """
         This method generates pd.DataFrame for self.get_plotly_plot().
         This dataframe does not contain unneeded (since duplicate and not nice in
@@ -337,22 +342,26 @@ class BaseCP(ABC):
         --------
         critical_df : pd.DataFrame
         """
-        critical_df = self.get_critical_path_df().copy()
-
-        # cp_activity IDs for both an activty
+        # cp_activity IDs for both an activity
         # and another simulation objects are too much - filter out
-        df_no_activity = critical_df.loc[critical_df.SimulationObject != "Activity", :]
-        df_to_add = critical_df.loc[
+        df_no_activity = recorded_activities_df.loc[
+            recorded_activities_df.SimulationObject != "Activity", :
+        ]
+        df_to_add = recorded_activities_df.loc[
             (
-                (critical_df.SimulationObject == "Activity")
-                & critical_df.is_critical
-                & (~critical_df.cp_activity_id.isin(df_no_activity.cp_activity_id))
+                (recorded_activities_df.SimulationObject == "Activity")
+                & recorded_activities_df.is_critical
+                & (
+                    ~recorded_activities_df.cp_activity_id.isin(
+                        df_no_activity.cp_activity_id
+                    )
+                )
             ),
             :,
         ]
-        critical_df = pd.concat([df_no_activity, df_to_add])
+        recorded_activities_df = pd.concat([df_no_activity, df_to_add])
 
-        return critical_df
+        return recorded_activities_df
 
     def get_plotly_plot(self, static=False):
         """
@@ -366,7 +375,7 @@ class BaseCP(ABC):
             If True a dict is returned (for use in go.Figure()).
             If False then this figure is returned with iplot.
         """
-        critical_path_dataframe = self._get_plotly_gantt_data()
+        critical_path_dataframe = self.get_critical_path_df()
 
         default_blockwidth = 10
         # prepare traces for each of the activities
