@@ -98,38 +98,6 @@ def test_get_recorded_activity_startevent(simulation_2_barges_start):
     ), "260 unique activities"
 
 
-def get_log_dataframe_activity(activity_list):
-    """
-    Get the log of the activity object in a pandas dataframe.
-
-    Parameters
-    ----------
-    activity_list : list
-        object from which the log is returned as a dataframe sorted by "Timestamp"
-    """
-
-    id_map = {act.id: act.name for act in activity_list}
-
-    all_dfs_list = []
-    for sub_activity in activity_list:
-        all_dfs_list.append(sub_activity.log)
-
-    all_timestamps = [ts for dict_ in all_dfs_list for ts in dict_["Timestamp"]]
-    all_activity_id = [id_ for dict_ in all_dfs_list for id_ in dict_["ActivityID"]]
-    all_states = [state for dict_ in all_dfs_list for state in dict_["ActivityState"]]
-    df_all = pd.DataFrame(
-        {
-            "ActivityID": all_activity_id,
-            "Timestamp": all_timestamps,
-            "ActivityState": all_states,
-            "Activity": [id_map[id_] for id_ in all_activity_id],
-            "SimulationObject": "Activity",
-        }
-    )
-
-    return df_all
-
-
 def test_get_recorded_activities_from_activities(simulation_2_barges):
     """Test creation of recorded activites."""
     my_basecp = TestCP(**simulation_2_barges)
