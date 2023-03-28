@@ -206,7 +206,7 @@ class AlteredStepEnv(simpy.Environment):
         self._monitor_cause_effect(e_id, new_e_ids)
         self._monitor_step(time_start, time_end, prio, e_id, event)
 
-    def _monitor_cause_effect(self, e_id_current, e_ids_new=None):
+    def _monitor_cause_effect(self, e_id_current, e_ids_new):
         """
         Append dependencies (triggers) to data_cause_effect.
 
@@ -216,9 +216,9 @@ class AlteredStepEnv(simpy.Environment):
             simpy execution ID (cause)
         e_ids_new : list
             simpy execution IDs (effect).
-            If None or empty list, eid_current does not trigger another event.
+            If empty list, eid_current does not trigger another event.
         """
-        if e_ids_new is not None and len(e_ids_new) > 0:
+        if len(e_ids_new) > 0:
             for new_eid in e_ids_new:
                 self.data_cause_effect.append((e_id_current, new_eid))
 
