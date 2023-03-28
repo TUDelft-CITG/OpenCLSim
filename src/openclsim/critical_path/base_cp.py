@@ -134,34 +134,29 @@ class BaseCP(ABC):
         Parameters
         ----------
         activity_list : list
-            object from which the log is returned as a dataframe sorted by "Timestamp"
+            list of recorded activities, i.e. every activity has log attribute.
         """
 
         id_map = {act.id: act.name for act in activity_list}
 
         all_dfs_list = []
         for sub_activity in activity_list:
-            df = (
-                pd.DataFrame(sub_activity.log)
-                .sort_values(by=["Timestamp"])
-                .sort_values(by=["Timestamp"])
-            )
+            all_dfs_list.append(sub_activity.log)
 
-            df_concat = pd.concat(
-                [
-                    df.filter(items=["ActivityID"]),
-                    pd.DataFrame(sub_activity.log).filter(
-                        ["Timestamp", "ActivityState"]
-                    ),
-                    pd.DataFrame(sub_activity.log["ObjectState"]),
-                ],
-                axis=1,
-            )
-            all_dfs_list.append(df_concat)
-
-        df_all = pd.concat(all_dfs_list, axis=0)
-        df_all.loc[:, "Activity"] = df_all.loc[:, "ActivityID"].replace(id_map)
-        df_all["SimulationObject"] = "Activity"
+        all_timestamps = [ts for dict_ in all_dfs_list for ts in dict_["Timestamp"]]
+        all_activity_id = [id_ for dict_ in all_dfs_list for id_ in dict_["ActivityID"]]
+        all_states = [
+            state for dict_ in all_dfs_list for state in dict_["ActivityState"]
+        ]
+        df_all = pd.DataFrame(
+            {
+                "ActivityID": all_activity_id,
+                "Timestamp": all_timestamps,
+                "ActivityState": all_states,
+                "Activity": [id_map[id_] for id_ in all_activity_id],
+                "SimulationObject": "Activity",
+            }
+        )
 
         return df_all
 
