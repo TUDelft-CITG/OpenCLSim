@@ -277,7 +277,7 @@ class BaseCP(ABC):
     def __make_simulation_graph(self):
         """
         Use self.recorded_activity_df and self.dependency_list to build graph of
-        (interconnected) activities as evaluated in time in simulation
+        (interconnected) activities as evaluated in time in simulation.
         """
         self.simulation_graph = SimulationGraph(
             self.recorded_activities_df, self.dependency_list
@@ -312,8 +312,9 @@ class BaseCP(ABC):
 
         Returns
         -------
-        recorded_activity_df : pd.DataFrame
-            All recorded activities from simulation.
+        critical_path_df : pd.DataFrame
+            Recorded activities from simulation for visualisation
+            critical path (in pd.DataFrame or plot).
         """
         critical_activities = self.simulation_graph.get_list_critical_activities()
         recorded_activity_df = self.get_recorded_activity_df().copy()
@@ -322,20 +323,28 @@ class BaseCP(ABC):
         ].isin(critical_activities)
 
         # remove activities which are duplicate or irrelevant
-        recorded_activity_df = self._remove_duplicate_activities(recorded_activity_df)
+        critical_path_df = self._remove_duplicate_activities(recorded_activity_df)
 
-        return recorded_activity_df
+        return critical_path_df
 
     @staticmethod
     def _remove_duplicate_activities(recorded_activities_df):
         """
-        This method generates pd.DataFrame for self.get_plotly_plot().
+        This method generates pd.DataFrame for self.make_plotly_gantt_chart().
         This dataframe does not contain unneeded (since duplicate and not nice in
         the "final" plotly plot) activity rows (rows with SimulationObject=='Activity').
 
+        Parameters
+        ----------
+        recorded_activities_df : pd.DataFrame
+            Recorded activities, containing duplicate cp_activity_id's
+            for 'Activity' and simulation objects.
+
         Returns
-        --------
-        critical_df : pd.DataFrame
+        -------
+        critical_path_df : pd.DataFrame
+            Recorded activities, containing NO duplicate cp_activity_id's
+            for 'Activity' and simulation objects.
         """
         # cp_activity IDs for both an activity
         # and another simulation objects are too much - filter out
@@ -354,13 +363,13 @@ class BaseCP(ABC):
             ),
             :,
         ]
-        recorded_activities_df = pd.concat([df_no_activity, df_to_add])
+        critical_path_df = pd.concat([df_no_activity, df_to_add])
 
-        return recorded_activities_df
+        return critical_path_df
 
-    def get_plotly_plot(self, static=False):
+    def make_plotly_gantt_chart(self, static=False):
         """
-        Make plotly gantt plot with critical path included (marked as red).
+        Make plotly gantt chart with critical path included (marked as red).
         The figure will contain a 'row' for each simulation object,
         and on each row horizontal bars that indicate an activity in time.
 

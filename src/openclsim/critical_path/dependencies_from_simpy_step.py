@@ -41,7 +41,7 @@ class DependenciesFromSimpy(BaseCP):
         Returns
         -------
         dependency_list : list
-            dependency_list contains tuples like [(A1, A2), (A1, A3), (A3, A4)]
+            Dependency_list contains tuples like [(A1, A2), (A1, A3), (A3, A4)]
             where A2 depends on A1 (A1 'causes' A2) etcetera.
         """
         self.get_recorded_activity_df()
@@ -143,9 +143,9 @@ class DependenciesFromSimpy(BaseCP):
         Parameters
         ----------
         e_id : int
-            execution id from simpy
+            Execution id from simpy.
         recorded_activities_df : pd.DataFrame
-            from self.get_recorded_activity_df()
+            From self.get_recorded_activity_df().
         """
         activity_id = self.step_logging_dataframe.loc[e_id, "event_object"].value
         end_time = round(self.step_logging_dataframe.loc[e_id, "t1"], 4)
@@ -213,9 +213,9 @@ class AlteredStepEnv(simpy.Environment):
         Parameters
         ----------
         e_id_current : int
-            simpy execution ID (cause)
+            Simpy execution ID (cause).
         e_ids_new : list
-            simpy execution IDs (effect).
+            Simpy execution IDs (effect).
             If empty list, eid_current does not trigger another event.
         """
         if len(e_ids_new) > 0:
@@ -229,18 +229,17 @@ class AlteredStepEnv(simpy.Environment):
         Parameters
         ----------
         t0 : float
-            numeric timestamp before execution of step() method.
+            Numeric timestamp before execution of step() method.
         t1 : float
-            numeric timestamp before execution of step() method.
+            Numeric timestamp before execution of step() method.
             This t1 corresponds with actual time when event has ended in simulation time,
             whereas t0 might be 'off' (due to other events that need to be handled in simulation).
         prio : int
-            prio attribute of event
+            Priority attribute of event.
         e_id : int
-            simpy execution ID which is handled (whose callbacks/triggers are handled).
-            in step() method
+            Simpy execution ID which is handled (whose callbacks/triggers are handled)
+            in step() method.
         event : instance of (Simpy) Event
             Event (with eid) which is handled.
-
         """
         self.data_step.append((t0, t1, e_id, type(event), event.value, prio, event))
