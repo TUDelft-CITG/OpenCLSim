@@ -29,5 +29,5 @@ __all__ = [
     "HasResource",
     "SimpyObject",
     "Priority",
-    "Location"
+    "Berth"
 ]
