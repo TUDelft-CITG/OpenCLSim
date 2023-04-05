@@ -52,7 +52,9 @@ def simulation_2_barges_custom_env_storm():
     """
     Fixture returns the custom environment, objects and activities after a 2-barges simulation.
     """
-    return demo_data(nr_barges=2, total_amount=100, env=CriticalPathEnvironment, max_wave=4)
+    return demo_data(
+        nr_barges=2, total_amount=100, env=CriticalPathEnvironment, max_wave=4
+    )
 
 
 @pytest.fixture()
