@@ -330,9 +330,9 @@ class BaseCP(ABC):
     @staticmethod
     def _remove_duplicate_activities(recorded_activities_df):
         """
-        This method generates pd.DataFrame for self.make_plotly_gantt_chart().
-        This dataframe does not contain unneeded (since duplicate and not nice in
-        the "final" plotly plot) activity rows (rows with SimulationObject=='Activity').
+        This method removes duplicate activities within recorded_activities_df,
+        i.e. activities which also have been recorded with one or more
+        simulation objects (vessel, site).
 
         Parameters
         ----------

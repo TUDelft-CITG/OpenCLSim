@@ -3,7 +3,7 @@ This module contains two classes which are both required if critical path (depen
 are to be found with method 'simpy step':
 - class DependenciesFromSimpy that inherits from critical_path.base_cp.BaseCP and has specific
  get_dependency_list method (as is the case with the other methods as well)
-- class AlteredStepEnv that inherits from simpy.env and patches env.step()
+- class CriticalPathEnvironment that inherits from simpy.Environment and 'patches' env.step()
 """
 import copy
 import logging
@@ -16,15 +16,17 @@ from openclsim.critical_path.base_cp import BaseCP
 
 class DependenciesFromSimpy(BaseCP):
     """
-    Build dependencies from data as recorded with AlteredStepEnv instance.
+    Build dependencies from data as recorded with CriticalPathEnvironment instance.
     """
 
     def __init__(self, *args, **kwargs):
         """Initialization."""
         super().__init__(*args, **kwargs)
-        assert isinstance(
-            self.env, AlteredStepEnv
-        ), "This module is not callable with the default simpy environment"
+        if not isinstance(self.env, CriticalPathEnvironment):
+            raise TypeError(
+                "DependenciesFromSimpy needs to be initialized"
+                " with a CriticalPathEnvironment"
+            )
 
         # other attributes, specific for this (child) class
         self.step_logging_dataframe = pd.DataFrame(
@@ -71,9 +73,9 @@ class DependenciesFromSimpy(BaseCP):
 
             This function will walk through a dependency tree which is represented by
             list of tuples (e.g. [(1, 2), (2, 3), (2, 4))]). Each tuple contains two
-            event - IDs and can be  seen a dependency with a cause (first element
+            eids (event-IDs) and can be seen a dependency with a cause (first element
             tuple) and effect (second and last element tuple).
-            AlteredStepEnv registers all events, but we are only
+            CriticalPathEnvironment registers all events, but we are only
             interested in events which are OpenClSim activities with duration,
             i.e. we are only interested in Timeout event with a _delay attribute > 0.
             This function extracts such dependencies (which Timeout causes which timeout)
@@ -166,7 +168,7 @@ class DependenciesFromSimpy(BaseCP):
         return cp_activity_id
 
 
-class AlteredStepEnv(simpy.Environment):
+class CriticalPathEnvironment(simpy.Environment):
     """
     Class is child of simpy.Environment and passes on all arguments on initialization.
     The 'step' method is overwritten (or 'monkey-patched') in order to log some data of
@@ -184,27 +186,28 @@ class AlteredStepEnv(simpy.Environment):
     def step(self):
         """
         The 'step' method is overwritten (or 'monkey-patched') in order to log some data of
-        simulation into self.data_step and self.data_cause_effect.
+        simulation into self.data_step and self.data_cause_effect. Before and after
+        the original step function we look at the self._queue and deduce dependencies.
         """
-        time_start = copy.deepcopy(self.now)
+        t_before = copy.deepcopy(self.now)
         if len(self._queue):
             _, prio, e_id, event = self._queue[0]
-            old_e_ids = set([t[2] for t in self._queue])
+            e_ids_before = set([t[2] for t in self._queue])
         else:
             _, prio, e_id, event = None, None, None, None
-            old_e_ids = {}
+            e_ids_before = {}
 
         super().step()
 
         if len(self._queue):
-            new_e_ids = list(set([t[2] for t in self._queue]) - old_e_ids)
+            e_ids_new = list(set([t[2] for t in self._queue]) - e_ids_before)
         else:
-            new_e_ids = []
+            e_ids_new = []
 
-        time_end = copy.deepcopy(self.now)
+        t_after = copy.deepcopy(self.now)
 
-        self._monitor_cause_effect(e_id, new_e_ids)
-        self._monitor_step(time_start, time_end, prio, e_id, event)
+        self._monitor_cause_effect(e_id, e_ids_new)
+        self._monitor_step(t_before, t_after, prio, e_id, event)
 
     def _monitor_cause_effect(self, e_id_current, e_ids_new):
         """

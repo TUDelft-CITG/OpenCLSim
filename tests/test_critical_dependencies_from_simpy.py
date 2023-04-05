@@ -4,14 +4,14 @@ Tests for openclsim.critical_path.dependencies_from_simpy module.
 import datetime as dt
 
 from openclsim.critical_path.dependencies_from_simpy_step import (
-    AlteredStepEnv,
+    CriticalPathEnvironment,
     DependenciesFromSimpy,
 )
 
 
 def test_altered_step_environment():
     """Test AlteredStepEnv."""
-    my_env = AlteredStepEnv(initial_time=0)
+    my_env = CriticalPathEnvironment(initial_time=0)
     # do a simple timeout and another and assert what is logged
 
     def simple_timeout(duration, value):

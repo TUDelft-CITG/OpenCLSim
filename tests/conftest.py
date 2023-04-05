@@ -10,7 +10,7 @@ import simpy
 import openclsim.core as core
 import openclsim.model as model
 import openclsim.plugins as plugin
-from openclsim.critical_path.dependencies_from_simpy_step import AlteredStepEnv
+from openclsim.critical_path.dependencies_from_simpy_step import CriticalPathEnvironment
 
 
 @pytest.fixture()
@@ -44,7 +44,7 @@ def simulation_2_barges_custom_env():
     """
     Fixture returns the custom environment, objects and activities after a 2-barges simulation.
     """
-    return demo_data(nr_barges=2, total_amount=100, env=AlteredStepEnv)
+    return demo_data(nr_barges=2, total_amount=100, env=CriticalPathEnvironment)
 
 
 @pytest.fixture()
@@ -52,7 +52,7 @@ def simulation_2_barges_custom_env_storm():
     """
     Fixture returns the custom environment, objects and activities after a 2-barges simulation.
     """
-    return demo_data(nr_barges=2, total_amount=100, env=AlteredStepEnv, max_wave=4)
+    return demo_data(nr_barges=2, total_amount=100, env=CriticalPathEnvironment, max_wave=4)
 
 
 @pytest.fixture()
@@ -61,7 +61,7 @@ def simulation_2_barges_custom_env_start():
     Fixture returns the custom environment, objects and activities after a 2-barges simulation.
     """
     return demo_data(
-        nr_barges=2, total_amount=100, env=AlteredStepEnv, start_delay=3600
+        nr_barges=2, total_amount=100, env=CriticalPathEnvironment, start_delay=3600
     )
 
 
@@ -71,7 +71,7 @@ def simulation_while_sequential():
     Fixture returns the custom environment, objects and activities
     after a simple while-sequential simulation.
     """
-    return demo_data_simple(env=AlteredStepEnv)
+    return demo_data_simple(env=CriticalPathEnvironment)
 
 
 @pytest.fixture()
