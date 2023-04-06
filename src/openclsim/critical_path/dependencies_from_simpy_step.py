@@ -33,7 +33,7 @@ class DependenciesFromSimpy(BaseCP):
             self.env.data_step,
             columns=["t0", "t1", "e_id", "type", "value", "prio", "event_object"],
         ).set_index("e_id")
-        self.cause_effect_list = copy.deepcopy(self.env.data_cause_effect)
+        self.__cause_effect_list = copy.deepcopy(self.env.data_cause_effect)
 
     def get_dependency_list(self):
         """
@@ -115,7 +115,7 @@ class DependenciesFromSimpy(BaseCP):
 
         # get all relevant dependencies from the simpy dependencies,
         # that is find how the timeouts depend on one another.
-        tree = copy.deepcopy(self.cause_effect_list)
+        tree = copy.deepcopy(self.__cause_effect_list)
         while len(tree) > 0:
             __extract_openclsim_dependencies(tree)
             tree = [tup for tup in tree if tup[0] not in SEEN]
