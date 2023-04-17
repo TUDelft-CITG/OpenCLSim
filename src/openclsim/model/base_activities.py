@@ -196,14 +196,22 @@ class GenericActivity(PluginActivity):
                         f"Unknown state {expr.get('state')} in ActivityExpression."
                     )
                 key = expr.get("ID", expr.get("name"))
-                activity_ = self.registry.get("id", {}).get(
-                    key, self.registry.get("name", {}).get(key)
-                )
 
-                if activity_ is None:
+                activity_ = None
+
+                activity_from_id = self.registry.get("id", {}).get(key)
+                activity_from_name = self.registry.get("name", {}).get(key)
+                if activity_from_id is not None:
+                    activity_ = activity_from_id
+                elif activity_from_name is not None:
+                    activity_ = activity_from_name
+                else:
                     raise Exception(
-                        f"No activity found in ActivityExpression for id/name {key}"
+                        f"No activity found in ActivityExpression for id/name {key} in expression {expr}\n"
+                        f"registry by name:\n{self.registry.get('name')}\n"
+                        f"registry by id:\n{self.registry.get('id')}\n"
                     )
+
                 return self.env.all_of(
                     [activity_item.main_process for activity_item in activity_]
                 )
