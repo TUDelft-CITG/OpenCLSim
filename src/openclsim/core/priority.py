@@ -1,7 +1,5 @@
-import simpy
-
 class Priority:
-    def __init__(self):
+    def __init__(self, priority, type):
         self._priority = {}
 
     def add_priority(self, type, priority):
@@ -9,14 +7,6 @@ class Priority:
 
     def get_priority(self, type):
         return self._priority[type]
-
-
-class Berth:
-    def __init__(self, env):
-        self.env = env
-        self.soil = simpy.Resource(env, capacity=1)  # limited number of soil containers
-        self.cargo = simpy.Resource(env, capacity=1)  # limited number of cargo containers
-        self.priority = Priority()
 
     def vessel(self, type):
         if type == "dredging_vessel":

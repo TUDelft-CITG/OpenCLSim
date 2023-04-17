@@ -9,7 +9,8 @@ from .movable import ContainerDependentMovable, Movable, MultiContainerDependent
 from .processor import LoadingFunction, Processor, UnloadingFunction
 from .resource import HasResource
 from .simpy_object import SimpyObject
-from .priority import Priority, Location
+from .priority import Priority
+from .priority import Location
 
 __all__ = [
     "basic",
@@ -29,5 +30,4 @@ __all__ = [
     "HasResource",
     "SimpyObject",
     "Priority",
-    "Berth"
 ]
