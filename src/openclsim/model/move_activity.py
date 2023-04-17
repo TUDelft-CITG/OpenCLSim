@@ -82,7 +82,6 @@ class MoveActivity(GenericActivity):
             corresponds to sailing at 50% of max speed
         """
 
-        print("mover", self.mover.name, "destination", self.destination.name)
         yield from self._request_resource(self.requested_resources, self.mover.resource)
 
         start_time = env.now
@@ -106,7 +105,6 @@ class MoveActivity(GenericActivity):
             engine_order=self.engine_order,
             duration=self.duration,
         )
-        print("mover", self.mover.name, "is now at", self.mover.geometry.wkt)
 
         activity_log.log_entry_v1(
             t=env.now,
@@ -122,4 +120,3 @@ class MoveActivity(GenericActivity):
             self.requested_resources, self.mover.resource, self.keep_resources
         )
 
-        print("mover", self.mover.name, "is now at", self.mover.geometry.wkt)
