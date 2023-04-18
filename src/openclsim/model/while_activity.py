@@ -20,7 +20,7 @@ class ConditionProcessMixin:
 
         start_while = env.now
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.START,
@@ -31,7 +31,7 @@ class ConditionProcessMixin:
         while True:
             self.start_sequence.succeed()
             for sub_process in self.sub_processes:
-                activity_log.log_entry(
+                activity_log.log_entry_v1(
                     t=env.now,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.START,
@@ -52,7 +52,7 @@ class ConditionProcessMixin:
                 )
                 yield stop_event
 
-                activity_log.log_entry(
+                activity_log.log_entry_v1(
                     t=env.now,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.STOP,
@@ -80,7 +80,7 @@ class ConditionProcessMixin:
 
                 # Re-add the activities to the simpy environment
                 register_processes(self.sub_processes)
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.STOP,

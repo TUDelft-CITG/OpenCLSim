@@ -96,14 +96,14 @@ class PluginActivity(core.Identifiable, core.Log):
             yield from item["plugin"].post_process(*args, **kwargs)
 
     def delay_processing(self, env, activity_label, activity_log, waiting):
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.WAIT_START,
             activity_label=activity_label,
         )
         yield env.timeout(waiting)
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.WAIT_STOP,
@@ -240,13 +240,13 @@ class GenericActivity(PluginActivity):
 
         if env.now > start_time:
             # log start
-            activity_log.log_entry(
+            activity_log.log_entry_v1(
                 t=start_time,
                 activity_id=activity_log.id,
                 activity_state=core.LogState.WAIT_START,
             )
             for log in additional_logs:
-                log.log_entry(
+                log.log_entry_v1(
                     t=start_time,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.WAIT_START,
@@ -257,13 +257,13 @@ class GenericActivity(PluginActivity):
                 )
 
             # log stop
-            activity_log.log_entry(
+            activity_log.log_entry_v1(
                 t=env.now,
                 activity_id=activity_log.id,
                 activity_state=core.LogState.WAIT_STOP,
             )
             for log in additional_logs:
-                log.log_entry(
+                log.log_entry_v1(
                     t=env.now,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.WAIT_STOP,

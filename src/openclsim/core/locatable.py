@@ -8,8 +8,9 @@ from shapely.geometry.base import BaseGeometry
 
 class Locatable:
     """Something with a geometry (geojson format). Can be a point as well as a
-    polygon. The object can also be located on a graph (with a node). That requires the extra and optional
-    node attribute. Make sure to also update the geometry when sailing over graphs.
+    polygon. The object can also be located on a graph (with a node). That
+    requires the extra and optional node attribute. Make sure to also update the
+    geometry when sailing over graphs.
 
     Parameters
     ----------
