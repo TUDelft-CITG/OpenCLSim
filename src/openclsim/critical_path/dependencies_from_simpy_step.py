@@ -164,6 +164,7 @@ class DependenciesFromSimpy(BaseCP):
             raise ValueError(
                 f"No recorded activity found for"
                 f" activityID {activity_id} at (end)time {end_time}"
+                f" . Make sure to add `value=activity_id` to timeout events you yield."
             )
         return cp_activity_id
 
