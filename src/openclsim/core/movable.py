@@ -183,14 +183,6 @@ class MultiContainerDependentMovable(Movable, HasMultiContainer):
         return self.compute_v(fill_degree)
 
 
-class Navigator:
-    @staticmethod
-    def find_route(waypoints):
-        # TODO: implement this method
-        route = [waypoint for waypoint in waypoints]
-        return route
-
-
 class Routable(SimpyObject, Locatable):
     """Mixin class: Something with a route (networkx node list format)
     route: a list of node ids (available on env.graph) or geometries (shapely.Geometry)
