@@ -68,13 +68,6 @@ class ShiftAmountActivity(GenericActivity):
 
     def main_process_function(self, activity_log, env):
         """Origin and Destination are of type HasContainer."""
-        print(
-            "processing shift amount",
-            "processor",
-            self.processor.name,
-            "origin",
-            self.origin.name,
-        )
         # concatenate long string
         msg = (
             f"Processor {self.processor.name} is at: "
