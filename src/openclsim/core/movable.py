@@ -85,7 +85,6 @@ class Movable(SimpyObject, Locatable):
         yield self.env.timeout(duration)
 
         # Set mover geometry to destination geometry
-        print("updating to destination geometry", destination.geometry)
         self.geometry = shapely.geometry.shape(destination.geometry)
 
         # Log the stop event
