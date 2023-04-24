@@ -69,7 +69,7 @@ class Processor(SimpyObject):
             reserved_amount=reserved_amount,
             id_=id_,
         )
-        yield self.env.timeout(duration)
+        yield self.env.timeout(duration, value=self.activity_id)
         # Put the amount in the destination
         yield from self.check_possible_shift(
             origin=origin,

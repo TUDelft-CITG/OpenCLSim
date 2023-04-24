@@ -66,6 +66,8 @@ def get_gantt_chart(
           will be resolved, e.g.: [while_activity]
         * a manual id_map to resolve uuids to labels, e.g. {'uuid1':'name1'}
     """
+    default_blockwidth = 10
+
     if type(id_map) == list:
         id_map = {act.id: act.name for act in get_subprocesses(id_map)}
     else:
@@ -122,7 +124,7 @@ def get_gantt_chart(
                 y=y_combined,
                 mode="lines",
                 hoverinfo="y+name",
-                line=dict(color=colors[i], width=10),
+                line=dict(color=colors[i], width=default_blockwidth),
                 connectgaps=False,
             )
         )
@@ -132,6 +134,27 @@ def get_gantt_chart(
     for log in logs:
         timestamps.extend(log)
 
+    return add_layout_gantt_chart(traces, min(timestamps), max(timestamps), static)
+
+
+def add_layout_gantt_chart(traces, xmin, xmax, static):
+    """
+    Given the plotly data (traces), add the layout and return the resulting figure.
+
+    Parameters
+    ----------
+    traces : list
+        contains data/plotly objects for plotting in go.Figure().
+    xmin : float
+        min value for x-axis of plot
+    xmax : float
+        max value for x-axis of plot
+    static: boolean
+        If True, return data and layout in dictionairy.
+        if False, a go.Figure is generated with iplot.
+
+    """
+
     layout = go.Layout(
         title="GANTT Chart",
         hovermode="closest",
@@ -139,7 +162,7 @@ def get_gantt_chart(
         xaxis=dict(
             title="Time",
             titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
-            range=[min(timestamps), max(timestamps)],
+            range=[xmin, xmax],
         ),
         yaxis=dict(
             title="Activities",
