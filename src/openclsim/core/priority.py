@@ -22,11 +22,3 @@ class Priority:
             yield request
             print(f"{type} claimed the {container.type} container.")
             yield self.env.timeout(5 if type == "dredging_vessel" else 3)  # process container
-
-
-class Location:
-    def __init__(self, water_depth, channel_width, soil_quantity, cargo_quantity):
-        self.water_depth = water_depth
-        self.channel_width = channel_width
-        self.soil_quantity = soil_quantity
-        self.cargo_quantity = cargo_quantity
