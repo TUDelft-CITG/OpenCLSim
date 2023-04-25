@@ -10,7 +10,7 @@ from .processor import LoadingFunction, Processor, UnloadingFunction
 from .resource import HasResource
 from .simpy_object import SimpyObject
 from .priority import Priority
-from .priority import Location
+from .Indicators import Port
 
 __all__ = [
     "basic",
@@ -30,5 +30,5 @@ __all__ = [
     "HasResource",
     "SimpyObject",
     "Priority",
-    "Location"
+    "Port"
 ]
