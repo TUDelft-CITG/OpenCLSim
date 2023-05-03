@@ -92,7 +92,7 @@ class BasicActivity(GenericActivity):
                     },
                 )
 
-        yield env.timeout(self.duration)
+        yield env.timeout(self.duration, value=activity_log.id)
 
         activity_log.log_entry_v1(
             t=env.now, activity_id=activity_log.id, activity_state=core.LogState.STOP

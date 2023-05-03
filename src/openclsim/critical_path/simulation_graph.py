@@ -32,7 +32,7 @@ class SimulationGraph:
 
     Parameters
     ----------
-    recorded_activity_df : pd.DataFrame
+    recorded_activities_df : pd.DataFrame
         attribute from instance of BaseCpLog
     dependency_list : list
         A key part of the recorded_activities_df is the ``cp_activity_id`` column. This column
@@ -67,11 +67,11 @@ class SimulationGraph:
     __NODE_START_PREFIX = "start"
     __NODE_END_PREFIX = "end"
 
-    def __init__(self, recorded_activity_df, dependency_list):
+    def __init__(self, recorded_activities_df, dependency_list):
         """Initialize the object."""
         self.critical_edges_list = None
-        self.recorded_activity_df = self.__check_recorded_activity_df(
-            recorded_activity_df
+        self.recorded_activities_df = self.__check_recorded_activities_df(
+            recorded_activities_df
         )
         self.dependency_list = self.__check_dependency_list(dependency_list)
 
@@ -91,57 +91,61 @@ class SimulationGraph:
             self.simulation_graph, weight="duration"
         )
 
-    def __check_recorded_activity_df(self, recorded_activity_df):
+    def __check_recorded_activities_df(self, recorded_activities_df):
         """
-        Check validity of recorded_activity_df.
+        Check validity of recorded_activities_df.
 
         Parameters
         ----------
-        recorded_activity_df : pd.DataFrame
+        recorded_activities_df : pd.DataFrame
             attribute from instance of BaseCpLog
         """
         # check expected columns
         missing_columns = [
             c
             for c in self.__RECORDED_ACTIVITY_COLUMNS.keys()
-            if c not in recorded_activity_df.columns
+            if c not in recorded_activities_df.columns
         ]
         assert missing_columns == [], f"cp_log is missing columns {missing_columns}"
 
-        return self.__prepare_recorded(recorded_activity_df)
+        return self.__prepare_recorded_activities_df(recorded_activities_df)
 
-    def __prepare_recorded(self, recorded_activity_df):
+    def __prepare_recorded_activities_df(self, recorded_activities_df):
         """
-        Prepare the recorded_activity_df to a workable format.
+        Prepare the recorded_activities_df to a workable format.
 
         Makes sure that column names are standardized, and that durations of
         activities are presented in seconds.
         """
         # rename columns to class defaults
-        recorded_activity_df = recorded_activity_df.rename(
+        recorded_activities_df = recorded_activities_df.rename(
             columns=self.__RECORDED_ACTIVITY_COLUMNS
         )
 
         # make sure the duration is numeric
-        recorded_activity_df["duration"] = (
-            recorded_activity_df["end_time"] - recorded_activity_df["start_time"]
+        recorded_activities_df["duration"] = (
+            recorded_activities_df["end_time"] - recorded_activities_df["start_time"]
         )
-        if is_timedelta64_dtype(recorded_activity_df["duration"]):
+        if is_timedelta64_dtype(recorded_activities_df["duration"]):
             logging.debug("Converting duration to seconds (float)")
-            recorded_activity_df["duration"] = round(
-                recorded_activity_df["duration"].dt.total_seconds(), 3
+            recorded_activities_df["duration"] = round(
+                recorded_activities_df["duration"].dt.total_seconds(), 3
             )
-        if not is_numeric_dtype(recorded_activity_df["duration"]):
+        if not is_numeric_dtype(recorded_activities_df["duration"]):
             raise TypeError(
-                f"Duration computed as type {type(recorded_activity_df['duration'][0])} "
+                f"Duration computed as type {type(recorded_activities_df['duration'][0])} "
                 "is not supported!"
             )
 
+        # drop activities with zero time, they mess up algorithm
+        recorded_activities_df = recorded_activities_df.loc[
+            recorded_activities_df.duration != 0, :
+        ]
         # make sure all durations are positive
-        if not all(recorded_activity_df["duration"] >= 0):
+        if not all(recorded_activities_df["duration"] > 0):
             raise ValueError("Negative durations encountered in activities.")
 
-        return recorded_activity_df
+        return recorded_activities_df
 
     def __check_dependency_list(self, dependency_list):
         """
@@ -186,12 +190,12 @@ class SimulationGraph:
         """
         Create nodes and edges for each individual activity.
 
-        Converts all cp_activity_ids within ``self.recorded_activity_df``
+        Converts all cp_activity_ids within ``self.recorded_activities_df``
         into start and end nodes connected through an edge.
         All relevant attributes, such as the duration of an activity,
         are added to these nodes and edges.
         """
-        cp_activities_df = self.recorded_activity_df.drop_duplicates(
+        cp_activities_df = self.recorded_activities_df.drop_duplicates(
             subset=["cp_activity_id"]
         )
         for params in cp_activities_df.itertuples():
@@ -422,7 +426,7 @@ class SimulationGraph:
         Returns
         -------
         critical_activities_list : list
-            list of activity UUIDs (from column cp_activity_id in recorded_activity_df)
+            list of activity UUIDs (from column cp_activity_id in recorded_activities_df)
         """
         # get all edges on all critical paths
         if self.critical_edges_list is None:

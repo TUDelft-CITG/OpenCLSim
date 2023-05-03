@@ -102,7 +102,7 @@ class PluginActivity(core.Identifiable, core.Log):
             activity_state=core.LogState.WAIT_START,
             activity_label=activity_label,
         )
-        yield env.timeout(waiting)
+        yield env.timeout(waiting, value=activity_log.id)
         activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
@@ -218,7 +218,7 @@ class GenericActivity(PluginActivity):
 
             if expr.get("type") == "time":
                 start = expr.get("start_time")
-                return self.env.timeout(max(start - self.env.now, 0))
+                return self.env.timeout(max(start - self.env.now, 0), value=self.id)
             raise ValueError
 
         raise ValueError(

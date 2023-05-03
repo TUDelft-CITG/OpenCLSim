@@ -40,6 +40,8 @@ class DependenciesFromRecordedActivities(BaseCP):
               be the case, for instance some level dependencies.
             - No explicit logic from the simulation model setup and objects can
               be extracted from the logbooks (after simulation)
+            - Activities which are not recorded with/on a simulation object
+              (e.g. weather plugin delays) are excluded.
 
         Returns
         -------
@@ -54,20 +56,18 @@ class DependenciesFromRecordedActivities(BaseCP):
 
     def __set_dependency_list(self):
         """Hidden and protected method for the get_dependency_list."""
-        # a recorded_activities_df is required
-        if self.recorded_activities_df is None:
-            self._make_recorded_activities_df()
-
+        # a recorded_activities_df is required - without the 'activity' (too many duplicates)
+        recorded_activities_df = self.get_recorded_activity_df().copy()
+        recorded_activities_df = recorded_activities_df.loc[
+            recorded_activities_df.SimulationObject != "Activity", :
+        ]
         dependency_list = []
 
         # loop over each unique cp_activity and find cp_activities which directly precede 'cp_act'
-        for cp_act in self.recorded_activities_df.itertuples():
-            dependencies = self.recorded_activities_df.loc[
-                (self.recorded_activities_df.end_time == cp_act.start_time)
-                & (
-                    self.recorded_activities_df.SimulationObject
-                    == cp_act.SimulationObject
-                ),
+        for cp_act in recorded_activities_df.itertuples():
+            dependencies = recorded_activities_df.loc[
+                (recorded_activities_df.end_time == cp_act.start_time)
+                & (recorded_activities_df.SimulationObject == cp_act.SimulationObject),
                 :,
             ]
 
@@ -75,8 +75,8 @@ class DependenciesFromRecordedActivities(BaseCP):
                 if "WAITING" in dependencies.loc[:, "state"].tolist():
                     # if this cp_act is waiting for something,
                     # drop shared SimulationObject condition
-                    dependencies = self.recorded_activities_df.loc[
-                        self.recorded_activities_df.end_time == cp_act.start_time, :
+                    dependencies = recorded_activities_df.loc[
+                        recorded_activities_df.end_time == cp_act.start_time, :
                     ]
                 depending_on = set(dependencies.cp_activity_id) - {
                     cp_act.cp_activity_id

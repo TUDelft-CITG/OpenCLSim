@@ -82,7 +82,7 @@ class Movable(SimpyObject, Locatable):
             duration = self.compute_duration(self.geometry, destination.geometry)
 
         # Check out the time based on duration of sailing event
-        yield self.env.timeout(duration)
+        yield self.env.timeout(sailing_duration, value=self.activity_id)
 
         # Set mover geometry to destination geometry
         self.geometry = shapely.geometry.shape(destination.geometry)
