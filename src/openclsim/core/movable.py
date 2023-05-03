@@ -47,7 +47,7 @@ class Movable(SimpyObject, Locatable):
 
     def __init__(self, v: float = 1, engine_order: float = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        """"""
+        """Construct a movable object."""
         self._v = v
         self.engine_order = 1.0
 
