@@ -41,7 +41,7 @@ class Movable(SimpyObject, Locatable):
 
     Parameters
     ----------
-    v: speed (1d)
+    v: speed, speed over ground of the object in m/s
     engine_order: factor that determines how much of the speed is used.
     """
 
