@@ -3,9 +3,12 @@ import datetime
 import numbers
 import warnings
 from enum import Enum
+from numbers import Number
+from typing import Any, Optional
 
 import deprecated
 import pandas as pd
+import shapely
 
 from .simpy_object import SimpyObject
 
@@ -68,17 +71,16 @@ class Log(SimpyObject):
 
     def log_entry_v1(
         self,
-        t,
-        activity_id,
-        activity_state=LogState.UNKNOWN,
-        additional_state=None,
-        activity_label=None,
+        t: Number,
+        activity_id: Union[str, int],
+        activity_state: LogState=LogState.UNKNOWN,
+        additional_state: Optional[dict]=None,
+        activity_label: Optional[dict]=None,
     ):
-        """Log an entry (openclsim version)"""
+        """Log an entry (openclsim version).
+        - Time (t) should b an timestamp in seconds since 1970 in utc.
 
-        assert isinstance(
-            t, numbers.Number
-        ), f"expected t variable of type Number, got {t} of type {type(t)}"
+        """
 
         object_state = self.get_state()
         if additional_state:
@@ -101,7 +103,7 @@ class Log(SimpyObject):
         }
         self.logbook.append(entry)
 
-    def log_entry_v0(self, log, t: numbers.Number, value, geometry_log):
+    def log_entry_v0(self, log: str, t: numbers.Number, value, geometry_log: shapely.Geometry):
         """Log an entry (opentnsim version)"""
         assert isinstance(log, str), "expected log variable of type string"
         entry = {
