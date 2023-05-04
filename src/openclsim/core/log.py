@@ -27,7 +27,7 @@ class LogState(Enum):
     WAIT_STOP = 4
     UNKNOWN = -1
 
-class PerformsActivity(Identifiable):
+class PerformsActivity:
     """An object can perform activities. For example a ship might be moing as
     part of a project activity like mobilization ("mobilization"). In that case
     you want to keep track of the activity that resulted in the move step. To
