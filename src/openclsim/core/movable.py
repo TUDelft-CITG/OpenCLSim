@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 WGS84 = pyproj.Geod(ellps="WGS84")
 
 
-class Movable(PerformsActivity, Locatable, Log):
+class Movable(Locatable, PerformsActivity, Log):
     """
     Movable class.
 
