@@ -214,8 +214,7 @@ class Routable(Movable, Locatable):
         b = shapely.geometry.Point(geometry.coords[-1])
         assert isinstance(geometry, shapely.geometry.LineString)
         distance = WGS84.geometry_length(geometry)
-        # TODO: align with Movable (use compute_duration)
-        duration = self.v * distance
+        duration = distance / (self.v * self.engine_order)
         self.geometry = a
         yield self.env.timeout(duration)
         self.geometry = b
