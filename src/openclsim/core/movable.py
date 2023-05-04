@@ -258,9 +258,8 @@ class Routable(Movable, Locatable):
             yield from self.pass_linestring(edge_geometry)
             # call any other functions we have registered
             for pass_edge_function in self.pass_edge_function:
-                # TODO: name ship with something more general? moveable, routable, self?
                 yield pass_edge_function(
-                    ship=self, a=a, b=b, route=route, geometry=edge_geometry
+                    movable=self, a=a, b=b, route=route, geometry=edge_geometry
                 )
             # we have arrived, go there....
             self.geometry = b_geometry
