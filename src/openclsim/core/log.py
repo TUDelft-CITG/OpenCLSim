@@ -45,7 +45,7 @@ class PerformsActivity(Identifiable):
     def __init__(self, activity_id: Union[int, str, None]=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
-        self.activity_id
+        self.activity_id = activity_id
 
 class Log(SimpyObject):
     """Log class to log the object activities."""
