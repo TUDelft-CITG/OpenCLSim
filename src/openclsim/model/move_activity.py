@@ -119,4 +119,3 @@ class MoveActivity(GenericActivity):
         self._release_resource(
             self.requested_resources, self.mover.resource, self.keep_resources
         )
-

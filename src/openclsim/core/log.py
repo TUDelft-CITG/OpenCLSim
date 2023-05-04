@@ -27,6 +27,7 @@ class LogState(Enum):
     WAIT_STOP = 4
     UNKNOWN = -1
 
+
 class PerformsActivity:
     """An object can perform activities. For example a ship might be moing as
     part of a project activity like mobilization ("mobilization"). In that case
@@ -42,10 +43,12 @@ class PerformsActivity:
     The activity_id is an identifier that stores which activity took place (for example "mobilization" or "shift A-B")
     Time is recorded in log events.
     """
-    def __init__(self, activity_id: Union[int, str, None]=None, *args, **kwargs):
+
+    def __init__(self, activity_id: Union[int, str, None] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """Initialization"""
         self.activity_id = activity_id
+
 
 class Log(SimpyObject):
     """Log class to log the object activities."""
@@ -66,14 +69,14 @@ class Log(SimpyObject):
             "ActivityID",
             "ActivityState",
             "ObjectState",
-            "ActivityLabel"
+            "ActivityLabel",
         ]
         # only return columns that we know from openclsim
         columns_to_drop = set(df.columns) - set(columns)
 
         df = df.drop(columns=columns_to_drop)
 
-        df = df.dropna(how='all')
+        df = df.dropna(how="all")
 
         if not self.logbook:
             # add columns from old formats
@@ -82,7 +85,7 @@ class Log(SimpyObject):
                 "ActivityID": [],
                 "ActivityState": [],
                 "ObjectState": [],
-                "ActivityLabel": []
+                "ActivityLabel": [],
             }
             df = pd.DataFrame(empty)
 
@@ -105,9 +108,9 @@ class Log(SimpyObject):
         self,
         t: float,
         activity_id: Union[str, int, None] = None,
-        activity_state: LogState=LogState.UNKNOWN,
-        additional_state: Optional[dict]=None,
-        activity_label: Optional[dict]=None,
+        activity_state: LogState = LogState.UNKNOWN,
+        additional_state: Optional[dict] = None,
+        activity_label: Optional[dict] = None,
     ):
         """Log an entry (openclsim version).
         - Time (t) should b an timestamp in seconds since 1970 in utc.

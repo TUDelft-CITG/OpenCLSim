@@ -19,7 +19,7 @@ try:
     from itertools import pairwise
 except ImportError:
     # redefine if needed
-    def pairwise(iterable): # type: ignore
+    def pairwise(iterable):  # type: ignore
         # pairwise('ABCDEFG') --> AB BC CD DE EF FG
         a, b = itertools.tee(iterable)
         next(b, None)
@@ -55,7 +55,7 @@ class Movable(Locatable, PerformsActivity, Log):
         self,
         destination: Optional[Locatable] = None,
         duration: Optional[float] = None,
-        engine_order: Optional[float] = None
+        engine_order: Optional[float] = None,
     ):
         """
         Determine distance between origin and destination.
