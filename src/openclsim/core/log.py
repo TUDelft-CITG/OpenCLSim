@@ -11,7 +11,7 @@ import pandas as pd
 import shapely
 
 from .simpy_object import SimpyObject
-from .core import Identifiable
+from . import Identifiable
 
 
 class LogState(Enum):
@@ -60,6 +60,21 @@ class Log(SimpyObject):
     def log(self):
         """return the log in log format (compatible with old log attribute)"""
         df = pd.DataFrame(self.logbook)
+
+        columns = [
+            "Timestamp",
+            "ActivityID",
+            "ActivityState",
+            "ObjectState",
+            "ActivityLabel"
+        ]
+        # only return columns that we know from openclsim
+        columns_to_drop = set(df.columns) - set(columns)
+
+        df = df.drop(columns=columns_to_drop)
+
+        df = df.dropna(how='all')
+
         if not self.logbook:
             # add columns from old formats
             empty = {
@@ -67,10 +82,7 @@ class Log(SimpyObject):
                 "ActivityID": [],
                 "ActivityState": [],
                 "ObjectState": [],
-                "ActivityLabel": [],
-                "Message": [],
-                "Value": [],
-                "Geometry": [],
+                "ActivityLabel": []
             }
             df = pd.DataFrame(empty)
 
