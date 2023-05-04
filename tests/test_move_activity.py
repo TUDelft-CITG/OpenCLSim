@@ -34,13 +34,13 @@ def test_move_activity():
     TransportProcessingResource = type(
         "TransportProcessingResource",
         (
-            core.Identifiable,
-            core.Log,
             core.ContainerDependentMovable,
             core.HasResource,
             core.Processor,
             core.LoadingFunction,
             core.UnloadingFunction,
+            core.Identifiable,
+            core.Log,
         ),
         {},
     )

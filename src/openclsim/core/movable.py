@@ -2,7 +2,7 @@
 import itertools
 import logging
 import warnings
-from typing import List, Optional, Union, Callable
+from typing import Callable, List, Optional
 
 import numpy as np
 import pyproj
@@ -11,8 +11,7 @@ import shapely.geometry
 
 from .container import HasContainer, HasMultiContainer
 from .locatable import Locatable
-from .log import LogState, Log, PerformsActivity
-from .simpy_object import SimpyObject
+from .log import Log, LogState, PerformsActivity
 
 # can be removed if we switch to python>=3.10
 try:
@@ -57,13 +56,14 @@ class Movable(Locatable, PerformsActivity, Log):
         duration: Optional[float] = None,
         engine_order: Optional[float] = None,
     ):
-        """
-        Determine distance between origin and destination.
+        """Determine distance between origin and destination.
 
         Yield the time it takes to travel based on speed properties and load factor of
         the speed.
 
-        The moving step can be part of an activity. Set the `activity_id` to the movable object to have it recorded in the log and in the timeout value.
+        The moving step can be part of an activity. Set the `activity_id` to the
+        movable object to have it recorded in the log and in the timeout value.
+
         """
         if destination is None:
             raise ValueError("Movable in OpenCLSim does not support empty destination")

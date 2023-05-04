@@ -3,7 +3,6 @@ from typing import Optional
 
 import numpy as np
 
-
 import openclsim.model as model
 
 

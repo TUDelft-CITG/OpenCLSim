@@ -32,13 +32,13 @@ def test_delay_plugin():
     TransportProcessingResource = type(
         "TransportProcessingResource",
         (
-            core.Identifiable,
-            core.Log,
             core.ContainerDependentMovable,
             core.Processor,
             core.HasResource,
             core.LoadingFunction,
             core.UnloadingFunction,
+            core.Identifiable,
+            core.Log,
         ),
         {},
     )

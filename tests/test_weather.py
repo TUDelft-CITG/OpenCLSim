@@ -36,11 +36,11 @@ def test_weather():
     TransportProcessingResource = type(
         "TransportProcessingResource",
         (
-            core.Identifiable,
-            core.Log,
             core.ContainerDependentMovable,
             core.Processor,
             core.HasResource,
+            core.Identifiable,
+            core.Log,
         ),
         {},
     )

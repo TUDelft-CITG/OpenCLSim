@@ -30,13 +30,13 @@ def test_shift_amount():
     TransportProcessingResource = type(
         "TransportProcessingResource",
         (
-            core.Identifiable,
-            core.Log,
             core.ContainerDependentMovable,
             core.Processor,
             core.HasResource,
             core.LoadingFunction,
             core.UnloadingFunction,
+            core.Identifiable,
+            core.Log,
         ),
         {},
     )

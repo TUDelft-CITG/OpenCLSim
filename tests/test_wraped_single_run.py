@@ -30,13 +30,13 @@ def test_wraped_single_run():
     TransportProcessingResource = type(
         "TransportProcessingResource",
         (
-            core.Identifiable,
-            core.Log,
             core.ContainerDependentMovable,
             core.Processor,
             core.LoadingFunction,
             core.UnloadingFunction,
             core.HasResource,
+            core.Identifiable,
+            core.Log,
         ),
         {},
     )

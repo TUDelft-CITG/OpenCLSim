@@ -3,15 +3,13 @@ import datetime
 import numbers
 import warnings
 from enum import Enum
-from numbers import Number
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import deprecated
 import pandas as pd
 import shapely
 
 from .simpy_object import SimpyObject
-from . import Identifiable
 
 
 class LogState(Enum):

@@ -1,8 +1,8 @@
 """Component to identify the simulation objects."""
 
 import uuid
-from typing import Optional
 import warnings
+from typing import Optional
 
 
 class Identifiable:
