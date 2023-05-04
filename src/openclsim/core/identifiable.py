@@ -22,7 +22,7 @@ class Identifiable:
         Note that this field does not influence the simulation.
     """
 
-    def __init__(self, name: str, id: str = None, *args, **kwargs):
+    def __init__(self, name: str, id: str, *args, **kwargs):
         # Deprecation
         if "ID" in kwargs:
             if id is not None:

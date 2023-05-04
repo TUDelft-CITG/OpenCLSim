@@ -2,7 +2,7 @@
 import itertools
 import logging
 import warnings
-from typing import List
+from typing import List, Optional, Union, Callable
 
 import numpy as np
 import pyproj
@@ -11,15 +11,15 @@ import shapely.geometry
 
 from .container import HasContainer, HasMultiContainer
 from .locatable import Locatable
-from .log import LogState
+from .log import LogState, Log, PerformsActivity
 from .simpy_object import SimpyObject
 
 # can be removed if we switch to python>=3.10
 try:
     from itertools import pairwise
 except ImportError:
-
-    def pairwise(iterable):
+    # redefine if needed
+    def pairwise(iterable): # type: ignore
         # pairwise('ABCDEFG') --> AB BC CD DE EF FG
         a, b = itertools.tee(iterable)
         next(b, None)
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 WGS84 = pyproj.Geod(ellps="WGS84")
 
 
-class Movable(SimpyObject, Locatable):
+class Movable(PerformsActivity, Locatable, Log):
     """
     Movable class.
 
@@ -53,15 +53,17 @@ class Movable(SimpyObject, Locatable):
 
     def move(
         self,
-        destination: Locatable = None,
-        duration: float = None,
-        engine_order: float = None,
+        destination: Optional[Locatable] = None,
+        duration: Optional[float] = None,
+        engine_order: Optional[float] = None
     ):
         """
         Determine distance between origin and destination.
 
         Yield the time it takes to travel based on speed properties and load factor of
         the speed.
+
+        The moving step can be part of an activity. Set the `activity_id` to the movable object to have it recorded in the log and in the timeout value.
         """
         if destination is None:
             raise ValueError("Movable in OpenCLSim does not support empty destination")
@@ -82,7 +84,7 @@ class Movable(SimpyObject, Locatable):
             duration = self.compute_duration(self.geometry, destination.geometry)
 
         # Check out the time based on duration of sailing event
-        yield self.env.timeout(sailing_duration, value=self.activity_id)
+        yield self.env.timeout(duration, value=self.activity_id)
 
         # Set mover geometry to destination geometry
         self.geometry = shapely.geometry.shape(destination.geometry)
@@ -183,7 +185,7 @@ class MultiContainerDependentMovable(Movable, HasMultiContainer):
         return self.compute_v(fill_degree)
 
 
-class Routable(SimpyObject, Locatable):
+class Routable(Movable, Locatable):
     """Mixin class: Something with a route (networkx node list format)
     route: a list of node ids (available on env.graph) or geometries (shapely.Geometry)
     """
@@ -194,7 +196,7 @@ class Routable(SimpyObject, Locatable):
         super().__init__(*args, **kwargs)
         # call functions when passing edges
         self.route = route
-        self.on_pass_edge_functions = []
+        self.on_pass_edge_functions: List[Callable] = []
 
         assert hasattr(self.env, "FG"), "expected graph FG to be available on env"
 
@@ -249,7 +251,7 @@ class Routable(SimpyObject, Locatable):
             b_geometry = self.graph[b]["geometry"]
             edge_geometry = self.graph[(a, b)]["geometry"]
             # make sure we are in the right order
-            edge_geometry = self.order_geometry(edge_geometry)
+            edge_geometry = self.order_geometry(edge_geometry, a_geometry)
             # go to a (we should already be here)
             self.geometry = a_geometry
             self.node = a

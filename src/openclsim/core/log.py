@@ -4,13 +4,14 @@ import numbers
 import warnings
 from enum import Enum
 from numbers import Number
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import deprecated
 import pandas as pd
 import shapely
 
 from .simpy_object import SimpyObject
+from .core import Identifiable
 
 
 class LogState(Enum):
@@ -26,6 +27,25 @@ class LogState(Enum):
     WAIT_STOP = 4
     UNKNOWN = -1
 
+class PerformsActivity(Identifiable):
+    """An object can perform activities. For example a ship might be moing as
+    part of a project activity like mobilization ("mobilization"). In that case
+    you want to keep track of the activity that resulted in the move step. To
+    keep track of this moving activity we keep track of more project based
+    perspective on events we use the [Process
+    Mining](https://processmining.org/event-data.html) concepts.
+
+    From a process mining perspective:
+    A ship might have an assignment to move soil from A to B.
+    The ship (self) is than the a identifiable (.id) resource.
+    The business transaction that resulted in the moving of the good would be a case id (not implemented)
+    The activity_id is an identifier that stores which activity took place (for example "mobilization" or "shift A-B")
+    Time is recorded in log events.
+    """
+    def __init__(self, activity_id: Union[int, str, None]=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """Initialization"""
+        self.activity_id
 
 class Log(SimpyObject):
     """Log class to log the object activities."""
@@ -71,8 +91,8 @@ class Log(SimpyObject):
 
     def log_entry_v1(
         self,
-        t: Number,
-        activity_id: Union[str, int],
+        t: float,
+        activity_id: Union[str, int, None] = None,
         activity_state: LogState=LogState.UNKNOWN,
         additional_state: Optional[dict]=None,
         activity_label: Optional[dict]=None,
@@ -87,7 +107,7 @@ class Log(SimpyObject):
             object_state.update(additional_state)
 
         # default argument
-        if activity_label is None or activity_label == {}:
+        if activity_label is None:
             activity_label = {}
         else:
             # if an activity_label is passed
@@ -103,9 +123,8 @@ class Log(SimpyObject):
         }
         self.logbook.append(entry)
 
-    def log_entry_v0(self, log: str, t: numbers.Number, value, geometry_log: shapely.Geometry):
+    def log_entry_v0(self, log: str, t: float, value, geometry_log: shapely.Geometry):
         """Log an entry (opentnsim version)"""
-        assert isinstance(log, str), "expected log variable of type string"
         entry = {
             "Message": log,
             "Timestamp": datetime.datetime.fromtimestamp(t),
