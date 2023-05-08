@@ -50,10 +50,10 @@ def locatable_b(geometry_b):
 def test_movable(env, geometry_a, locatable_a, locatable_b):
     """Test movable."""
 
-    class movable(core.Movable, core.Log):
+    class Movable(core.Movable, core.Log):
         pass
 
-    movable = movable(env=env, geometry=geometry_a, v=10)
+    movable = Movable(env=env, geometry=geometry_a, v=10)
     movable.activity_id = "Test activity"
     env.process(movable.move(locatable_b))
     env.run()
@@ -71,10 +71,10 @@ def test_container_dependent_movable(env, geometry_a, locatable_a, locatable_b):
     def compute_v(x):
         return x * (v_full - v_empty) + v_empty
 
-    class movable(core.ContainerDependentMovable, core.Log):
+    class Movable(core.ContainerDependentMovable, core.Log):
         pass
 
-    movable = movable(env=env, geometry=geometry_a, compute_v=compute_v, capacity=10)
+    movable = Movable(env=env, geometry=geometry_a, compute_v=compute_v, capacity=10)
     movable.activity_id = "Test activity"
 
     move_and_test(env, locatable_b, movable, 20, 2.18)
@@ -94,7 +94,7 @@ def move_and_test(env, destination, movable, expected_speed, expected_time):
     start = env.now
     env.process(movable.move(destination))
     env.run()
-    np.testing.assert_almost_equal(movable.current_speed, expected_speed)
+    np.testing.assert_almost_equal(movable.v, expected_speed)
     assert movable.geometry.equals(destination.geometry)
     hours_spent = (env.now - start) / 3600
     np.testing.assert_almost_equal(hours_spent, expected_time, decimal=2)

@@ -81,6 +81,7 @@ class MoveActivity(GenericActivity):
             speed the mover should sail. for example, engine_order=0.5
             corresponds to sailing at 50% of max speed
         """
+
         yield from self._request_resource(self.requested_resources, self.mover.resource)
 
         start_time = env.now
@@ -91,7 +92,7 @@ class MoveActivity(GenericActivity):
         }
         yield from self.pre_process(args_data)
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.START,
@@ -105,7 +106,7 @@ class MoveActivity(GenericActivity):
             duration=self.duration,
         )
 
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.STOP,

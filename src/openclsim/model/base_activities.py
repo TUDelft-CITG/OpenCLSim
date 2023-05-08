@@ -96,14 +96,14 @@ class PluginActivity(core.Identifiable, core.Log):
             yield from item["plugin"].post_process(*args, **kwargs)
 
     def delay_processing(self, env, activity_label, activity_log, waiting):
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.WAIT_START,
             activity_label=activity_label,
         )
         yield env.timeout(waiting, value=activity_log.id)
-        activity_log.log_entry(
+        activity_log.log_entry_v1(
             t=env.now,
             activity_id=activity_log.id,
             activity_state=core.LogState.WAIT_STOP,
@@ -196,14 +196,22 @@ class GenericActivity(PluginActivity):
                         f"Unknown state {expr.get('state')} in ActivityExpression."
                     )
                 key = expr.get("ID", expr.get("name"))
-                activity_ = self.registry.get("id", {}).get(
-                    key, self.registry.get("name", {}).get(key)
-                )
 
-                if activity_ is None:
+                activity_ = None
+
+                activity_from_id = self.registry.get("id", {}).get(key)
+                activity_from_name = self.registry.get("name", {}).get(key)
+                if activity_from_id is not None:
+                    activity_ = activity_from_id
+                elif activity_from_name is not None:
+                    activity_ = activity_from_name
+                else:
                     raise Exception(
-                        f"No activity found in ActivityExpression for id/name {key}"
+                        f"No activity found in ActivityExpression for id/name {key} in expression {expr}\n"
+                        f"registry by name:\n{self.registry.get('name')}\n"
+                        f"registry by id:\n{self.registry.get('id')}\n"
                     )
+
                 return self.env.all_of(
                     [activity_item.main_process for activity_item in activity_]
                 )
@@ -240,13 +248,13 @@ class GenericActivity(PluginActivity):
 
         if env.now > start_time:
             # log start
-            activity_log.log_entry(
+            activity_log.log_entry_v1(
                 t=start_time,
                 activity_id=activity_log.id,
                 activity_state=core.LogState.WAIT_START,
             )
             for log in additional_logs:
-                log.log_entry(
+                log.log_entry_v1(
                     t=start_time,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.WAIT_START,
@@ -257,13 +265,13 @@ class GenericActivity(PluginActivity):
                 )
 
             # log stop
-            activity_log.log_entry(
+            activity_log.log_entry_v1(
                 t=env.now,
                 activity_id=activity_log.id,
                 activity_state=core.LogState.WAIT_STOP,
             )
             for log in additional_logs:
-                log.log_entry(
+                log.log_entry_v1(
                     t=env.now,
                     activity_id=activity_log.id,
                     activity_state=core.LogState.WAIT_STOP,

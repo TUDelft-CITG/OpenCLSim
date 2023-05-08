@@ -167,11 +167,11 @@ def demo_data(nr_barges, total_amount, env=None, max_wave=None, start_delay=0):
     TransportProcessingResource = type(
         "TransportProcessingResource",
         (
-            core.Identifiable,
-            core.Log,
             core.ContainerDependentMovable,
             core.Processor,
             core.HasResource,
+            core.Identifiable,
+            core.Log,
         ),
         {},
     )
@@ -410,13 +410,13 @@ def demo_data_simple(env=None):
     TransportProcessingResource = type(
         "TransportProcessingResource",
         (
-            core.Identifiable,
-            core.Log,
             core.ContainerDependentMovable,
             core.Processor,
             core.HasResource,
             core.LoadingFunction,
             core.UnloadingFunction,
+            core.Identifiable,
+            core.Log,
         ),
         {},
     )

@@ -52,7 +52,7 @@ class Processor(SimpyObject):
 
         # Log the process for all parts
         for location in set([self, origin, destination]):
-            location.log_entry(
+            location.log_entry_v1(
                 t=location.env.now,
                 activity_id=self.activity_id,
                 activity_state=LogState.START,
@@ -82,7 +82,7 @@ class Processor(SimpyObject):
 
         # Log the process for all parts
         for location in set([self, origin, destination]):
-            location.log_entry(
+            location.log_entry_v1(
                 t=location.env.now,
                 activity_id=self.activity_id,
                 activity_state=LogState.STOP,
@@ -117,7 +117,7 @@ class Processor(SimpyObject):
 
         # If the amount is not available in the origin, log waiting
         if start_time != end_time:
-            self.log_entry(
+            self.log_entry_v1(
                 t=start_time,
                 activity_id=self.activity_id,
                 activity_state=LogState.WAIT_START,
@@ -126,7 +126,7 @@ class Processor(SimpyObject):
                     "ref": f"waiting {obj.name} content",
                 },
             )
-            self.log_entry(
+            self.log_entry_v1(
                 t=end_time,
                 activity_id=self.activity_id,
                 activity_state=LogState.WAIT_STOP,

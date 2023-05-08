@@ -30,13 +30,13 @@ def test_mulitcontainer():
     TransportProcessingResource = type(
         "TransportProcessingResource",
         (
-            core.Identifiable,
-            core.Log,
             core.MultiContainerDependentMovable,
             core.Processor,
             core.HasResource,
             core.LoadingFunction,
             core.UnloadingFunction,
+            core.Identifiable,
+            core.Log,
         ),
         {},
     )

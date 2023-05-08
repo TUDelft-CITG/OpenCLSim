@@ -1,4 +1,5 @@
 """Directory for the weather plugin."""
+from typing import Optional
 
 import numpy as np
 
@@ -28,8 +29,8 @@ class WeatherCriterion:
         name: str,
         condition: str,
         window_length: float,
-        maximum: float = None,
-        minimum: float = None,
+        maximum: Optional[float] = None,
+        minimum: Optional[float] = None,
         window_delay: float = 0,
         *args,
         **kwargs,
@@ -119,7 +120,7 @@ class WeatherPluginActivity(model.AbstractPluginClass):
 
         return list(filter_windows[0])
 
-    def process_data(self, criterion) -> None:
+    def process_data(self, criterion) -> dict:
         col = criterion.condition
         orig_data = self.metocean_df.copy()
 

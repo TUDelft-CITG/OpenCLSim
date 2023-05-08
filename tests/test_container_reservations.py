@@ -26,11 +26,11 @@ def test_container_reservations():
     TransportProcessingResource = type(
         "TransportProcessingResource",
         (
-            core.Identifiable,
-            core.Log,
-            core.ContainerDependentMovable,
             core.Processor,
             core.HasResource,
+            core.ContainerDependentMovable,
+            core.Identifiable,
+            core.Log,
         ),
         {},
     )
