@@ -1,24 +1,32 @@
-class Priority:
-    def __init__(self, priority, type):
-        self._priority = {}
+import simpy
+from .identifiable import Identifiable
+from .simpy_object import SimpyObject
 
-    def add_priority(self, type, priority):
-        self._priority[type] = priority
 
-    def get_priority(self, type):
-        return self._priority[type]
+class ResourceAllocation(SimpyObject):
+    def __init__(self, env, num_resources):
+        self.env = env
+        self.num_resources = num_resources
+        self.resource_pool = simpy.PriorityResource(env, num_resources)
+        self.location_claimed = False
+        self.location_claimed_by = -1
 
-    def vessel(self, type):
-        if type == "dredging_vessel":
-            priority = 1  # dredging vessel has priority to claim soil
-            container = self.soil
-        elif type == "seagoing_vessel":
-            priority = 2  # seagoing vessel claims cargo container
-            container = self.cargo
+
+class VesselClaim(Identifiable):
+    def claim_location(self, name, priority):
+        yield self.resource_pool.request(priority=priority)
+        if not self.location_claimed:
+            self.location_claimed = True
+            self.location_claimed_by = name
+            print(f"Vessel {name} claimed the location with priority {priority}")
         else:
-            raise ValueError("Invalid vessel type.")
+            print(
+                f"Vessel {name} failed to claim the location with priority {priority}"
+            )
+        yield self.env.timeout(1)  # time it takes to claim location
 
-        with container.request(priority=self.priority.get_priority(type)) as request:
-            yield request
-            print(f"{type} claimed the {container.type} container.")
-            yield self.env.timeout(5 if type == "dredging_vessel" else 3)  # process container
+    def release_location(self, name):
+        self.location_claimed = False
+        self.location_claimed_by = -1
+        self.resource_pool.release()
+        print(f"Vessel {name} released the location")
