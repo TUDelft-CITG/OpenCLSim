@@ -11,7 +11,7 @@ from .resource import HasResource
 from .simpy_object import SimpyObject
 from .priority import ResourceAllocation
 from .priority import VesselClaim
-from .indicators import Port
+from .indicator import Port
 
 __all__ = [
     "basic",
