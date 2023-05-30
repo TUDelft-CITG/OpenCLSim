@@ -1,32 +1,31 @@
 import simpy
-from .identifiable import Identifiable
 from .simpy_object import SimpyObject
 
 
-class ResourceAllocation(SimpyObject):
+class HasPriorityResource(SimpyObject):
     def __init__(self, env, num_resources):
         self.env = env
-        self.num_resources = num_resources
-        self.resource_pool = simpy.PriorityResource(env, num_resources)
-        self.location_claimed = False
-        self.location_claimed_by = -1
+        self.resources = simpy.PriorityResource(env, capacity=num_resources)
 
+    def process_vessel(self, name, priority, vessel_type):
+        with self.resources.request(priority=priority) as req:
+            yield req
 
-class VesselClaim(Identifiable):
-    def claim_location(self, name, priority):
-        yield self.resource_pool.request(priority=priority)
-        if not self.location_claimed:
-            self.location_claimed = True
-            self.location_claimed_by = name
-            print(f"Vessel {name} claimed the location with priority {priority}")
-        else:
-            print(
-                f"Vessel {name} failed to claim the location with priority {priority}"
-            )
-        yield self.env.timeout(1)  # time it takes to claim location
-
-    def release_location(self, name):
-        self.location_claimed = False
-        self.location_claimed_by = -1
-        self.resource_pool.release()
-        print(f"Vessel {name} released the location")
+            if vessel_type == "dredging":
+                # Dredging vessels have priority
+                print(
+                    f"Dredging vessel {name} entered the berth at time {self.env.now}"
+                )
+                yield self.env.timeout(1)  # Simulate dredging operation
+                print(
+                    f"Dredging vessel {name} completed dredging at time {self.env.now}"
+                )
+            else:
+                # Seagoing vessels have priority
+                print(
+                    f"Seagoing vessel {name} entered the berth at time {self.env.now}"
+                )
+                yield self.env.timeout(5)  # Simulate berthing and servicing time
+                print(
+                    f"Seagoing vessel {name} completed service at the berth at time {self.env.now}"
+                )
