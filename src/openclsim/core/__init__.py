@@ -9,8 +9,8 @@ from .movable import ContainerDependentMovable, Movable, MultiContainerDependent
 from .processor import LoadingFunction, Processor, UnloadingFunction
 from .resource import HasResource
 from .simpy_object import SimpyObject
-from .priority import ResourceAllocation
-from .priority import VesselClaim
+from .priority import HasPriorityResource
+from .priority import PriorityVessel
 from .indicator import Port
 
 __all__ = [
@@ -30,7 +30,7 @@ __all__ = [
     "UnloadingFunction",
     "HasResource",
     "SimpyObject",
-    "ResourceAllocation",
-    "VesselClaim",
+    "HasPriorityResource",
+    "PriorityVessel",
     "Port",
 ]
