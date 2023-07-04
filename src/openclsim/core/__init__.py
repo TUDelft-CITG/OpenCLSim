@@ -11,7 +11,12 @@ from .resource import HasResource
 from .simpy_object import SimpyObject
 from .priority import HasPriorityResource
 from .priority import PriorityVessel
-from .indicator import Port
+from .indicators import Port
+from .access import HasDraught
+from .access import HasWaterLevel
+from .access import HasTide
+from .access import HasMaintainedDepth
+from .access import HasBedLevel
 
 __all__ = [
     "basic",
@@ -33,4 +38,9 @@ __all__ = [
     "HasPriorityResource",
     "PriorityVessel",
     "Port",
+    "HasDraught",
+    "HasWaterLevel",
+    "HasTide",
+    "HasMaintainedDepth",
+    "HasBedLevel",
 ]
