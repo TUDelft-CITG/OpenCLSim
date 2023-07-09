@@ -3,7 +3,7 @@ FROM python:3.9-slim
 ARG GITHUB_TOKEN
 
 # upgrade packages
-RUN apt update && apt install -y git procps build-essential libgeos-dev libgeos-c1v5 libgeos-3.9.0
+RUN apt update && apt install -y git procps build-essential libgeos-dev libgeos-c1v5
 
 RUN pip install --upgrade pip
 
