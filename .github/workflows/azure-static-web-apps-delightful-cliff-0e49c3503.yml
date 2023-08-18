@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - feature/book
 
   # disable branches to avoid  https://github.com/Azure/static-web-apps/issues/765
   # # reenable once fixed in azure
