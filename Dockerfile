@@ -5,9 +5,11 @@ ARG GITHUB_TOKEN
 # upgrade packages
 RUN apt update && apt install -y git procps build-essential libgeos-dev libgeos-c1v5
 
+# Upgrade pip
 RUN pip install --upgrade pip
 
-RUN pip install jupyter
+# Install notebook
+RUN pip install jupyter notebook
 
 RUN echo 'alias la="ls -la"' >> ~/.bashrc
 RUN echo 'alias jn="jupyter notebook --ip 0.0.0.0 --allow-root --no-browser --port=8888"' >> ~/.bashrc
