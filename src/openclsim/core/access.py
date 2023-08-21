@@ -1,7 +1,10 @@
-"""This mixin aims to formulate port accessibilty based on water, bottom, and ship-related factors"""
+"""This mixin aims to formulate port accessibilty based on water, bottom, and ship-related factors
+   The main idea behind these class objects is to ensure that the available water depth is higher than the required water depth.
+   The required water depth is calculated by measuring the distance between maximum draught and actual water level.
+"""
 from .simpy_object import SimpyObject
 
-
+# Ship-related factors
 class HasDraught(SimpyObject):
     def __init__(self, draught, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -13,65 +16,61 @@ class HasDraught(SimpyObject):
 
     def get_UKC(self):
         return self.UKC
+    
+    @property
+    def required_water_depth(self):
+        return self.draught + self.UKC
 
-
-class HasWaterLevel(SimpyObject):
-    def __init__(self, water_level, *args, **kwargs):
+# Water level-related factors
+class HasActualWaterLevel(SimpyObject):
+    def __init__(self, AWL, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.water_level = water_level
+        self.AWL = AWL
 
-    def get_water_level(self):
+    def get_AWL(self):
         state = {}
-        if hasattr(super(), "get_water_level"):
-            state = super().get_water_level()
+        if hasattr(super(), "get_AWL"):
+            state = super().get_AWL()
 
-        state.update({"water_level": self.water_level.get_water_level()})
+        state.update({"AWL": self.AWL.get_AWL()})
         return state
 
-
-class HasTide(SimpyObject):
-    def __init__(self, tide_height, *args, **kwargs):
+class HasLowestAstronomicalTide(SimpyObject):
+    def __init__(self, LAT, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tide_height = tide_height
+        self.LAT = LAT
 
-    def get_tide_height(self):
+    def get_LAT(self):
         state = {}
-        if hasattr(super(), "get_tide_height"):
-            state = super().get_tide_height()
+        if hasattr(super(), "get_LAT"):
+            state = super().get_LAT()
 
-        state.update({"tide height": self.tide_height.get_tide_height()})
+        state.update({"LAT": self.LAT.get_LAT()})
         return state
 
-
-class HasMaintainedDepth(SimpyObject):
-    def __init__(self, maintained_depth, *args, **kwargs):
+# Bottom-related factors
+class HasManitainedBedLevel(SimpyObject):
+    def __init__(self, MBL, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.maintained_depth = maintained_depth
+        self.MBL = MBL
 
-    def get_maintained_depth(self):
+    def get_MBL(self):
         state = {}
-        if hasattr(super(), "maintained_depth"):
-            state = super().get_maintained_depth()
+        if hasattr(super(), "get_MBL"):
+            state = super().get_MBL()
 
-        state.update({"maintained depth": self.maintained_depth.get_maintained_depth()})
+        state.update({"MBL": self.MBL.get_MBL()})
         return state
 
-
-class HasBedLevel(SimpyObject):
-    def __init__(self, bathymetry, sedimentation_rate, *args, **kwargs):
+# Determine the navigability of vessels 
+class HasNavigability(SimpyObject):
+    def __init__(self, AWL, LAT, MBL, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.bathymetry = bathymetry
-        self.sedimentation_rate = sedimentation_rate
+        self.AWL = AWL
+        self.LAT = LAT
+        self.MBL = MBL
 
-    def get_bed_level(self):
-        state = {}
-        if hasattr(super(), "get_bed_level"):
-            state = super().get_bed_level()
-
-        state.update(
-            {
-                "bed level": self.sedimentation_rate.get_bed_level()
-                + self.bathymetry.get_bed_level()
-            }
-        )
-        return state
+    @property
+    def required_water_depth(self):
+        required_water_depth = self.AWL - self.MBL - self.LAT
+        return required_water_depth

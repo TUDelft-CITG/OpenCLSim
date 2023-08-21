@@ -13,10 +13,10 @@ from .priority import HasPriorityResource
 from .priority import PriorityVessel
 from .indicators import Port
 from .access import HasDraught
-from .access import HasWaterLevel
-from .access import HasTide
-from .access import HasMaintainedDepth
-from .access import HasBedLevel
+from .access import HasActualWaterLevel
+from .access import HasLowestAstronomicalTide
+from .access import HasManitainedBedLevel
+from .access import HasNavigability
 
 __all__ = [
     "basic",
@@ -39,8 +39,8 @@ __all__ = [
     "PriorityVessel",
     "Port",
     "HasDraught",
-    "HasWaterLevel",
-    "HasTide",
-    "HasMaintainedDepth",
-    "HasBedLevel",
+    "HasActualWaterLevel",
+    "HasLowestAstronomicalTide",
+    "HasManitainedBedLevel",
+    "HasNavigability",
 ]
