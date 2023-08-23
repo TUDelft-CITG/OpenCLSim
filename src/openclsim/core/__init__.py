@@ -15,7 +15,7 @@ from .indicators import Port
 from .access import HasDraught
 from .access import HasActualWaterLevel
 from .access import HasLowestAstronomicalTide
-from .access import HasManitainedBedLevel
+from .access import HasMaintainedBedLevel
 from .access import HasNavigability
 
 __all__ = [
@@ -41,6 +41,6 @@ __all__ = [
     "HasDraught",
     "HasActualWaterLevel",
     "HasLowestAstronomicalTide",
-    "HasManitainedBedLevel",
+    "HasMaintainedBedLevel",
     "HasNavigability",
 ]

@@ -49,7 +49,7 @@ class HasLowestAstronomicalTide(SimpyObject):
         return state
 
 # Bottom-related factors
-class HasManitainedBedLevel(SimpyObject):
+class HasMaintainedBedLevel(SimpyObject):
     def __init__(self, MBL, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.MBL = MBL
@@ -75,5 +75,5 @@ class HasNavigability(SimpyObject):
         if LAT > AWL:
             available_water_depth = self.LAT - self.MBL
         else:
-            available water depth = self.AWL - self.MBL
-        return actual_water_depth
+            available_water_depth = self.AWL - self.MBL
+        return available_water_depth
