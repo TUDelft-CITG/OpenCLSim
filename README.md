@@ -15,7 +15,7 @@ Documentation is found [here](https://openclsim.readthedocs.io).
 
 <a href="https://delightful-cliff-0e49c3503-137.westeurope.1.azurestaticapps.net"><img src="docs/_static/book.png" style="max-width: 50vw;"></a>
 
-You can find the OpenCLSim book, based on the examples in the `notebooks` folder on the [OpenCLSim-book](https://delightful-cliff-0e49c3503-137.westeurope.1.azurestaticapps.net/Intro_draft.html) website.
+You can find the OpenCLSim book, based on the examples in the `notebooks` folder on the [OpenCLSim-book]([https://delightful-cliff-0e49c3503-137.westeurope.1.azurestaticapps.net/Intro_draft.html](https://delightful-cliff-0e49c3503.1.azurestaticapps.net/Intro_draft.html) website.
 
 ## Installation
 
