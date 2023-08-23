@@ -71,6 +71,9 @@ class HasNavigability(SimpyObject):
         self.MBL = MBL
 
     @property
-    def required_water_depth(self):
-        required_water_depth = self.AWL - self.MBL - self.LAT
-        return required_water_depth
+    def available_water_depth(self):
+        if LAT > AWL:
+            available_water_depth = self.LAT - self.MBL
+        else:
+            available water depth = self.AWL - self.MBL
+        return actual_water_depth
