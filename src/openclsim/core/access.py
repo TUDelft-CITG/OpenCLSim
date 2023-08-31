@@ -4,6 +4,7 @@
 """
 from .simpy_object import SimpyObject
 
+
 # Ship-related factors
 class HasDraught(SimpyObject):
     def __init__(self, draught, *args, **kwargs):
@@ -16,14 +17,16 @@ class HasDraught(SimpyObject):
 
     def get_UKC(self):
         return self.UKC
-    
+
     @property
     def required_water_depth(self):
         return self.draught + self.UKC
 
+
 # Water level-related factors
 class HasActualWaterLevel(SimpyObject):
     def __init__(self, AWL, *args, **kwargs):
+        """TODO: Document all variables"""
         super().__init__(*args, **kwargs)
         self.AWL = AWL
 
@@ -34,6 +37,7 @@ class HasActualWaterLevel(SimpyObject):
 
         state.update({"AWL": self.AWL.get_AWL()})
         return state
+
 
 class HasLowestAstronomicalTide(SimpyObject):
     def __init__(self, LAT, *args, **kwargs):
@@ -47,6 +51,7 @@ class HasLowestAstronomicalTide(SimpyObject):
 
         state.update({"LAT": self.LAT.get_LAT()})
         return state
+
 
 # Bottom-related factors
 class HasMaintainedBedLevel(SimpyObject):
@@ -62,7 +67,8 @@ class HasMaintainedBedLevel(SimpyObject):
         state.update({"MBL": self.MBL.get_MBL()})
         return state
 
-# Determine the navigability of vessels 
+
+# Determine the navigability of vessels
 class HasNavigability(SimpyObject):
     def __init__(self, AWL, LAT, MBL, *args, **kwargs):
         super().__init__(*args, **kwargs)
