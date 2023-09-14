@@ -17,6 +17,7 @@ from .access import HasActualWaterLevel
 from .access import HasLowestAstronomicalTide
 from .access import HasMaintainedBedLevel
 from .access import HasNavigability
+from .access import HasDredging
 
 __all__ = [
     "basic",
@@ -43,4 +44,5 @@ __all__ = [
     "HasLowestAstronomicalTide",
     "HasMaintainedBedLevel",
     "HasNavigability",
+    "HasDredging",
 ]
