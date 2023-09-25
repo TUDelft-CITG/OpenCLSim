@@ -6,6 +6,7 @@ from .identifiable import Identifiable
 from .locatable import Locatable
 from .log import Log, LogState
 from .movable import ContainerDependentMovable, Movable, MultiContainerDependentMovable
+from .movable2 import ContainerDependentMovable2, Movable2, MultiContainerDependentMovable2
 from .processor import LoadingFunction, Processor, UnloadingFunction
 from .resource import HasResource
 from .simpy_object import SimpyObject
@@ -31,6 +32,9 @@ __all__ = [
     "Movable",
     "ContainerDependentMovable",
     "MultiContainerDependentMovable",
+    "Movable2",
+    "ContainerDependentMovable2",
+    "MultiContainerDependentMovable2",
     "Processor",
     "LoadingFunction",
     "UnloadingFunction",
