@@ -67,7 +67,6 @@ class HasMaintainedBedLevel(SimpyObject):
         state.update({"MBL": self.MBL.get_MBL()})
         return state
 
-    
 
 # Determine the navigability of vessels
 class HasNavigability(SimpyObject):
@@ -82,12 +81,18 @@ class HasNavigability(SimpyObject):
         available_water_depth = self.AWL - self.MBL
         return available_water_depth
 
-       
+
 class HasDredging(SimpyObject):
-    def __init__(self, ABL, DCL, DBL, *args, **kwargs):
+    def __init__(self, ABL, DCL, DBL, SR=0, *args, **kwargs):
+        """
+        Support for dredged bed level.
+        ABL: actual bed level [m]
+        DCL: Dredge criterion level [m]
+        DBL: Dredge bed level [m]
+        SR: Sedimentation rate [m/s]
+        """
         super().__init__(*args, **kwargs)
         self.ABL = ABL
         self.DCL = DCL
         self.DBL = DBL
-
-
+        self.SR = SR
