@@ -42,7 +42,7 @@ docs: test-up
 	@docker exec $(CONTAINER_NAME_APP) bash -c "pip install -e .[docs]"
 	# build from setup.py is no longer supported
 	# https://github.com/sphinx-doc/sphinx/pull/11363
-	@docker exec $(CONTAINER_NAME_APP) bash -c "sphinx-build docs docs/_build"
+	@docker exec $(CONTAINER_NAME_APP) bash -c "sphinx-build docs docs/_build/html"
 	@docker cp $(CONTAINER_NAME_APP):/$(IMAGE_NAME)/docs/_build/html/ html_docs
 	@docker-compose down
 
