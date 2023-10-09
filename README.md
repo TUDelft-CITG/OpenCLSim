@@ -7,7 +7,7 @@
 
 # OpenCLSim
 
-**Open** source **C**omplex **L**ogistics **Sim**ulation - Rule driven scheduling of cyclic activities for in-depth comparison of alternative operating strategies. For background please read our [WODCON 2022 paper](https://www.dredging.org/resources/ceda-publications-online/conference-proceedings/abstract/1126), also available at [ResearchGate](https://www.researchgate.net/publication/360852095_OpenCLSim_Discrete_Event_Dredging_Fleet_Simulation_to_Optimise_Project_Costs).
+**Open** source **C**omplex **L**ogistics **Sim**ulation - Rule driven scheduling of cyclic activities for in-depth comparison of alternative operating strategies. For background please read our [WODCON 2022 paper](https://www.dredging.org/resources/ceda-publications-online/conference-proceedings/abstract/1126), also available at [ResearchGate](https://www.researchgate.net/publication/360852095_OpenCLSim_Discrete_Event_Dredging_Fleet_Simulation_to_Optimise_Project_Costs). And our [Terra et Aqua 2023 paper](https://www.iadc-dredging.com/article/simulating-for-sustainability-alternative-operating-strategies-for-energy-efficiency/), available at [ResearchGate](https://www.researchgate.net/publication/371782674_Simulating_for_Sustainability_Alternative_Operating_Strategies_for_Energy_Efficiency) as well.
 
 Documentation is found [here](https://openclsim.readthedocs.io).
 
