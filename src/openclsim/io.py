@@ -32,7 +32,7 @@ def get_tree_as_list(treelist, depth=0) -> dict:
     """
 
     if isinstance(treelist,list):
-        treelist = treelist
+        pass
     elif isinstance(treelist,dict):
         treelist = [*treelist.values()]
     else:
