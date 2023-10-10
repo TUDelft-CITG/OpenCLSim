@@ -33,11 +33,11 @@ def get_segments(df, activity, y_val):
     x = []
     y = []
     start = 0
-    for i in range(len(df)):
-        if "START" in df["activity_state"][i] and df["log_string"][i] == activity:
-            start = df.index[i]
-        elif "STOP" in df["activity_state"][i] and df["log_string"][i] == activity:
-            x.extend((start, start, df.index[i], df.index[i], df.index[i]))
+    for index, row in df.iterrows():
+        if "START" in row["activity_state"] and row["log_string"] == activity:
+            start = index
+        elif "STOP" in row["activity_state"] and row["log_string"] == activity:
+            x.extend((start, start, index, index, index))
             y.extend((y_val, y_val, y_val, y_val, None))
     return x, y
 
