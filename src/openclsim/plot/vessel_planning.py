@@ -56,16 +56,16 @@ def get_gantt_chart(
     Parameters
     ----------
     concepts
-        a list or dict of vessels, sites or activities for which to plot all 
+        a list or dict of vessels, sites or activities for which to plot all
         activities, e.g.: [while_activity1, while_activity2] or
-        {'w1':while_activity1, 'w2:while_activity2'}. Combinations of list 
-        and dicts need to be merged first into 1 overall list or dict, e.g. 
+        {'w1':while_activity1, 'w2:while_activity2'}. Combinations of list
+        and dicts need to be merged first into 1 overall list or dict, e.g.
         concepts = [from_site, to_site, *vessels.values()]
     activities
         a list or dict of additional activities to be plotted, if not yet in concepts
     id_map
         by default only the legend labels of activities in concepts are resolved.
-        Activities associated with vessels and sites are not resolved. id_map 
+        Activities associated with vessels and sites are not resolved. id_map
         resolves the legend labels using extra metadata:
         * a list or dict of vessels
         * a manual id_map to resolve uuids to labels, e.g. {'uuid1':'name1'}
@@ -73,7 +73,7 @@ def get_gantt_chart(
     """
     default_blockwidth = 10
 
-     # unpack dict to list
+    # unpack dict to list
     if type(concepts) == dict:
         concepts = [*concepts.values()]
 

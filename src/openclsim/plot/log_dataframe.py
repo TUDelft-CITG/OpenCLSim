@@ -24,7 +24,7 @@ def get_log_dataframe(simulation_object, id_map=None):
         id_map = []
 
     if isinstance(id_map, dict):
-        id_map = [*id_map.values()]    
+        id_map = [*id_map.values()]
     if isinstance(id_map, list):
         # TO DO should in fact be recursive for nested activities
         id_map = {act.id: act.name for act in get_subprocesses(id_map)}
