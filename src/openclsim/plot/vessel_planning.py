@@ -33,11 +33,11 @@ def get_segments(df, activity, y_val):
     x = []
     y = []
     start = 0
-    for i in range(len(df)):
-        if "START" in df["activity_state"][i] and df["log_string"][i] == activity:
-            start = df.index[i]
-        elif "STOP" in df["activity_state"][i] and df["log_string"][i] == activity:
-            x.extend((start, start, df.index[i], df.index[i], df.index[i]))
+    for index, row in df.iterrows():
+        if "START" in row["activity_state"] and row["log_string"] == activity:
+            start = index
+        elif "STOP" in row["activity_state"] and row["log_string"] == activity:
+            x.extend((start, start, index, index, index))
             y.extend((y_val, y_val, y_val, y_val, None))
     return x, y
 
@@ -56,17 +56,32 @@ def get_gantt_chart(
     Parameters
     ----------
     concepts
-        a list of vessels, sites or activities for which to plot all activities
+        a list or dict of vessels, sites or activities for which to plot all
+        activities, e.g.: [while_activity1, while_activity2] or
+        {'w1':while_activity1, 'w2:while_activity2'}. Combinations of list
+        and dicts need to be merged first into 1 overall list or dict, e.g.
+        concepts = [from_site, to_site, *vessels.values()]
     activities
-        additional activities to be plotted, if not yet in concepts
+        a list or dict of additional activities to be plotted, if not yet in concepts
     id_map
-        by default only activity in concepts are resolved. Activities
-        associated with vessels and sites are not resolved. id_map solves this:
-        * a list of top-activities of which also all sub-activities
-          will be resolved, e.g.: [while_activity]
+        by default only the legend labels of activities in concepts are resolved.
+        Activities associated with vessels and sites are not resolved. id_map
+        resolves the legend labels using extra metadata:
+        * a list or dict of vessels
         * a manual id_map to resolve uuids to labels, e.g. {'uuid1':'name1'}
+
     """
     default_blockwidth = 10
+
+    # unpack dict to list
+    if type(concepts) == dict:
+        concepts = [*concepts.values()]
+
+    if type(activities) == dict:
+        activities = [*activities.values()]
+
+    if type(id_map) == dict:
+        id_map = [*id_map.values()]
 
     if type(id_map) == list:
         id_map = {act.id: act.name for act in get_subprocesses(id_map)}
