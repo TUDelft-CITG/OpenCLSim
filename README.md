@@ -13,9 +13,10 @@ Documentation is found [here](https://openclsim.readthedocs.io).
 
 ## Book
 
-<a href="https://delightful-cliff-0e49c3503-137.westeurope.1.azurestaticapps.net"><img src="docs/_static/book.png" style="max-width: 50vw;"></a>
 
-You can find the OpenCLSim book, based on the examples in the `notebooks` folder on the [OpenCLSim-book](https://delightful-cliff-0e49c3503-137.westeurope.1.azurestaticapps.net/Intro_draft.html) website.
+<a href="https://delightful-cliff-0e49c3503.1.azurestaticapps.net/Intro_draft.html"><img src="docs/_static/book.png" style="max-width: 50vw;"></a>
+
+You can find the OpenCLSim book, based on the examples in the `notebooks` folder on the [OpenCLSim-book](https://delightful-cliff-0e49c3503.1.azurestaticapps.net/Intro_draft.html) website.
 
 The book is only build from the master branch and the special "feature/book" branch. For testing your book you can use the feature/book branch.
 
