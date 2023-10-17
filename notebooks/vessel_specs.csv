@@ -1,0 +1,11 @@
+vessel_name,rates [€/day],sailing empty [kW],loading [kW],sailing full [kW],unloading [kW],WAIT [kW],vessel_type
+Carrier A,6000,1000,1000,2500,2500,20,barge
+Carrier B,6000,1000,1000,2500,2500,20,barge
+Carrier C,6000,1000,1000,2500,2500,20,barge
+Barge I,5000,1000,1000,2500,2500,20,barge
+Barge II,5000,1000,1000,2500,2500,20,barge
+Barge III,5000,1000,1000,2500,2500,20,barge
+Extra 1,4000,1000,1000,2500,2500,20,barge
+Extra 2,4000,1000,1000,2500,2500,20,barge
+Extra 3,4000,1000,1000,2500,2500,20,barge
+Cutter T,25000,1000,15000,1000,1000,500,CSD

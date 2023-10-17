@@ -1,0 +1,71 @@
+ActivityID,ActivityName,ActivityClass,ConceptID,ConceptName,ConceptMode
+31db5da7-5646-4702-ae02-b5916d04b70f,loading: loading Carrier A,ShiftAmountActivity,044e1549-efef-4b78-a6d5-17a1e997a9df,Cutter T,processor
+b92de4e2-dc1f-4c97-99c9-184ee40cf14e,unloading: unloading Carrier A,ShiftAmountActivity,5dbea8dd-ea2d-4500-9b16-5ad4640ef9c3,Carrier A,processor
+f0a40bbc-abcb-4aef-95ce-ef8e6b4fae3b,loading: loading Carrier B,ShiftAmountActivity,044e1549-efef-4b78-a6d5-17a1e997a9df,Cutter T,processor
+86cdebc8-2673-40b2-b5d9-a2e43ba36c2a,unloading: unloading Carrier B,ShiftAmountActivity,54a44899-202d-4acd-880e-ee2035955f5d,Carrier B,processor
+800895e4-ad97-41fc-af9e-2c7dd6d1b991,loading: loading Carrier C,ShiftAmountActivity,044e1549-efef-4b78-a6d5-17a1e997a9df,Cutter T,processor
+27da1e92-73e9-4e1b-b2f7-fe8ab01f9777,unloading: unloading Carrier C,ShiftAmountActivity,5bd12dda-82f6-433d-b3ce-a27b5ef3c0c0,Carrier C,processor
+dab788ca-5433-4590-b9df-b1f31150e13d,loading: loading Barge I,ShiftAmountActivity,044e1549-efef-4b78-a6d5-17a1e997a9df,Cutter T,processor
+b4691a8b-7c47-4999-b531-dddb640b5f4b,unloading: unloading Barge I,ShiftAmountActivity,c8219df4-6b15-466d-870f-0f9a430cf12a,Barge I,processor
+2e28c54e-639b-434f-b195-eedcab0ea4a1,loading: loading Barge II,ShiftAmountActivity,044e1549-efef-4b78-a6d5-17a1e997a9df,Cutter T,processor
+6ef7a3d3-6e1e-4cfc-a17c-ca48ebe690b2,unloading: unloading Barge II,ShiftAmountActivity,5defa630-9f7a-4a43-9d94-4ea3dc711878,Barge II,processor
+22c70d82-2e97-4b6b-875b-7acff3cd617c,loading: loading Barge III,ShiftAmountActivity,044e1549-efef-4b78-a6d5-17a1e997a9df,Cutter T,processor
+5bc128d9-5ea8-467d-919b-56fa4b88f345,unloading: unloading Barge III,ShiftAmountActivity,f18cc045-7a1f-4cad-9bd0-e807586a4f39,Barge III,processor
+a97ac758-41d0-4c32-b782-cd6c0d14cd17,loading: loading Extra 1,ShiftAmountActivity,044e1549-efef-4b78-a6d5-17a1e997a9df,Cutter T,processor
+5e4d1ba0-16b6-4d3b-924d-5c9ed930026b,unloading: unloading Extra 1,ShiftAmountActivity,e09f81e9-5b54-46fa-a150-ecd8dfa0d38c,Extra 1,processor
+a1c4bcbe-a173-41a2-991d-1b119f45e6b1,sailing empty: sailing empty Carrier A,MoveActivity,5dbea8dd-ea2d-4500-9b16-5ad4640ef9c3,Carrier A,mover
+57c8e1c1-084a-4f13-9968-5a311c06f034,sailing full: sailing full Carrier A,MoveActivity,5dbea8dd-ea2d-4500-9b16-5ad4640ef9c3,Carrier A,mover
+8882c57e-343a-487c-ab78-a7a735595347,sailing empty: sailing empty Carrier B,MoveActivity,54a44899-202d-4acd-880e-ee2035955f5d,Carrier B,mover
+d8d5f971-f0bd-44df-9e7e-2aae9779ff1f,sailing full: sailing full Carrier B,MoveActivity,54a44899-202d-4acd-880e-ee2035955f5d,Carrier B,mover
+c1d3a2b0-0700-47b3-9347-64f80d17419d,sailing empty: sailing empty Carrier C,MoveActivity,5bd12dda-82f6-433d-b3ce-a27b5ef3c0c0,Carrier C,mover
+c3ba0354-0587-4b20-9781-7d65a2fd53a5,sailing full: sailing full Carrier C,MoveActivity,5bd12dda-82f6-433d-b3ce-a27b5ef3c0c0,Carrier C,mover
+a48bda16-054d-4f8a-ba1d-0c6fcbc17bb8,sailing empty: sailing empty Barge I,MoveActivity,c8219df4-6b15-466d-870f-0f9a430cf12a,Barge I,mover
+49ac4dfc-1526-4274-ae10-23ef85757b87,sailing full: sailing full Barge I,MoveActivity,c8219df4-6b15-466d-870f-0f9a430cf12a,Barge I,mover
+8fe35d98-01c6-4ba4-823e-ac53aca4dc47,sailing empty: sailing empty Barge II,MoveActivity,5defa630-9f7a-4a43-9d94-4ea3dc711878,Barge II,mover
+17074833-91ed-44f3-8264-a405b70f363a,sailing full: sailing full Barge II,MoveActivity,5defa630-9f7a-4a43-9d94-4ea3dc711878,Barge II,mover
+29f641af-d9b2-41f8-b25d-9dbadde15857,sailing empty: sailing empty Barge III,MoveActivity,f18cc045-7a1f-4cad-9bd0-e807586a4f39,Barge III,mover
+5d4d5efc-76af-4ce4-94f4-cd992a483dbe,sailing full: sailing full Barge III,MoveActivity,f18cc045-7a1f-4cad-9bd0-e807586a4f39,Barge III,mover
+f1425c0d-990a-47b5-86e2-56d5a3423c12,sailing empty: sailing empty Extra 1,MoveActivity,e09f81e9-5b54-46fa-a150-ecd8dfa0d38c,Extra 1,mover
+9fa3e0b9-6ef3-450f-b16f-e26cb73bdfd6,sailing full: sailing full Extra 1,MoveActivity,e09f81e9-5b54-46fa-a150-ecd8dfa0d38c,Extra 1,mover
+31db5da7-5646-4702-ae02-b5916d04b70f,loading: loading Carrier A,ShiftAmountActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,origin
+b92de4e2-dc1f-4c97-99c9-184ee40cf14e,unloading: unloading Carrier A,ShiftAmountActivity,5dbea8dd-ea2d-4500-9b16-5ad4640ef9c3,Carrier A,origin
+f0a40bbc-abcb-4aef-95ce-ef8e6b4fae3b,loading: loading Carrier B,ShiftAmountActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,origin
+86cdebc8-2673-40b2-b5d9-a2e43ba36c2a,unloading: unloading Carrier B,ShiftAmountActivity,54a44899-202d-4acd-880e-ee2035955f5d,Carrier B,origin
+800895e4-ad97-41fc-af9e-2c7dd6d1b991,loading: loading Carrier C,ShiftAmountActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,origin
+27da1e92-73e9-4e1b-b2f7-fe8ab01f9777,unloading: unloading Carrier C,ShiftAmountActivity,5bd12dda-82f6-433d-b3ce-a27b5ef3c0c0,Carrier C,origin
+dab788ca-5433-4590-b9df-b1f31150e13d,loading: loading Barge I,ShiftAmountActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,origin
+b4691a8b-7c47-4999-b531-dddb640b5f4b,unloading: unloading Barge I,ShiftAmountActivity,c8219df4-6b15-466d-870f-0f9a430cf12a,Barge I,origin
+2e28c54e-639b-434f-b195-eedcab0ea4a1,loading: loading Barge II,ShiftAmountActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,origin
+6ef7a3d3-6e1e-4cfc-a17c-ca48ebe690b2,unloading: unloading Barge II,ShiftAmountActivity,5defa630-9f7a-4a43-9d94-4ea3dc711878,Barge II,origin
+22c70d82-2e97-4b6b-875b-7acff3cd617c,loading: loading Barge III,ShiftAmountActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,origin
+5bc128d9-5ea8-467d-919b-56fa4b88f345,unloading: unloading Barge III,ShiftAmountActivity,f18cc045-7a1f-4cad-9bd0-e807586a4f39,Barge III,origin
+a97ac758-41d0-4c32-b782-cd6c0d14cd17,loading: loading Extra 1,ShiftAmountActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,origin
+5e4d1ba0-16b6-4d3b-924d-5c9ed930026b,unloading: unloading Extra 1,ShiftAmountActivity,e09f81e9-5b54-46fa-a150-ecd8dfa0d38c,Extra 1,origin
+a1c4bcbe-a173-41a2-991d-1b119f45e6b1,sailing empty: sailing empty Carrier A,MoveActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,destination
+31db5da7-5646-4702-ae02-b5916d04b70f,loading: loading Carrier A,ShiftAmountActivity,5dbea8dd-ea2d-4500-9b16-5ad4640ef9c3,Carrier A,destination
+57c8e1c1-084a-4f13-9968-5a311c06f034,sailing full: sailing full Carrier A,MoveActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+b92de4e2-dc1f-4c97-99c9-184ee40cf14e,unloading: unloading Carrier A,ShiftAmountActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+8882c57e-343a-487c-ab78-a7a735595347,sailing empty: sailing empty Carrier B,MoveActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,destination
+f0a40bbc-abcb-4aef-95ce-ef8e6b4fae3b,loading: loading Carrier B,ShiftAmountActivity,54a44899-202d-4acd-880e-ee2035955f5d,Carrier B,destination
+d8d5f971-f0bd-44df-9e7e-2aae9779ff1f,sailing full: sailing full Carrier B,MoveActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+86cdebc8-2673-40b2-b5d9-a2e43ba36c2a,unloading: unloading Carrier B,ShiftAmountActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+c1d3a2b0-0700-47b3-9347-64f80d17419d,sailing empty: sailing empty Carrier C,MoveActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,destination
+800895e4-ad97-41fc-af9e-2c7dd6d1b991,loading: loading Carrier C,ShiftAmountActivity,5bd12dda-82f6-433d-b3ce-a27b5ef3c0c0,Carrier C,destination
+c3ba0354-0587-4b20-9781-7d65a2fd53a5,sailing full: sailing full Carrier C,MoveActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+27da1e92-73e9-4e1b-b2f7-fe8ab01f9777,unloading: unloading Carrier C,ShiftAmountActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+a48bda16-054d-4f8a-ba1d-0c6fcbc17bb8,sailing empty: sailing empty Barge I,MoveActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,destination
+dab788ca-5433-4590-b9df-b1f31150e13d,loading: loading Barge I,ShiftAmountActivity,c8219df4-6b15-466d-870f-0f9a430cf12a,Barge I,destination
+49ac4dfc-1526-4274-ae10-23ef85757b87,sailing full: sailing full Barge I,MoveActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+b4691a8b-7c47-4999-b531-dddb640b5f4b,unloading: unloading Barge I,ShiftAmountActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+8fe35d98-01c6-4ba4-823e-ac53aca4dc47,sailing empty: sailing empty Barge II,MoveActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,destination
+2e28c54e-639b-434f-b195-eedcab0ea4a1,loading: loading Barge II,ShiftAmountActivity,5defa630-9f7a-4a43-9d94-4ea3dc711878,Barge II,destination
+17074833-91ed-44f3-8264-a405b70f363a,sailing full: sailing full Barge II,MoveActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+6ef7a3d3-6e1e-4cfc-a17c-ca48ebe690b2,unloading: unloading Barge II,ShiftAmountActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+29f641af-d9b2-41f8-b25d-9dbadde15857,sailing empty: sailing empty Barge III,MoveActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,destination
+22c70d82-2e97-4b6b-875b-7acff3cd617c,loading: loading Barge III,ShiftAmountActivity,f18cc045-7a1f-4cad-9bd0-e807586a4f39,Barge III,destination
+5d4d5efc-76af-4ce4-94f4-cd992a483dbe,sailing full: sailing full Barge III,MoveActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+5bc128d9-5ea8-467d-919b-56fa4b88f345,unloading: unloading Barge III,ShiftAmountActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+f1425c0d-990a-47b5-86e2-56d5a3423c12,sailing empty: sailing empty Extra 1,MoveActivity,6cb29e51-22e7-4b0e-958a-737cfa545336,Trench,destination
+a97ac758-41d0-4c32-b782-cd6c0d14cd17,loading: loading Extra 1,ShiftAmountActivity,e09f81e9-5b54-46fa-a150-ecd8dfa0d38c,Extra 1,destination
+9fa3e0b9-6ef3-450f-b16f-e26cb73bdfd6,sailing full: sailing full Extra 1,MoveActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination
+5e4d1ba0-16b6-4d3b-924d-5c9ed930026b,unloading: unloading Extra 1,ShiftAmountActivity,d0867026-aaa9-480b-bd5e-f7d5ed117f0e,Reclamation,destination

@@ -1,0 +1,9 @@
+VesselName,VesselID,VesselClass
+Carrier A,5dbea8dd-ea2d-4500-9b16-5ad4640ef9c3,TransportProcessingResource
+Carrier B,54a44899-202d-4acd-880e-ee2035955f5d,TransportProcessingResource
+Carrier C,5bd12dda-82f6-433d-b3ce-a27b5ef3c0c0,TransportProcessingResource
+Barge I,c8219df4-6b15-466d-870f-0f9a430cf12a,TransportProcessingResource
+Barge II,5defa630-9f7a-4a43-9d94-4ea3dc711878,TransportProcessingResource
+Barge III,f18cc045-7a1f-4cad-9bd0-e807586a4f39,TransportProcessingResource
+Extra 1,e09f81e9-5b54-46fa-a150-ecd8dfa0d38c,TransportProcessingResource
+Cutter T,044e1549-efef-4b78-a6d5-17a1e997a9df,TransportProcessingResource

@@ -1,0 +1,208 @@
+trip,ActivityID,ActivityName,ActivityClass,TimestampStart,TimestampStop,TimestampDt
+1,342bfba6-9217-4707-b325-9a96651c9dee,while_sequential_activity_subcycle:while_sequential_activity_subcycle Carrier A,WhileActivity,1970-01-01 00:00:00,1970-01-01 04:45:45,17145.0
+2,342bfba6-9217-4707-b325-9a96651c9dee,while_sequential_activity_subcycle:while_sequential_activity_subcycle Carrier A,WhileActivity,1970-01-01 00:00:00,1970-01-01 09:37:25,34645.0
+3,342bfba6-9217-4707-b325-9a96651c9dee,while_sequential_activity_subcycle:while_sequential_activity_subcycle Carrier A,WhileActivity,1970-01-01 04:45:45,1970-01-01 14:29:05,35000.0
+4,342bfba6-9217-4707-b325-9a96651c9dee,while_sequential_activity_subcycle:while_sequential_activity_subcycle Carrier A,WhileActivity,1970-01-01 09:37:25,1970-01-01 14:29:05,17500.0
+1,3713cc68-33b0-4c8a-9d63-43d50cefeb48,while_sequential_activity_subcycle:while_sequential_activity_subcycle Carrier B,WhileActivity,1970-01-01 00:00:00,1970-01-01 06:19:37,22777.0
+2,3713cc68-33b0-4c8a-9d63-43d50cefeb48,while_sequential_activity_subcycle:while_sequential_activity_subcycle Carrier B,WhileActivity,1970-01-01 00:00:00,1970-01-01 11:11:17,40277.0
+3,3713cc68-33b0-4c8a-9d63-43d50cefeb48,while_sequential_activity_subcycle:while_sequential_activity_subcycle Carrier B,WhileActivity,1970-01-01 06:19:37,1970-01-01 16:02:57,35000.0
+4,3713cc68-33b0-4c8a-9d63-43d50cefeb48,while_sequential_activity_subcycle:while_sequential_activity_subcycle Carrier B,WhileActivity,1970-01-01 11:11:17,1970-01-01 16:02:57,17500.0
+1,77103d44-7ac5-44a7-aa03-28399d58ddb2,while_sequential_activity_subcycle:while_sequential_activity_subcycle Carrier C,WhileActivity,1970-01-01 00:00:00,1970-01-01 02:24:31,8671.0
+2,77103d44-7ac5-44a7-aa03-28399d58ddb2,while_sequential_activity_subcycle:while_sequential_activity_subcycle Carrier C,WhileActivity,1970-01-01 00:00:00,1970-01-01 07:16:11,26171.0
+3,77103d44-7ac5-44a7-aa03-28399d58ddb2,while_sequential_activity_subcycle:while_sequential_activity_subcycle Carrier C,WhileActivity,1970-01-01 02:24:31,1970-01-01 11:26:11,32500.0
+4,77103d44-7ac5-44a7-aa03-28399d58ddb2,while_sequential_activity_subcycle:while_sequential_activity_subcycle Carrier C,WhileActivity,1970-01-01 07:16:11,1970-01-01 11:26:11,15000.0
+1,261bfa1e-c754-477a-b9d7-3b23fe116b9a,while_sequential_activity_subcycle:while_sequential_activity_subcycle Barge I,WhileActivity,1970-01-01 00:00:00,1970-01-01 05:35:29,20129.0
+2,261bfa1e-c754-477a-b9d7-3b23fe116b9a,while_sequential_activity_subcycle:while_sequential_activity_subcycle Barge I,WhileActivity,1970-01-01 00:00:00,1970-01-01 10:27:09,37629.0
+3,261bfa1e-c754-477a-b9d7-3b23fe116b9a,while_sequential_activity_subcycle:while_sequential_activity_subcycle Barge I,WhileActivity,1970-01-01 05:35:29,1970-01-01 15:18:49,35000.0
+4,261bfa1e-c754-477a-b9d7-3b23fe116b9a,while_sequential_activity_subcycle:while_sequential_activity_subcycle Barge I,WhileActivity,1970-01-01 10:27:09,1970-01-01 15:18:49,17500.0
+1,31b6b428-8c7a-431e-a396-eeac901d7233,while_sequential_activity_subcycle:while_sequential_activity_subcycle Barge II,WhileActivity,1970-01-01 00:00:00,1970-01-01 03:12:29,11549.0
+2,31b6b428-8c7a-431e-a396-eeac901d7233,while_sequential_activity_subcycle:while_sequential_activity_subcycle Barge II,WhileActivity,1970-01-01 00:00:00,1970-01-01 08:04:09,29049.0
+3,31b6b428-8c7a-431e-a396-eeac901d7233,while_sequential_activity_subcycle:while_sequential_activity_subcycle Barge II,WhileActivity,1970-01-01 03:12:29,1970-01-01 12:55:49,35000.0
+4,31b6b428-8c7a-431e-a396-eeac901d7233,while_sequential_activity_subcycle:while_sequential_activity_subcycle Barge II,WhileActivity,1970-01-01 08:04:09,1970-01-01 12:55:49,17500.0
+1,358e4db3-364d-47fa-b45b-c6f78302b49d,while_sequential_activity_subcycle:while_sequential_activity_subcycle Barge III,WhileActivity,1970-01-01 00:00:00,1970-01-01 03:58:29,14309.0
+2,358e4db3-364d-47fa-b45b-c6f78302b49d,while_sequential_activity_subcycle:while_sequential_activity_subcycle Barge III,WhileActivity,1970-01-01 00:00:00,1970-01-01 08:50:09,31809.0
+3,358e4db3-364d-47fa-b45b-c6f78302b49d,while_sequential_activity_subcycle:while_sequential_activity_subcycle Barge III,WhileActivity,1970-01-01 03:58:29,1970-01-01 13:41:49,35000.0
+4,358e4db3-364d-47fa-b45b-c6f78302b49d,while_sequential_activity_subcycle:while_sequential_activity_subcycle Barge III,WhileActivity,1970-01-01 08:50:09,1970-01-01 13:41:49,17500.0
+1,3f56e6c6-609e-4646-ba35-6c5fb23240f7,while_sequential_activity_subcycle:while_sequential_activity_subcycle Extra 1,WhileActivity,1970-01-01 00:00:00,1970-01-01 07:04:35,25475.0
+2,3f56e6c6-609e-4646-ba35-6c5fb23240f7,while_sequential_activity_subcycle:while_sequential_activity_subcycle Extra 1,WhileActivity,1970-01-01 00:00:00,1970-01-01 12:37:55,45475.0
+3,3f56e6c6-609e-4646-ba35-6c5fb23240f7,while_sequential_activity_subcycle:while_sequential_activity_subcycle Extra 1,WhileActivity,1970-01-01 07:04:35,1970-01-01 12:37:55,20000.0
+1,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 00:00:00,1970-01-01 00:42:24,2544.0
+2,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 00:00:00,1970-01-01 03:20:57,12057.0
+3,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 00:42:24,1970-01-01 04:03:21,12057.0
+4,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 03:20:57,1970-01-01 04:45:45,5088.0
+5,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 04:03:21,1970-01-01 04:45:45,2544.0
+6,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 04:45:45,1970-01-01 05:28:09,2544.0
+7,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 04:45:45,1970-01-01 08:12:37,12412.0
+8,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 05:28:09,1970-01-01 08:55:01,12412.0
+9,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 08:12:37,1970-01-01 09:37:25,5088.0
+10,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 08:55:01,1970-01-01 09:37:25,2544.0
+11,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 09:37:25,1970-01-01 10:19:49,2544.0
+12,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 09:37:25,1970-01-01 13:04:17,12412.0
+13,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 10:19:49,1970-01-01 13:46:41,12412.0
+14,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 13:04:17,1970-01-01 14:29:05,5088.0
+15,69a03af7-afd1-4905-92b9-8796dcca531f,sequential_activity_subcycle:sequential_activity_subcycle Carrier A,SequentialActivity,1970-01-01 13:46:41,1970-01-01 14:29:05,2544.0
+1,a1c4bcbe-a173-41a2-991d-1b119f45e6b1,sailing empty: sailing empty Carrier A,MoveActivity,1970-01-01 00:00:00,1970-01-01 00:42:24,2544.0
+2,a1c4bcbe-a173-41a2-991d-1b119f45e6b1,sailing empty: sailing empty Carrier A,MoveActivity,1970-01-01 04:45:45,1970-01-01 05:28:09,2544.0
+3,a1c4bcbe-a173-41a2-991d-1b119f45e6b1,sailing empty: sailing empty Carrier A,MoveActivity,1970-01-01 09:37:25,1970-01-01 10:19:49,2544.0
+1,31db5da7-5646-4702-ae02-b5916d04b70f,loading: loading Carrier A,ShiftAmountActivity,1970-01-01 02:39:17,1970-01-01 03:20:57,2500.0
+2,31db5da7-5646-4702-ae02-b5916d04b70f,loading: loading Carrier A,ShiftAmountActivity,1970-01-01 07:30:57,1970-01-01 08:12:37,2500.0
+3,31db5da7-5646-4702-ae02-b5916d04b70f,loading: loading Carrier A,ShiftAmountActivity,1970-01-01 12:22:37,1970-01-01 13:04:17,2500.0
+1,57c8e1c1-084a-4f13-9968-5a311c06f034,sailing full: sailing full Carrier A,MoveActivity,1970-01-01 03:20:57,1970-01-01 04:03:21,2544.0
+2,57c8e1c1-084a-4f13-9968-5a311c06f034,sailing full: sailing full Carrier A,MoveActivity,1970-01-01 08:12:37,1970-01-01 08:55:01,2544.0
+3,57c8e1c1-084a-4f13-9968-5a311c06f034,sailing full: sailing full Carrier A,MoveActivity,1970-01-01 13:04:17,1970-01-01 13:46:41,2544.0
+1,b92de4e2-dc1f-4c97-99c9-184ee40cf14e,unloading: unloading Carrier A,ShiftAmountActivity,1970-01-01 04:03:21,1970-01-01 04:45:45,2544.0
+2,b92de4e2-dc1f-4c97-99c9-184ee40cf14e,unloading: unloading Carrier A,ShiftAmountActivity,1970-01-01 08:55:01,1970-01-01 09:37:25,2544.0
+3,b92de4e2-dc1f-4c97-99c9-184ee40cf14e,unloading: unloading Carrier A,ShiftAmountActivity,1970-01-01 13:46:41,1970-01-01 14:29:05,2544.0
+1,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 00:00:00,1970-01-01 00:47:40,2860.0
+2,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 00:00:00,1970-01-01 04:44:17,17057.0
+3,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 00:47:40,1970-01-01 05:31:57,17057.0
+4,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 04:44:17,1970-01-01 06:19:37,5720.0
+5,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 05:31:57,1970-01-01 06:19:37,2860.0
+6,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 06:19:37,1970-01-01 07:07:17,2860.0
+7,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 06:19:37,1970-01-01 09:35:57,11780.0
+8,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 07:07:17,1970-01-01 10:23:37,11780.0
+9,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 09:35:57,1970-01-01 11:11:17,5720.0
+10,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 10:23:37,1970-01-01 11:11:17,2860.0
+11,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 11:11:17,1970-01-01 11:58:57,2860.0
+12,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 11:11:17,1970-01-01 14:27:37,11780.0
+13,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 11:58:57,1970-01-01 15:15:17,11780.0
+14,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 14:27:37,1970-01-01 16:02:57,5720.0
+15,edc6089f-eccf-4bf6-8668-deed4edb00f9,sequential_activity_subcycle:sequential_activity_subcycle Carrier B,SequentialActivity,1970-01-01 15:15:17,1970-01-01 16:02:57,2860.0
+1,8882c57e-343a-487c-ab78-a7a735595347,sailing empty: sailing empty Carrier B,MoveActivity,1970-01-01 00:00:00,1970-01-01 00:47:40,2860.0
+2,8882c57e-343a-487c-ab78-a7a735595347,sailing empty: sailing empty Carrier B,MoveActivity,1970-01-01 06:19:37,1970-01-01 07:07:17,2860.0
+3,8882c57e-343a-487c-ab78-a7a735595347,sailing empty: sailing empty Carrier B,MoveActivity,1970-01-01 11:11:17,1970-01-01 11:58:57,2860.0
+1,f0a40bbc-abcb-4aef-95ce-ef8e6b4fae3b,loading: loading Carrier B,ShiftAmountActivity,1970-01-01 04:02:37,1970-01-01 04:44:17,2500.0
+2,f0a40bbc-abcb-4aef-95ce-ef8e6b4fae3b,loading: loading Carrier B,ShiftAmountActivity,1970-01-01 08:54:17,1970-01-01 09:35:57,2500.0
+3,f0a40bbc-abcb-4aef-95ce-ef8e6b4fae3b,loading: loading Carrier B,ShiftAmountActivity,1970-01-01 13:45:57,1970-01-01 14:27:37,2500.0
+1,d8d5f971-f0bd-44df-9e7e-2aae9779ff1f,sailing full: sailing full Carrier B,MoveActivity,1970-01-01 04:44:17,1970-01-01 05:31:57,2860.0
+2,d8d5f971-f0bd-44df-9e7e-2aae9779ff1f,sailing full: sailing full Carrier B,MoveActivity,1970-01-01 09:35:57,1970-01-01 10:23:37,2860.0
+3,d8d5f971-f0bd-44df-9e7e-2aae9779ff1f,sailing full: sailing full Carrier B,MoveActivity,1970-01-01 14:27:37,1970-01-01 15:15:17,2860.0
+1,86cdebc8-2673-40b2-b5d9-a2e43ba36c2a,unloading: unloading Carrier B,ShiftAmountActivity,1970-01-01 05:31:57,1970-01-01 06:19:37,2860.0
+2,86cdebc8-2673-40b2-b5d9-a2e43ba36c2a,unloading: unloading Carrier B,ShiftAmountActivity,1970-01-01 10:23:37,1970-01-01 11:11:17,2860.0
+3,86cdebc8-2673-40b2-b5d9-a2e43ba36c2a,unloading: unloading Carrier B,ShiftAmountActivity,1970-01-01 15:15:17,1970-01-01 16:02:57,2860.0
+1,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 00:00:00,1970-01-01 00:34:17,2057.0
+2,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 00:00:00,1970-01-01 01:15:57,4557.0
+3,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 00:34:17,1970-01-01 01:50:14,4557.0
+4,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 01:15:57,1970-01-01 02:24:31,4114.0
+5,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 01:50:14,1970-01-01 02:24:31,2057.0
+6,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 02:24:31,1970-01-01 02:58:48,2057.0
+7,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 02:24:31,1970-01-01 06:07:37,13386.0
+8,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 02:58:48,1970-01-01 06:41:54,13386.0
+9,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 06:07:37,1970-01-01 07:16:11,4114.0
+10,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 06:41:54,1970-01-01 07:16:11,2057.0
+11,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 07:16:11,1970-01-01 07:50:28,2057.0
+12,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 07:16:11,1970-01-01 10:17:37,10886.0
+13,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 07:50:28,1970-01-01 10:51:54,10886.0
+14,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 10:17:37,1970-01-01 11:26:11,4114.0
+15,953aecf1-1c3e-43c8-9e12-112de970e553,sequential_activity_subcycle:sequential_activity_subcycle Carrier C,SequentialActivity,1970-01-01 10:51:54,1970-01-01 11:26:11,2057.0
+1,c1d3a2b0-0700-47b3-9347-64f80d17419d,sailing empty: sailing empty Carrier C,MoveActivity,1970-01-01 00:00:00,1970-01-01 00:34:17,2057.0
+2,c1d3a2b0-0700-47b3-9347-64f80d17419d,sailing empty: sailing empty Carrier C,MoveActivity,1970-01-01 02:24:31,1970-01-01 02:58:48,2057.0
+3,c1d3a2b0-0700-47b3-9347-64f80d17419d,sailing empty: sailing empty Carrier C,MoveActivity,1970-01-01 07:16:11,1970-01-01 07:50:28,2057.0
+1,800895e4-ad97-41fc-af9e-2c7dd6d1b991,loading: loading Carrier C,ShiftAmountActivity,1970-01-01 00:34:17,1970-01-01 01:15:57,2500.0
+2,800895e4-ad97-41fc-af9e-2c7dd6d1b991,loading: loading Carrier C,ShiftAmountActivity,1970-01-01 05:25:57,1970-01-01 06:07:37,2500.0
+3,800895e4-ad97-41fc-af9e-2c7dd6d1b991,loading: loading Carrier C,ShiftAmountActivity,1970-01-01 09:35:57,1970-01-01 10:17:37,2500.0
+1,c3ba0354-0587-4b20-9781-7d65a2fd53a5,sailing full: sailing full Carrier C,MoveActivity,1970-01-01 01:15:57,1970-01-01 01:50:14,2057.0
+2,c3ba0354-0587-4b20-9781-7d65a2fd53a5,sailing full: sailing full Carrier C,MoveActivity,1970-01-01 06:07:37,1970-01-01 06:41:54,2057.0
+3,c3ba0354-0587-4b20-9781-7d65a2fd53a5,sailing full: sailing full Carrier C,MoveActivity,1970-01-01 10:17:37,1970-01-01 10:51:54,2057.0
+1,27da1e92-73e9-4e1b-b2f7-fe8ab01f9777,unloading: unloading Carrier C,ShiftAmountActivity,1970-01-01 01:50:14,1970-01-01 02:24:31,2057.0
+2,27da1e92-73e9-4e1b-b2f7-fe8ab01f9777,unloading: unloading Carrier C,ShiftAmountActivity,1970-01-01 06:41:54,1970-01-01 07:16:11,2057.0
+3,27da1e92-73e9-4e1b-b2f7-fe8ab01f9777,unloading: unloading Carrier C,ShiftAmountActivity,1970-01-01 10:51:54,1970-01-01 11:26:11,2057.0
+1,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 00:00:00,1970-01-01 00:46:26,2786.0
+2,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 00:00:00,1970-01-01 04:02:37,14557.0
+3,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 00:46:26,1970-01-01 04:49:03,14557.0
+4,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 04:02:37,1970-01-01 05:35:29,5572.0
+5,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 04:49:03,1970-01-01 05:35:29,2786.0
+6,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 05:35:29,1970-01-01 06:21:55,2786.0
+7,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 05:35:29,1970-01-01 08:54:17,11928.0
+8,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 06:21:55,1970-01-01 09:40:43,11928.0
+9,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 08:54:17,1970-01-01 10:27:09,5572.0
+10,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 09:40:43,1970-01-01 10:27:09,2786.0
+11,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 10:27:09,1970-01-01 11:13:35,2786.0
+12,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 10:27:09,1970-01-01 13:45:57,11928.0
+13,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 11:13:35,1970-01-01 14:32:23,11928.0
+14,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 13:45:57,1970-01-01 15:18:49,5572.0
+15,ee90456b-ce52-4a9d-8055-5e365abb7fbe,sequential_activity_subcycle:sequential_activity_subcycle Barge I,SequentialActivity,1970-01-01 14:32:23,1970-01-01 15:18:49,2786.0
+1,a48bda16-054d-4f8a-ba1d-0c6fcbc17bb8,sailing empty: sailing empty Barge I,MoveActivity,1970-01-01 00:00:00,1970-01-01 00:46:26,2786.0
+2,a48bda16-054d-4f8a-ba1d-0c6fcbc17bb8,sailing empty: sailing empty Barge I,MoveActivity,1970-01-01 05:35:29,1970-01-01 06:21:55,2786.0
+3,a48bda16-054d-4f8a-ba1d-0c6fcbc17bb8,sailing empty: sailing empty Barge I,MoveActivity,1970-01-01 10:27:09,1970-01-01 11:13:35,2786.0
+1,dab788ca-5433-4590-b9df-b1f31150e13d,loading: loading Barge I,ShiftAmountActivity,1970-01-01 03:20:57,1970-01-01 04:02:37,2500.0
+2,dab788ca-5433-4590-b9df-b1f31150e13d,loading: loading Barge I,ShiftAmountActivity,1970-01-01 08:12:37,1970-01-01 08:54:17,2500.0
+3,dab788ca-5433-4590-b9df-b1f31150e13d,loading: loading Barge I,ShiftAmountActivity,1970-01-01 13:04:17,1970-01-01 13:45:57,2500.0
+1,49ac4dfc-1526-4274-ae10-23ef85757b87,sailing full: sailing full Barge I,MoveActivity,1970-01-01 04:02:37,1970-01-01 04:49:03,2786.0
+2,49ac4dfc-1526-4274-ae10-23ef85757b87,sailing full: sailing full Barge I,MoveActivity,1970-01-01 08:54:17,1970-01-01 09:40:43,2786.0
+3,49ac4dfc-1526-4274-ae10-23ef85757b87,sailing full: sailing full Barge I,MoveActivity,1970-01-01 13:45:57,1970-01-01 14:32:23,2786.0
+1,b4691a8b-7c47-4999-b531-dddb640b5f4b,unloading: unloading Barge I,ShiftAmountActivity,1970-01-01 04:49:03,1970-01-01 05:35:29,2786.0
+2,b4691a8b-7c47-4999-b531-dddb640b5f4b,unloading: unloading Barge I,ShiftAmountActivity,1970-01-01 09:40:43,1970-01-01 10:27:09,2786.0
+3,b4691a8b-7c47-4999-b531-dddb640b5f4b,unloading: unloading Barge I,ShiftAmountActivity,1970-01-01 14:32:23,1970-01-01 15:18:49,2786.0
+1,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 00:00:00,1970-01-01 00:37:26,2246.0
+2,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 00:00:00,1970-01-01 01:57:37,7057.0
+3,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 00:37:26,1970-01-01 02:35:03,7057.0
+4,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 01:57:37,1970-01-01 03:12:29,4492.0
+5,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 02:35:03,1970-01-01 03:12:29,2246.0
+6,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 03:12:29,1970-01-01 03:49:55,2246.0
+7,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 03:12:29,1970-01-01 06:49:17,13008.0
+8,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 03:49:55,1970-01-01 07:26:43,13008.0
+9,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 06:49:17,1970-01-01 08:04:09,4492.0
+10,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 07:26:43,1970-01-01 08:04:09,2246.0
+11,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 08:04:09,1970-01-01 08:41:35,2246.0
+12,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 08:04:09,1970-01-01 11:40:57,13008.0
+13,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 08:41:35,1970-01-01 12:18:23,13008.0
+14,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 11:40:57,1970-01-01 12:55:49,4492.0
+15,7b39cdf3-9080-4771-a6b0-4cae7f9c480e,sequential_activity_subcycle:sequential_activity_subcycle Barge II,SequentialActivity,1970-01-01 12:18:23,1970-01-01 12:55:49,2246.0
+1,8fe35d98-01c6-4ba4-823e-ac53aca4dc47,sailing empty: sailing empty Barge II,MoveActivity,1970-01-01 00:00:00,1970-01-01 00:37:26,2246.0
+2,8fe35d98-01c6-4ba4-823e-ac53aca4dc47,sailing empty: sailing empty Barge II,MoveActivity,1970-01-01 03:12:29,1970-01-01 03:49:55,2246.0
+3,8fe35d98-01c6-4ba4-823e-ac53aca4dc47,sailing empty: sailing empty Barge II,MoveActivity,1970-01-01 08:04:09,1970-01-01 08:41:35,2246.0
+1,2e28c54e-639b-434f-b195-eedcab0ea4a1,loading: loading Barge II,ShiftAmountActivity,1970-01-01 01:15:57,1970-01-01 01:57:37,2500.0
+2,2e28c54e-639b-434f-b195-eedcab0ea4a1,loading: loading Barge II,ShiftAmountActivity,1970-01-01 06:07:37,1970-01-01 06:49:17,2500.0
+3,2e28c54e-639b-434f-b195-eedcab0ea4a1,loading: loading Barge II,ShiftAmountActivity,1970-01-01 10:59:17,1970-01-01 11:40:57,2500.0
+1,17074833-91ed-44f3-8264-a405b70f363a,sailing full: sailing full Barge II,MoveActivity,1970-01-01 01:57:37,1970-01-01 02:35:03,2246.0
+2,17074833-91ed-44f3-8264-a405b70f363a,sailing full: sailing full Barge II,MoveActivity,1970-01-01 06:49:17,1970-01-01 07:26:43,2246.0
+3,17074833-91ed-44f3-8264-a405b70f363a,sailing full: sailing full Barge II,MoveActivity,1970-01-01 11:40:57,1970-01-01 12:18:23,2246.0
+1,6ef7a3d3-6e1e-4cfc-a17c-ca48ebe690b2,unloading: unloading Barge II,ShiftAmountActivity,1970-01-01 02:35:03,1970-01-01 03:12:29,2246.0
+2,6ef7a3d3-6e1e-4cfc-a17c-ca48ebe690b2,unloading: unloading Barge II,ShiftAmountActivity,1970-01-01 07:26:43,1970-01-01 08:04:09,2246.0
+3,6ef7a3d3-6e1e-4cfc-a17c-ca48ebe690b2,unloading: unloading Barge II,ShiftAmountActivity,1970-01-01 12:18:23,1970-01-01 12:55:49,2246.0
+1,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 00:00:00,1970-01-01 00:39:36,2376.0
+2,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 00:00:00,1970-01-01 02:39:17,9557.0
+3,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 00:39:36,1970-01-01 03:18:53,9557.0
+4,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 02:39:17,1970-01-01 03:58:29,4752.0
+5,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 03:18:53,1970-01-01 03:58:29,2376.0
+6,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 03:58:29,1970-01-01 04:38:05,2376.0
+7,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 03:58:29,1970-01-01 07:30:57,12748.0
+8,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 04:38:05,1970-01-01 08:10:33,12748.0
+9,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 07:30:57,1970-01-01 08:50:09,4752.0
+10,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 08:10:33,1970-01-01 08:50:09,2376.0
+11,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 08:50:09,1970-01-01 09:29:45,2376.0
+12,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 08:50:09,1970-01-01 12:22:37,12748.0
+13,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 09:29:45,1970-01-01 13:02:13,12748.0
+14,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 12:22:37,1970-01-01 13:41:49,4752.0
+15,3cad57c1-573f-4c6e-a6cd-fefc25235564,sequential_activity_subcycle:sequential_activity_subcycle Barge III,SequentialActivity,1970-01-01 13:02:13,1970-01-01 13:41:49,2376.0
+1,29f641af-d9b2-41f8-b25d-9dbadde15857,sailing empty: sailing empty Barge III,MoveActivity,1970-01-01 00:00:00,1970-01-01 00:39:36,2376.0
+2,29f641af-d9b2-41f8-b25d-9dbadde15857,sailing empty: sailing empty Barge III,MoveActivity,1970-01-01 03:58:29,1970-01-01 04:38:05,2376.0
+3,29f641af-d9b2-41f8-b25d-9dbadde15857,sailing empty: sailing empty Barge III,MoveActivity,1970-01-01 08:50:09,1970-01-01 09:29:45,2376.0
+1,22c70d82-2e97-4b6b-875b-7acff3cd617c,loading: loading Barge III,ShiftAmountActivity,1970-01-01 01:57:37,1970-01-01 02:39:17,2500.0
+2,22c70d82-2e97-4b6b-875b-7acff3cd617c,loading: loading Barge III,ShiftAmountActivity,1970-01-01 06:49:17,1970-01-01 07:30:57,2500.0
+3,22c70d82-2e97-4b6b-875b-7acff3cd617c,loading: loading Barge III,ShiftAmountActivity,1970-01-01 11:40:57,1970-01-01 12:22:37,2500.0
+1,5d4d5efc-76af-4ce4-94f4-cd992a483dbe,sailing full: sailing full Barge III,MoveActivity,1970-01-01 02:39:17,1970-01-01 03:18:53,2376.0
+2,5d4d5efc-76af-4ce4-94f4-cd992a483dbe,sailing full: sailing full Barge III,MoveActivity,1970-01-01 07:30:57,1970-01-01 08:10:33,2376.0
+3,5d4d5efc-76af-4ce4-94f4-cd992a483dbe,sailing full: sailing full Barge III,MoveActivity,1970-01-01 12:22:37,1970-01-01 13:02:13,2376.0
+1,5bc128d9-5ea8-467d-919b-56fa4b88f345,unloading: unloading Barge III,ShiftAmountActivity,1970-01-01 03:18:53,1970-01-01 03:58:29,2376.0
+2,5bc128d9-5ea8-467d-919b-56fa4b88f345,unloading: unloading Barge III,ShiftAmountActivity,1970-01-01 08:10:33,1970-01-01 08:50:09,2376.0
+3,5bc128d9-5ea8-467d-919b-56fa4b88f345,unloading: unloading Barge III,ShiftAmountActivity,1970-01-01 13:02:13,1970-01-01 13:41:49,2376.0
+1,b51a25ea-b11f-4b27-94cc-8463b662ecf4,sequential_activity_subcycle:sequential_activity_subcycle Extra 1,SequentialActivity,1970-01-01 00:00:00,1970-01-01 00:49:19,2959.0
+2,b51a25ea-b11f-4b27-94cc-8463b662ecf4,sequential_activity_subcycle:sequential_activity_subcycle Extra 1,SequentialActivity,1970-01-01 00:00:00,1970-01-01 05:25:57,19557.0
+3,b51a25ea-b11f-4b27-94cc-8463b662ecf4,sequential_activity_subcycle:sequential_activity_subcycle Extra 1,SequentialActivity,1970-01-01 00:49:19,1970-01-01 06:15:16,19557.0
+4,b51a25ea-b11f-4b27-94cc-8463b662ecf4,sequential_activity_subcycle:sequential_activity_subcycle Extra 1,SequentialActivity,1970-01-01 05:25:57,1970-01-01 07:04:35,5918.0
+5,b51a25ea-b11f-4b27-94cc-8463b662ecf4,sequential_activity_subcycle:sequential_activity_subcycle Extra 1,SequentialActivity,1970-01-01 06:15:16,1970-01-01 07:04:35,2959.0
+6,b51a25ea-b11f-4b27-94cc-8463b662ecf4,sequential_activity_subcycle:sequential_activity_subcycle Extra 1,SequentialActivity,1970-01-01 07:04:35,1970-01-01 07:53:54,2959.0
+7,b51a25ea-b11f-4b27-94cc-8463b662ecf4,sequential_activity_subcycle:sequential_activity_subcycle Extra 1,SequentialActivity,1970-01-01 07:04:35,1970-01-01 10:59:17,14082.0
+8,b51a25ea-b11f-4b27-94cc-8463b662ecf4,sequential_activity_subcycle:sequential_activity_subcycle Extra 1,SequentialActivity,1970-01-01 07:53:54,1970-01-01 11:48:36,14082.0
+9,b51a25ea-b11f-4b27-94cc-8463b662ecf4,sequential_activity_subcycle:sequential_activity_subcycle Extra 1,SequentialActivity,1970-01-01 10:59:17,1970-01-01 12:37:55,5918.0
+10,b51a25ea-b11f-4b27-94cc-8463b662ecf4,sequential_activity_subcycle:sequential_activity_subcycle Extra 1,SequentialActivity,1970-01-01 11:48:36,1970-01-01 12:37:55,2959.0
+1,f1425c0d-990a-47b5-86e2-56d5a3423c12,sailing empty: sailing empty Extra 1,MoveActivity,1970-01-01 00:00:00,1970-01-01 00:49:19,2959.0
+2,f1425c0d-990a-47b5-86e2-56d5a3423c12,sailing empty: sailing empty Extra 1,MoveActivity,1970-01-01 07:04:35,1970-01-01 07:53:54,2959.0
+1,a97ac758-41d0-4c32-b782-cd6c0d14cd17,loading: loading Extra 1,ShiftAmountActivity,1970-01-01 04:44:17,1970-01-01 05:25:57,2500.0
+2,a97ac758-41d0-4c32-b782-cd6c0d14cd17,loading: loading Extra 1,ShiftAmountActivity,1970-01-01 10:17:37,1970-01-01 10:59:17,2500.0
+1,9fa3e0b9-6ef3-450f-b16f-e26cb73bdfd6,sailing full: sailing full Extra 1,MoveActivity,1970-01-01 05:25:57,1970-01-01 06:15:16,2959.0
+2,9fa3e0b9-6ef3-450f-b16f-e26cb73bdfd6,sailing full: sailing full Extra 1,MoveActivity,1970-01-01 10:59:17,1970-01-01 11:48:36,2959.0
+1,5e4d1ba0-16b6-4d3b-924d-5c9ed930026b,unloading: unloading Extra 1,ShiftAmountActivity,1970-01-01 06:15:16,1970-01-01 07:04:35,2959.0
+2,5e4d1ba0-16b6-4d3b-924d-5c9ed930026b,unloading: unloading Extra 1,ShiftAmountActivity,1970-01-01 11:48:36,1970-01-01 12:37:55,2959.0
