@@ -12,12 +12,6 @@ from .resource import HasResource
 from .simpy_object import SimpyObject
 from .priority import HasPriorityResource
 from .priority import PriorityVessel
-from .indicators import Port
-from .access import HasDraught
-from .access import HasActualWaterLevel
-from .access import HasLowestAstronomicalTide
-from .access import HasMaintainedBedLevel
-from .access import HasNavigability
 from .access import HasDredging
 
 __all__ = [
