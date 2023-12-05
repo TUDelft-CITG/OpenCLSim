@@ -234,12 +234,18 @@ class Routable(Movable, Locatable):
             a_geometry = self.env.graph.nodes[a]["geometry"]
             b_geometry = self.env.graph.nodes[b]["geometry"]
 
-            assert shapely.equals_exact(
-                origin, a_geometry, tolerance=0.01
-            ), f"You are sailing from origin {origin}, which is not equal to start of the route {a_geometry}"
-            assert shapely.equals_exact(
+            a_is_origin = shapely.equals_exact(origin, a_geometry, tolerance=0.01)
+            b_is_origin = shapely.equals_exact(origin, b_geometry, tolerance=0.01)
+            a_is_destination = shapely.equals_exact(
+                destination, a_geometry, tolerance=0.01
+            )
+            b_is_destination = shapely.equals_exact(
                 destination, b_geometry, tolerance=0.01
-            ), f"You are sailing to destination {destination}, which is not equal to start of the route {b_geometry}"
+            )
+
+            assert (a_is_origin and b_is_destination) or (
+                a_is_destination and b_is_origin
+            ), f"Expected that {self} sails from start {a_geometry} to end of route {b_geometry} or back. You are sailing from {origin} to {destination}. {a_is_origin}, {b_is_origin}, {a_is_destination}, {b_is_destination}"
 
             for a, b in zip(self.route[:-1], self.route[1:]):
                 e = (a, b)
