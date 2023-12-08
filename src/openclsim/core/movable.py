@@ -2,7 +2,7 @@
 import itertools
 import logging
 import warnings
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional
 
 import numpy as np
 import pyproj
@@ -245,7 +245,10 @@ class Routable(Movable, Locatable):
 
             assert (a_is_origin and b_is_destination) or (
                 a_is_destination and b_is_origin
-            ), f"Expected that {self} sails from start {a_geometry} to end of route {b_geometry} or back. You are sailing from {origin} to {destination}. {a_is_origin}, {b_is_origin}, {a_is_destination}, {b_is_destination}"
+            ), (
+                f"Expected that {self} sails from start {a_geometry} to end of route {b_geometry} or back. "
+                + f"You are sailing from {origin} to {destination}."
+            )
 
             for a, b in zip(self.route[:-1], self.route[1:]):
                 e = (a, b)
