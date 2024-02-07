@@ -145,7 +145,7 @@ class TidePluginActivity(openclsim.model.AbstractPluginClass):
             print("we do not have positive under keel clearance")
             return False
 
-    def time_until_dredging_needed(self):
+    def time_until_tide_allows(self):
         """compute how long until next dredging cycle starts"""
         remaining_bed_level = self.destination.DCL - self.destination.ABL
         print(f"remaining_bed_level: {remaining_bed_level}")
