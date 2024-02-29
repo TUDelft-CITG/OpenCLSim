@@ -1,0 +1,71 @@
+// BI: Qlik Sense load script for notebook 34_fleet_optimization
+
+Schedule:
+LOAD
+    trip,
+    ActivityID,
+    ActivityID & ':' & trip as uuid,
+    TimeStamp(TimestampStart) as TimestampStart,
+    TimeStamp(TimestampStop) as TimestampStop,
+    TimestampDt
+FROM [lib://notebooks_folder/activity_logs.csv]
+(txt, codepage is 28592, embedded labels, delimiter is ',', msq);
+
+Planning:
+LOAD
+    ActivityID,
+    subfield(ActivityName,':',1) as ActivityType,
+    subfield(ActivityName,':',2) as ActivityName,
+    ActivityClass,
+    ParentId,
+    ParentName,
+    ParentLevel,
+    OriginID,
+    OriginName,
+    DestinationID,
+    DestinationName,
+    ProcessorID,
+    ProcessorName,
+    MoverID,
+    MoverName,
+    MoverName & '' & ProcessorName as ResourceSetName
+FROM [lib://notebooks_folder/activities.csv]
+(txt, codepage is 28592, embedded labels, delimiter is ',', msq)
+where (subfield(ActivityName,':',1)<>'sequential_activity_subcycle') and
+      (subfield(ActivityName,':',1)<>'while_sequential_activity_subcycle');
+
+Vessels:
+LOAD
+    ConceptName as VesselName,
+    ConceptID ,
+    ConceptClass as VesselClass
+FROM [lib://notebooks_folder/concepts.csv]
+(txt, codepage is 28591, embedded labels, delimiter is ',', msq)
+where ConceptClass='TransportProcessingResource';
+
+Sites:
+LOAD
+    ConceptName as SiteName,
+    ConceptID ,
+    ConceptClass as SiteClass
+FROM [lib://notebooks_folder/concepts.csv]
+(txt, codepage is 28591, embedded labels, delimiter is ',', msq)
+where ConceptClass='Site';
+
+Campaigns:
+LOAD
+    ActivityID,
+    ConceptID,
+    ConceptMode as ResourceMode
+FROM [lib://notebooks_folder/resources.csv]
+(txt, codepage is 28591, embedded labels, delimiter is ',', msq);
+
+Activities:
+load * inline [
+ActivityType.colorid,ActivityType.color,ActivityType
+1,#253a79,sailing full
+3,#cccee3,sailing empty
+5,#ffb702,loading
+6,#ff8702,unloading
+];
+

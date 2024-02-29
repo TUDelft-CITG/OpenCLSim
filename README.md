@@ -7,15 +7,18 @@
 
 # OpenCLSim
 
-**Open** source **C**omplex **L**ogistics **Sim**ulation - Rule driven scheduling of cyclic activities for in-depth comparison of alternative operating strategies. For background please read our [WODCON 2022 paper](https://www.dredging.org/resources/ceda-publications-online/conference-proceedings/abstract/1126), also available at [ResearchGate](https://www.researchgate.net/publication/360852095_OpenCLSim_Discrete_Event_Dredging_Fleet_Simulation_to_Optimise_Project_Costs).
+**Open** source **C**omplex **L**ogistics **Sim**ulation - Rule driven scheduling of cyclic activities for in-depth comparison of alternative operating strategies. For background please read our [WODCON 2022 paper](https://www.dredging.org/resources/ceda-publications-online/conference-proceedings/abstract/1126), also available at [ResearchGate](https://www.researchgate.net/publication/360852095_OpenCLSim_Discrete_Event_Dredging_Fleet_Simulation_to_Optimise_Project_Costs). And our [Terra et Aqua 2023 paper](https://www.iadc-dredging.com/article/simulating-for-sustainability-alternative-operating-strategies-for-energy-efficiency/), available at [ResearchGate](https://www.researchgate.net/publication/371782674_Simulating_for_Sustainability_Alternative_Operating_Strategies_for_Energy_Efficiency) as well.
 
 Documentation is found [here](https://openclsim.readthedocs.io).
 
 ## Book
 
-<a href="https://delightful-cliff-0e49c3503.1.azurestaticapps.net"><img src="docs/_static/book.png" style="max-width: 50vw;"></a>
+
+<a href="https://delightful-cliff-0e49c3503.1.azurestaticapps.net/Intro_draft.html"><img src="docs/_static/book.png" style="max-width: 50vw;"></a>
 
 You can find the OpenCLSim book, based on the examples in the `notebooks` folder on the [OpenCLSim-book](https://delightful-cliff-0e49c3503.1.azurestaticapps.net/Intro_draft.html) website.
+
+The book is only build from the master branch and the special "feature/book" branch. For testing your book you can use the feature/book branch.
 
 ## Installation
 
