@@ -1,4 +1,5 @@
 """Sequential activity for the simulation."""
+
 import openclsim.core as core
 
 from .base_activities import GenericActivity, RegisterSubProcesses

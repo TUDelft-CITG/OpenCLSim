@@ -1,6 +1,5 @@
 """Base classes for the openclsim activities."""
 
-
 import openclsim.core as core
 
 from .base_activities import GenericActivity

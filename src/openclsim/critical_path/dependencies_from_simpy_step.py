@@ -5,6 +5,7 @@ are to be found with method 'simpy step':
  get_dependency_list method (as is the case with the other methods as well)
 - class CriticalPathEnvironment that inherits from simpy.Environment and 'patches' env.step()
 """
+
 import copy
 import logging
 

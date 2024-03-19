@@ -1,4 +1,5 @@
 """Component to log the simulation objects."""
+
 import datetime
 import numbers
 import warnings
