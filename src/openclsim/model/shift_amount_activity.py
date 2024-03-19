@@ -1,6 +1,5 @@
 """Shift amount activity for the simulation."""
 
-
 from functools import partial
 
 import openclsim.core as core

@@ -2,6 +2,7 @@
 Module that contains class SimulationGraph.
 SimulationGraph is a graph representation of simulated activities and their dependencies.
 """
+
 import copy
 import datetime as dt
 import logging
@@ -392,9 +393,9 @@ class SimulationGraph:
             ]
             for edge in list_edges:
                 marked_edges_graph.edges[edge]["duration"] = 10**-4
-                self.simulation_graph.edges[edge][
-                    self.__COLNAME_CRITICAL
-                ] = self.__CRITICAL[1]
+                self.simulation_graph.edges[edge][self.__COLNAME_CRITICAL] = (
+                    self.__CRITICAL[1]
+                )
             yet_to_discount = []
         else:
             yet_to_discount = [

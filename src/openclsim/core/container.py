@@ -1,4 +1,5 @@
 """Component that assigns a container to the simulation objects."""
+
 from .events_container import EventsContainer
 from .simpy_object import SimpyObject
 

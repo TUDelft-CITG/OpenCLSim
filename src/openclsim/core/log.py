@@ -1,4 +1,5 @@
 """Component to log the simulation objects."""
+
 import datetime
 import numbers
 import warnings
@@ -59,7 +60,17 @@ class Log(SimpyObject):
 
     @property
     def log(self):
-        """return the log in log format (compatible with old log attribute)"""
+        """
+        Return the log in log format (compatible with old log attribute).
+
+        The log can contain the following columns:
+            Timestamp: datetime
+            ActivityID: str
+            ActivityState: dict
+            ObjectState: dict
+            ActivityLabel: dict
+        """
+
         df = pd.DataFrame(self.logbook)
 
         columns = [
@@ -85,10 +96,24 @@ class Log(SimpyObject):
                 "ObjectState": [],
                 "ActivityLabel": [],
             }
+            dtypes = {
+                "Timestamp": "datetime64[ns]",
+                "ActivityID": object,
+                "ActivityState": object,
+                "ObjectState": object,
+                "ActivityLabel": object,
+            }
             df = pd.DataFrame(empty)
+            # cast to types
+            for key, val in dtypes.items():
+                df[key] = df[key].astype(val)
+
+        # ensure we keep python datetimes and not timestamps. Timestamps will be cast to ints at the next step
+        df["Timestamp"] = pd.Series(df["Timestamp"].dt.to_pydatetime(), dtype=object)
 
         # Convert table to this format:
         # {'a': [1, 2], 'b': [2, 4]}
+        #
         list_format = df.to_dict(orient="list")
 
         return list_format
@@ -110,8 +135,21 @@ class Log(SimpyObject):
         additional_state: Optional[dict] = None,
         activity_label: Optional[dict] = None,
     ):
-        """Log an entry (openclsim version).
-        - Time (t) should b an timestamp in seconds since 1970 in utc.
+        """
+        Log an entry (openclsim version).
+
+        Parameters
+        ----------
+        t : float
+            Timestamp in seconds since 1970 in utc.
+        activity_id : Union[str, int, None], optional
+            Identifier of the activity, by default None
+        activity_state : LogState, optional
+            State of the activity, by default LogState.UNKNOWN
+        additional_state : Optional[dict], optional
+            Additional state of the activity, by default None
+        activity_label : Optional[dict], optional
+            Label of the activity, by default None
 
         """
 

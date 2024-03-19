@@ -2,6 +2,7 @@
 Tests for openclsim.critical_path.base_cp module.
 Tests the method 'get_recorded_activity_df' for a number of simulations.
 """
+
 import datetime as dt
 
 import pandas as pd

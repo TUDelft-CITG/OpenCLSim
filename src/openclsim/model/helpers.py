@@ -1,4 +1,5 @@
 """Module with helper functions for the simulation."""
+
 import logging
 
 logger = logging.getLogger(__name__)

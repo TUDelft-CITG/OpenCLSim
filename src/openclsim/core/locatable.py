@@ -1,4 +1,5 @@
 """Component to locate the simulation objects."""
+
 from typing import Optional
 
 import pyproj

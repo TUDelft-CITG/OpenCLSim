@@ -1,4 +1,5 @@
 """Directory for the weather plugin."""
+
 from typing import Optional
 
 import numpy as np
