@@ -4,6 +4,7 @@ Tests for openclsim.critical_path.simulation_graph module
 In order to test the simulation graph creation and the 'get critical path'
 we have a hardcoded dependency_list based on index of testdata (which we convert to UUIDs)
 """
+
 import pytest
 
 from openclsim.critical_path.dependencies_from_recorded_activities import (

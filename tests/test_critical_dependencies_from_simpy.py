@@ -1,6 +1,7 @@
 """
 Tests for openclsim.critical_path.dependencies_from_simpy module.
 """
+
 import datetime as dt
 
 from openclsim.critical_path.dependencies_from_simpy_step import (
