@@ -1,6 +1,7 @@
 """
 Module contains DependenciesFromModel that inherits from critical_path.base_cp.BaseCP
 """
+
 import networkx as nx
 
 from openclsim.critical_path.base_cp import BaseCP

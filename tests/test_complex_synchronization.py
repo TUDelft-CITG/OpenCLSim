@@ -1,4 +1,5 @@
 """Test package."""
+
 import simpy
 
 import openclsim.model as model

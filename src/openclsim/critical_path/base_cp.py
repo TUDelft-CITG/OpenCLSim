@@ -72,6 +72,7 @@ class BaseCP(ABC):
         Uses the logs of provided activities and sim objects, combines these, adds unique UUID
         and reshape into format such that single row has a start time and an end time.
         """
+
         # get all recorded events through logs simulation objects (excl plugins)
         all_recorded_events_objects = self.combine_logs()
 

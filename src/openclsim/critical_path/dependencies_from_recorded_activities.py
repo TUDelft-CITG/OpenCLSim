@@ -1,6 +1,7 @@
 """
 Module contains DependenciesFromRecordedActivities that inherits from critical_path.base_cp.BaseCP
 """
+
 from openclsim.critical_path.base_cp import BaseCP
 
 

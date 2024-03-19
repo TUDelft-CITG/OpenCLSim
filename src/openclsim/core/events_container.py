@@ -1,4 +1,5 @@
 """EventsContainer provides events based on the level of the container."""
+
 import operator as py_opp
 
 import simpy

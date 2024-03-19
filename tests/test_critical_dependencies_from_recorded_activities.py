@@ -1,6 +1,7 @@
 """
 Tests for openclsim.critical_path.dependencies_from_recorded_activities module
 """
+
 from openclsim.critical_path.dependencies_from_recorded_activities import (
     BaseCP,
     DependenciesFromRecordedActivities,

@@ -1,6 +1,5 @@
 """Single run activity for the simulation."""
 
-
 from .move_activity import MoveActivity
 from .shift_amount_activity import ShiftAmountActivity
 from .while_activity import WhileActivity
