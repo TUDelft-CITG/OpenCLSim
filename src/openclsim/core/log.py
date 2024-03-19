@@ -95,7 +95,17 @@ class Log(SimpyObject):
                 "ObjectState": [],
                 "ActivityLabel": [],
             }
+            dtypes = {
+                "Timestamp": "datetime64[ns]",
+                "ActivityID": object,
+                "ActivityState": object,
+                "ObjectState": object,
+                "ActivityLabel": object,
+            }
             df = pd.DataFrame(empty)
+            # cast to types
+            for key, val in dtypes.items():
+                df[key] = df[key].astype(val)
 
         # ensure we keep python datetimes and not timestamps. Timestamps will be cast to ints at the next step
         df["Timestamp"] = pd.Series(df["Timestamp"].dt.to_pydatetime(), dtype=object)
