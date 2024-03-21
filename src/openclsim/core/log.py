@@ -109,7 +109,12 @@ class Log(SimpyObject):
                 df[key] = df[key].astype(val)
 
         # ensure we keep python datetimes and not timestamps. Timestamps will be cast to ints at the next step
-        df["Timestamp"] = pd.Series(df["Timestamp"].dt.to_pydatetime(), dtype=object)
+        # no way to do this without a loop or warnings at the moment
+        datetimes = pd.Series(
+            [x.to_pydatetime() for x in df["Timestamp"].tolist()], dtype=object
+        )
+
+        df["Timestamp"] = datetimes
 
         # Convert table to this format:
         # {'a': [1, 2], 'b': [2, 4]}
