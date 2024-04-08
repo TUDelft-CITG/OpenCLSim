@@ -13,6 +13,9 @@ from .simpy_object import SimpyObject
 from .priority import HasPriorityResource
 from .priority import PriorityVessel
 from .access import HasDredging
+from .processor_wid import Processor_wid
+from .processor_wid import WIDLoadingFunction
+from .processor_wid import WIDUnloadingFunction
 
 __all__ = [
     "basic",
@@ -43,4 +46,7 @@ __all__ = [
     "HasMaintainedBedLevel",
     "HasNavigability",
     "HasDredging",
+    "Processor_wid",
+    "WIDLoadingFunction",
+    "WIDUnloadingFunction",
 ]

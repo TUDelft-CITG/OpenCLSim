@@ -10,6 +10,7 @@ from .shift_amount_activity import ShiftAmountActivity
 from .single_run_process import single_run_process
 from .while_activity import RepeatActivity, WhileActivity
 from .while_access_activity import WhileAccessActivity, RepeatAccessActivity
+from produce_amount_activity import ProduceAmountActivity
 
 __all__ = [
     "AbstractPluginClass",
@@ -27,4 +28,5 @@ __all__ = [
     "WhileActivity",
     "WhileAccessActivity",
     "RepeatAccessActivity",
+    "ProduceAmountActivity",
 ]
