@@ -1,0 +1,4 @@
+barge_name,sailing empty [kW],loading [kW],sailing full [kW],unloading [kW],WAIT [kW],fuel_type
+barge I,300,100,500,150,30,Diesel
+barge II,300,100,500,150,30,Diesel
+barge III,300,100,500,150,30,Diesel
