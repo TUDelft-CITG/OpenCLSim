@@ -22,10 +22,11 @@ The book is only build from the master branch and the special "feature/book" bra
 
 ## Installation
 
-To install OpenCLSim, run this command in your terminal. This is the preferred method to install OpenCLSim, as it will always install the most recent stable release. In general you want to install python software in a virtual environment, either using [anaconda](https://docs.anaconda.com/anaconda/install/) or through python's default [virtual environment](https://docs.python.org/3/tutorial/venv.html).
+To install OpenCLSim, run this command in your terminal. This is the preferred method to install OpenCLSim, as it will always install the most recent stable release. In general you want to install python software in a virtual environment, either using [anaconda](https://docs.anaconda.com/anaconda/install/) or through python's default [virtual environment](https://docs.python.org/3/tutorial/venv.html). You can specifiy a specific version.
 
 ``` bash
 pip install openclsim
+pip install openclsim==1.6.1
 ```
 
 For local development use:
