@@ -188,4 +188,4 @@ class HasTidePluginActivity(openclsim.model.PluginActivity):
             self, openclsim.model.PluginActivity
         ):
             tide_plugin = TidePluginActivity(tide_criteria=tide_criteria)
-            self.register_plugin(plugin=dredge_plugin, priority=2)
+            self.register_plugin(plugin=tide_plugin, priority=2)
