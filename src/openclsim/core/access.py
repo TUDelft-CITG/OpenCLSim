@@ -14,3 +14,15 @@ class HasDredging(SimpyObject):
         self.DCL = DCL
         self.DBL = DBL
         self.SR = SR
+
+class HasTide(SimpyObject):
+    def __init__(self, UKC, T, *args, **kwargs):
+        """
+        Support for tide.
+        UKC: under keel clearance [m]
+        T: draught of the vessel [m]
+        """
+        super().__init__(*args, **kwargs)
+        # TODO: make consistent or share with opentnsim
+        self.UKC = UKC
+        self.T = T
