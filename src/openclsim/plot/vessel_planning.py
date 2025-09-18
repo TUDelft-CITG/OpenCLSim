@@ -150,8 +150,7 @@ def get_gantt_chart(
     for log in logs:
         timestamps.extend(log)
 
-    return add_layout_gantt_chart(traces, min(timestamps),
-                                  max(timestamps), static)
+    return add_layout_gantt_chart(traces, min(timestamps), max(timestamps), static)
 
 
 def add_layout_gantt_chart(traces, xmin, xmax, static):
@@ -178,15 +177,17 @@ def add_layout_gantt_chart(traces, xmin, xmax, static):
         hovermode="closest",
         legend=dict(x=0, y=-0.2, orientation="h"),
         xaxis=dict(
-            title=dict(text="Time",
-                       font=dict(family="Courier New, monospace",
-                                 size=18, color="#7f7f7f")),
+            title=dict(
+                text="Time",
+                font=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
+            ),
             range=[xmin, xmax],
         ),
         yaxis=dict(
-            title=dict(text="Activities",
-                       font=dict(family="Courier New, monospace",
-                                 size=18, color="#7f7f7f")),
+            title=dict(
+                text="Activities",
+                font=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
+            ),
         ),
     )
 
