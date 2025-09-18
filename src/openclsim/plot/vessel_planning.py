@@ -175,13 +175,11 @@ def add_layout_gantt_chart(traces, xmin, xmax, static):
         hovermode="closest",
         legend=dict(x=0, y=-0.2, orientation="h"),
         xaxis=dict(
-            title="Time",
-            titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
+            title=dict(text="Time",font=dict(family="Courier New, monospace", size=18, color="#7f7f7f") ),
             range=[xmin, xmax],
         ),
         yaxis=dict(
-            title="Activities",
-            titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
+            title=dict(text="Activities",font=dict(family="Courier New, monospace", size=18, color="#7f7f7f")),
         ),
     )
 
