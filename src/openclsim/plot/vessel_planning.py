@@ -175,20 +175,20 @@ def add_layout_gantt_chart(traces, xmin, xmax, static):
     layout = go.Layout(
         title="GANTT Chart",
         hovermode="closest",
-        legend=dict(x=0, y=-0.2, orientation="h"),
-        xaxis=dict(
-            title=dict(
+        legend={x=0, y=-0.2, orientation="h"},
+        xaxis={
+            title={
                 text="Time",
-                font=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
-            ),
+                font={family="Courier New, monospace", size=18, color="#7f7f7f"},
+            },
             range=[xmin, xmax],
-        ),
-        yaxis=dict(
-            title=dict(
+        },
+        yaxis={
+            title={
                 text="Activities",
-                font=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
-            ),
-        ),
+                font=d{family="Courier New, monospace", size=18, color="#7f7f7f"},
+            },
+        },
     )
 
     if static is False:
