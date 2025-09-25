@@ -62,11 +62,12 @@ def get_gantt_chart(
         and dicts need to be merged first into 1 overall list or dict, e.g.
         concepts = [from_site, to_site, *vessels.values()]
     activities
-        a list or dict of additional activities to be plotted, if not yet in concepts
+        a list or dict of additional activities to be plotted,
+        if not yet in concepts
     id_map
-        by default only the legend labels of activities in concepts are resolved.
-        Activities associated with vessels and sites are not resolved. id_map
-        resolves the legend labels using extra metadata:
+        by default only the legend labels of activities in concepts are
+        resolved. Activities associated with vessels and sites are not
+        resolved. id_map resolves the legend labels using extra metadata:
         * a list or dict of vessels
         * a manual id_map to resolve uuids to labels, e.g. {'uuid1':'name1'}
 
@@ -74,16 +75,16 @@ def get_gantt_chart(
     default_blockwidth = 10
 
     # unpack dict to list
-    if type(concepts) == dict:
+    if type(concepts) is dict:
         concepts = [*concepts.values()]
 
-    if type(activities) == dict:
+    if type(activities) is dict:
         activities = [*activities.values()]
 
-    if type(id_map) == dict:
+    if type(id_map) is dict:
         id_map = [*id_map.values()]
 
-    if type(id_map) == list:
+    if type(id_map) is list:
         id_map = {act.id: act.name for act in get_subprocesses(id_map)}
     else:
         id_map = id_map if id_map else {}
@@ -154,7 +155,8 @@ def get_gantt_chart(
 
 def add_layout_gantt_chart(traces, xmin, xmax, static):
     """
-    Given the plotly data (traces), add the layout and return the resulting figure.
+    Given the plotly data (traces), add the layout and return the
+     resulting figure.
 
     Parameters
     ----------
@@ -164,7 +166,7 @@ def add_layout_gantt_chart(traces, xmin, xmax, static):
         min value for x-axis of plot
     xmax : float
         max value for x-axis of plot
-    static: boolean
+    static : boolean
         If True, return data and layout in dictionairy.
         if False, a go.Figure is generated with iplot.
 
@@ -173,16 +175,28 @@ def add_layout_gantt_chart(traces, xmin, xmax, static):
     layout = go.Layout(
         title="GANTT Chart",
         hovermode="closest",
-        legend=dict(x=0, y=-0.2, orientation="h"),
-        xaxis=dict(
-            title="Time",
-            titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
-            range=[xmin, xmax],
-        ),
-        yaxis=dict(
-            title="Activities",
-            titlefont=dict(family="Courier New, monospace", size=18, color="#7f7f7f"),
-        ),
+        legend={"x": 0, "y": -0.2, "orientation": "h"},
+        xaxis={
+            "title": {
+                "text": "Time",
+                "font": {
+                    "family": "Courier New, monospace",
+                    "size": 18,
+                    "color": "#7f7f7f",
+                },
+            },
+            "range": [xmin, xmax],
+        },
+        yaxis={
+            "title": {
+                "text": "Activities",
+                "font": {
+                    "family": "Courier New, monospace",
+                    "size": 18,
+                    "color": "#7f7f7f",
+                },
+            },
+        },
     )
 
     if static is False:
