@@ -6,3 +6,99 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 # See configuration details in https://github.com/pypa/setuptools_scm
 version_scheme = "no-guess-dev"
+
+[project]
+name = "openclsim"
+dynamic = ["version"]
+description = "The OpenCLSim package aims to facilitate rule based planning of cyclic activities and in depth comparison of different system concepts."
+readme = "README.md"
+license = "mit"
+authors = [
+    { name = "Mark van Koningsveld", email = "m.vankoningsveld@tudelft.nl" },
+]
+keywords = [
+    "OpenCLSim",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "setuptools>=80.9.0",
+    "importlib-metadata >=8.7.0; python_version < '3.8'",
+    "setuptools_scm[toml]>=9.2.0",
+    "pandas >=2.2.3",
+    "networkx >=3.5",
+    "simpy >=4.1.1",
+    "shapely >=2.1.2",
+    "pyproj >=3.7.2",
+    "plotly >=6.3.0",
+    "matplotlib >=3.10.6",
+    # https://github.com/tantale/deprecated
+    "deprecated >=1.2.18"
+]
+
+[project.optional-dependencies]
+testing = [
+    "pytest >=8.3.5",
+    "jupyter >=1.1.1",
+    "ipykernel >=6.29.5",
+    "pytest-cov >=6.1.1",
+    "pytest-timeout >=2.3.1",
+    "colorcet >=3.1.0",
+    "cython >= 3.1.0",
+    "fiona >=1.10.1",
+    "folium >=0.19.5",
+    "ipyleaflet >=0.19.2",
+    "ipywidgets >=8.1.7",
+    "jsonschema >=4.23.0",
+    "jupyter-book >=1.0.4.post1",
+    "jupyterlab_widgets >=3.0.15",
+    "momepy >=0.10.0",
+    "nbconvert >=7.16.6",
+    "nbmake >=1.5.5",
+    "notebook >=7.4.2",
+    "openpyxl >=3.1.5",
+    "pytest-datadir >=1.6.1",
+    "pyyaml >=6.0.2",
+    "sphinx-rtd-theme >= 3.0.2",
+    "black >=25.9.0",
+]
+
+[project.scripts]
+openclsim = "openclsim.cli:cli"
+
+
+[tool.flake8]
+# Some sane defaults for the code style checker flake8
+max_line_length = 120
+extend-ignore = ["E203", "W503"]
+# ^  Black-compatible
+#    E203 and W503 have edge cases handled by black
+
+
+[tool.pytest.ini_options]
+# py.test options when running `pytest`
+addopts = [
+    "tests", "src",
+    "--cov", "--cov-report", "term", "--cov-report", "html",
+    "--black",
+    "--isort",
+    "--flake8",
+    "-W", "default"
+]
+
+[tool.isort]
+known_first_party = []
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 88
+
+
+
+
+
