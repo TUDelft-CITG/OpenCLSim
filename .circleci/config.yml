@@ -11,16 +11,16 @@ jobs:
             make build
 
       - run:
-          name: Install coverage badge beforte running tests
+          name: Install coverage badge before running tests
           command: |
-            docker exec -it openclsim bash -c "pip install coverage coverage-badge "
+            docker exec -it openclsim bash -c "pip install coverage coverage-badge pytest-cov "
 
       - run:
           name: Run tests
           command: |
-            docker exec -it openclsim bash -c "pytest"
+            docker exec -it openclsim bash -c "pytest --cov=openclsim --cov-report=html"
             docker exec -it openclsim bash -c "pytest --nbmake ./notebooks --nbmake-kernel=python3 --ignore ./notebooks/.ipynb_checkpoints --ignore  ./notebooks/cleanup  --ignore ./notebooks/students"
-            docker cp openclsim:/OpenCLSim/htmlcov /tmp/artifacts
+            docker cp openclsim:/openclsim/htmlcov /tmp/artifacts
 
       - run:
           name: Build docs
