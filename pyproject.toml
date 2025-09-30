@@ -79,17 +79,6 @@ extend-ignore = ["E203", "W503"]
 #    E203 and W503 have edge cases handled by black
 
 
-[tool.pytest.ini_options]
-# py.test options when running `pytest`
-addopts = [
-    "tests", "src",
-    "--cov", "--cov-report", "term", "--cov-report", "html",
-    "--black",
-    "--isort",
-    "--flake8",
-    "-W", "default"
-]
-
 [tool.isort]
 known_first_party = []
 multi_line_output = 3
