@@ -69,7 +69,7 @@ testing = [
     "contextily >=1.6.2",
     "pyarrow >=21.0.0",
     "folium >=0.20.0",
-
+    "nbformat >=5.10.4",
 ]
 
 [project.scripts]
