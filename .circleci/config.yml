@@ -12,7 +12,8 @@ jobs:
 
       - run:
           name: Install coverage badge before running tests
-          command: |
+          command: 
+            make test-up
             docker exec -it openclsim bash -c "pip install coverage coverage-badge pytest-cov "
 
       - run:
