@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  schedule:
+    - cron: "5 4 * * SUN"
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  # build the image 
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # set up build using both layer and buildkit caching following this guide
+      # https://evilmartians.com/chronicles/build-images-on-github-actions-with-docker-layer-caching
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-single-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-single-buildx
+
+      - name: Build and export
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          builder: ${{ steps.buildx.outputs.name }}
+          file: ./Dockerfile
+          tags: openclsim:latest
+          outputs: type=docker,dest=/tmp/image.tar
+          cache-from: type=gha, scope=${{ github.workflow }}
+          cache-to: type=gha, scope=${{ github.workflow }}
+
+      - name: Upload image to github artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: image
+          path: /tmp/image.tar
+          retention-days: 5
+
+  # test the image in parallel
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v2
+
+      # an explicit pull step is not strictly necessary, but it pulls in parallel
+      # and in the background while just `running docker-compose up` pulls images one by one
+      - name: Run docker-compose pull
+        run: docker-compose pull --ignore-pull-failures -q &
+        continue-on-error: true
+
+      - name: Download image from github artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: image
+          path: /tmp
+
+      - name: Load image into docker
+        run: |
+          docker load --input /tmp/image.tar
+          docker image ls -a
+
+      - name: Run docker-compose up
+        run: docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d --remove-orphans
+
+      - name: Install test dependecies
+        run: docker-compose exec -T package bash -c "pip install -e .[testing]"
+
+      - name: List installed packages
+        run: docker-compose exec -T package bash -c "pip freeze"
+
+      - name: Run tests
+        run: >-
+          docker-compose exec -T package bash -c '
+            pytest \
+              --cov=src \
+              --cov=app \
+              --durations=3 \
+              --cov-config=setup.cfg \
+              --cov-context=test \
+              --black \
+              --isort \
+              -W default \
+              tests src'
+
+      - name: Extract coverage from container
+        run: docker-compose exec -T package bash -c "cat .coverage" > .coverage
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v2
+        with:
+          path: .coverage
+          retention-days: 1
