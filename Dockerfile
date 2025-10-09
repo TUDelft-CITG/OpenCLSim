@@ -1,8 +1,13 @@
 # Start with pyramid app image
 FROM continuumio/miniconda3
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt update
-RUN apt install -y build-essential python3-dev ffmpeg
+RUN apt update \
+    && apt install -y \
+    build-essential \
+    python3-dev \
+    ffmpeg \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install conda stuff first
 # install gdal library
