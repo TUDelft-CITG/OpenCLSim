@@ -30,6 +30,9 @@ jobs:
           gdalinfo --version
       - name: Set up Python 3.9
         uses: actions/setup-python@v3
+        # This step sometimes fails when cache is not available
+        # That's ok....
+        continue-on-error: true
         with:
           python-version: 3.9
           cache: "pip"
