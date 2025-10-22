@@ -394,16 +394,16 @@ class Routable(Movable, Locatable):
             a list of nodes that are available on the network
         """
         a = route[0]
-        a_geometry = self.graph.nodes[a]["geometry"]
+        a_geometry = self.env.graph.nodes[a]["geometry"]
         yield from self.move_to_geometry(a_geometry)
         # move self to node + geometry
         self.node = a
         self.geometry = a_geometry
 
         for i, (a, b) in enumerate(pairwise(route)):
-            a_geometry = self.graph[a]["geometry"]
-            b_geometry = self.graph[b]["geometry"]
-            edge_geometry = self.graph[(a, b)]["geometry"]
+            a_geometry = self.env.graph.nodes[a]["geometry"]
+            b_geometry = self.env.graph.nodes[b]["geometry"]
+            edge_geometry = self.env.graph.edges[(a, b)]["geometry"]
             # make sure we are in the right order
             edge_geometry = self.order_geometry(edge_geometry, a_geometry)
             # go to a (we should already be here)
@@ -412,10 +412,48 @@ class Routable(Movable, Locatable):
             # pass over the edge
             yield from self.pass_linestring(edge_geometry)
             # call any other functions we have registered
-            for pass_edge_function in self.pass_edge_function:
+            for pass_edge_function in self.on_pass_edge_functions:
                 yield pass_edge_function(
                     movable=self, a=a, b=b, route=route, geometry=edge_geometry
                 )
             # we have arrived, go there....
             self.geometry = b_geometry
             self.node = b
+
+    def move(
+        self,
+        destination: Optional[Locatable] = None,
+        duration: Optional[float] = None,
+        engine_order: Optional[float] = None,
+    ):
+        if engine_order is not None:
+            self.engine_order = engine_order
+
+        if self.path:
+            for event in self.pass_linestring(self.path):
+                self.log_entry_v1(
+                    self.env.now,
+                    self.activity_id,
+                    LogState.START,
+                )
+                yield event
+                self.log_entry_v1(
+                    self.env.now,
+                    self.activity_id,
+                    LogState.STOP,
+                )
+        elif self.route:
+            for event in self.move_over_route(self.route):
+                self.log_entry_v1(
+                    self.env.now,
+                    self.activity_id,
+                    LogState.START,
+                )
+                yield event
+                self.log_entry_v1(
+                    self.env.now,
+                    self.activity_id,
+                    LogState.STOP,
+                )
+        else:
+            ValueError("Routable requires either a path or a route")
