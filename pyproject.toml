@@ -37,7 +37,7 @@ dependencies = [
     "plotly >=6.3.0",
     "matplotlib >=3.10.6",
     # https://github.com/tantale/deprecated
-    "deprecated >=1.2.18"
+    "deprecated >=1.2.18",
 ]
 
 [project.optional-dependencies]
@@ -70,10 +70,14 @@ testing = [
     "pyarrow >=21.0.0",
     "folium >=0.20.0",
     "nbformat >=5.10.4",
+    "movingpandas>=0.22.4",
+    "lonboard>=0.12.1",
+    "stonesoup>=1.8",
 ]
 
 [project.scripts]
 openclsim = "openclsim.cli:cli"
+
 
 
 [tool.flake8]
