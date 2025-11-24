@@ -71,7 +71,7 @@ testing = [
     "folium >=0.20.0",
     "nbformat >=5.10.4",
     "movingpandas>=0.22.4",
-    "lonboard>=0.12.1",
+    "lonboard>=0.13.0",
     "stonesoup>=1.8",
 ]
 
