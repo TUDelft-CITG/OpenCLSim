@@ -65,7 +65,7 @@ configure complex supply chains. An example of such a mixin is the mixin
 *Processor*. This class has loading and unloading functions and can be
 used to represent a crane. Other mixin classes, with different
 properties, can be used to represent other components in the system.
-Combining different mixins can then be used to represent a port, or ac ontainer 
+Combining different mixins can then be used to represent a port, or a container 
 vessel.
 
 It is expected that OpenCLSim and OpenTNSim will grow in the future with
