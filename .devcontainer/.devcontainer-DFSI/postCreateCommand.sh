@@ -22,7 +22,7 @@ python -m pip install "opentnsim==1.3.7"
 
 echo ""
 echo "OpenCLSim version:"
-python -c "import openclsim; print(openclsim.__version__)"
+python -c "import openclsim; print('OpenCLSim imported successfully from:', openclsim.__file__)"
 
 echo ""
 echo "OpenTNSim version:"
