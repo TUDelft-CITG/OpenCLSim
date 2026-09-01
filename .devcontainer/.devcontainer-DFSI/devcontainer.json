@@ -1,0 +1,27 @@
+{
+    "name": "OpenCLSim DfSI Environment",
+
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+
+    "workspaceFolder": "/workspaces/OpenCLSim",
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-toolsai.jupyter"
+            ],
+
+            "settings": {
+                "python.defaultInterpreterPath": "/opt/conda/bin/python",
+                "jupyter.askForKernelRestart": false
+            }
+        }
+    },
+
+    "postCreateCommand": "bash .devcontainer-DfSI/postCreateCommand.sh"
+}
