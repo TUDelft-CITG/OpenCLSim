@@ -23,5 +23,5 @@
         }
     },
 
-    "postCreateCommand": "bash .devcontainer-student/postCreateCommand.sh"
+    "postCreateCommand": "bash .devcontainer-DfSI/postCreateCommand.sh"
 }
