@@ -1,5 +1,5 @@
 {
-    "name": "OpenCLSim Student Environment",
+    "name": "OpenCLSim DfSI Environment",
 
     "build": {
         "dockerfile": "Dockerfile",

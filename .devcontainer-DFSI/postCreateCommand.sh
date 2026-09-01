@@ -4,20 +4,20 @@ set -e
 
 echo ""
 echo "=============================================="
-echo " Setting up OpenCLSim student environment"
+echo "   OpenCLSim DfSI Environment"
 echo "=============================================="
 echo ""
 
+echo "Python version:"
 python --version
 
 echo ""
-echo "Upgrading pip..."
-python -m pip install --upgrade pip
+echo "OpenCLSim version:"
+python -c "import openclsim; print(openclsim.__version__)"
 
 echo ""
-echo "Installing OpenCLSim and notebook dependencies..."
-
-python -m pip install -e ".[testing]"
+echo "OpenTNSim version:"
+python -c "import opentnsim; print(opentnsim.__version__)"
 
 echo ""
 echo "Registering Jupyter kernel..."
@@ -28,6 +28,6 @@ python -m ipykernel install --user \
 
 echo ""
 echo "=============================================="
-echo " OpenCLSim environment is ready!"
+echo "   DfSI environment ready!"
 echo "=============================================="
 echo ""
