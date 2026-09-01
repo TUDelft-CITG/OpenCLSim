@@ -1,0 +1,27 @@
+{
+    "name": "OpenCLSim Student Environment",
+
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+
+    "workspaceFolder": "/workspaces/OpenCLSim",
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-toolsai.jupyter"
+            ],
+
+            "settings": {
+                "python.defaultInterpreterPath": "/opt/conda/bin/python",
+                "jupyter.askForKernelRestart": false
+            }
+        }
+    },
+
+    "postCreateCommand": "bash .devcontainer-student/postCreateCommand.sh"
+}
