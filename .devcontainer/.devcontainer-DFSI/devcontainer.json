@@ -23,5 +23,5 @@
         }
     },
 
-    "postCreateCommand": "bash .devcontainer-DfSI/postCreateCommand.sh"
+    "postCreateCommand": "chmod +x .devcontainer-DfSI/postCreateCommand.sh && bash .devcontainer-DfSI/postCreateCommand.sh"
 }

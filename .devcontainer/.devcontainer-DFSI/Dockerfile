@@ -19,16 +19,7 @@ RUN conda install -y python=3.12 gdal && \
 
 WORKDIR /workspaces/OpenCLSim
 
-COPY . /workspaces/OpenCLSim
-
 RUN python -m pip install --upgrade pip setuptools wheel
-
-# Install the local OpenCLSim package first
-RUN python -m pip install -e .
-
-# Install the OpenTNSim version compatible with the current
-# OpenCLSim development code
-RUN python -m pip install "opentnsim==1.3.7"
 
 # Notebook and teaching dependencies
 RUN python -m pip install \
