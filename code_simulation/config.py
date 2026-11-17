@@ -1,6 +1,12 @@
+"""Model parameters for the FOWT installation-chain simulation.
 
+Units: durations in seconds (use HOUR / DAY), speeds in m/s, positions as
+WGS84 lon/lat. Distances between nodes are not parameters: they follow from
+the node coordinates of the selected SCENARIO in LOCATION_SCENARIOS.
+"""
 
 import datetime as dt
+import os
 from pathlib import Path
 
 import shapely.geometry
@@ -10,87 +16,61 @@ DAY = 24 * HOUR
 YEAR = 365 * DAY
 
 SIMULATION_START = dt.datetime(2017, 1, 1, 0, 0, tzinfo=dt.timezone.utc)
+
 START_DATES = [
     dt.datetime(2017 + (2 * i) // 12, 1 + (2 * i) % 12, 1,
                 tzinfo=dt.timezone.utc)
     for i in range(10)
 ]
 
-METOCEAN_PATH = Path(
-    r"C:\Users\coosj\MUDE\Python\OpenCLSim-Notebooks-master\Data\metocean_era5.xlsx"
-)
+DATA_DIR = Path(__file__).resolve().parent / "data"
+METOCEAN_PATH = Path(os.environ.get("FOWT_METOCEAN_PATH",
+                                    DATA_DIR / "metocean_era5.xlsx"))
 
+METOCEAN_PATH_MF = None
+METOCEAN_PATH_WS = None
+METOCEAN_PATH_IP = None
+METOCEAN_PATH_PS = None
 
-METOCEAN_PATH_MF = Path(
-    r"C:\Users\coosj\MUDE\Python\OpenCLSim-Notebooks-master\Data\metocean_era5.xlsx"
-)
+SCENARIO = "100,10,100"
 
-METOCEAN_PATH_WS = Path(
-    r"C:\Users\coosj\MUDE\Python\OpenCLSim-Notebooks-master\Data\metocean_era5.xlsx"
-)
-
-METOCEAN_PATH_IP = Path(
-    r"C:\Users\coosj\MUDE\Python\OpenCLSim-Notebooks-master\Data\metocean_era5.xlsx"
-)
-
-METOCEAN_PATH_PS = Path(
-    r"C:\Users\coosj\MUDE\Python\OpenCLSim-Notebooks-master\Data\metocean_era5.xlsx"
-)
-
-
-
-SCENARIO = "100,10,100"  # baseline: d1=100km, d2=10km, d3=100km
-
-NUM_FLOATERS = 25
-N_TARGET = 25       
-MAX_INTEGRATION = 1
-STRINGING_BATCH = 1 
-
+N_TARGET = 25
+NUM_FLOATERS = N_TARGET
+N_VESSELS_PER_LEG = 2
 
 MANUFACTURING_CAPACITY = 6
 
-BERTH_STORAGE_MF_CAPACITY = 1    # Buffer berth at manufacturing port 
-WET_STORAGE_CAPACITY      = 100  # Wet storage facility 
-BERTH_STORAGE_IP1_CAPACITY = 1   # Buffer berth at integration port, before integration
-BERTH_STORAGE_IP2_CAPACITY = 1  # Buffer berth at integration port, after commissionin
+BERTH_STORAGE_MF_CAPACITY = 1
+WET_STORAGE_CAPACITY = 100
+BERTH_STORAGE_IP1_CAPACITY = 1
+BERTH_STORAGE_IP2_CAPACITY = 1
 
-WET_STORAGE_1_CAPACITY = BERTH_STORAGE_MF_CAPACITY
-WET_STORAGE_2_CAPACITY = WET_STORAGE_CAPACITY
+PRODUCTION_TIME = YEAR / 180
 
-WET_STORAGE_3_CAPACITY = BERTH_STORAGE_IP2_CAPACITY
+LAUNCH_TIME = 4 * HOUR
+INTEGRATION_TIME = 1 * HOUR
+ASSEMBLY_NC_TOT = 2 * HOUR
+COMMISSIONING_TESTING_TIME = 1 * DAY
+INSTALLATION_TIME = 40 * HOUR
+IAC_HOOKUP_TIME = 12 * HOUR
 
+SHIFTS_PER_TURBINE = 18
+TTE_TIME = 2 * HOUR
+WTG_COMMISSIONING_TIME = 2 * HOUR
 
-N_VESSELS_PER_LEG = 2
+LAUNCH_TIME_WW = 0.5 * HOUR
+INTEGRATION_WW = 2 * HOUR
+ASSEMBLY_NACELLE_WW = 4 * HOUR
+ASSEMBLY_BLADE_WW = 4 * HOUR
+INSTALLATION_TIME_WW = 1 * HOUR
+IAC_HOOKUP_TIME_WW = 1 * HOUR
+TTE_TIME_WW = 0.5 * HOUR
+WTG_COMMISSIONING_TIME_WW = 0.5 * HOUR
 
-
-PRODUCTION_TIME = YEAR / 180 #misschien naar 180,
-
-LAUNCH_TIME             = 4 * HOUR
-TOWER_ASSEMBLY_TIME     = 0.01 *HOUR
-INTEGRATION_TIME        = 1 * HOUR
-ASSEMBLY_NC_TOT         = 2 * HOUR  
-INSTALLATION_TIME       = 40 * HOUR
-IAC_HOOKUP_TIME         = 12 * HOUR
-TTE_TIME                = 2* HOUR
-WTG_COMMISSIONING_TIME  = 2 * HOUR
-
-TOWER_INTERVAL          = 0.01 * DAY
-COMMISSIONING_TESTING_TIME =1 * DAY
-
-LAUNCH_TIME_WW              = 0.5 * HOUR
-ASSEMBLY_TOWER_WW           = 0.01 * HOUR
-INTEGRATION_WW              = 2 * HOUR 
-ASSEMBLY_NACELLE_WW         = 4 * HOUR 
-ASSEMBLY_BLADE_WW           = 4 * HOUR 
-INSTALLATION_TIME_WW        = 1 * HOUR
-IAC_HOOKUP_TIME_WW          = 1 * HOUR
-TTE_TIME_WW                 = 0.5 * HOUR
-WTG_COMMISSIONING_TIME_WW   = 0.5 * HOUR
-VESSEL_SPEED_EMPTY  = 12 * 1.83 /3.6
-VESSEL_SPEED_LOADED = 3 * 1.83/3.6
-VESSEL_SPEED_CLV    = 30 * 1.83/3.6
-
-
+KNOT_KMH = 1.83
+VESSEL_SPEED_EMPTY = 12 * KNOT_KMH / 3.6
+VESSEL_SPEED_LOADED = 3 * KNOT_KMH / 3.6
+VESSEL_SPEED_CLV = 30 * KNOT_KMH / 3.6
 
 LOCATION_SCENARIOS = {
     "10,10,10": {"manufacturing": shapely.geometry.Point(-4.06788, 57.65),   "wet_storage": shapely.geometry.Point(-3.9, 57.65),       "integration": shapely.geometry.Point(-3.73212, 57.65),  "site": shapely.geometry.Point(-3.564239, 57.65)},
@@ -249,21 +229,25 @@ LOCATION_SCENARIOS = {
 }
 
 
-
-
-
-
-
 def get_locations():
+    """Node coordinates of the active SCENARIO."""
     if SCENARIO not in LOCATION_SCENARIOS:
         raise ValueError(
-            f"Onbekend SCENARIO '{SCENARIO}'. "
-            f"Kies uit: {list(LOCATION_SCENARIOS)}"
+            f"Unknown SCENARIO '{SCENARIO}'. "
+            f"Choose from: {list(LOCATION_SCENARIOS)}"
         )
     return LOCATION_SCENARIOS[SCENARIO]
 
 
+def scenario_distances_km(name=None):
+    """Geodesic distances d1, d2, d3 (km) of a scenario, as the model sees them."""
+    import pyproj
 
-
-
-
+    locs = LOCATION_SCENARIOS[name or SCENARIO]
+    geod = pyproj.Geod(ellps="WGS84")
+    legs = [("manufacturing", "wet_storage"), ("wet_storage", "integration"),
+            ("integration", "site")]
+    return tuple(
+        geod.inv(locs[a].x, locs[a].y, locs[b].x, locs[b].y)[2] / 1000
+        for a, b in legs
+    )

@@ -1,0 +1,16 @@
+# Environment in which this version was verified (November 2026).
+# If the published results were produced with other versions, replace this
+# list with `pip freeze` output from that environment.
+# OpenCLSim itself: `pip install -e .` in the repository root
+# (commit d9282c6, v1.6.3-13).
+simpy==4.1.2
+pandas==2.3.3
+numpy==2.5.4
+shapely==2.2.0
+pyproj==3.8.0
+matplotlib==3.11.2
+openpyxl==3.1.5
+networkx==3.7
+plotly==7.1.0
+Deprecated==3.0.1
+pytest

@@ -1,15 +1,36 @@
+"""Batch runs: one scenario, several start dates; writes Excel, CSV and Gantt charts.
+
+Examples
+--------
+    python run_batch.py
+    python run_batch.py --scenario "500,10,100" --label "I1_500,10,100"
+    python run_batch.py --scenario "Hub west" --label CaseStudy_v1 --vessels 2
+
+Output: <OUTPUT_ROOT>/<LABEL>_<timestamp>/ with
+    resultaten_<LABEL>_<timestamp>.xlsx  sheets samenvatting (one row per run),
+                                         eindanalyse (statistics over runs),
+                                         gantt_data, fases_<date> (per run),
+                                         weather_check (see diagnostics.py)
+    gantt_charts/gantt_<date>.png
+    gantt_data/gantt_data_<date>.csv, gantt_data_alle_runs.csv
+    eindanalyse_total_installation_time.png
+Column names are documented in README.md.
+"""
+
+import argparse
 import datetime as dt
 from pathlib import Path
 
 import matplotlib
-matplotlib.use("Agg")         
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pandas as pd
 
 import config as cfg
-from simulation_BB123 import run_simulation
-from analysis_BB123 import (build_turbine_tracking_df, _PHASE_COLORS,                           _PHASE_ORDER)
+from simulation import run_simulation
+from analysis import build_turbine_tracking_df, _PHASE_COLORS, _PHASE_ORDER
+from diagnostics import weather_gate_report
 
 
 LABEL = "CaseStudy_v1"
@@ -17,8 +38,11 @@ START_YEAR = 2017
 N_YEARS = 1
 STARTS_PER_YEAR = 6
 START_MONTH = 1
+OUTPUT_ROOT = "batch_output"
+CHECK_WEATHER = True
 
 GANTT_XAS = "relatief"
+
 
 def make_start_dates():
     step_months = 12 // STARTS_PER_YEAR
@@ -66,17 +90,16 @@ def summarize_run(result, gantt_df):
 
 
 def gantt_plot_data(gantt_df, start_date):
-    
+    """Exact numbers behind a Gantt chart (days from start and matplotlib dates)."""
     t0 = start_date.timestamp()
     df = gantt_df.copy()
 
     df["start_dag"] = (df["start"].map(lambda s: s.timestamp()) - t0) / 86400
-    df["duur_dag"]  = (df["stop"] - df["start"]).dt.total_seconds() / 86400
-    df["stop_dag"]  = df["start_dag"] + df["duur_dag"]
+    df["duur_dag"] = (df["stop"] - df["start"]).dt.total_seconds() / 86400
+    df["stop_dag"] = df["start_dag"] + df["duur_dag"]
 
-    # absolute as: identiek aan plot_gantt_fixed (mdates.date2num)
     df["start_datenum"] = df["start"].map(mdates.date2num)
-    df["stop_datenum"]  = df["stop"].map(mdates.date2num)
+    df["stop_datenum"] = df["stop"].map(mdates.date2num)
 
     cols = ["turbine_id", "phase", "start", "stop",
             "duration_h", "duur_dag", "start_dag", "stop_dag",
@@ -88,6 +111,7 @@ def gantt_plot_data(gantt_df, start_date):
 
 
 def plot_gantt_fixed(gantt_df, start_date, xlim, ylim, title):
+    """Gantt chart with fixed axes, so charts of different runs compare directly."""
     turbine_ids = sorted(gantt_df["turbine_id"].unique())
     phases = [p for p in _PHASE_ORDER if p in gantt_df["phase"].unique()]
 
@@ -101,7 +125,6 @@ def plot_gantt_fixed(gantt_df, start_date, xlim, ylim, title):
         sub = gantt_df[gantt_df["turbine_id"] == tid]
         for _, row in sub.iterrows():
             if GANTT_XAS == "relatief":
-                # dagen vanaf start
                 left = (row["start"].timestamp() - t0) / 86400
                 width = (row["stop"] - row["start"]).total_seconds() / 86400
             else:
@@ -124,19 +147,20 @@ def plot_gantt_fixed(gantt_df, start_date, xlim, ylim, title):
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 
-    ax.set_title(f"{title} — Total duration {total_days:.0f} d "
-                 f"({total_days / 365:.2f} jaar)")
+    ax.set_title(f"{title}, total duration {total_days:.0f} d "
+                 f"({total_days / 365:.2f} years)")
     ax.grid(axis="x", alpha=0.3)
 
     handles = [plt.Rectangle((0, 0), 1, 1, color=_PHASE_COLORS[p])
                for p in phases]
     ax.legend(handles, phases, loc="upper right",
-              title="Fase", fontsize=9, framealpha=0.9)
+              title="Phase", fontsize=9, framealpha=0.9)
     plt.tight_layout()
     return fig, ax
 
 
 def plot_eindanalyse(summary_df, out_path):
+    """Total installation time per start month (one dot per run)."""
     df = summary_df.dropna(subset=["total_installation_d"]).copy()
 
     sd = pd.to_datetime(df["startdatum"])
@@ -144,8 +168,8 @@ def plot_eindanalyse(summary_df, out_path):
     df["jaar"] = sd.dt.year
 
     maanden = sorted(df["maand"].unique())
-    maand_namen = ["jan", "feb", "mrt", "apr", "mei", "jun",
-                   "jul", "aug", "sep", "okt", "nov", "dec"]
+    month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
     fig, ax = plt.subplots(figsize=(12, 6))
 
@@ -165,27 +189,28 @@ def plot_eindanalyse(summary_df, out_path):
         ax.scatter(m, vals.mean(), marker="_", s=400,
                    color="red", linewidth=2, zorder=2)
 
-    gem = df["total_installation_d"].mean()
-    ax.axhline(gem, color="red", linestyle="--", alpha=0.6,
-               label=f"gemiddelde = {gem:.0f} d")
+    mean = df["total_installation_d"].mean()
+    ax.axhline(mean, color="red", linestyle="--", alpha=0.6,
+               label=f"mean = {mean:.0f} d")
 
     ax.set_xticks(maanden)
-    ax.set_xticklabels([maand_namen[m - 1] for m in maanden])
-    ax.set_ylabel("Total installation time (dagen)")
-    ax.set_xlabel("Startmaand")
-    ax.set_title(f"Total installation time per startmaand "
-                 f"(LABEL: {LABEL}, scenario {cfg.SCENARIO})")
-    ax.legend(title="Jaar", fontsize=8)
+    ax.set_xticklabels([month_names[m - 1] for m in maanden])
+    ax.set_ylabel("Total installation time (days)")
+    ax.set_xlabel("Start month")
+    ax.set_title(f"Total installation time per start month "
+                 f"(label {LABEL}, scenario {cfg.SCENARIO})")
+    ax.legend(title="Year", fontsize=8)
     ax.grid(axis="y", alpha=0.3)
     plt.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
 
+
 def main():
     start_dates = make_start_dates()
 
     stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-    out_dir = Path("batch_output_interaction_V3") / f"{LABEL}_{stamp}"
+    out_dir = Path(OUTPUT_ROOT) / f"{LABEL}_{stamp}"
     out_dir.mkdir(parents=True, exist_ok=True)
     gantt_dir = out_dir / "gantt_charts"
     gantt_dir.mkdir(exist_ok=True)
@@ -193,41 +218,56 @@ def main():
     gantt_data_dir.mkdir(exist_ok=True)
 
     print("=" * 60)
-    print("BATCH-RUN — FOWT-installatieketen")
+    print("BATCH RUN, FOWT installation chain")
     print("=" * 60)
     print(f"Label        : {LABEL}")
     print(f"Scenario     : {cfg.SCENARIO}")
-    print(f"N_TARGET     : {cfg.N_TARGET}")
-    print(f"Aantal runs  : {len(start_dates)} "
-          f"({N_YEARS} jaar x {STARTS_PER_YEAR} startdata)")
-    print(f"Gantt x-as   : {GANTT_XAS}")
-    print(f"Output-map   : {out_dir.resolve()}")
+    print(f"Turbines     : {cfg.N_TARGET}")
+    print(f"Vessels/leg  : {cfg.N_VESSELS_PER_LEG}")
+    print(f"Metocean     : {cfg.METOCEAN_PATH}")
+    print(f"Runs         : {len(start_dates)} "
+          f"({N_YEARS} year(s) x {STARTS_PER_YEAR} start dates)")
+    print(f"Gantt x-axis : {GANTT_XAS}")
+    print(f"Output folder: {out_dir.resolve()}")
     print("=" * 60)
     print()
 
     summary_rows = []
     fase_tabellen = {}
-    runs = []       
+    weather_reports = []
+    runs = []
     for i, sd in enumerate(start_dates, start=1):
         label = sd.strftime("%Y-%m-%d")
-        print(f"[{i:2d}/{len(start_dates)}] Run startdatum {label} ...")
+        print(f"[{i:2d}/{len(start_dates)}] Run start date {label} ...")
 
         try:
             result = run_simulation(verbose=False, start_date=sd)
             gantt_df, _ = build_turbine_tracking_df(result)
 
             summary_row, fase_tabel = summarize_run(result, gantt_df)
+            summary_row["zero_shift_events"] = result.zero_shift_events
+            if CHECK_WEATHER:
+                report = weather_gate_report(result)
+                summary_row["weather_no_window"] = int(report["no_window"].sum())
+                summary_row["weather_beyond_data"] = int(report["beyond_data"].sum())
+                report.insert(0, "startdatum", label)
+                weather_reports.append(report)
             summary_rows.append(summary_row)
             fase_tabellen[label] = fase_tabel
             runs.append((label, sd, gantt_df))
 
             print(f"          total installation time = "
                   f"{summary_row['total_installation_d']:.1f} d")
+            if CHECK_WEATHER and (summary_row["weather_no_window"]
+                                  or summary_row["weather_beyond_data"]):
+                print(f"          WARNING: {summary_row['weather_no_window']} "
+                      f"weather-gated start(s) without a workable window, "
+                      f"{summary_row['weather_beyond_data']} beyond the data")
 
         except Exception as e:
             import traceback
             traceback.print_exc()
-            print(f"          [FOUT] {type(e).__name__}: {e}")
+            print(f"          [ERROR] {type(e).__name__}: {e}")
             summary_rows.append({
                 "startdatum": label,
                 "startmaand": sd.strftime("%Y-%m"),
@@ -240,7 +280,9 @@ def main():
 
     ymax = max((g["turbine_id"].nunique() for _, _, g in runs), default=1)
 
-    if GANTT_XAS == "relatief":
+    if not runs:
+        xlim = (0, 1)
+    elif GANTT_XAS == "relatief":
         max_days = 0.0
         for label, sd, g in runs:
             t0 = sd.timestamp()
@@ -252,19 +294,17 @@ def main():
         latest = max(g["stop"].max() for _, _, g in runs)
         xlim = (mdates.date2num(earliest), mdates.date2num(latest))
 
-
     print()
-    print("Gantt-charts tekenen met vaste assen ...")
+    print("Drawing Gantt charts with fixed axes ...")
     alle_gantt_data = []
     for label, sd, gantt_df in runs:
-        title = (f"Gantt — start {label} "
+        title = (f"Gantt, start {label} "
                  f"(scenario {cfg.SCENARIO}, N={cfg.N_TARGET})")
         fig, ax = plot_gantt_fixed(gantt_df, sd, xlim, ymax, title)
         png_path = gantt_dir / f"gantt_{label}.png"
         fig.savefig(png_path, dpi=150, bbox_inches="tight")
         plt.close(fig)
 
-        # exacte getallen achter de chart los opslaan
         gdata = gantt_plot_data(gantt_df, sd)
         gdata.insert(0, "startdatum", label)
         csv_path = gantt_data_dir / f"gantt_data_{label}.csv"
@@ -280,28 +320,25 @@ def main():
     else:
         combined_gantt = pd.DataFrame()
 
-
     eind_png = out_dir / "eindanalyse_total_installation_time.png"
     plot_eindanalyse(summary_df, eind_png)
-    print(f"\nEindanalyse-grafiek: {eind_png.name}")
-
+    print(f"\nSummary chart: {eind_png.name}")
 
     excel_path = out_dir / f"resultaten_{LABEL}_{stamp}.xlsx"
-
 
     geldig = summary_df.dropna(subset=["total_installation_d"])
     tit = geldig["total_installation_d"]
 
     if len(geldig) > 1:
-        beste_maand     = geldig.loc[tit.idxmin(), "startmaand"]
+        beste_maand = geldig.loc[tit.idxmin(), "startmaand"]
         slechtste_maand = geldig.loc[tit.idxmax(), "startmaand"]
-        spreiding       = round(tit.max() - tit.min(), 1)
-        std             = round(tit.std(), 1)
+        spreiding = round(tit.max() - tit.min(), 1)
+        std = round(tit.std(), 1)
     else:
-        beste_maand     = geldig["startmaand"].iloc[0] if len(geldig) == 1 else "n.v.t."
+        beste_maand = geldig["startmaand"].iloc[0] if len(geldig) == 1 else "n/a"
         slechtste_maand = beste_maand
-        spreiding       = 0.0
-        std             = 0.0
+        spreiding = 0.0
+        std = 0.0
 
     eindanalyse = pd.DataFrame([
         {"statistiek": "aantal runs",           "waarde": len(geldig)},
@@ -328,29 +365,64 @@ def main():
             safe = label.replace("-", "")
             fase_tabellen[label].to_excel(
                 writer, sheet_name=f"fases_{safe}"[:31], index=False)
-
+        if weather_reports:
+            pd.concat(weather_reports, ignore_index=True).to_excel(
+                writer, sheet_name="weather_check", index=False)
 
     print()
     print("=" * 60)
-    print("KLAAR")
+    print("DONE")
     print("=" * 60)
     print(f"Excel        : {excel_path.resolve()}")
-    print(f"Gantt-charts : {gantt_dir.resolve()} ({len(runs)} png's)")
-    print(f"Gantt-data   : {gantt_data_dir.resolve()} "
-          f"({len(runs)} csv's + gantt_data_alle_runs.csv)")
-    print(f"Eindanalyse  : {eind_png.resolve()}")
+    print(f"Gantt charts : {gantt_dir.resolve()} ({len(runs)} png files)")
+    print(f"Gantt data   : {gantt_data_dir.resolve()} "
+          f"({len(runs)} csv files + gantt_data_alle_runs.csv)")
+    print(f"Summary chart: {eind_png.resolve()}")
     print()
-    print("Total installation time per startdatum:")
+    print("Total installation time per start date:")
     cols = [c for c in ["startdatum", "total_installation_d",
                         "projectduur_d", "duur_per_turbine_d"]
             if c in summary_df.columns]
     print(summary_df[cols].to_string(index=False))
     print()
-    print("Eindanalyse:")
+    print("Statistics over runs:")
     print(eindanalyse.to_string(index=False))
 
     return summary_df, eindanalyse, out_dir
 
 
+def _parse_args():
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("--scenario", help='key in config.LOCATION_SCENARIOS, e.g. "100,10,100"')
+    p.add_argument("--label", help="name of this batch (output folder and file)")
+    p.add_argument("--vessels", type=int, help="vessels per leg (N_VESSELS_PER_LEG)")
+    p.add_argument("--start-year", type=int)
+    p.add_argument("--n-years", type=int)
+    p.add_argument("--starts-per-year", type=int)
+    p.add_argument("--start-month", type=int)
+    p.add_argument("--output", help="output root folder")
+    p.add_argument("--no-weather-check", action="store_true")
+    return p.parse_args()
+
+
 if __name__ == "__main__":
+    args = _parse_args()
+    if args.scenario:
+        cfg.SCENARIO = args.scenario
+    if args.vessels:
+        cfg.N_VESSELS_PER_LEG = args.vessels
+    if args.label:
+        LABEL = args.label
+    if args.start_year:
+        START_YEAR = args.start_year
+    if args.n_years:
+        N_YEARS = args.n_years
+    if args.starts_per_year:
+        STARTS_PER_YEAR = args.starts_per_year
+    if args.start_month:
+        START_MONTH = args.start_month
+    if args.output:
+        OUTPUT_ROOT = args.output
+    if args.no_weather_check:
+        CHECK_WEATHER = False
     main()
